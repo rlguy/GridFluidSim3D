@@ -22,7 +22,7 @@ MACVelocityField::~MACVelocityField()
 void MACVelocityField::_initializeVelocityGrids() {
     _u = new Grid3d(boost::extents[k_voxels][j_voxels][i_voxels + 1]);
     _v = new Grid3d(boost::extents[k_voxels][j_voxels + 1][i_voxels]);
-    _w = new Grid3d(boost::extents[k_voxels+ 1][j_voxels][i_voxels]);
+    _w = new Grid3d(boost::extents[k_voxels + 1][j_voxels][i_voxels]);
 
     clear();
 }
@@ -236,7 +236,7 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
 /* 
     Intopolation methods from http://www.paulinternet.nl/?page=bicubic
 
-    - p is indexed in order by p[k][j][i]
+    - p is indexed in order by p[i][j][k]
     - x, y, z are in [0,1]
     - this function will interpolate the volume between point Index 1 and 2
 */
@@ -296,9 +296,9 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     }
 
     double invdx = 1 / dx;
-    double ix = (x - refx)*dx;
-    double iy = (y - refy)*dx;
-    double iz = (z - refz)*dx;
+    double ix = (x - refx)*invdx;
+    double iy = (y - refy)*invdx;
+    double iz = (z - refz)*invdx;
 
     assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
 
@@ -307,7 +307,7 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pk][pj][pi] = U(pi + refi, pj + refj, pk + refk);
+                points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk);
             }
         }
     }
@@ -344,9 +344,9 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     }
 
     double invdx = 1 / dx;
-    double ix = (x - refx)*dx;
-    double iy = (y - refy)*dx;
-    double iz = (z - refz)*dx;
+    double ix = (x - refx)*invdx;
+    double iy = (y - refy)*invdx;
+    double iz = (z - refz)*invdx;
 
     assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
 
@@ -355,7 +355,7 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pk][pj][pi] = U(pi + refi, pj + refj, pk + refk);
+                points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk);
             }
         }
     }
@@ -392,9 +392,9 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     }
 
     double invdx = 1 / dx;
-    double ix = (x - refx)*dx;
-    double iy = (y - refy)*dx;
-    double iz = (z - refz)*dx;
+    double ix = (x - refx)*invdx;
+    double iy = (y - refy)*invdx;
+    double iz = (z - refz)*invdx;
 
     assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
 
@@ -403,7 +403,7 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pk][pj][pi] = U(pi + refi, pj + refj, pk + refk);
+                points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk);
             }
         }
     }
@@ -415,9 +415,9 @@ void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i
     assert(_isPositionInGrid(x, y, z));
 
     double invdx = 1.0 / dx;
-    *i = (int)floor(x*invdx);
-    *j = (int)floor(y*invdx);
-    *k = (int)floor(z*invdx);
+    *i = fminf((int)floor(x*invdx), i_voxels);
+    *j = fminf((int)floor(y*invdx), j_voxels);
+    *k = fminf((int)floor(z*invdx), k_voxels);
 }
 
 void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
