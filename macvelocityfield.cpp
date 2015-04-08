@@ -141,6 +141,36 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
     (*_w)[k][j][i] = val;
 }
 
+glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
+    assert(_isIndexInRangeU(i, j, k));
+
+    double gx = (double)(i-1)*dx;
+    double gy = (double)j*dx;
+    double gz = (double)k*dx;
+
+    return glm::vec3(gx + dx, gy + 0.5*dx, gz + 0.5*dx);
+}
+
+glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
+    assert(_isIndexInRangeV(i, j, k));
+
+    double gx = (double)i*dx;
+    double gy = (double)(j-1)*dx;
+    double gz = (double)k*dx;
+
+    return glm::vec3(gx + 0.5*dx, gy + dx, gz + 0.5*dx);
+}
+
+glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
+    assert(_isIndexInRangeW(i, j, k));
+
+    double gx = (double)i*dx;
+    double gy = (double)j*dx;
+    double gz = (double)(k-1)*dx;
+
+    return glm::vec3(gx + 0.5*dx, gy + 0.5*dx, gz);
+}
+
 glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
     assert(_isCellIndexInRange(i, j, k));
 

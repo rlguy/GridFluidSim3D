@@ -44,6 +44,10 @@ public:
     glm::vec3 evaluateVelocityAtPosition(double x, double y, double z);
     glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
 
+    glm::vec3 velocityIndexToPositionU(int i, int j, int k);
+    glm::vec3 velocityIndexToPositionV(int i, int j, int k);
+    glm::vec3 velocityIndexToPositionW(int i, int j, int k);
+
 private:
     void _initializeVelocityGrids();
 
