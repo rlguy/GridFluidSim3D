@@ -6,6 +6,7 @@
 #include <time.h>
 #include <assert.h>
 
+#include "array3d.h"
 #include "glm/glm.hpp" 
 
 class MACVelocityField
@@ -50,9 +51,6 @@ public:
 private:
     void _initializeVelocityGrids();
 
-    double ***_newArray3d(int width, int height, int depth);
-    void _deleteArray3d(int width, int height, int depth, double ***array3d);
-
     inline bool _isIndexInRangeU(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels + 1 && j < j_voxels && k < k_voxels;
     }
@@ -91,8 +89,8 @@ private:
     int j_voxels = 10;
     int k_voxels = 10;
 
-    double ***_u;
-    double ***_v;
-    double ***_w;
+    Array3d<double> _u;
+    Array3d<double> _v;
+    Array3d<double> _w;
 };
 

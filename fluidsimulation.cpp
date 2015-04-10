@@ -3,6 +3,9 @@
 
 FluidSimulation::FluidSimulation() {
     MACVelocity = MACVelocityField(i_voxels, j_voxels, k_voxels, dx);
+    _initMaterialGrid();
+    pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels);
+    pressureGrid.fill(0.0);
 }
 
 FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) : 
@@ -10,14 +13,40 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                  dx(cell_size), MACVelocity(x_voxels, y_voxels, z_voxels, cell_size) {
     MACVelocity.randomizeValues(0.0, 20.0);
 
-    glm::vec3 v = MACVelocity.evaluateVelocityAtPosition(3.789, 3.345, 3.234);
-
-    std::cout << v.x << std::endl;
-    std::cout << v.y << std::endl;
-    std::cout << v.z << std::endl;
+    _initMaterialGrid();
+    pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels);
+    pressureGrid.fill(0.0);
 }
 
 FluidSimulation::~FluidSimulation() {
+
+}
+
+void FluidSimulation::_initMaterialGrid() {
+    materialGrid = Array3d<int>(i_voxels, j_voxels, k_voxels);
+    materialGrid.fill(M_AIR);
+
+    // fill borders with solid cells
+    for (int j = 0; j < j_voxels; j++) {
+        for (int i = 0; i < i_voxels; i++) {
+            materialGrid.set(i, j, 0, M_SOLID);
+            materialGrid.set(i, j, k_voxels-1, M_SOLID);
+        }
+    }
+
+    for (int k = 0; k < k_voxels; k++) {
+        for (int i = 0; i < i_voxels; i++) {
+            materialGrid.set(i, 0, k, M_SOLID);
+            materialGrid.set(i, j_voxels-1, k, M_SOLID);
+        }
+    }
+
+    for (int k = 0; k < k_voxels; k++) {
+        for (int j = 0; j < j_voxels; j++) {
+            materialGrid.set(0, j, k, M_SOLID);
+            materialGrid.set(i_voxels-1, j, k, M_SOLID);
+        }
+    }
 }
 
 glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
