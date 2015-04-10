@@ -5,7 +5,6 @@
 #include <iostream>
 #include <time.h>
 #include <assert.h>
-#include <boost/multi_array.hpp>
 
 #include "glm/glm.hpp" 
 
@@ -51,6 +50,9 @@ public:
 private:
     void _initializeVelocityGrids();
 
+    double ***_newArray3d(int width, int height, int depth);
+    void _deleteArray3d(int width, int height, int depth, double ***array3d);
+
     inline bool _isIndexInRangeU(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels + 1 && j < j_voxels && k < k_voxels;
     }
@@ -89,9 +91,8 @@ private:
     int j_voxels = 10;
     int k_voxels = 10;
 
-    typedef boost::multi_array<double, 3> Grid3d;
-    Grid3d *_u;
-    Grid3d *_v;
-    Grid3d *_w;
+    double ***_u;
+    double ***_v;
+    double ***_w;
 };
 

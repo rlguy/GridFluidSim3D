@@ -11,27 +11,62 @@ MACVelocityField::MACVelocityField(int x_voxels, int y_voxels, int z_voxels, dou
                                    dx(cell_size) {
 
     _initializeVelocityGrids();
-
 }
 
 
 MACVelocityField::~MACVelocityField()
 {
+    _deleteArray3d(i_voxels + 1, j_voxels, k_voxels, _u);
+    _deleteArray3d(i_voxels, j_voxels + 1, k_voxels, _v);
+    _deleteArray3d(i_voxels, j_voxels, k_voxels + 1, _w);
+
 }
 
 void MACVelocityField::_initializeVelocityGrids() {
-    _u = new Grid3d(boost::extents[k_voxels][j_voxels][i_voxels + 1]);
-    _v = new Grid3d(boost::extents[k_voxels][j_voxels + 1][i_voxels]);
-    _w = new Grid3d(boost::extents[k_voxels + 1][j_voxels][i_voxels]);
+
+    _u = _newArray3d(i_voxels + 1, j_voxels, k_voxels);
+    _v = _newArray3d(i_voxels, j_voxels + 1, k_voxels);
+    _w = _newArray3d(i_voxels, j_voxels, k_voxels + 1);
 
     clear();
+}
+
+double ***MACVelocityField::_newArray3d(int width, int height, int depth){
+    double ***g = new double**[depth];
+    for (int k = 0; k < depth; k++) {
+        g[k] = new double*[height];
+
+        for (int j = 0; j < height; j++) {
+            g[k][j] = new double[width];
+        }
+    }
+
+    for (int k = 0; k < depth; k++) {
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                g[k][j][i] = 0.0;
+            }
+        }
+    }
+
+    return g;
+}
+
+void MACVelocityField::_deleteArray3d(int width, int height, int depth, double ***g) {
+    for (int k = 0; k < depth; k++) {
+        for (int j = 0; j < height; j++)
+            delete[] g[k][j];
+
+        delete[] g[k];
+    }
+    delete[] g;
 }
 
 void MACVelocityField::clearU() {
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels + 1; i++) {
-                (*_u)[k][j][i] = 0.0;
+                _u[k][j][i] = 0.0;
             }
         }
     }
@@ -41,7 +76,7 @@ void MACVelocityField::clearV() {
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                (*_v)[k][j][i] = 0.0;
+                _v[k][j][i] = 0.0;
             }
         }
     }
@@ -51,7 +86,7 @@ void MACVelocityField::clearW() {
     for (int k = 0; k < k_voxels + 1; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                (*_w)[k][j][i] = 0.0;
+                _w[k][j][i] = 0.0;
             }
         }
     }
@@ -71,7 +106,7 @@ void MACVelocityField::randomizeValues(double min, double max) {
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels + 1; i++) {
-                (*_u)[k][j][i] = _randomFloat(min, max);
+                _u[k][j][i] = _randomFloat(min, max);
             }
         }
     }
@@ -79,7 +114,7 @@ void MACVelocityField::randomizeValues(double min, double max) {
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                (*_v)[k][j][i] = _randomFloat(min, max);
+                _v[k][j][i] = _randomFloat(min, max);
             }
         }
     }
@@ -87,7 +122,7 @@ void MACVelocityField::randomizeValues(double min, double max) {
     for (int k = 0; k < k_voxels + 1; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                (*_w)[k][j][i] = _randomFloat(min, max);
+                _w[k][j][i] = _randomFloat(min, max);
             }
         }
     }
@@ -98,7 +133,7 @@ double MACVelocityField::U(int i, int j, int k) {
         return _default_out_of_range_value;
     }
 
-    return (*_u)[k][j][i];
+    return _u[k][j][i];
 }
 
 double MACVelocityField::V(int i, int j, int k) {
@@ -106,7 +141,7 @@ double MACVelocityField::V(int i, int j, int k) {
         return _default_out_of_range_value;
     }
 
-    return (*_v)[k][j][i];
+    return _v[k][j][i];
 }
 
 double MACVelocityField::W(int i, int j, int k) {
@@ -114,7 +149,7 @@ double MACVelocityField::W(int i, int j, int k) {
         return _default_out_of_range_value;
     }
 
-    return (*_w)[k][j][i];
+    return _w[k][j][i];
 }
 
 void MACVelocityField::setU(int i, int j, int k, double val) {
@@ -122,7 +157,7 @@ void MACVelocityField::setU(int i, int j, int k, double val) {
         return;
     }
 
-    (*_u)[k][j][i] = val;
+    _u[k][j][i] = val;
 }
 
 void MACVelocityField::setV(int i, int j, int k, double val) {
@@ -130,7 +165,7 @@ void MACVelocityField::setV(int i, int j, int k, double val) {
         return;
     }
 
-    (*_v)[k][j][i] = val;
+    _v[k][j][i] = val;
 }
 
 void MACVelocityField::setW(int i, int j, int k, double val) {
@@ -138,7 +173,7 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
         return;
     }
 
-    (*_w)[k][j][i] = val;
+    _w[k][j][i] = val;
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
@@ -463,7 +498,9 @@ glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
-    assert(_isPositionInGrid(x, y, z));
+    if (!_isPositionInGrid(x, y, z)) {
+        return glm::vec3(0.0, 0.0, 0.0);
+    }
 
     double xvel = _interpolateU(x, y, z);
     double yvel = _interpolateV(x, y, z);

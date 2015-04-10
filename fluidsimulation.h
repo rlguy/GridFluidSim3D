@@ -27,6 +27,7 @@ public:
                                                      *k = k_voxels; }
 
 private:
+    double _calculateNextTimeStep();
     void _advectVelocityField(double dt);
 
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
@@ -37,6 +38,10 @@ private:
     int i_voxels = 10;
     int j_voxels = 10;
     int k_voxels = 10;
+
+    double CFLConditionNumber = 5.0;
+    double minTimeStep = 1.0 / 720.0;
+    double maxTimeStep = 1.0 / 30.0;
 
     MACVelocityField MACVelocity;
 

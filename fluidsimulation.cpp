@@ -2,14 +2,19 @@
 
 
 FluidSimulation::FluidSimulation() {
+    MACVelocity = MACVelocityField(i_voxels, j_voxels, k_voxels, dx);
 }
 
 FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) : 
                                  i_voxels(x_voxels), j_voxels(y_voxels), k_voxels(z_voxels),
                                  dx(cell_size), MACVelocity(x_voxels, y_voxels, z_voxels, cell_size) {
-    MACVelocity.randomizeValues(0.0, 1.0);
+    MACVelocity.randomizeValues(0.0, 20.0);
 
-    _advectVelocityField(1.0/60.0);
+    glm::vec3 v = MACVelocity.evaluateVelocityAtPosition(3.789, 3.345, 3.234);
+
+    std::cout << v.x << std::endl;
+    std::cout << v.y << std::endl;
+    std::cout << v.z << std::endl;
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -40,6 +45,16 @@ glm::vec3 FluidSimulation::_RK4(glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 p1 = p0 + (float)(dt/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
 
     return p1;
+}
+
+double FluidSimulation::_calculateNextTimeStep() {
+    double maxu = MACVelocity.evaluateMaximumVelocityMagnitude();
+    double timeStep = CFLConditionNumber*dx / maxu;
+
+    timeStep = fmaxf(minTimeStep, timeStep);
+    timeStep = fminf(maxTimeStep, timeStep);
+
+    return timeStep;
 }
 
 void FluidSimulation::_advectVelocityField(double dt) {
