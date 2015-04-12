@@ -21,11 +21,17 @@ MACVelocityField::~MACVelocityField()
 
 void MACVelocityField::_initializeVelocityGrids() {
 
-    _u = Array3d<double>(i_voxels + 1, j_voxels, k_voxels);
-    _v = Array3d<double>(i_voxels, j_voxels + 1, k_voxels);
-    _w = Array3d<double>(i_voxels, j_voxels, k_voxels + 1);
+    _u = Array3d<double>(i_voxels + 1, j_voxels, k_voxels, 0.0);
+    _v = Array3d<double>(i_voxels, j_voxels + 1, k_voxels, 0.0);
+    _w = Array3d<double>(i_voxels, j_voxels, k_voxels + 1, 0.0);
 
-    clear();
+    _temp_u = Array3d<double>(i_voxels + 1, j_voxels, k_voxels, 0.0);
+    _temp_v = Array3d<double>(i_voxels, j_voxels + 1, k_voxels, 0.0);
+    _temp_w = Array3d<double>(i_voxels, j_voxels, k_voxels + 1, 0.0);
+
+    _is_set_u = Array3d<bool>(i_voxels + 1, j_voxels, k_voxels, false);
+    _is_set_v = Array3d<bool>(i_voxels, j_voxels + 1, k_voxels, false);
+    _is_set_w = Array3d<bool>(i_voxels, j_voxels, k_voxels + 1, false);
 }
 
 void MACVelocityField::clearU() {
@@ -44,6 +50,47 @@ void MACVelocityField::clear() {
     clearU();
     clearV();
     clearW();
+}
+
+void MACVelocityField::resetTemporaryVelocityField() {
+    _temp_u.fill(0.0);
+    _temp_v.fill(0.0);
+    _temp_w.fill(0.0);
+    _is_set_u.fill(false);
+    _is_set_v.fill(false);
+    _is_set_w.fill(false);
+}
+
+void MACVelocityField::commitTemporaryVelocityFieldValues() {
+    for (int k = 0; k < _is_set_u.depth; k++) {
+        for (int j = 0; j < _is_set_u.height; j++) {
+            for (int i = 0; i < _is_set_u.width; i++) {
+                if (_is_set_u(i, j, k)) {
+                    setU(i, j, k, _temp_u(i, j, k));
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < _is_set_v.depth; k++) {
+        for (int j = 0; j < _is_set_v.height; j++) {
+            for (int i = 0; i < _is_set_v.width; i++) {
+                if (_is_set_v(i, j, k)) {
+                    setV(i, j, k, _temp_v(i, j, k));
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < _is_set_w.depth; k++) {
+        for (int j = 0; j < _is_set_w.height; j++) {
+            for (int i = 0; i < _is_set_w.width; i++) {
+                if (_is_set_w(i, j, k)) {
+                    setW(i, j, k, _temp_w(i, j, k));
+                }
+            }
+        }
+    }
 }
 
 void MACVelocityField::randomizeValues() {
@@ -100,6 +147,30 @@ double MACVelocityField::W(int i, int j, int k) {
     return _w(i, j, k);
 }
 
+double MACVelocityField::tempU(int i, int j, int k) {
+    if (!_isIndexInRangeU(i, j, k)) {
+        return _default_out_of_range_value;
+    }
+
+    return _temp_u(i, j, k);
+}
+
+double MACVelocityField::tempV(int i, int j, int k) {
+    if (!_isIndexInRangeV(i, j, k)) {
+        return _default_out_of_range_value;
+    }
+
+    return _temp_v(i, j, k);
+}
+
+double MACVelocityField::tempW(int i, int j, int k) {
+    if (!_isIndexInRangeW(i, j, k)) {
+        return _default_out_of_range_value;
+    }
+
+    return _temp_w(i, j, k);
+}
+
 void MACVelocityField::setU(int i, int j, int k, double val) {
     if (!_isIndexInRangeU(i, j, k)) {
         return;
@@ -122,6 +193,33 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
     }
 
     _w.set(i, j, k, val);
+}
+
+void MACVelocityField::setTempU(int i, int j, int k, double val) {
+    if (!_isIndexInRangeU(i, j, k)) {
+        return;
+    }
+
+    _temp_u.set(i, j, k, val);
+    _is_set_u.set(i, j, k, true);
+}
+
+void MACVelocityField::setTempV(int i, int j, int k, double val) {
+    if (!_isIndexInRangeV(i, j, k)) {
+        return;
+    }
+
+    _temp_v.set(i, j, k, val);
+    _is_set_v.set(i, j, k, true);
+}
+
+void MACVelocityField::setTempW(int i, int j, int k, double val) {
+    if (!_isIndexInRangeW(i, j, k)) {
+        return;
+    }
+
+    _temp_w.set(i, j, k, val);
+    _is_set_w.set(i, j, k, true);
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {

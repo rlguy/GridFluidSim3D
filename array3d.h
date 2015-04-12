@@ -16,22 +16,44 @@ public:
         _initializeGrid();
     }
 
-    Array3d(const Array3d &obj)
+    Array3d(int i, int j, int k, T fillValue) : width(i), height(j), depth(k)
+    {
+        _initializeGrid();
+        fill(fillValue);
+    }
+
+    Array3d(Array3d &obj)
     {
         width = obj.width;
         height = obj.height;
         depth = obj.depth;
 
         _initializeGrid();
+
+        for (int k = 0; k < depth; k++) {
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+                    set(i, j, k, obj(i, j, k));
+                }
+            }
+        }
     }
 
-    Array3d operator=(const Array3d & rhs)
+    Array3d operator=(Array3d & rhs)
     {
         width = rhs.width;
         height = rhs.height;
         depth = rhs.depth;
 
         _initializeGrid();
+
+        for (int k = 0; k < depth; k++) {
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+                    set(i, j, k, rhs(i, j, k));
+                }
+            }
+        }
 
         return *this;
     }
@@ -68,9 +90,9 @@ public:
         grid[k][j][i] = value;
     }
 
-    int width = 1;
-    int height = 1;
-    int depth = 1;
+    int width = 0;
+    int height = 0;
+    int depth = 0;
 
 private:
     void _initializeGrid() {

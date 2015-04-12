@@ -19,10 +19,18 @@ public:
     double U(int i, int j, int k);
     double V(int i, int j, int k);
     double W(int i, int j, int k);
+    double tempU(int i, int j, int k);
+    double tempV(int i, int j, int k);
+    double tempW(int i, int j, int k);
 
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
     void setW(int i, int j, int k, double val);
+    void setTempU(int i, int j, int k, double val);
+    void setTempV(int i, int j, int k, double val);
+    void setTempW(int i, int j, int k, double val);
+    void resetTemporaryVelocityField();
+    void commitTemporaryVelocityFieldValues();
 
     void clear();
     void clearU();
@@ -92,5 +100,11 @@ private:
     Array3d<double> _u;
     Array3d<double> _v;
     Array3d<double> _w;
+    Array3d<double> _temp_u;
+    Array3d<double> _temp_v;
+    Array3d<double> _temp_w;
+    Array3d<bool> _is_set_u;
+    Array3d<bool> _is_set_v;
+    Array3d<bool> _is_set_w;
 };
 
