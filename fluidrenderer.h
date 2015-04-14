@@ -7,8 +7,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "fluidsimulation.h"
+#include "ImplicitField.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -16,7 +18,7 @@ class FluidRenderer
 {
 public:
     FluidRenderer();
-    FluidRenderer(FluidSimulation &sim);
+    FluidRenderer(FluidSimulation *sim);
     ~FluidRenderer();
 
     void update(float dt);
@@ -30,6 +32,7 @@ public:
     void drawSolidCells();
     void drawFluidCells();
     void drawAirCells();
+    void drawImplicitFluidPoints();
 
 private:
     int M_AIR = 0;
@@ -38,11 +41,12 @@ private:
 
     void _drawWireframeCube(glm::vec3 p, double size);
     void _drawFluidMaterialType(int mType);
+    void _drawImplicitPointData(ImplicitPointData p);
 
     void _setTransforms();
     void _unsetTransforms();
 
-    FluidSimulation fluidsim;
+    FluidSimulation *fluidsim;
 
     double scale = 1.0;
     double tx = 0.0;

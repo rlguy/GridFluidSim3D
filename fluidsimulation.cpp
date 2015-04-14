@@ -3,17 +3,17 @@
 
 FluidSimulation::FluidSimulation() {
     MACVelocity = MACVelocityField(i_voxels, j_voxels, k_voxels, dx);
-    _initMaterialGrid();
-    pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels);
-    pressureGrid.fill(0.0);
+    _initializeMaterialGrid();
+    pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels, 0.0);
 }
 
 FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) : 
                                  i_voxels(x_voxels), j_voxels(y_voxels), k_voxels(z_voxels),
-                                 dx(cell_size), MACVelocity(x_voxels, y_voxels, z_voxels, cell_size) {
+                                 dx(cell_size), MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
+                                 implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size) {
     MACVelocity.randomizeValues(0.0, 20.0);
 
-    _initMaterialGrid();
+    _initializeMaterialGrid();
     pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels);
     pressureGrid.fill(0.0);
 }
@@ -22,9 +22,25 @@ FluidSimulation::~FluidSimulation() {
 
 }
 
-void FluidSimulation::_initMaterialGrid() {
-    materialGrid = Array3d<int>(i_voxels, j_voxels, k_voxels);
-    materialGrid.fill(M_AIR);
+void FluidSimulation::run() {
+    _initializeSimulation();
+    _isSimulationRunning = true;
+}
+
+void FluidSimulation::pause() {
+    _isSimulationRunning = false;
+}
+
+void FluidSimulation::addImplicitFluidPoint(glm::vec3 p, double r) {
+    implicitFluidField.addPoint(p, r);
+}
+
+std::vector<ImplicitPointData> FluidSimulation::getImplicitFluidPoints() {
+    return implicitFluidField.getImplicitPointData();
+}
+
+void FluidSimulation::_initializeMaterialGrid() {
+    materialGrid = Array3d<int>(i_voxels, j_voxels, k_voxels, M_AIR);
 
     // fill borders with solid cells
     for (int j = 0; j < j_voxels; j++) {
@@ -47,6 +63,32 @@ void FluidSimulation::_initMaterialGrid() {
             materialGrid.set(i_voxels-1, j, k, M_SOLID);
         }
     }
+}
+
+void FluidSimulation::_initializeFluidMaterial() {
+    _isFluidInSimulation = implicitFluidField.getNumPoints() > 0;
+
+    if (!_isFluidInSimulation) {
+        return;
+    }
+
+    for (int k = 0; k < materialGrid.depth; k++) {
+        for (int j = 0; j < materialGrid.height; j++) {
+            for (int i = 0; i < materialGrid.width; i++) {
+                double x, y, z;
+                gridIndexToCellCenter(i, j, k, &x, &y, &z);
+
+                if (implicitFluidField.isInside(x, y, z)) {
+                    materialGrid.set(i, j, k, M_FLUID);
+                }
+            }
+        }
+    }
+}
+
+void FluidSimulation::_initializeSimulation() {
+    _initializeFluidMaterial();
+    _isSimulationInitialized = true;
 }
 
 glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
@@ -87,6 +129,7 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::_advectVelocityField(double dt) {
+    // TODO: Update velocities on temporary grid
 
     glm::vec3 p0, p1, v0, v1;
 
@@ -149,7 +192,27 @@ void FluidSimulation::_advectVelocityField(double dt) {
 
 }
 
+void FluidSimulation::gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
+    assert(_isCellIndexInRange(i, j, k));
+
+    *x = (double)i*dx;
+    *y = (double)j*dx;
+    *z = (double)k*dx;
+}
+
+void FluidSimulation::gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z) {
+    assert(_isCellIndexInRange(i, j, k));
+
+    *x = (double)i*dx + 0.5*dx;
+    *y = (double)j*dx + 0.5*dx;
+    *z = (double)k*dx + 0.5*dx;
+}
+
 void FluidSimulation::update(double dt) {
+    if (!_isSimulationRunning || !_isSimulationInitialized || !_isFluidInSimulation) {
+        return;
+    }
+
 }
 
 void FluidSimulation::draw() {

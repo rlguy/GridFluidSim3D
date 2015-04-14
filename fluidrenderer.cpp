@@ -5,7 +5,7 @@ FluidRenderer::FluidRenderer()
 {
 }
 
-FluidRenderer::FluidRenderer(FluidSimulation &sim) : fluidsim(sim)
+FluidRenderer::FluidRenderer(FluidSimulation *sim) : fluidsim(sim)
 {
 }
 
@@ -88,20 +88,20 @@ void FluidRenderer::drawSolidCells() {
 
 void FluidRenderer::_drawFluidMaterialType(int mType) {
     int depth, height, width;
-    fluidsim.getGridDimensions(&width, &height, &depth);
+    fluidsim->getGridDimensions(&width, &height, &depth);
 
     _setTransforms();
 
     glm::vec3 p;
-    double size = fluidsim.getCellSize();
+    double size = fluidsim->getCellSize();
     for (int k = 0; k < depth; k++) {
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
-                if (fluidsim.getMaterial(i, j, k) == mType) {
+                if (fluidsim->getMaterial(i, j, k) == mType) {
                     double x, y, z;
-                    fluidsim.gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
                     p = glm::vec3(x, y, z);
-                    _drawWireframeCube(p, 0.025);
+                    _drawWireframeCube(p, 0.2*size);
                 }
             }
         }
@@ -112,8 +112,8 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
 
 void FluidRenderer::drawGridBoundingBox() {
     int i, j, k;
-    double dx = fluidsim.getCellSize();
-    fluidsim.getGridDimensions(&i, &j, &k);
+    double dx = fluidsim->getCellSize();
+    fluidsim->getGridDimensions(&i, &j, &k);
 
     double hw = (double)i * dx * 0.5;
     double hh = (double)j * dx * 0.5;
@@ -159,8 +159,8 @@ void FluidRenderer::drawGridBoundingBox() {
 
 void FluidRenderer::drawGrid() {
     int i, j, k;
-    double dx = fluidsim.getCellSize();
-    fluidsim.getGridDimensions(&i, &j, &k);
+    double dx = fluidsim->getCellSize();
+    fluidsim->getGridDimensions(&i, &j, &k);
 
     double x_len = (double)i * dx;
     double y_len = (double)j * dx;
@@ -197,6 +197,41 @@ void FluidRenderer::drawGrid() {
     }
 
     glEnd();
+    _unsetTransforms();
+
+}
+
+void FluidRenderer::_drawImplicitPointData(ImplicitPointData point) {
+    double r = point.radius;
+    glm::vec3 p = point.position;
+
+    glBegin(GL_LINES);
+        glVertex3f(p.x - r, p.y, p.z);
+        glVertex3f(p.x + r, p.y, p.z);
+        glVertex3f(p.x, p.y - r, p.z);
+        glVertex3f(p.x, p.y + r, p.z);
+        glVertex3f(p.x, p.y, p.z - r);
+        glVertex3f(p.x, p.y, p.z + r);
+    glEnd();
+
+    glBegin(GL_POINTS);
+        glVertex3f(p.x, p.y, p.z);
+        glVertex3f(p.x - r, p.y, p.z);
+        glVertex3f(p.x + r, p.y, p.z);
+        glVertex3f(p.x, p.y - r, p.z);
+        glVertex3f(p.x, p.y + r, p.z);
+        glVertex3f(p.x, p.y, p.z - r);
+        glVertex3f(p.x, p.y, p.z + r);
+    glEnd();
+}
+
+void FluidRenderer::drawImplicitFluidPoints() {
+    std::vector<ImplicitPointData> points = fluidsim->getImplicitFluidPoints();
+
+    _setTransforms();
+    for (int i = 0; i < (int)points.size(); i++) {
+        _drawImplicitPointData(points[i]);
+    }
     _unsetTransforms();
 
 }

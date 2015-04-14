@@ -7,9 +7,11 @@
 #include <gl\glew.h>
 #include <SDL_opengl.h>
 #include <gl\glu.h>
+#include <assert.h>
 
 #include "MACVelocityField.h"
 #include "array3d.h"
+#include "implicitfield.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -22,16 +24,38 @@ public:
     void update(double dt);
     void draw();
 
+    void run();
+    void pause();
+        
     double getCellSize() { return dx; }
     void getGridDimensions(int *i, int *j, int *k) { *i = i_voxels; *j = j_voxels; *k = k_voxels; }
+    void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)i_voxels*dx;
+                                                                    *h = (double)j_voxels*dx;
+                                                                    *d = (double)k_voxels*dx; }
+    double getSimulationWidth() {  return (double)i_voxels*dx; }
+    double getSimulationHeight() { return (double)j_voxels*dx; }
+    double getSimulationDepth() {  return (double)k_voxels*dx; }
+
     int getMaterial(int i, int j, int k) { return materialGrid(i, j, k); }
+
+    std::vector<ImplicitPointData> getImplicitFluidPoints();
+
+    void addImplicitFluidPoint(double x, double y, double z, double r) {
+        addImplicitFluidPoint(glm::vec3(x, y, z), r);
+    }
+    void addImplicitFluidPoint(glm::vec3 p, double radius);
+
+    void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
+    void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
 
 private:
     int M_AIR = 0;
     int M_FLUID = 1;
     int M_SOLID = 2;
 
-    void _initMaterialGrid();
+    void _initializeSimulation();
+    void _initializeMaterialGrid();
+    void _initializeFluidMaterial();
 
     double _calculateNextTimeStep();
     void _advectVelocityField(double dt);
@@ -68,6 +92,17 @@ private:
         }
     }
 
+    inline bool _isCellIndexInRange(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
+    }
+    inline bool _isPositionInGrid(double x, double y, double z) {
+        return x >= 0 && y >= 0 && z >= 0 && x <= dx*i_voxels && y <= dx*j_voxels && z <= dx*k_voxels;
+    }
+
+    bool _isSimulationInitialized = false;
+    bool _isSimulationRunning = false;
+    bool _isFluidInSimulation = false;
+
     double dx = 0.1;
     int i_voxels = 10;
     int j_voxels = 10;
@@ -81,6 +116,6 @@ private:
     Array3d<int> materialGrid;
     Array3d<double> pressureGrid;
 
-
+    ImplicitField implicitFluidField;
 };
 
