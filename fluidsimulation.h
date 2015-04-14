@@ -39,6 +39,12 @@ public:
     int getMaterial(int i, int j, int k) { return materialGrid(i, j, k); }
 
     std::vector<ImplicitPointData> getImplicitFluidPoints();
+    std::vector<glm::vec3> getMarkerParticles();
+
+    void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
+    void addBodyForce(glm::vec3 f);
+    void setBodyForce(double fx, double fy, double fz) { setBodyForce(glm::vec3(fx, fy, fz)); }
+    void setBodyForce(glm::vec3 f);
 
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
@@ -47,8 +53,23 @@ public:
 
     void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
     void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
+    void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
 
 private:
+    struct MarkerParticle {
+        glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
+        int i = 0;
+        int j = 0;
+        int k = 0;
+
+        MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
+                                                              i(ii), j(jj), k(kk) {}
+
+        MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
+                        position(glm::vec3(x, y, z)),
+                        i(ii), j(jj), k(kk) {}
+    };
+
     int M_AIR = 0;
     int M_FLUID = 1;
     int M_SOLID = 2;
@@ -56,6 +77,7 @@ private:
     void _initializeSimulation();
     void _initializeMaterialGrid();
     void _initializeFluidMaterial();
+    void _addMarkerParticlesToCell(int i, int j, int k);
 
     double _calculateNextTimeStep();
     void _advectVelocityField(double dt);
@@ -99,6 +121,10 @@ private:
         return x >= 0 && y >= 0 && z >= 0 && x <= dx*i_voxels && y <= dx*j_voxels && z <= dx*k_voxels;
     }
 
+    inline double _randomFloat(double min, double max) {
+        return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+    }
+
     bool _isSimulationInitialized = false;
     bool _isSimulationRunning = false;
     bool _isFluidInSimulation = false;
@@ -112,10 +138,14 @@ private:
     double minTimeStep = 1.0 / 720.0;
     double maxTimeStep = 1.0 / 30.0;
 
+    glm::vec3 bodyForce;
+
     MACVelocityField MACVelocity;
     Array3d<int> materialGrid;
     Array3d<double> pressureGrid;
 
     ImplicitField implicitFluidField;
+
+    std::vector<MarkerParticle> markerParticles;
 };
 

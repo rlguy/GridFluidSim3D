@@ -236,6 +236,20 @@ void FluidRenderer::drawImplicitFluidPoints() {
 
 }
 
+void FluidRenderer::drawMarkerParticles() {
+    std::vector<glm::vec3> points = fluidsim->getMarkerParticles();
+
+    _setTransforms();
+
+    glBegin(GL_POINTS);
+    for (int i = 0; i < (int)points.size(); i++) {
+        glVertex3f(points[i].x, points[i].y, points[i].z);
+    }
+    glEnd();
+
+    _unsetTransforms();
+}
+
 void FluidRenderer::draw() {
 
 }

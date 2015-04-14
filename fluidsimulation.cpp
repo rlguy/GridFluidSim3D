@@ -8,14 +8,13 @@ FluidSimulation::FluidSimulation() {
 }
 
 FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) : 
-                                 i_voxels(x_voxels), j_voxels(y_voxels), k_voxels(z_voxels),
-                                 dx(cell_size), MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
-                                 implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size) {
-    MACVelocity.randomizeValues(0.0, 20.0);
+                                 i_voxels(x_voxels), j_voxels(y_voxels), k_voxels(z_voxels), dx(cell_size), 
+                                 bodyForce(glm::vec3(0.0, 0.0, 0.0)),
+                                 MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
+                                 implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size),
+                                 pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)) {
 
     _initializeMaterialGrid();
-    pressureGrid = Array3d<double>(i_voxels, j_voxels, k_voxels);
-    pressureGrid.fill(0.0);
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -31,12 +30,30 @@ void FluidSimulation::pause() {
     _isSimulationRunning = false;
 }
 
+void FluidSimulation::addBodyForce(glm::vec3 f) {
+    bodyForce += f;
+}
+
+void FluidSimulation::setBodyForce(glm::vec3 f) {
+    bodyForce = f;
+}
+
 void FluidSimulation::addImplicitFluidPoint(glm::vec3 p, double r) {
     implicitFluidField.addPoint(p, r);
 }
 
 std::vector<ImplicitPointData> FluidSimulation::getImplicitFluidPoints() {
     return implicitFluidField.getImplicitPointData();
+}
+
+std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
+    std::vector<glm::vec3> particles;
+
+    for (int i = 0; i < (int)markerParticles.size(); i++) {
+        particles.push_back(markerParticles[i].position);
+    }
+
+    return particles;
 }
 
 void FluidSimulation::_initializeMaterialGrid() {
@@ -65,6 +82,35 @@ void FluidSimulation::_initializeMaterialGrid() {
     }
 }
 
+void FluidSimulation::_addMarkerParticlesToCell(int i, int j, int k) {
+    double q = 0.25*dx;
+    double cx, cy, cz;
+    gridIndexToCellCenter(i, j, k, &cx, &cy, &cz);
+
+    glm::vec3 points[] = {
+        glm::vec3(cx - q, cy - q, cz - q),
+        glm::vec3(cx + q, cy - q, cz - q),
+        glm::vec3(cx + q, cy - q, cz + q),
+        glm::vec3(cx - q, cy - q, cz + q),
+        glm::vec3(cx - q, cy + q, cz - q),
+        glm::vec3(cx + q, cy + q, cz - q),
+        glm::vec3(cx + q, cy + q, cz + q),
+        glm::vec3(cx - q, cy + q, cz + q)
+    };
+
+    double eps = 10e-6;
+    double jitter = 0.125*dx - eps;
+
+    for (int idx = 0; idx < 8; idx++) {
+        glm::vec3 jit = glm::vec3(_randomFloat(-jitter, jitter),
+                                  _randomFloat(-jitter, jitter),
+                                  _randomFloat(-jitter, jitter));
+
+        glm::vec3 p = points[idx] + jit;
+        markerParticles.push_back(MarkerParticle(p, i, j, k));
+    }
+}
+
 void FluidSimulation::_initializeFluidMaterial() {
     _isFluidInSimulation = implicitFluidField.getNumPoints() > 0;
 
@@ -78,8 +124,9 @@ void FluidSimulation::_initializeFluidMaterial() {
                 double x, y, z;
                 gridIndexToCellCenter(i, j, k, &x, &y, &z);
 
-                if (implicitFluidField.isInside(x, y, z)) {
+                if (implicitFluidField.isInside(x, y, z) && _isCellAir(i, j, k)) {
                     materialGrid.set(i, j, k, M_FLUID);
+                    _addMarkerParticlesToCell(i, j, k);
                 }
             }
         }
@@ -206,6 +253,15 @@ void FluidSimulation::gridIndexToCellCenter(int i, int j, int k, double *x, doub
     *x = (double)i*dx + 0.5*dx;
     *y = (double)j*dx + 0.5*dx;
     *z = (double)k*dx + 0.5*dx;
+}
+
+void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
+    assert(_isPositionInGrid(x, y, z));
+
+    double invdx = 1.0 / dx;
+    *i = fminf((int)floor(x*invdx), i_voxels);
+    *j = fminf((int)floor(y*invdx), j_voxels);
+    *k = fminf((int)floor(z*invdx), k_voxels);
 }
 
 void FluidSimulation::update(double dt) {

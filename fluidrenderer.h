@@ -33,6 +33,7 @@ public:
     void drawFluidCells();
     void drawAirCells();
     void drawImplicitFluidPoints();
+    void drawMarkerParticles();
 
 private:
     int M_AIR = 0;
