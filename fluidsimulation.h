@@ -40,6 +40,7 @@ public:
 
     std::vector<ImplicitPointData> getImplicitFluidPoints();
     std::vector<glm::vec3> getMarkerParticles();
+    Array3d<int> getLayerGrid() { return layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
     void addBodyForce(glm::vec3 f);
@@ -62,6 +63,8 @@ private:
         int j = 0;
         int k = 0;
 
+        MarkerParticle() : position(glm::vec3(0.0, 0.0, 0.0)), i(0), j(0), k(0) {}
+
         MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
                                                               i(ii), j(jj), k(kk) {}
 
@@ -75,12 +78,20 @@ private:
     int M_SOLID = 2;
 
     void _initializeSimulation();
-    void _initializeMaterialGrid();
+    void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(int i, int j, int k);
 
     double _calculateNextTimeStep();
+    void _stepFluid(double dt);
+    void _updateFluidCells();
+    void _extrapolateFluidVelocities();
+    int _updateExtrapolationLayers();
+    void _updateExtrapolationLayer(int layerIndex);
+    void _getCellNeighbourGridIndices(int i, int j, int k, GridIndex n[6]);
+    void _extrapolateVelocitiesForLayerIndex(int layerIndex);
     void _advectVelocityField(double dt);
+
 
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
@@ -91,7 +102,9 @@ private:
     inline bool _isCellSolid(int i, int j, int k) { return materialGrid(i, j, k) == M_SOLID; }
 
     inline bool _isFaceBorderingFluidU(int i, int j, int k) {
-        if (i > 0) {
+        if (i == i_voxels) {
+            return materialGrid(i - 1, j, k) == M_FLUID;
+        } else if (i > 0) {
             return materialGrid(i, j, k) == M_FLUID || materialGrid(i-1, j, k) == M_FLUID;
         } else {
             return materialGrid(i, j, k) == M_FLUID;
@@ -99,20 +112,63 @@ private:
     }
 
     inline bool _isFaceBorderingFluidV(int i, int j, int k) {
-        if (j > 0) {
-            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j-1, k) == M_FLUID;
+        if (j == j_voxels) {
+            return materialGrid(i, j - 1, k) == M_FLUID;
+        } else if (j > 0) {
+            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j - 1, k) == M_FLUID;
         } else {
             return materialGrid(i, j, k) == M_FLUID;
         }
     }
 
     inline bool _isFaceBorderingFluidW(int i, int j, int k) {
-        if (k > 0) {
-            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j, k-1) == M_FLUID;
-        } else {
+        if (k == k_voxels) {
+            return materialGrid(i, j, k - 1) == M_FLUID;
+        }
+        else if (k > 0) {
+            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j, k - 1) == M_FLUID;
+        }
+        else {
             return materialGrid(i, j, k) == M_FLUID;
         }
     }
+
+    inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer) {
+        if (i == i_voxels) {
+            return layerGrid(i - 1, j, k) == layer;
+        }
+        else if (i > 0) {
+            return layerGrid(i, j, k) == layer || layerGrid(i - 1, j, k) == layer;
+        }
+        else {
+            return layerGrid(i, j, k) == layer;
+        }
+    }
+
+    inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer) {
+        if (j == j_voxels) {
+            return layerGrid(i, j - 1, k) == layer;
+        }
+        else if (j > 0) {
+            return layerGrid(i, j, k) == layer || layerGrid(i, j - 1, k) == layer;
+        }
+        else {
+            return layerGrid(i, j, k) == layer;
+        }
+    }
+
+    inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer) {
+        if (k == k_voxels) {
+            return layerGrid(i, j, k - 1) == layer;
+        }
+        else if (k > 0) {
+            return layerGrid(i, j, k) == layer || layerGrid(i, j, k - 1) == layer;
+        }
+        else {
+            return layerGrid(i, j, k) == layer;
+        }
+    }
+
 
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
@@ -129,6 +185,8 @@ private:
     bool _isSimulationRunning = false;
     bool _isFluidInSimulation = false;
 
+    int _currentFrame = 0;
+
     double dx = 0.1;
     int i_voxels = 10;
     int j_voxels = 10;
@@ -143,9 +201,11 @@ private:
     MACVelocityField MACVelocity;
     Array3d<int> materialGrid;
     Array3d<double> pressureGrid;
+    Array3d<int> layerGrid;
 
     ImplicitField implicitFluidField;
 
     std::vector<MarkerParticle> markerParticles;
+    std::vector<GridIndex> fluidCellIndices;
 };
 

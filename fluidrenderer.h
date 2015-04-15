@@ -11,6 +11,7 @@
 
 #include "fluidsimulation.h"
 #include "ImplicitField.h"
+#include "Array3d.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -34,6 +35,7 @@ public:
     void drawAirCells();
     void drawImplicitFluidPoints();
     void drawMarkerParticles();
+    void drawLayerGrid();
 
 private:
     int M_AIR = 0;

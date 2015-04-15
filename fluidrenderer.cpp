@@ -250,6 +250,29 @@ void FluidRenderer::drawMarkerParticles() {
     _unsetTransforms();
 }
 
+void FluidRenderer::drawLayerGrid() {
+    Array3d<int> grid = fluidsim->getLayerGrid();
+    double size = fluidsim->getCellSize();
+    glm::vec3 p;
+
+    _setTransforms();
+
+    for (int k = 0; k < grid.depth; k++) {
+        for (int j = 0; j < grid.height; j++) {
+            for (int i = 0; i < grid.width; i++) {
+                if (grid(i, j, k) > 0) {
+                    double x, y, z;
+                    fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    p = glm::vec3(x, y, z);
+                    _drawWireframeCube(p, 0.2*size);
+                }
+            }
+        }
+    }
+
+    _unsetTransforms();
+}
+
 void FluidRenderer::draw() {
 
 }

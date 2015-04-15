@@ -2,6 +2,13 @@
 
 #include <assert.h>
 
+struct GridIndex {
+    int i, j, k;
+
+    GridIndex() : i(0), j(0), k(0) {}
+    GridIndex(int ii, int jj, int kk) : i(ii), j(jj), k(kk) {}
+};
+
 template <class T>
 class Array3d
 {
