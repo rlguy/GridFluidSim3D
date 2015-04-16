@@ -181,8 +181,6 @@ double FluidSimulation::_calculateNextTimeStep() {
     timeStep = fmaxf(minTimeStep, timeStep);
     timeStep = fminf(maxTimeStep, timeStep);
 
-    std::cout << maxu << " " << timeStep << std::endl;
-
     return timeStep;
 }
 
@@ -623,11 +621,50 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     }
 }
 
+void FluidSimulation::_updatePressureGrid(double dt) {
+
+}
+
+void FluidSimulation::_advanceMarkerParticles(double dt) {
+    MarkerParticle mp;
+    glm::vec3 p;
+    glm::vec3 vi;
+    for (int idx = 0; idx < (int)markerParticles.size(); idx++) {
+        mp = markerParticles[idx];
+
+        vi = MACVelocity.evaluateVelocityAtPosition(mp.position);
+        p = _RK4(mp.position, vi, dt);
+
+        if (_isPositionInGrid(p.x, p.y, p.z)) {
+            int i, j, k;
+            _positionToGridIndex(p.x, p.y, p.z, &i, &j, &k);
+
+            double x, y, z;
+            gridIndexToCellCenter(i, j, k, &x, &y, &z);
+            glm::vec3 b = MACVelocity.evaluateVelocityAtCellCenter(i, j, k);
+            glm::vec3 c = MACVelocity.evaluateVelocityAtPosition(glm::vec3(x, y, z));
+
+            if (_isCellSolid(i, j, k)) {
+                // TODO: handle case when marker particle is in a solid cell
+            } else {
+                markerParticles[idx].position = p;
+                markerParticles[idx].i = i;
+                markerParticles[idx].j = j;
+                markerParticles[idx].k = k;
+            }
+
+         
+        }
+    }
+}
+
 void FluidSimulation::_stepFluid(double dt) {
     _updateFluidCells();
     _extrapolateFluidVelocities();
     _applyBodyForcesToVelocityField(dt);
     _advectVelocityField(dt);
+    _updatePressureGrid(dt);
+    _advanceMarkerParticles(dt);
 }
 
 void FluidSimulation::update(double dt) {
@@ -647,6 +684,7 @@ void FluidSimulation::update(double dt) {
         _stepFluid(timestep);
     }
 
+    std::cout << _currentFrame << std::endl;
     _currentFrame++;
 }
 

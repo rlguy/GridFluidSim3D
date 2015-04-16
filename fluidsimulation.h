@@ -98,6 +98,8 @@ private:
     glm::vec3 _getExtrapolatedVelocityAtPosition(glm::vec3 p);
     void _applyBodyForcesToVelocityField(double dt);
     void _advectVelocityField(double dt);
+    void _updatePressureGrid(double dt);
+    void _advanceMarkerParticles(double dt);
 
 
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);

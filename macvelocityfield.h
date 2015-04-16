@@ -76,7 +76,7 @@ private:
         return x >= 0 && y >= 0 && z >= 0 && x <= dx*i_voxels && y <= dx*j_voxels && z <= dx*k_voxels;
     }
 
-    double _default_out_of_range_value = 0.0;
+    double _default_out_of_range_value = 1.0;
 
     inline double _randomFloat(double min, double max) {
          return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min))); 

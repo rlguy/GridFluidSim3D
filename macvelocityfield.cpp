@@ -256,8 +256,8 @@ glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
     assert(_isCellIndexInRange(i, j, k));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
-    double yavg = 0.5 * (V(i + 1, j, k) + V(i, j, k));
-    double zavg = 0.5 * (W(i + 1, j, k) + W(i, j, k));
+    double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
+    double zavg = 0.5 * (W(i, j, k + 1) + W(i, j, k));
 
     return glm::vec3(xavg, yavg, zavg);
 }
@@ -266,8 +266,8 @@ double MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int
     assert(_isCellIndexInRange(i, j, k));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
-    double yavg = 0.5 * (V(i + 1, j, k) + V(i, j, k));
-    double zavg = 0.5 * (W(i + 1, j, k) + W(i, j, k));
+    double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
+    double zavg = 0.5 * (W(i, j, k + 1) + W(i, j, k));
 
     return xavg*xavg + yavg*yavg + zavg*zavg;
 }
@@ -540,7 +540,7 @@ void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, doub
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {
-    return evaluateVelocityAtPosition(pos.x, pos.x, pos.z);
+    return evaluateVelocityAtPosition(pos.x, pos.y, pos.z);
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
