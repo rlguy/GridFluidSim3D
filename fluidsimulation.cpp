@@ -19,7 +19,6 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                  layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
                                  implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size)
 {
-    MACVelocity.randomizeValues(-1, 1);
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -182,6 +181,8 @@ double FluidSimulation::_calculateNextTimeStep() {
     timeStep = fmaxf(minTimeStep, timeStep);
     timeStep = fminf(maxTimeStep, timeStep);
 
+    std::cout << maxu << " " << timeStep << std::endl;
+
     return timeStep;
 }
 
@@ -194,16 +195,27 @@ void FluidSimulation::_advectVelocityField(double dt) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels + 1; i++) {
                
-                // TODO: advect only fluid velocities
+                if (_isFaceBorderingFluidU(i, j, k)) {
+                    p0 = MACVelocity.velocityIndexToPositionU(i, j, k);
+                    v0 = MACVelocity.evaluateVelocityAtFaceCenterU(i, j, k);
+                    p1 = _RK4(p0, v0, -dt);
 
-                p0 = MACVelocity.velocityIndexToPositionU(i, j, k);
-                v0 = MACVelocity.evaluateVelocityAtFaceCenterU(i, j, k);
-                p1 = _RK4(p0, v0, -dt);
+                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
+                        std::cout << "error in advection U" << std::endl;
+                        continue;
+                    }
 
-                // TODO: handle boundary conditions for p1
+                    int ni, nj, nk;
+                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
 
-                v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                MACVelocity.setU(i, j, k, v1.x);
+                    if (_isCellSolid(ni, nj, nk)) {
+                        v1 = _getExtrapolatedVelocityAtPosition(p1);
+                    } else {
+                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
+                    }
+
+                    MACVelocity.setU(i, j, k, v1.x);
+                }
 
             }
         }
@@ -213,16 +225,27 @@ void FluidSimulation::_advectVelocityField(double dt) {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
                 
-                // TODO: advect only fluid velocities
+                if (_isFaceBorderingFluidV(i, j, k)) {
+                    p0 = MACVelocity.velocityIndexToPositionV(i, j, k);
+                    v0 = MACVelocity.evaluateVelocityAtFaceCenterV(i, j, k);
+                    p1 = _RK4(p0, v0, -dt);
 
-                p0 = MACVelocity.velocityIndexToPositionV(i, j, k);
-                v0 = MACVelocity.evaluateVelocityAtFaceCenterV(i, j, k);
-                p1 = _RK4(p0, v0, -dt);
+                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
+                        std::cout << "error in advection V" << std::endl;
+                        continue;
+                    }
 
-                // TODO: handle boundary conditions for p1
+                    int ni, nj, nk;
+                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
 
-                v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                MACVelocity.setV(i, j, k, v1.y);
+                    if (_isCellSolid(ni, nj, nk)) {
+                        v1 = _getExtrapolatedVelocityAtPosition(p1);
+                    } else {
+                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
+                    }
+
+                    MACVelocity.setV(i, j, k, v1.y);
+                }
 
             }
         }
@@ -232,16 +255,28 @@ void FluidSimulation::_advectVelocityField(double dt) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
                 
-                // TODO: advect only fluid velocities
+                if (_isFaceBorderingFluidW(i, j, k)) {
+                    p0 = MACVelocity.velocityIndexToPositionW(i, j, k);
+                    v0 = MACVelocity.evaluateVelocityAtFaceCenterW(i, j, k);
+                    p1 = _RK4(p0, v0, -dt);
 
-                p0 = MACVelocity.velocityIndexToPositionW(i, j, k);
-                v0 = MACVelocity.evaluateVelocityAtFaceCenterW(i, j, k);
-                p1 = _RK4(p0, v0, -dt);
+                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
+                        std::cout << "error in advection W" << std::endl;
+                        continue;
+                    }
 
-                // TODO: handle boundary conditions for p1
+                    int ni, nj, nk;
+                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
 
-                v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                MACVelocity.setW(i, j, k, v1.z);
+                    if (_isCellSolid(ni, nj, nk)) {
+                        v1 = _getExtrapolatedVelocityAtPosition(p1);
+                    } else {
+                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
+                    }
+
+                    v1 = MACVelocity.evaluateVelocityAtPosition(p1);
+                    MACVelocity.setW(i, j, k, v1.z);
+                }
 
             }
         }
@@ -379,6 +414,7 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
     for (int idx = 0; idx < 6; idx++) {
         c = n[idx];
         double diag = 0;
+
         if (MACVelocity.isIndexInRangeU(c.i, c.j, c.k) && 
             _isFaceBorderingLayerIndexU(c.i, c.j, c.k, layerIdx - 1)) {
                 sum += MACVelocity.U(c.i, c.j, c.k);
@@ -441,6 +477,26 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, in
     }
 
     return sum / weightsum;
+}
+
+glm::vec3 FluidSimulation::_getExtrapolatedVelocityAtPosition(glm::vec3 p) {
+    // TODO: update this method with a better extrapolation technique
+    int i, j, k;
+    _positionToGridIndex(p.x, p.y, p.z, &i, &j, &k);
+
+    glm::vec3 sum = glm::vec3(0.0, 0.0, 0.0);
+    double weight = 0;
+    GridIndex n[6];
+    _getNeighbourGridIndices6(i, j, k, n);
+    for (int idx = 0; idx < 6; idx++) {
+        GridIndex c = n[idx];
+        if (_isCellIndexInRange(c.i, c.j, c.k) && layerGrid(c.i, c.j, c.k) != -1) {
+            sum += MACVelocity.evaluateVelocityAtCellCenter(c.i, c.j, c.k);
+            weight++;
+        }
+    }
+
+    return sum / (float)weight;
 }
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
@@ -523,9 +579,55 @@ void FluidSimulation::_extrapolateFluidVelocities() {
     }
 }
 
+void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
+    if (fabs(bodyForce.x) > 0.0) {
+        for (int k = 0; k < k_voxels; k++) {
+            for (int j = 0; j < j_voxels; j++) {
+                for (int i = 0; i < i_voxels + 1; i++) {
+                    if (_isFaceBorderingFluidU(i, j, k) || 
+                        _isFaceVelocityExtrapolatedU(i, j, k)) {
+                        double u = MACVelocity.U(i, j, k);
+                        MACVelocity.setU(i, j, k, u + bodyForce.x * dt);
+                    }
+                }
+            }
+        }
+    }
+
+    if (fabs(bodyForce.y) > 0.0) {
+        for (int k = 0; k < k_voxels; k++) {
+            for (int j = 0; j < j_voxels + 1; j++) {
+                for (int i = 0; i < i_voxels; i++) {
+                    if (_isFaceBorderingFluidV(i, j, k) ||
+                        _isFaceVelocityExtrapolatedV(i, j, k)) {
+                        double v = MACVelocity.V(i, j, k);
+                        MACVelocity.setV(i, j, k, v + bodyForce.y * dt);
+                    }
+                }
+            }
+        }
+    }
+
+    if (fabs(bodyForce.z) > 0.0) {
+        for (int k = 0; k < k_voxels + 1; k++) {
+            for (int j = 0; j < j_voxels; j++) {
+                for (int i = 0; i < i_voxels; i++) {
+                    if (_isFaceBorderingFluidW(i, j, k) ||
+                        _isFaceVelocityExtrapolatedW(i, j, k)) {
+                        double w = MACVelocity.W(i, j, k);
+                        MACVelocity.setW(i, j, k, w + bodyForce.z * dt);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void FluidSimulation::_stepFluid(double dt) {
     _updateFluidCells();
     _extrapolateFluidVelocities();
+    _applyBodyForcesToVelocityField(dt);
+    _advectVelocityField(dt);
 }
 
 void FluidSimulation::update(double dt) {
@@ -546,6 +648,15 @@ void FluidSimulation::update(double dt) {
     }
 
     _currentFrame++;
+}
+
+void FluidSimulation::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
+    assert(_isPositionInGrid(x, y, z));
+
+    double invdx = 1.0 / dx;
+    *i = fminf((int)floor(x*invdx), i_voxels);
+    *j = fminf((int)floor(y*invdx), j_voxels);
+    *k = fminf((int)floor(z*invdx), k_voxels);
 }
 
 void FluidSimulation::draw() {

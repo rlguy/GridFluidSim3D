@@ -95,6 +95,8 @@ private:
     double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
+    glm::vec3 _getExtrapolatedVelocityAtPosition(glm::vec3 p);
+    void _applyBodyForcesToVelocityField(double dt);
     void _advectVelocityField(double dt);
 
 
@@ -174,6 +176,41 @@ private:
         }
     }
 
+    inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k) {
+        if (i == i_voxels) {
+            return layerGrid(i - 1, j, k) >= 1.0;
+        }
+        else if (i > 0) {
+            return layerGrid(i, j, k) >= 1.0 || layerGrid(i - 1, j, k) >= 1.0;
+        }
+        else {
+            return layerGrid(i, j, k) >= 1.0;
+        }
+    }
+
+    inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k) {
+        if (j == j_voxels) {
+            return layerGrid(i, j - 1, k) >= 1.0;
+        }
+        else if (j > 0) {
+            return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j - 1, k) >= 1.0;
+        }
+        else {
+            return layerGrid(i, j, k) >= 1.0;
+        }
+    }
+
+    inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k) {
+        if (k == k_voxels) {
+            return layerGrid(i, j, k - 1) >= 1.0;
+        }
+        else if (k > 0) {
+            return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0;
+        }
+        else {
+            return layerGrid(i, j, k) >= 1.0;
+        }
+    }
 
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
@@ -185,6 +222,8 @@ private:
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }
+
+    void _positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
 
     bool _isSimulationInitialized = false;
     bool _isSimulationRunning = false;
@@ -198,7 +237,7 @@ private:
     int k_voxels = 10;
 
     double CFLConditionNumber = 2.0;
-    double minTimeStep = 1.0 / 720.0;
+    double minTimeStep = 1.0 / 1200.0;
     double maxTimeStep = 1.0 / 30.0;
 
     glm::vec3 bodyForce;
