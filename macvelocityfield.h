@@ -40,6 +40,16 @@ public:
     void randomizeValues();
     void randomizeValues(double min, double max);
 
+    inline bool isIndexInRangeU(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels + 1 && j < j_voxels && k < k_voxels;
+    }
+    inline bool isIndexInRangeV(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels + 1 && k < k_voxels;
+    }
+    inline bool isIndexInRangeW(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels + 1;
+    }
+
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
     double evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k);
     double evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k);
@@ -59,15 +69,6 @@ public:
 private:
     void _initializeVelocityGrids();
 
-    inline bool _isIndexInRangeU(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels + 1 && j < j_voxels && k < k_voxels;
-    }
-    inline bool _isIndexInRangeV(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels + 1 && k < k_voxels;
-    }
-    inline bool _isIndexInRangeW(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels + 1;
-    }
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
     }

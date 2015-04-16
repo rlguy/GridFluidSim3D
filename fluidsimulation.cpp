@@ -19,6 +19,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                  layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
                                  implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size)
 {
+    MACVelocity.randomizeValues(-1, 1);
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -303,13 +304,27 @@ void FluidSimulation::_updateFluidCells() {
     }
 }
 
-void FluidSimulation::_getCellNeighbourGridIndices(int i, int j, int k, GridIndex n[6]) {
+void FluidSimulation::_getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]) {
     n[0] = GridIndex(i-1, j, k);
     n[1] = GridIndex(i+1, j, k);
     n[2] = GridIndex(i, j-1, k);
     n[3] = GridIndex(i, j+1, k);
     n[4] = GridIndex(i, j, k-1);
     n[5] = GridIndex(i, j, k+1);
+}
+
+void FluidSimulation::_getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]) {
+    int idx = 0;
+    for (int nk = k-1; nk <= k+1; nk++) {
+        for (int nj = j-1; nj <= j+1; nj++) {
+            for (int ni = i-1; ni <= i+1; ni++) {
+                if (!(ni == i && nj == j && nk == k)) {
+                    n[idx] = GridIndex(ni, nj, nk);
+                    idx++;
+                }
+            }
+        }
+    }
 }
 
 void FluidSimulation::_updateExtrapolationLayer(int layerIndex) {
@@ -320,7 +335,7 @@ void FluidSimulation::_updateExtrapolationLayer(int layerIndex) {
         for (int j = 0; j < layerGrid.height; j++) {
             for (int i = 0; i < layerGrid.width; i++) {
                 if (layerGrid(i, j, k) == layerIndex - 1 && !_isCellSolid(i, j, k)) {
-                    _getCellNeighbourGridIndices(i, j, k, neighbours);
+                    _getNeighbourGridIndices6(i, j, k, neighbours);
                     for (int idx = 0; idx < 6; idx++) {
                         n = neighbours[idx];
                         if (_isCellIndexInRange(n.i, n.j, n.k) && layerGrid(n.i, n.j, n.k) == -1 && 
@@ -353,13 +368,90 @@ int FluidSimulation::_updateExtrapolationLayers() {
     return numLayers;
 }
 
+double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIdx) {
+    GridIndex n[6];
+    _getNeighbourGridIndices6(i, j, k, n);
+
+    GridIndex c;
+    double sum = 0.0;
+    double weightsum = 0.0;
+
+    for (int idx = 0; idx < 6; idx++) {
+        c = n[idx];
+        double diag = 0;
+        if (MACVelocity.isIndexInRangeU(c.i, c.j, c.k) && 
+            _isFaceBorderingLayerIndexU(c.i, c.j, c.k, layerIdx - 1)) {
+                sum += MACVelocity.U(c.i, c.j, c.k);
+                weightsum++;
+        }
+    }
+
+    if (sum == 0.0) {
+        return 0.0;
+    }
+
+    return sum / weightsum;
+}
+
+double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIdx) {
+    GridIndex n[6];
+    _getNeighbourGridIndices6(i, j, k, n);
+
+    GridIndex c;
+    double sum = 0.0;
+    double weightsum = 0.0;
+
+    for (int idx = 0; idx < 6; idx++) {
+        c = n[idx];
+        double diag = 0;
+        if (MACVelocity.isIndexInRangeV(c.i, c.j, c.k) &&
+            _isFaceBorderingLayerIndexV(c.i, c.j, c.k, layerIdx - 1)) {
+            sum += MACVelocity.V(c.i, c.j, c.k);
+            weightsum++;
+        }
+    }
+
+    if (sum == 0.0) {
+        return 0.0;
+    }
+
+    return sum / weightsum;
+}
+
+double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIdx) {
+    GridIndex n[6];
+    _getNeighbourGridIndices6(i, j, k, n);
+
+    GridIndex c;
+    double sum = 0.0;
+    double weightsum = 0.0;
+
+    for (int idx = 0; idx < 6; idx++) {
+        c = n[idx];
+        double diag = 0;
+        if (MACVelocity.isIndexInRangeW(c.i, c.j, c.k) &&
+            _isFaceBorderingLayerIndexW(c.i, c.j, c.k, layerIdx - 1)) {
+            sum += MACVelocity.W(c.i, c.j, c.k);
+            weightsum++;
+        }
+    }
+
+    if (sum == 0.0) {
+        return 0.0;
+    }
+
+    return sum / weightsum;
+}
+
 void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
+
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels + 1; i++) {
                 if (_isFaceBorderingLayerIndexU(i, j, k, idx) &&
                     !_isFaceBorderingLayerIndexU(i, j, k, idx-1)) {
-
+                    double v = _getExtrapolatedVelocityForFaceU(i, j, k, idx);
+                    MACVelocity.setU(i, j, k, v);
                 }
             }
         }
@@ -370,7 +462,8 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
             for (int i = 0; i < i_voxels; i++) {
                 if (_isFaceBorderingLayerIndexV(i, j, k, idx) &&
                     !_isFaceBorderingLayerIndexV(i, j, k, idx-1)) {
-
+                    double v = _getExtrapolatedVelocityForFaceV(i, j, k, idx);
+                    MACVelocity.setV(i, j, k, v);
                 }
             }
         }
@@ -381,7 +474,40 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
             for (int i = 0; i < i_voxels; i++) {
                 if (_isFaceBorderingLayerIndexW(i, j, k, idx) &&
                     !_isFaceBorderingLayerIndexW(i, j, k, idx-1)) {
+                    double v = _getExtrapolatedVelocityForFaceW(i, j, k, idx);
+                    MACVelocity.setW(i, j, k, v);
+                }
+            }
+        }
+    }
+}
 
+void FluidSimulation::_resetExtrapolatedFluidVelocities() {
+    for (int k = 0; k < k_voxels; k++) {
+        for (int j = 0; j < j_voxels; j++) {
+            for (int i = 0; i < i_voxels + 1; i++) {
+                if (!_isFaceBorderingFluidU(i, j, k)) {
+                    MACVelocity.setU(i, j, k, 0.0);
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < k_voxels; k++) {
+        for (int j = 0; j < j_voxels + 1; j++) {
+            for (int i = 0; i < i_voxels; i++) {
+                if (!_isFaceBorderingFluidV(i, j, k)) {
+                    MACVelocity.setU(i, j, k, 0.0);
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < k_voxels + 1; k++) {
+        for (int j = 0; j < j_voxels; j++) {
+            for (int i = 0; i < i_voxels; i++) {
+                if (!_isFaceBorderingFluidW(i, j, k)) {
+                    MACVelocity.setU(i, j, k, 0.0);
                 }
             }
         }
@@ -389,6 +515,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
 }
 
 void FluidSimulation::_extrapolateFluidVelocities() {
+    _resetExtrapolatedFluidVelocities();
     int numLayers = _updateExtrapolationLayers();
 
     for (int i = 1; i <= numLayers; i++) {

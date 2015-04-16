@@ -124,7 +124,7 @@ void MACVelocityField::randomizeValues(double min, double max) {
 }
 
 double MACVelocityField::U(int i, int j, int k) {
-    if (!_isIndexInRangeU(i, j, k)) {
+    if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -132,7 +132,7 @@ double MACVelocityField::U(int i, int j, int k) {
 }
 
 double MACVelocityField::V(int i, int j, int k) {
-    if (!_isIndexInRangeV(i, j, k)) {
+    if (!isIndexInRangeV(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -140,7 +140,7 @@ double MACVelocityField::V(int i, int j, int k) {
 }
 
 double MACVelocityField::W(int i, int j, int k) {
-    if (!_isIndexInRangeW(i, j, k)) {
+    if (!isIndexInRangeW(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -148,7 +148,7 @@ double MACVelocityField::W(int i, int j, int k) {
 }
 
 double MACVelocityField::tempU(int i, int j, int k) {
-    if (!_isIndexInRangeU(i, j, k)) {
+    if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -156,7 +156,7 @@ double MACVelocityField::tempU(int i, int j, int k) {
 }
 
 double MACVelocityField::tempV(int i, int j, int k) {
-    if (!_isIndexInRangeV(i, j, k)) {
+    if (!isIndexInRangeV(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -164,7 +164,7 @@ double MACVelocityField::tempV(int i, int j, int k) {
 }
 
 double MACVelocityField::tempW(int i, int j, int k) {
-    if (!_isIndexInRangeW(i, j, k)) {
+    if (!isIndexInRangeW(i, j, k)) {
         return _default_out_of_range_value;
     }
 
@@ -172,7 +172,7 @@ double MACVelocityField::tempW(int i, int j, int k) {
 }
 
 void MACVelocityField::setU(int i, int j, int k, double val) {
-    if (!_isIndexInRangeU(i, j, k)) {
+    if (!isIndexInRangeU(i, j, k)) {
         return;
     }
 
@@ -180,7 +180,7 @@ void MACVelocityField::setU(int i, int j, int k, double val) {
 }
 
 void MACVelocityField::setV(int i, int j, int k, double val) {
-    if (!_isIndexInRangeV(i, j, k)) {
+    if (!isIndexInRangeV(i, j, k)) {
         return;
     }
 
@@ -188,7 +188,7 @@ void MACVelocityField::setV(int i, int j, int k, double val) {
 }
 
 void MACVelocityField::setW(int i, int j, int k, double val) {
-    if (!_isIndexInRangeW(i, j, k)) {
+    if (!isIndexInRangeW(i, j, k)) {
         return;
     }
 
@@ -196,7 +196,7 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
 }
 
 void MACVelocityField::setTempU(int i, int j, int k, double val) {
-    if (!_isIndexInRangeU(i, j, k)) {
+    if (!isIndexInRangeU(i, j, k)) {
         return;
     }
 
@@ -205,7 +205,7 @@ void MACVelocityField::setTempU(int i, int j, int k, double val) {
 }
 
 void MACVelocityField::setTempV(int i, int j, int k, double val) {
-    if (!_isIndexInRangeV(i, j, k)) {
+    if (!isIndexInRangeV(i, j, k)) {
         return;
     }
 
@@ -214,7 +214,7 @@ void MACVelocityField::setTempV(int i, int j, int k, double val) {
 }
 
 void MACVelocityField::setTempW(int i, int j, int k, double val) {
-    if (!_isIndexInRangeW(i, j, k)) {
+    if (!isIndexInRangeW(i, j, k)) {
         return;
     }
 
@@ -223,7 +223,7 @@ void MACVelocityField::setTempW(int i, int j, int k, double val) {
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
-    assert(_isIndexInRangeU(i, j, k));
+    assert(isIndexInRangeU(i, j, k));
 
     double gx = (double)(i-1)*dx;
     double gy = (double)j*dx;
@@ -233,7 +233,7 @@ glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
-    assert(_isIndexInRangeV(i, j, k));
+    assert(isIndexInRangeV(i, j, k));
 
     double gx = (double)i*dx;
     double gy = (double)(j-1)*dx;
@@ -243,7 +243,7 @@ glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
-    assert(_isIndexInRangeW(i, j, k));
+    assert(isIndexInRangeW(i, j, k));
 
     double gx = (double)i*dx;
     double gy = (double)j*dx;
@@ -305,7 +305,7 @@ double MACVelocityField::evaluateMaximumVelocityMagnitude() {
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
-    assert(_isIndexInRangeU(i, j, k));
+    assert(isIndexInRangeU(i, j, k));
 
     // Shift reference coordinate to the left. The formula used is for calculating
     // u(i+1/2, j, k). If we keep original (i,j,k) coordinate, then using the formula
@@ -321,7 +321,7 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
-    assert(_isIndexInRangeV(i, j, k));
+    assert(isIndexInRangeV(i, j, k));
 
     j--;
 
@@ -333,7 +333,7 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
-    assert(_isIndexInRangeW(i, j, k));
+    assert(isIndexInRangeW(i, j, k));
 
     k--;
 

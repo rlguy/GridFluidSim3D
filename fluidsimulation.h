@@ -86,10 +86,15 @@ private:
     void _stepFluid(double dt);
     void _updateFluidCells();
     void _extrapolateFluidVelocities();
+    void _resetExtrapolatedFluidVelocities();
     int _updateExtrapolationLayers();
     void _updateExtrapolationLayer(int layerIndex);
-    void _getCellNeighbourGridIndices(int i, int j, int k, GridIndex n[6]);
+    void _getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]);
+    void _getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
     void _extrapolateVelocitiesForLayerIndex(int layerIndex);
+    double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex);
+    double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
+    double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
     void _advectVelocityField(double dt);
 
 
@@ -192,7 +197,7 @@ private:
     int j_voxels = 10;
     int k_voxels = 10;
 
-    double CFLConditionNumber = 5.0;
+    double CFLConditionNumber = 2.0;
     double minTimeStep = 1.0 / 720.0;
     double maxTimeStep = 1.0 / 30.0;
 
