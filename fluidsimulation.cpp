@@ -604,8 +604,50 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     }
 }
 
-void FluidSimulation::_updatePressureGrid(double dt) {
+void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double dt) {
+    double scale = dt / (density*dx*dx);
 
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx ++) {
+        int i = fluidCellIndices[idx].i;
+        int j = fluidCellIndices[idx].j;
+        int k = fluidCellIndices[idx].k;
+
+        std::cout << i << " " << j << " " << k << std::endl;
+
+        if (_isCellFluid(i + 1, j, k)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+            A.diag.set(i + 1, j, k, A.diag(i + 1, j, k) + scale);
+            A.plusi.set(i, j, k, A.plusi(i, j, k) - scale);
+        }
+        else if (_isCellAir(i + 1, j, k)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+        }
+
+        if (_isCellFluid(i, j + 1, k)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+            A.diag.set(i, j + 1, k, A.diag(i, j + 1, k) + scale);
+            A.plusj.set(i, j, k, A.plusj(i, j, k) - scale);
+        }
+        else if (_isCellAir(i, j + 1, k)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+        }
+
+        if (_isCellFluid(i, j, k + 1)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+            A.diag.set(i, j, k + 1, A.diag(i, j, k + 1) + scale);
+            A.plusk.set(i, j, k, A.plusk(i, j, k) - scale);
+        }
+        else if (_isCellAir(i, j, k + 1)) {
+            A.diag.set(i, j, k, A.diag(i, j, k) + scale);
+        }
+
+    }
+
+}
+
+void FluidSimulation::_updatePressureGrid(double dt) {
+    MatrixCoefficients A(i_voxels, j_voxels, k_voxels);
+    _calculateMatrixCoefficients(A, dt);
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {

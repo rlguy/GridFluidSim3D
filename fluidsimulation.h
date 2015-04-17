@@ -48,6 +48,9 @@ public:
     void setBodyForce(double fx, double fy, double fz) { setBodyForce(glm::vec3(fx, fy, fz)); }
     void setBodyForce(glm::vec3 f);
 
+    double getDensity() { return density; }
+    double setDensity(double p) { assert(p > 0); density = p; }
+
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
     }
@@ -72,6 +75,21 @@ private:
         MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                         position(glm::vec3(x, y, z)),
                         i(ii), j(jj), k(kk) {}
+    };
+
+    struct MatrixCoefficients {
+        Array3d<double> diag;
+        Array3d<double> plusi;
+        Array3d<double> plusj;
+        Array3d<double> plusk;
+        int width, height, depth;
+
+        MatrixCoefficients() : width(0), height(0), depth(0) {} 
+        MatrixCoefficients(int i, int j, int k) : diag(Array3d<double>(i, j, k, 0.0)),
+                                                  plusi(Array3d<double>(i, j, k, 0.0)),
+                                                  plusj(Array3d<double>(i, j, k, 0.0)),
+                                                  plusk(Array3d<double>(i, j, k, 0.0)),
+                                                  width(i), height(j), depth(k) {};
     };
 
     int M_AIR = 0;
@@ -102,6 +120,7 @@ private:
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     void _updatePressureGrid(double dt);
+    void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
     void _advanceMarkerParticles(double dt);
 
 
@@ -237,6 +256,7 @@ private:
     int _currentFrame = 0;
 
     double dx = 0.1;
+    double density = 10.0;
     int i_voxels = 10;
     int j_voxels = 10;
     int k_voxels = 10;
