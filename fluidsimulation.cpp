@@ -184,37 +184,54 @@ double FluidSimulation::_calculateNextTimeStep() {
     return timeStep;
 }
 
+bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt,
+                                       glm::vec3 *p1, glm::vec3 *v1) {
+    *p1 = _RK4(p0, v0, dt);
+
+    assert(_isPositionInGrid((*p1).x, (*p1).y, (*p1).z));
+
+    int ni, nj, nk;
+    _positionToGridIndex((*p1).x, (*p1).y, (*p1).z, &ni, &nj, &nk);
+
+    if (_isCellSolid(ni, nj, nk)) {
+        *v1 = _getExtrapolatedVelocityAtPosition(*p1);
+        return false;
+    }
+    else {
+        *v1 = MACVelocity.evaluateVelocityAtPosition(*p1);
+        return true;
+    }
+}
+
+void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, 
+                                               glm::vec3 *p1, glm::vec3 *v1) {
+    double timeleft = dt;
+    while (timeleft > 0.0) {
+        double timestep = dx / glm::length(v0);
+        timestep = fminf(timeleft, timestep);
+        bool isOutsideBoundary = _integrateVelocity(p0, v0, -timestep, p1, v1);
+        if (!isOutsideBoundary) {
+            break;
+        }
+
+        p0 = *p1; v0 = *v1;
+        timeleft -= timestep;
+    }
+}
+
 void FluidSimulation::_advectVelocityField(double dt) {
-    // TODO: Update velocities on temporary grid
+    MACVelocity.resetTemporaryVelocityField();
 
     glm::vec3 p0, p1, v0, v1;
-
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels + 1; i++) {
-               
                 if (_isFaceBorderingFluidU(i, j, k)) {
                     p0 = MACVelocity.velocityIndexToPositionU(i, j, k);
                     v0 = MACVelocity.evaluateVelocityAtFaceCenterU(i, j, k);
-                    p1 = _RK4(p0, v0, -dt);
-
-                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
-                        std::cout << "error in advection U" << std::endl;
-                        continue;
-                    }
-
-                    int ni, nj, nk;
-                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
-
-                    if (_isCellSolid(ni, nj, nk)) {
-                        v1 = _getExtrapolatedVelocityAtPosition(p1);
-                    } else {
-                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                    }
-
-                    MACVelocity.setU(i, j, k, v1.x);
+                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
+                    MACVelocity.setTempU(i, j, k, v1.x);
                 }
-
             }
         }
     }
@@ -222,29 +239,12 @@ void FluidSimulation::_advectVelocityField(double dt) {
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                
                 if (_isFaceBorderingFluidV(i, j, k)) {
                     p0 = MACVelocity.velocityIndexToPositionV(i, j, k);
                     v0 = MACVelocity.evaluateVelocityAtFaceCenterV(i, j, k);
-                    p1 = _RK4(p0, v0, -dt);
-
-                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
-                        std::cout << "error in advection V" << std::endl;
-                        continue;
-                    }
-
-                    int ni, nj, nk;
-                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
-
-                    if (_isCellSolid(ni, nj, nk)) {
-                        v1 = _getExtrapolatedVelocityAtPosition(p1);
-                    } else {
-                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                    }
-
-                    MACVelocity.setV(i, j, k, v1.y);
+                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
+                    MACVelocity.setTempV(i, j, k, v1.y);
                 }
-
             }
         }
     }
@@ -252,34 +252,17 @@ void FluidSimulation::_advectVelocityField(double dt) {
     for (int k = 0; k < k_voxels + 1; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
-                
                 if (_isFaceBorderingFluidW(i, j, k)) {
                     p0 = MACVelocity.velocityIndexToPositionW(i, j, k);
                     v0 = MACVelocity.evaluateVelocityAtFaceCenterW(i, j, k);
-                    p1 = _RK4(p0, v0, -dt);
-
-                    if (!_isPositionInGrid(p1.x, p1.y, p1.z)) {
-                        std::cout << "error in advection W" << std::endl;
-                        continue;
-                    }
-
-                    int ni, nj, nk;
-                    _positionToGridIndex(p1.x, p1.y, p1.z, &ni, &nj, &nk);
-
-                    if (_isCellSolid(ni, nj, nk)) {
-                        v1 = _getExtrapolatedVelocityAtPosition(p1);
-                    } else {
-                        v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                    }
-
-                    v1 = MACVelocity.evaluateVelocityAtPosition(p1);
-                    MACVelocity.setW(i, j, k, v1.z);
+                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
+                    MACVelocity.setTempW(i, j, k, v1.z);
                 }
-
             }
         }
     }
 
+    MACVelocity.commitTemporaryVelocityFieldValues();
 }
 
 void FluidSimulation::gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
@@ -659,12 +642,22 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 }
 
 void FluidSimulation::_stepFluid(double dt) {
+
+    StopWatch timer = StopWatch();
+    timer.start();
+
     _updateFluidCells();
     _extrapolateFluidVelocities();
     _applyBodyForcesToVelocityField(dt);
     _advectVelocityField(dt);
     _updatePressureGrid(dt);
     _advanceMarkerParticles(dt);
+
+    timer.stop();
+
+    std::cout << "Frame: " << _currentFrame << 
+                "\tStep time: " << floor(dt*1000.0)/1000.0 << "s" <<
+                "\tSimulationTime: " << floor(timer.getTime()*1000.0)/1000.0 << "s" << std::endl;
 }
 
 void FluidSimulation::update(double dt) {
@@ -684,7 +677,6 @@ void FluidSimulation::update(double dt) {
         _stepFluid(timestep);
     }
 
-    std::cout << _currentFrame << std::endl;
     _currentFrame++;
 }
 

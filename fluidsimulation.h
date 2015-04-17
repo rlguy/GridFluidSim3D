@@ -9,6 +9,7 @@
 #include <gl\glu.h>
 #include <assert.h>
 
+#include "stopwatch.h"
 #include "MACVelocityField.h"
 #include "array3d.h"
 #include "implicitfield.h"
@@ -98,6 +99,8 @@ private:
     glm::vec3 _getExtrapolatedVelocityAtPosition(glm::vec3 p);
     void _applyBodyForcesToVelocityField(double dt);
     void _advectVelocityField(double dt);
+    void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
+    bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     void _updatePressureGrid(double dt);
     void _advanceMarkerParticles(double dt);
 
