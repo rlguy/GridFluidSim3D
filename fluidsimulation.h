@@ -92,6 +92,15 @@ private:
                                                   width(i), height(j), depth(k) {};
     };
 
+    struct VectorCoefficients {
+        Array3d<double> vector;
+        int width, height, depth;
+
+        VectorCoefficients() : width(0), height(0), depth(0) {}
+        VectorCoefficients(int i, int j, int k) : vector(Array3d<double>(i, j, k, 0.0)),
+                                                width(i), height(j), depth(k) {}
+    };
+
     int M_AIR = 0;
     int M_FLUID = 1;
     int M_SOLID = 2;
@@ -120,7 +129,9 @@ private:
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     void _updatePressureGrid(double dt);
+    void _calculateNegativeDivergenceVector(VectorCoefficients &b);
     void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
+    void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
     void _advanceMarkerParticles(double dt);
 
 

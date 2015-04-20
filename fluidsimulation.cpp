@@ -604,6 +604,58 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     }
 }
 
+void FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) {
+    double scale = 1.0 / dx;
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        int i = fluidCellIndices[idx].i;
+        int j = fluidCellIndices[idx].j;
+        int k = fluidCellIndices[idx].k;
+
+        double value = -scale * (MACVelocity.U(i + 1, j, k) - MACVelocity.U(i, j, k) +
+                                 MACVelocity.V(i, j + 1, k) - MACVelocity.V(i, j, k) +
+                                 MACVelocity.W(i, j, k + 1) - MACVelocity.W(i, j, k));
+        b.vector.set(i, j, k, value);
+    }
+
+    // solid cells are stationary right now
+    double usolid = 0.0;
+    double vsolid = 0.0;
+    double wsolid = 0.0;
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        int i = fluidCellIndices[idx].i;
+        int j = fluidCellIndices[idx].j;
+        int k = fluidCellIndices[idx].k;
+
+        if (_isCellSolid(i-1, j, k)) {
+            double value = b.vector(i, j, k) - scale*(MACVelocity.U(i, j, k) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+        if (_isCellSolid(i+1, j, k)) {
+            double value = b.vector(i, j, k) + scale*(MACVelocity.U(i+1, j, k) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+
+        if (_isCellSolid(i, j-1, k)) {
+            double value = b.vector(i, j, k) - scale*(MACVelocity.V(i, j, k) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+        if (_isCellSolid(i, j+1, k)) {
+            double value = b.vector(i, j, k) + scale*(MACVelocity.V(i, j+1, k) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+
+        if (_isCellSolid(i, j, k-1)) {
+            double value = b.vector(i, j, k) - scale*(MACVelocity.W(i, j, k) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+        if (_isCellSolid(i, j, k+1)) {
+            double value = b.vector(i, j, k) + scale*(MACVelocity.W(i, j, k+1) - usolid);
+            b.vector.set(i, j, k, value);
+        }
+    }
+
+}
+
 void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double dt) {
     double scale = dt / (density*dx*dx);
 
@@ -612,12 +664,10 @@ void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double
         int j = fluidCellIndices[idx].j;
         int k = fluidCellIndices[idx].k;
 
-        std::cout << i << " " << j << " " << k << std::endl;
-
         if (_isCellFluid(i + 1, j, k)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
             A.diag.set(i + 1, j, k, A.diag(i + 1, j, k) + scale);
-            A.plusi.set(i, j, k, A.plusi(i, j, k) - scale);
+            A.plusi.set(i, j, k, -scale);
         }
         else if (_isCellAir(i + 1, j, k)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
@@ -626,7 +676,7 @@ void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double
         if (_isCellFluid(i, j + 1, k)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
             A.diag.set(i, j + 1, k, A.diag(i, j + 1, k) + scale);
-            A.plusj.set(i, j, k, A.plusj(i, j, k) - scale);
+            A.plusj.set(i, j, k, -scale);
         }
         else if (_isCellAir(i, j + 1, k)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
@@ -635,7 +685,7 @@ void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double
         if (_isCellFluid(i, j, k + 1)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
             A.diag.set(i, j, k + 1, A.diag(i, j, k + 1) + scale);
-            A.plusk.set(i, j, k, A.plusk(i, j, k) - scale);
+            A.plusk.set(i, j, k, -scale);
         }
         else if (_isCellAir(i, j, k + 1)) {
             A.diag.set(i, j, k, A.diag(i, j, k) + scale);
@@ -645,9 +695,45 @@ void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double
 
 }
 
+void FluidSimulation::_calculatePreconditionerVector(VectorCoefficients &p, 
+                                                     MatrixCoefficients &A) {
+    double tau = 0.97;      // Tuning constant
+    double sigma = 0.25;    // safety constant
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        int i = fluidCellIndices[idx].i;
+        int j = fluidCellIndices[idx].j;
+        int k = fluidCellIndices[idx].k;
+
+        double v1 = A.plusi(i - 1, j, k)*p.vector(i - 1, j, k);
+        double v2 = A.plusj(i, j - 1, k)*p.vector(i, j - 1, k);
+        double v3 = A.plusk(i, j, k - 1)*p.vector(i, j, k - 1);
+        double v4 = p.vector(i - 1, j, k); v4 = v4*v4;
+        double v5 = p.vector(i, j - 1, k); v4 = v5*v5;
+        double v6 = p.vector(i, j, k - 1); v6 = v4*v6;
+
+        double e = A.diag(i, j, k) - v1*v1 - v2*v2 - v3*v3 - 
+            tau*(A.plusi(i - 1, j, k)*(A.plusj(i - 1, j, k) + A.plusk(i - 1, j, k))*v4 +
+                 A.plusj(i, j - 1, k)*(A.plusi(i, j - 1, k) + A.plusk(i, j - 1, k))*v5 +
+                 A.plusk(i, j, k - 1)*(A.plusi(i, j, k - 1) + A.plusj(i, j, k - 1))*v6);
+
+        if (e < sigma*A.diag(i, j, k)) {
+            e = A.diag(i, j, k);
+        }
+
+        if (fabs(e) > 10e-9) {
+            p.vector.set(i, j, k, 1 / sqrt(e));
+        }
+    }
+}
+
 void FluidSimulation::_updatePressureGrid(double dt) {
     MatrixCoefficients A(i_voxels, j_voxels, k_voxels);
+    VectorCoefficients b(i_voxels, j_voxels, k_voxels);
+    VectorCoefficients precon(i_voxels, j_voxels, k_voxels);
+
     _calculateMatrixCoefficients(A, dt);
+    _calculateNegativeDivergenceVector(b);
+    _calculatePreconditionerVector(precon, A);
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
@@ -698,8 +784,8 @@ void FluidSimulation::_stepFluid(double dt) {
     timer.stop();
 
     std::cout << "Frame: " << _currentFrame << 
-                "\tStep time: " << floor(dt*1000.0)/1000.0 << "s" <<
-                "\tSimulationTime: " << floor(timer.getTime()*1000.0)/1000.0 << "s" << std::endl;
+                 "\tStep time: " << floor(dt*10000.0)/10000.0 << "s" <<
+                 "\tSimulationTime: " << floor(timer.getTime()*1000.0)/1000.0 << "s" << std::endl;
 }
 
 void FluidSimulation::update(double dt) {
