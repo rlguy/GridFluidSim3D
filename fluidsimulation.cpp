@@ -726,7 +726,174 @@ void FluidSimulation::_calculatePreconditionerVector(VectorCoefficients &p,
     }
 }
 
+Eigen::VectorXd FluidSimulation::_VectorCoefficientsToEigenVectorXd(VectorCoefficients &v,
+                                                                    std::vector<GridIndex> indices) {
+    Eigen::VectorXd ev((int)indices.size());
+    for (int idx = 0; idx < (int)indices.size(); idx++) {
+        int i = indices[idx].i;
+        int j = indices[idx].j;
+        int k = indices[idx].k;
+
+        ev(idx) = v.vector(i, j, k);
+    }
+
+    return ev;
+}
+
+void FluidSimulation::_EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, 
+                                                         VectorCoefficients &vc) {
+    for (int idx = 0; idx < v.size(); idx++) {
+        GridIndex index = _VectorIndexToGridIndex(idx);
+        vc.vector.set(index.i, index.j, index.k, v(idx));
+    }
+}
+
+unsigned long long int FluidSimulation::_calculateGridIndexHash(GridIndex &index) {
+    return (unsigned long long)index.i + (unsigned long long)i_voxels *
+          ((unsigned long long)index.j +
+           (unsigned long long)k_voxels * (unsigned long long)index.k);
+}
+
+void FluidSimulation::_updateFluidGridIndexToEigenVectorXdIndexHashTable() {
+    GridIndexToEigenVectorXdIndex.clear();
+
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        unsigned long long key = _calculateGridIndexHash(fluidCellIndices[idx]);
+        std::pair<unsigned long long, int> keyvalue(key, idx);
+        GridIndexToEigenVectorXdIndex.insert(keyvalue);
+    }
+}
+
+GridIndex FluidSimulation::_VectorIndexToGridIndex(int i) {
+    return fluidCellIndices[i];
+}
+
+int FluidSimulation::_GridIndexToVectorIndex(int i, int j, int k) {
+    GridIndex g(i, j, k);
+    return _GridIndexToVectorIndex(g);
+}
+
+int FluidSimulation::_GridIndexToVectorIndex(GridIndex index) {
+    unsigned long long h = _calculateGridIndexHash(index);
+    assert(GridIndexToEigenVectorXdIndex.find(h) != GridIndexToEigenVectorXdIndex.end());
+
+    return GridIndexToEigenVectorXdIndex[h];
+}
+
+Eigen::VectorXd FluidSimulation::_applyPreconditioner(Eigen::VectorXd residualVector,
+                                                      VectorCoefficients &p,
+                                                      MatrixCoefficients &A) {
+    VectorCoefficients r(i_voxels, j_voxels, k_voxels);
+    _EigenVectorXdToVectorCoefficients(residualVector, r);
+
+    // Solve Aq = r
+    VectorCoefficients q(i_voxels, j_voxels, k_voxels);
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        GridIndex g = fluidCellIndices[idx];
+        int i = g.i;
+        int j = g.j;
+        int k = g.k;
+
+        double t = r.vector(i, j, k) - 
+                   A.plusi(i - 1, j, k)*p.vector(i - 1, j, k)*q.vector(i - 1, j, k) - 
+                   A.plusj(i, j - 1, k)*p.vector(i, j - 1, k)*q.vector(i, j - 1, k) - 
+                   A.plusk(i, j, k - 1)*p.vector(i, j, k - 1)*q.vector(i, j, k - 1);
+
+        t = t*p.vector(i, j, k);
+        q.vector.set(i, j, k, t);
+    }
+
+    // Solve transpose(A)*z = q
+    VectorCoefficients z(i_voxels, j_voxels, k_voxels);
+    for (int idx = (int)fluidCellIndices.size() - 1; idx >= 0; idx--) {
+        GridIndex g = fluidCellIndices[idx];
+        int i = g.i;
+        int j = g.j;
+        int k = g.k;
+
+        double precon = p.vector(i, j, k);
+        double t = q.vector(i, j, k) -
+                   A.plusi(i, j, k)*precon*z.vector(i + 1, j, k) -
+                   A.plusj(i, j, k)*precon*z.vector(i, j + 1, k) -
+                   A.plusk(i, j, k)*precon*z.vector(i, j, k + 1);
+
+        t = t*precon;
+        z.vector.set(i, j, k, t);
+    }
+
+    return _VectorCoefficientsToEigenVectorXd(z, fluidCellIndices);
+}
+
+int FluidSimulation::_getNumFluidOrAirCellNeighbours(int i, int j, int k) {
+    int n = 0;
+    if (!_isCellSolid(i-1, j, k)) { n++; }
+    if (!_isCellSolid(i+1, j, k)) { n++; }
+    if (!_isCellSolid(i, j-1, k)) { n++; }
+    if (!_isCellSolid(i, j+1, k)) { n++; }
+    if (!_isCellSolid(i, j, k-1)) { n++; }
+    if (!_isCellSolid(i, j, k+1)) { n++; }
+
+    return n;
+}
+
+Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMatrix(
+                                                    MatrixCoefficients &A, double dt) {
+    // TODO: test this method
+
+    int size = (int)fluidCellIndices.size();
+    double scale = dt / (density * dx*dx);
+
+    Eigen::SparseMatrix<double> m(size, size);
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        GridIndex g = fluidCellIndices[idx];
+        int i = g.i;
+        int j = g.j;
+        int k = g.k;
+
+        int row = idx;
+        int col = idx;
+        m.insert(col, row) = _getNumFluidOrAirCellNeighbours(i, j, k)*scale;
+
+        if (_isCellFluid(i-1, j, k)) {
+            col = _GridIndexToVectorIndex(i-1, j, k);
+            double coef = A.plusi(i-1, j, k);
+            m.insert(col, row) = coef;
+        }
+        if (_isCellFluid(i+1, j, k)) {
+            col = _GridIndexToVectorIndex(i+1, j, k);
+            double coef = A.plusi(i, j, k);
+            m.insert(col, row) = coef;
+        }
+
+        if (_isCellFluid(i, j-1, k)) {
+            col = _GridIndexToVectorIndex(i, j-1, k);
+            double coef = A.plusj(i, j-1, k);
+            m.insert(col, row) = coef;
+        }
+        if (_isCellFluid(i, j+1, k)) {
+            col = _GridIndexToVectorIndex(i, j+1, k);
+            double coef = A.plusj(i, j, k);
+            m.insert(col, row) = coef;
+        }
+
+        if (_isCellFluid(i, j, k-1)) {
+            col = _GridIndexToVectorIndex(i, j, k-1);
+            double coef = A.plusk(i, j, k-1);
+            m.insert(col, row) = coef;
+        }
+        if (_isCellFluid(i, j, k+1)) {
+            col = _GridIndexToVectorIndex(i, j, k+1);
+            double coef = A.plusk(i, j, k);
+            m.insert(col, row) = coef;
+        }
+    }
+
+    return m;
+}
+
 void FluidSimulation::_updatePressureGrid(double dt) {
+    _updateFluidGridIndexToEigenVectorXdIndexHashTable();
+
     MatrixCoefficients A(i_voxels, j_voxels, k_voxels);
     VectorCoefficients b(i_voxels, j_voxels, k_voxels);
     VectorCoefficients precon(i_voxels, j_voxels, k_voxels);
@@ -734,6 +901,19 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     _calculateMatrixCoefficients(A, dt);
     _calculateNegativeDivergenceVector(b);
     _calculatePreconditionerVector(precon, A);
+    
+    Eigen::SparseMatrix<double> m = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+
+    Eigen::VectorXd r = _VectorCoefficientsToEigenVectorXd(b, fluidCellIndices);
+    Eigen::VectorXd v = _applyPreconditioner(r, precon, A);
+
+    //m.insert(0, 0) = 3.0;
+    m.coeffRef(0, 0) = 6.0;
+    //v = m*v;
+
+    //for (int idx = 0; idx < v.size(); idx++) {
+    //    std::cout << v(idx) << std::endl;
+    //}
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {

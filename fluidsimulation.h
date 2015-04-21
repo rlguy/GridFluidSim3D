@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+#include <Eigen\Core>
+#include <Eigen\SparseCore>
 
 #include <gl\glew.h>
 #include <SDL_opengl.h>
@@ -132,8 +135,21 @@ private:
     void _calculateNegativeDivergenceVector(VectorCoefficients &b);
     void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
     void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
+    int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
+    Eigen::VectorXd _applyPreconditioner(Eigen::VectorXd r, 
+                                         VectorCoefficients &precon,
+                                         MatrixCoefficients &A);
     void _advanceMarkerParticles(double dt);
 
+    void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
+    Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
+                                                       std::vector<GridIndex> indices);
+    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A, double dt);
+    void _updateFluidGridIndexToEigenVectorXdIndexHashTable();
+    unsigned long long int _calculateGridIndexHash(GridIndex &index);
+    int _GridIndexToVectorIndex(int i, int j, int k);
+    int _GridIndexToVectorIndex(GridIndex index);
+    GridIndex _VectorIndexToGridIndex(int index);
 
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
@@ -287,5 +303,6 @@ private:
 
     std::vector<MarkerParticle> markerParticles;
     std::vector<GridIndex> fluidCellIndices;
+    std::unordered_map<unsigned long long, int> GridIndexToEigenVectorXdIndex;
 };
 
