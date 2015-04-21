@@ -139,6 +139,10 @@ private:
     Eigen::VectorXd _applyPreconditioner(Eigen::VectorXd r, 
                                          VectorCoefficients &precon,
                                          MatrixCoefficients &A);
+    Eigen::VectorXd _solvePressureSystem(MatrixCoefficients &A, 
+                                         VectorCoefficients &b, 
+                                         VectorCoefficients &precon,
+                                         double dt);
     void _advanceMarkerParticles(double dt);
 
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
@@ -291,6 +295,8 @@ private:
     double CFLConditionNumber = 2.0;
     double minTimeStep = 1.0 / 1200.0;
     double maxTimeStep = 1.0 / 30.0;
+    double pressureSolveTolerance = 10e-6;
+    int maxPressureSolveIterations = 100;
 
     glm::vec3 bodyForce;
 

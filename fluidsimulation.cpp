@@ -606,6 +606,7 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
 
 void FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) {
     double scale = 1.0 / dx;
+
     for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
         int i = fluidCellIndices[idx].i;
         int j = fluidCellIndices[idx].j;
@@ -891,6 +892,60 @@ Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMat
     return m;
 }
 
+// Solve (A*p = b) with Modified Incomplete Cholesky Conjugate Gradient menthod
+// (MICCG(0))
+Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
+                                                      VectorCoefficients &b,
+                                                      VectorCoefficients &precon,
+                                                      double dt) {
+    int size = (int)fluidCellIndices.size();
+    double tol = pressureSolveTolerance;
+
+    Eigen::SparseMatrix<double> aMatrix = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+    Eigen::VectorXd bVector = _VectorCoefficientsToEigenVectorXd(b, fluidCellIndices);
+    Eigen::VectorXd preconVector = _VectorCoefficientsToEigenVectorXd(precon, fluidCellIndices);
+
+    Eigen::VectorXd pressureVector(size);
+    pressureVector.setZero();
+    Eigen::VectorXd residualVector(bVector);
+    Eigen::VectorXd auxillaryVector = _applyPreconditioner(residualVector, precon, A);
+    Eigen::VectorXd searchVector(auxillaryVector);
+
+    if (fabs(residualVector.maxCoeff()) < tol) {
+        return pressureVector;
+    }
+
+    double alpha = 0.0;
+    double beta = 0.0;
+    double sigma = auxillaryVector.dot(residualVector);
+    double sigmaNew = 0.0;
+    int iterationNumber = 0;
+
+    while (iterationNumber < maxPressureSolveIterations) {
+        auxillaryVector = aMatrix*searchVector;
+        alpha = sigma / auxillaryVector.dot(searchVector);
+        pressureVector = pressureVector + alpha*searchVector;
+        residualVector = residualVector - alpha*auxillaryVector;
+
+        if (fabs(residualVector.maxCoeff()) < tol) {
+            std::cout << "numIterations: " << iterationNumber << std::endl;
+            return pressureVector;
+        }
+
+        auxillaryVector = _applyPreconditioner(residualVector, precon, A);
+        sigmaNew = auxillaryVector.dot(residualVector);
+        beta = sigmaNew / sigma;
+        searchVector = auxillaryVector + beta*searchVector;
+        sigma = sigmaNew;
+
+        iterationNumber++;
+    }
+
+    std::cout << "iterations limit reached" << std::endl;
+
+    return pressureVector;
+}
+
 void FluidSimulation::_updatePressureGrid(double dt) {
     _updateFluidGridIndexToEigenVectorXdIndexHashTable();
 
@@ -901,19 +956,9 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     _calculateMatrixCoefficients(A, dt);
     _calculateNegativeDivergenceVector(b);
     _calculatePreconditionerVector(precon, A);
-    
-    Eigen::SparseMatrix<double> m = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+    Eigen::VectorXd pressures = _solvePressureSystem(A, b, precon, dt);
 
-    Eigen::VectorXd r = _VectorCoefficientsToEigenVectorXd(b, fluidCellIndices);
-    Eigen::VectorXd v = _applyPreconditioner(r, precon, A);
-
-    //m.insert(0, 0) = 3.0;
-    m.coeffRef(0, 0) = 6.0;
-    //v = m*v;
-
-    //for (int idx = 0; idx < v.size(); idx++) {
-    //    std::cout << v(idx) << std::endl;
-    //}
+    //std::cout << pressures << std::endl;
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
