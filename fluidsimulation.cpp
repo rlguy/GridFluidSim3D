@@ -956,9 +956,14 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     _calculateMatrixCoefficients(A, dt);
     _calculateNegativeDivergenceVector(b);
     _calculatePreconditionerVector(precon, A);
-    Eigen::VectorXd pressures = _solvePressureSystem(A, b, precon, dt);
 
-    //std::cout << pressures << std::endl;
+    Eigen::VectorXd pressures = _solvePressureSystem(A, b, precon, dt);
+    pressureGrid.fill(0.0);
+
+    for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
+        GridIndex index = _VectorIndexToGridIndex(idx);
+        pressureGrid.set(index.i, index.j, index.k, pressures(idx));
+    }
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
@@ -994,6 +999,104 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     }
 }
 
+void FluidSimulation::_applyPressureToVelocityField(double dt) {
+    MACVelocity.resetTemporaryVelocityField();
+
+    double usolid = 0.0;   // solids are stationary
+    double scale = dt / (density * dx);
+    double invscale = 1.0 / scale;
+
+    for (int k = 0; k < k_voxels; k++) {
+        for (int j = 0; j < j_voxels; j++) {
+            for (int i = 0; i < i_voxels + 1; i++) {
+                if (_isFaceBorderingFluidU(i, j, k)) {
+                    double ci = i - 1; double cj = j; double ck = k;
+
+                    double p0, p1;
+                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci + 1, cj, ck)) {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci + 1, cj, ck);
+                    } else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = pressureGrid(ci + 1, cj, ck) - 
+                             invscale*(MACVelocity.U(i, j, k) - usolid);
+                        p1 = pressureGrid(ci + 1, cj, ck);
+                    } else {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci, cj, ck) -
+                             invscale*(MACVelocity.U(i, j, k) - usolid);
+                    }
+
+                    double unext = MACVelocity.U(i, j, k) -
+                        scale*(pressureGrid(ci + 1, cj, ck) - pressureGrid(ci, cj, ck));
+                    MACVelocity.setTempU(i, j, k, unext);
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < k_voxels; k++) {
+        for (int j = 0; j < j_voxels + 1; j++) {
+            for (int i = 0; i < i_voxels; i++) {
+                if (_isFaceBorderingFluidV(i, j, k)) {
+                    double ci = i; double cj = j - 1; double ck = k;
+
+                    double p0, p1;
+                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci, cj + 1, ck)) {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci, cj + 1, ck);
+                    }
+                    else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = pressureGrid(ci, cj + 1, ck) -
+                            invscale*(MACVelocity.V(i, j, k) - usolid);
+                        p1 = pressureGrid(ci, cj + 1, ck);
+                    }
+                    else {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci, cj, ck) -
+                            invscale*(MACVelocity.V(i, j, k) - usolid);
+                    }
+
+                    double vnext = MACVelocity.V(i, j, k) -
+                        scale*(pressureGrid(ci, cj + 1, ck) - pressureGrid(ci, cj, ck));
+                    MACVelocity.setTempV(i, j, k, vnext);
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < k_voxels + 1; k++) {
+        for (int j = 0; j < j_voxels; j++) {
+            for (int i = 0; i < i_voxels; i++) {
+                if (_isFaceBorderingFluidW(i, j, k)) {
+                    double ci = i; double cj = j; double ck = k - 1;
+
+                    double p0, p1;
+                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci, cj, ck + 1)) {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci, cj, ck + 1);
+                    }
+                    else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = pressureGrid(ci, cj, ck + 1) -
+                             invscale*(MACVelocity.W(i, j, k) - usolid);
+                        p1 = pressureGrid(ci, cj, ck + 1);
+                    }
+                    else {
+                        p0 = pressureGrid(ci, cj, ck);
+                        p1 = pressureGrid(ci, cj, ck) -
+                             invscale*(MACVelocity.W(i, j, k) - usolid);
+                    }
+
+                    double wnext = MACVelocity.W(i, j, k) -
+                        scale*(pressureGrid(i, j, k + 1) - pressureGrid(i, j, k));
+                    MACVelocity.setTempW(i, j, k, wnext);
+                }
+            }
+        }
+    }
+
+    MACVelocity.commitTemporaryVelocityFieldValues();
+}
+
 void FluidSimulation::_stepFluid(double dt) {
 
     StopWatch timer = StopWatch();
@@ -1004,6 +1107,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _applyBodyForcesToVelocityField(dt);
     _advectVelocityField(dt);
     _updatePressureGrid(dt);
+    _applyPressureToVelocityField(dt);
     _advanceMarkerParticles(dt);
 
     timer.stop();
@@ -1017,6 +1121,7 @@ void FluidSimulation::update(double dt) {
     if (!_isSimulationRunning || !_isSimulationInitialized || !_isFluidInSimulation) {
         return;
     }
+    _isCurrentFrameFinished = false;
 
     int numsteps = 0;
     double timeleft = dt;
@@ -1031,6 +1136,8 @@ void FluidSimulation::update(double dt) {
     }
 
     _currentFrame++;
+
+    _isCurrentFrameFinished = true;
 }
 
 void FluidSimulation::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {

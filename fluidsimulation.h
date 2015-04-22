@@ -62,6 +62,7 @@ public:
     void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
     void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
     void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
+    bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
 
 private:
     struct MarkerParticle {
@@ -143,6 +144,7 @@ private:
                                          VectorCoefficients &b, 
                                          VectorCoefficients &precon,
                                          double dt);
+    void _applyPressureToVelocityField(double dt);
     void _advanceMarkerParticles(double dt);
 
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
@@ -285,6 +287,7 @@ private:
     bool _isFluidInSimulation = false;
 
     int _currentFrame = 0;
+    bool _isCurrentFrameFinished = true;
 
     double dx = 0.1;
     double density = 10.0;
