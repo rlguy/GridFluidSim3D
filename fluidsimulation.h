@@ -299,7 +299,7 @@ private:
     double minTimeStep = 1.0 / 1200.0;
     double maxTimeStep = 1.0 / 30.0;
     double pressureSolveTolerance = 10e-6;
-    int maxPressureSolveIterations = 100;
+    int maxPressureSolveIterations = 200;
 
     glm::vec3 bodyForce;
 

@@ -188,7 +188,11 @@ bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt,
                                        glm::vec3 *p1, glm::vec3 *v1) {
     *p1 = _RK4(p0, v0, dt);
 
-    assert(_isPositionInGrid((*p1).x, (*p1).y, (*p1).z));
+    //assert(_isPositionInGrid((*p1).x, (*p1).y, (*p1).z));
+    if (!_isPositionInGrid((*p1).x, (*p1).y, (*p1).z)) {
+        *v1 = glm::vec3(0.0, 0.0, 0.0);
+        return false;
+    }
 
     int ni, nj, nk;
     _positionToGridIndex((*p1).x, (*p1).y, (*p1).z, &ni, &nj, &nk);
@@ -354,8 +358,10 @@ void FluidSimulation::_updateExtrapolationLayer(int layerIndex) {
                     _getNeighbourGridIndices6(i, j, k, neighbours);
                     for (int idx = 0; idx < 6; idx++) {
                         n = neighbours[idx];
-                        if (_isCellIndexInRange(n.i, n.j, n.k) && layerGrid(n.i, n.j, n.k) == -1 && 
-                                                                  _isCellAir(n.i, n.j, n.k)) {
+
+                        // Extrapolate velocity even into solids so that data exists at solid
+                        // boundaries when computing tricubic interpolation
+                        if (_isCellIndexInRange(n.i, n.j, n.k) && layerGrid(n.i, n.j, n.k) == -1) {
                             layerGrid.set(n.i, n.j, n.k, layerIndex);
                         }
                     }
@@ -534,7 +540,7 @@ void FluidSimulation::_resetExtrapolatedFluidVelocities() {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
                 if (!_isFaceBorderingFluidV(i, j, k)) {
-                    MACVelocity.setU(i, j, k, 0.0);
+                    MACVelocity.setV(i, j, k, 0.0);
                 }
             }
         }
@@ -544,7 +550,7 @@ void FluidSimulation::_resetExtrapolatedFluidVelocities() {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
                 if (!_isFaceBorderingFluidW(i, j, k)) {
-                    MACVelocity.setU(i, j, k, 0.0);
+                    MACVelocity.setW(i, j, k, 0.0);
                 }
             }
         }
@@ -1013,7 +1019,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                     double ci = i - 1; double cj = j; double ck = k;
 
                     double p0, p1;
-                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci + 1, cj, ck)) {
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci + 1, cj, ck)) {
                         p0 = pressureGrid(ci, cj, ck);
                         p1 = pressureGrid(ci + 1, cj, ck);
                     } else if (_isCellSolid(ci, cj, ck)) {
@@ -1022,12 +1028,11 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                         p1 = pressureGrid(ci + 1, cj, ck);
                     } else {
                         p0 = pressureGrid(ci, cj, ck);
-                        p1 = pressureGrid(ci, cj, ck) -
+                        p1 = pressureGrid(ci, cj, ck) +
                              invscale*(MACVelocity.U(i, j, k) - usolid);
                     }
 
-                    double unext = MACVelocity.U(i, j, k) -
-                        scale*(pressureGrid(ci + 1, cj, ck) - pressureGrid(ci, cj, ck));
+                    double unext = MACVelocity.U(i, j, k) - scale*(p1 - p0);
                     MACVelocity.setTempU(i, j, k, unext);
                 }
             }
@@ -1041,7 +1046,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                     double ci = i; double cj = j - 1; double ck = k;
 
                     double p0, p1;
-                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci, cj + 1, ck)) {
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj + 1, ck)) {
                         p0 = pressureGrid(ci, cj, ck);
                         p1 = pressureGrid(ci, cj + 1, ck);
                     }
@@ -1052,12 +1057,11 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                     }
                     else {
                         p0 = pressureGrid(ci, cj, ck);
-                        p1 = pressureGrid(ci, cj, ck) -
+                        p1 = pressureGrid(ci, cj, ck) +
                             invscale*(MACVelocity.V(i, j, k) - usolid);
                     }
 
-                    double vnext = MACVelocity.V(i, j, k) -
-                        scale*(pressureGrid(ci, cj + 1, ck) - pressureGrid(ci, cj, ck));
+                    double vnext = MACVelocity.V(i, j, k) - scale*(p1 - p0);
                     MACVelocity.setTempV(i, j, k, vnext);
                 }
             }
@@ -1071,7 +1075,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                     double ci = i; double cj = j; double ck = k - 1;
 
                     double p0, p1;
-                    if (_isCellFluid(ci, cj, ck) && _isCellFluid(ci, cj, ck + 1)) {
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj, ck + 1)) {
                         p0 = pressureGrid(ci, cj, ck);
                         p1 = pressureGrid(ci, cj, ck + 1);
                     }
@@ -1082,12 +1086,11 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
                     }
                     else {
                         p0 = pressureGrid(ci, cj, ck);
-                        p1 = pressureGrid(ci, cj, ck) -
+                        p1 = pressureGrid(ci, cj, ck) +
                              invscale*(MACVelocity.W(i, j, k) - usolid);
                     }
 
-                    double wnext = MACVelocity.W(i, j, k) -
-                        scale*(pressureGrid(i, j, k + 1) - pressureGrid(i, j, k));
+                    double wnext = MACVelocity.W(i, j, k) - scale*(p1 - p0);
                     MACVelocity.setTempW(i, j, k, wnext);
                 }
             }
