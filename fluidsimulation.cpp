@@ -223,9 +223,7 @@ void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, doubl
     }
 }
 
-void FluidSimulation::_advectVelocityField(double dt) {
-    MACVelocity.resetTemporaryVelocityField();
-
+void FluidSimulation::_advectVelocityFieldU(double dt) {
     glm::vec3 p0, p1, v0, v1;
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels; j++) {
@@ -239,7 +237,10 @@ void FluidSimulation::_advectVelocityField(double dt) {
             }
         }
     }
+}
 
+void FluidSimulation::_advectVelocityFieldV(double dt) {
+    glm::vec3 p0, p1, v0, v1;
     for (int k = 0; k < k_voxels; k++) {
         for (int j = 0; j < j_voxels + 1; j++) {
             for (int i = 0; i < i_voxels; i++) {
@@ -252,7 +253,10 @@ void FluidSimulation::_advectVelocityField(double dt) {
             }
         }
     }
+}
 
+void FluidSimulation::_advectVelocityFieldW(double dt) {
+    glm::vec3 p0, p1, v0, v1;
     for (int k = 0; k < k_voxels + 1; k++) {
         for (int j = 0; j < j_voxels; j++) {
             for (int i = 0; i < i_voxels; i++) {
@@ -265,6 +269,18 @@ void FluidSimulation::_advectVelocityField(double dt) {
             }
         }
     }
+}
+
+void FluidSimulation::_advectVelocityField(double dt) {
+    MACVelocity.resetTemporaryVelocityField();
+    
+    std::thread t1 = std::thread(&FluidSimulation::_advectVelocityFieldU, this, dt);
+    std::thread t2 = std::thread(&FluidSimulation::_advectVelocityFieldV, this, dt);
+    std::thread t3 = std::thread(&FluidSimulation::_advectVelocityFieldW, this, dt);
+
+    t1.join();
+    t2.join();
+    t3.join();
 
     MACVelocity.commitTemporaryVelocityFieldValues();
 }
@@ -606,7 +622,7 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     }
 }
 
-void FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) {
+double FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) {
     double scale = 1.0 / dx;
 
     for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
@@ -624,6 +640,7 @@ void FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) 
     double usolid = 0.0;
     double vsolid = 0.0;
     double wsolid = 0.0;
+    double maxDivergence = 0.0;
     for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
         int i = fluidCellIndices[idx].i;
         int j = fluidCellIndices[idx].j;
@@ -655,8 +672,11 @@ void FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) 
             double value = b.vector(i, j, k) + scale*(MACVelocity.W(i, j, k+1) - usolid);
             b.vector.set(i, j, k, value);
         }
+
+        maxDivergence = fmax(maxDivergence, fabs(b.vector(i, j, k)));
     }
 
+    return maxDivergence;
 }
 
 void FluidSimulation::_calculateMatrixCoefficients(MatrixCoefficients &A, double dt) {
@@ -846,7 +866,9 @@ Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMat
     int size = (int)fluidCellIndices.size();
     double scale = dt / (density * dx*dx);
 
-    Eigen::SparseMatrix<double> m(size, size);
+    std::vector<Eigen::Triplet<double>> matrixValues;
+    matrixValues.reserve(size * (6 + 1));   // max number of non-zero entries 
+                                            // (6 neighbours + diagonal) for each row
     for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
         GridIndex g = fluidCellIndices[idx];
         int i = g.i;
@@ -855,41 +877,45 @@ Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMat
 
         int row = idx;
         int col = idx;
-        m.insert(col, row) = _getNumFluidOrAirCellNeighbours(i, j, k)*scale;
+        double diag = _getNumFluidOrAirCellNeighbours(i, j, k)*scale;
+        matrixValues.push_back(Eigen::Triplet<double>(col, row, diag));
 
         if (_isCellFluid(i-1, j, k)) {
             col = _GridIndexToVectorIndex(i-1, j, k);
             double coef = A.plusi(i-1, j, k);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i+1, j, k)) {
             col = _GridIndexToVectorIndex(i+1, j, k);
             double coef = A.plusi(i, j, k);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
 
         if (_isCellFluid(i, j-1, k)) {
             col = _GridIndexToVectorIndex(i, j-1, k);
             double coef = A.plusj(i, j-1, k);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i, j+1, k)) {
             col = _GridIndexToVectorIndex(i, j+1, k);
             double coef = A.plusj(i, j, k);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
 
         if (_isCellFluid(i, j, k-1)) {
             col = _GridIndexToVectorIndex(i, j, k-1);
             double coef = A.plusk(i, j, k-1);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i, j, k+1)) {
             col = _GridIndexToVectorIndex(i, j, k+1);
             double coef = A.plusk(i, j, k);
-            m.insert(col, row) = coef;
+            matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
     }
+
+    Eigen::SparseMatrix<double> m(size, size);
+    m.setFromTriplets(matrixValues.begin(), matrixValues.end());
 
     return m;
 }
@@ -900,22 +926,23 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
                                                       VectorCoefficients &b,
                                                       VectorCoefficients &precon,
                                                       double dt) {
+
     int size = (int)fluidCellIndices.size();
     double tol = pressureSolveTolerance;
 
-    Eigen::SparseMatrix<double> aMatrix = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+    Eigen::VectorXd pressureVector(size); pressureVector.setZero();
     Eigen::VectorXd bVector = _VectorCoefficientsToEigenVectorXd(b, fluidCellIndices);
-    Eigen::VectorXd preconVector = _VectorCoefficientsToEigenVectorXd(precon, fluidCellIndices);
-
-    Eigen::VectorXd pressureVector(size);
-    pressureVector.setZero();
     Eigen::VectorXd residualVector(bVector);
-    Eigen::VectorXd auxillaryVector = _applyPreconditioner(residualVector, precon, A);
-    Eigen::VectorXd searchVector(auxillaryVector);
 
     if (fabs(residualVector.maxCoeff()) < tol) {
+        std::cout << "\tCG Iterations: " << 0 << std::endl;
         return pressureVector;
     }
+
+    Eigen::SparseMatrix<double> aMatrix = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+    Eigen::VectorXd preconVector = _VectorCoefficientsToEigenVectorXd(precon, fluidCellIndices);
+    Eigen::VectorXd auxillaryVector = _applyPreconditioner(residualVector, precon, A);
+    Eigen::VectorXd searchVector(auxillaryVector);
 
     double alpha = 0.0;
     double beta = 0.0;
@@ -930,7 +957,7 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
         residualVector = residualVector - alpha*auxillaryVector;
 
         if (fabs(residualVector.maxCoeff()) < tol) {
-            std::cout << "numIterations: " << iterationNumber << std::endl;
+            std::cout << "\tCG Iterations: " << iterationNumber << std::endl;
             return pressureVector;
         }
 
@@ -943,24 +970,29 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
         iterationNumber++;
     }
 
-    std::cout << "iterations limit reached" << std::endl;
+    std::cout << "\tIterations limit reached.\t Error: " << 
+        fabs(residualVector.maxCoeff()) << std::endl;
 
     return pressureVector;
 }
 
 void FluidSimulation::_updatePressureGrid(double dt) {
-    _updateFluidGridIndexToEigenVectorXdIndexHashTable();
+    pressureGrid.fill(0.0);
+
+    VectorCoefficients b(i_voxels, j_voxels, k_voxels);
+    double maxDivergence = _calculateNegativeDivergenceVector(b);
+    if (maxDivergence < pressureSolveTolerance) {
+        // all pressure values are near 0.0
+        return;
+    }
 
     MatrixCoefficients A(i_voxels, j_voxels, k_voxels);
-    VectorCoefficients b(i_voxels, j_voxels, k_voxels);
     VectorCoefficients precon(i_voxels, j_voxels, k_voxels);
-
     _calculateMatrixCoefficients(A, dt);
-    _calculateNegativeDivergenceVector(b);
     _calculatePreconditionerVector(precon, A);
 
+    _updateFluidGridIndexToEigenVectorXdIndexHashTable();
     Eigen::VectorXd pressures = _solvePressureSystem(A, b, precon, dt);
-    pressureGrid.fill(0.0);
 
     for (int idx = 0; idx < (int)fluidCellIndices.size(); idx++) {
         GridIndex index = _VectorIndexToGridIndex(idx);
@@ -968,11 +1000,13 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     }
 }
 
-void FluidSimulation::_advanceMarkerParticles(double dt) {
+void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt) {
+    assert(startIdx <= endIdx);
+
     MarkerParticle mp;
     glm::vec3 p;
     glm::vec3 vi;
-    for (int idx = 0; idx < (int)markerParticles.size(); idx++) {
+    for (int idx = startIdx; idx <= endIdx; idx++) {
         mp = markerParticles[idx];
 
         vi = MACVelocity.evaluateVelocityAtPosition(mp.position);
@@ -984,15 +1018,44 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 
             if (_isCellSolid(i, j, k)) {
                 // TODO: handle case when marker particle is in a solid cell
-            } else {
+            }
+            else {
                 markerParticles[idx].position = p;
                 markerParticles[idx].i = i;
                 markerParticles[idx].j = j;
                 markerParticles[idx].k = k;
             }
-
-         
         }
+    }
+}
+
+void FluidSimulation::_advanceMarkerParticles(double dt) {
+    int size = markerParticles.size();
+
+    std::vector<int> startIndices;
+    std::vector<int> endIndices;
+
+    int numThreads = numAdvanceMarkerParticleThreads;
+    int chunksize = floor(size / numThreads);
+    for (int i = 0; i < numThreads; i++) {
+        int startIdx = (i == 0) ? 0 : endIndices[i - 1] + 1;
+        int endIdx = (i == numThreads - 1) ? size - 1 : startIdx + chunksize - 1;
+
+        startIndices.push_back(startIdx);
+        endIndices.push_back(endIdx);
+    }
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numThreads; i++) {
+        threads.push_back(std::thread(&FluidSimulation::_advanceRangeOfMarkerParticles,
+                                      this,
+                                      startIndices[i],
+                                      endIndices[i],
+                                      dt));
+    }
+
+    for (int i = 0; i < numThreads; i++) {
+        threads[i].join();
     }
 }
 
@@ -1093,22 +1156,97 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
 
 void FluidSimulation::_stepFluid(double dt) {
 
-    StopWatch timer = StopWatch();
-    timer.start();
+    StopWatch timer1 = StopWatch();
+    StopWatch timer2 = StopWatch();
+    StopWatch timer3 = StopWatch();
+    StopWatch timer4 = StopWatch();
+    StopWatch timer5 = StopWatch();
+    StopWatch timer6 = StopWatch();
+    StopWatch timer7 = StopWatch();
+    StopWatch timer8 = StopWatch();
 
+    std::cout << "--------------------------------------------------" << std::endl;
+    std::cout << "Frame: " << _currentFrame <<
+                 "\tStep time: " << floor(dt*10000.0) / 10000.0 << "s" << std::endl;
+    std::cout << std::endl;
+
+    timer1.start();
+
+    timer2.start();
     _updateFluidCells();
+    timer2.stop();
+
+    std::cout << "Update Fluid Cells:          \t" << 
+        floor(timer2.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    std::cout << "\tNum Fluid Cells: " << fluidCellIndices.size() << std::endl;
+
+    timer3.start();
     _extrapolateFluidVelocities();
+    timer3.stop();
+
+    std::cout << "Extrapolate Fluid Velocities:\t" << 
+        floor(timer3.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+
+    timer4.start();
     _applyBodyForcesToVelocityField(dt);
+    timer4.stop();
+
+    std::cout << "Apply Body Forces:           \t" << 
+        floor(timer4.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+
+    timer5.start();
     _advectVelocityField(dt);
+    timer5.stop();
+
+    std::cout << "Advect Velocity Field:       \t" << 
+        floor(timer5.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+
+    timer6.start();
     _updatePressureGrid(dt);
+    timer6.stop();
+
+    std::cout << "Update Pressure Grid:        \t" << 
+        floor(timer6.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+
+    timer7.start();
     _applyPressureToVelocityField(dt);
+    timer7.stop();
+
+    std::cout << "Apply Pressure:              \t" << 
+        floor(timer7.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+
+    timer8.start();
     _advanceMarkerParticles(dt);
+    timer8.stop();
 
-    timer.stop();
+    std::cout << "Advance Marker Particles:    \t" << 
+        floor(timer8.getTime()*10000.0) / 10000.0 << "s" << std::endl;
 
-    std::cout << "Frame: " << _currentFrame << 
-                 "\tStep time: " << floor(dt*10000.0)/10000.0 << "s" <<
-                 "\tSimulationTime: " << floor(timer.getTime()*1000.0)/1000.0 << "s" << std::endl;
+    timer1.stop();
+
+    double totalTime = floor(timer1.getTime()*1000.0) / 1000.0;
+    std::cout << "Simulation Time:           \t" << totalTime << "s" << std::endl;
+    std::cout << std::endl;
+
+    double p2 = floor(1000 * timer2.getTime() / totalTime) / 10.0;
+    double p3 = floor(1000 * timer3.getTime() / totalTime) / 10.0;
+    double p4 = floor(1000 * timer4.getTime() / totalTime) / 10.0;
+    double p5 = floor(1000 * timer5.getTime() / totalTime) / 10.0;
+    double p6 = floor(1000 * timer6.getTime() / totalTime) / 10.0;
+    double p7 = floor(1000 * timer7.getTime() / totalTime) / 10.0;
+    double p8 = floor(1000 * timer8.getTime() / totalTime) / 10.0;
+
+    std::cout << "Percentage Breakdown" << std::endl << std::endl;
+    std::cout << "Update Fluid Cells:          \t" << p2 << "%" << std::endl;
+    std::cout << "Extrapolate Fluid Velocities:\t" << p3 << "%" << std::endl;
+    std::cout << "Apply Body Forces:           \t" << p4 << "%" << std::endl;
+    std::cout << "Advect Velocity Field:       \t" << p5 << "%" << std::endl;
+    std::cout << "Update Pressure Grid:        \t" << p6 << "%" << std::endl;
+    std::cout << "Apply Pressure:              \t" << p7 << "%" << std::endl;
+    std::cout << "Advance Marker Particles:    \t" << p8 << "%" << std::endl;
+    std::cout << std::endl;
+
+
 }
 
 void FluidSimulation::update(double dt) {

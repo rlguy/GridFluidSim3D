@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <thread>
 #include <unordered_map>
 #include <Eigen\Core>
 #include <Eigen\SparseCore>
@@ -130,10 +131,13 @@ private:
     glm::vec3 _getExtrapolatedVelocityAtPosition(glm::vec3 p);
     void _applyBodyForcesToVelocityField(double dt);
     void _advectVelocityField(double dt);
+    void _advectVelocityFieldU(double dt);
+    void _advectVelocityFieldV(double dt);
+    void _advectVelocityFieldW(double dt);
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     void _updatePressureGrid(double dt);
-    void _calculateNegativeDivergenceVector(VectorCoefficients &b);
+    double _calculateNegativeDivergenceVector(VectorCoefficients &b);
     void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
     void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
     int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
@@ -146,11 +150,13 @@ private:
                                          double dt);
     void _applyPressureToVelocityField(double dt);
     void _advanceMarkerParticles(double dt);
+    void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
 
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
     Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
                                                        std::vector<GridIndex> indices);
-    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A, double dt);
+    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A, 
+                                                                       double dt);
     void _updateFluidGridIndexToEigenVectorXdIndexHashTable();
     unsigned long long int _calculateGridIndexHash(GridIndex &index);
     int _GridIndexToVectorIndex(int i, int j, int k);
@@ -295,11 +301,12 @@ private:
     int j_voxels = 10;
     int k_voxels = 10;
 
-    double CFLConditionNumber = 2.0;
+    double CFLConditionNumber = 5.0;
     double minTimeStep = 1.0 / 1200.0;
     double maxTimeStep = 1.0 / 30.0;
     double pressureSolveTolerance = 10e-6;
-    int maxPressureSolveIterations = 200;
+    int maxPressureSolveIterations = 300;
+    int numAdvanceMarkerParticleThreads = 8;
 
     glm::vec3 bodyForce;
 
