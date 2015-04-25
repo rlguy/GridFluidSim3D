@@ -249,7 +249,7 @@ glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
     double gy = (double)j*dx;
     double gz = (double)(k-1)*dx;
 
-    return glm::vec3(gx + 0.5*dx, gy + 0.5*dx, gz);
+    return glm::vec3(gx + 0.5*dx, gy + 0.5*dx, gz + dx);
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {

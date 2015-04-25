@@ -400,8 +400,6 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
 
     for (int idx = 0; idx < 6; idx++) {
         c = n[idx];
-        double diag = 0;
-
         if (MACVelocity.isIndexInRangeU(c.i, c.j, c.k) && 
             _isFaceBorderingLayerIndexU(c.i, c.j, c.k, layerIdx - 1)) {
                 sum += MACVelocity.U(c.i, c.j, c.k);
@@ -426,7 +424,6 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, in
 
     for (int idx = 0; idx < 6; idx++) {
         c = n[idx];
-        double diag = 0;
         if (MACVelocity.isIndexInRangeV(c.i, c.j, c.k) &&
             _isFaceBorderingLayerIndexV(c.i, c.j, c.k, layerIdx - 1)) {
             sum += MACVelocity.V(c.i, c.j, c.k);
@@ -451,7 +448,6 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, in
 
     for (int idx = 0; idx < 6; idx++) {
         c = n[idx];
-        double diag = 0;
         if (MACVelocity.isIndexInRangeW(c.i, c.j, c.k) &&
             _isFaceBorderingLayerIndexW(c.i, c.j, c.k, layerIdx - 1)) {
             sum += MACVelocity.W(c.i, c.j, c.k);
@@ -985,11 +981,6 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
         if (_isPositionInGrid(p.x, p.y, p.z)) {
             int i, j, k;
             _positionToGridIndex(p.x, p.y, p.z, &i, &j, &k);
-
-            double x, y, z;
-            gridIndexToCellCenter(i, j, k, &x, &y, &z);
-            glm::vec3 b = MACVelocity.evaluateVelocityAtCellCenter(i, j, k);
-            glm::vec3 c = MACVelocity.evaluateVelocityAtPosition(glm::vec3(x, y, z));
 
             if (_isCellSolid(i, j, k)) {
                 // TODO: handle case when marker particle is in a solid cell
