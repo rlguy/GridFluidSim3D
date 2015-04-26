@@ -22,6 +22,10 @@ public:
 
     void addPoint(double x, double y, double z, double r) { addPoint(glm::vec3(x, y, z), r); };
     void addPoint(glm::vec3 p, double r);
+    void addCuboid(double x, double y, double z, double w, double h, double d) {
+        addCuboid(glm::vec3(x, y, z), w, h, d);
+    }
+    void addCuboid(glm::vec3 p, double width, double height, double depth);
 
     void getDimensions(double *w, double *h, double *d) { *w = width; *h = height; *d = depth; }
     double getWidth()  { return width; }
@@ -51,7 +55,24 @@ public:
     double depth = 0;
 
 private:
+
+    // cuboid has a field value of (surfaceThreshold + epsilon) within
+    // its volume, 0 outside
+    struct Cuboid {
+        glm::vec3 position;
+        double width, height, depth;
+
+        Cuboid() : position(glm::vec3(0.0, 0.0, 0.0)),
+                   width(0.0), height(0.0), depth(0.0) {}
+
+        Cuboid(glm::vec3 p, double w, double h, double d) :
+               position(p), width(w), height(h), depth(d) {}
+    };
+
+    bool _isPointInsideCuboid(glm::vec3 p, Cuboid c);
+
     std::vector<ImplicitPointPrimitive> points;
+    std::vector<Cuboid> cuboids;
 
     double surfaceThreshold = 0.5;
     double ricciBlend = 1.0;

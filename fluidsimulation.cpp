@@ -52,18 +52,37 @@ void FluidSimulation::addImplicitFluidPoint(glm::vec3 p, double r) {
     implicitFluidField.addPoint(p, r);
 }
 
+void FluidSimulation::addFluidCuboid(glm::vec3 p1, glm::vec3 p2) {
+    glm::vec3 minp = glm::vec3(fmin(p1.x, p2.x),
+                               fmin(p1.y, p2.y), 
+                               fmin(p1.z, p2.z));
+    double width = fabs(p2.x - p1.x);
+    double height = fabs(p2.y - p1.y);
+    double depth = fabs(p2.z - p1.z);
+
+    addFluidCuboid(minp, width, height, depth);
+}
+
+void FluidSimulation::addFluidCuboid(glm::vec3 p, double w, double h, double d) {
+    implicitFluidField.addCuboid(p, w, h, d);
+}
+
 std::vector<ImplicitPointData> FluidSimulation::getImplicitFluidPoints() {
     return implicitFluidField.getImplicitPointData();
 }
 
-std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
+std::vector<glm::vec3> FluidSimulation::getMarkerParticles(int skip) {
     std::vector<glm::vec3> particles;
 
-    for (int i = 0; i < (int)markerParticles.size(); i++) {
+    for (int i = 0; i < (int)markerParticles.size(); i += skip) {
         particles.push_back(markerParticles[i].position);
     }
 
     return particles;
+}
+
+std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
+    return getMarkerParticles(1);
 }
 
 void FluidSimulation::_initializeSolidCells() {
@@ -184,6 +203,149 @@ double FluidSimulation::_calculateNextTimeStep() {
     return timeStep;
 }
 
+bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
+    double eps = 10e-6;
+
+    if (fabs(f.normal.x) - 1.0 < eps) {
+        return fabs(p.x - f.minx) < eps &&
+               p.y >= f.miny && p.y < f.maxy && p.z >= f.minz && p.z < f.maxz;
+    }
+    else if (fabs(f.normal.y) - 1.0 < eps) {
+        return fabs(p.y - f.miny) < eps &&
+               p.x >= f.minx && p.x < f.maxx && p.z >= f.minz && p.z < f.maxz;
+    }
+    else if (fabs(f.normal.z) - 1.0 < eps) {
+        return fabs(p.z - f.minz) < eps &&
+               p.x >= f.minx && p.x < f.maxx && p.y >= f.miny && p.y < f.maxy;
+    }
+
+    return false;
+}
+
+FluidSimulation::CellFace FluidSimulation::_getCellFace(int i, int j, int k, 
+                                                        glm::vec3 normal) {
+    assert(_isCellIndexInRange(i, j, k));
+    
+    double eps = 10e-4;
+    glm::vec3 trans;
+    if (fabs(normal.x) - 1.0 < eps) {
+        trans = (float)(0.5 * dx) * glm::vec3(0.0, 1.0, 1.0);
+    }
+    else if (fabs(normal.y) - 1.0 < eps) {
+        trans = (float)(0.5 * dx) * glm::vec3(1.0, 0.0, 1.0);
+    }
+    else if (fabs(normal.z) - 1.0 < eps) {
+        trans = (float)(0.5 * dx) * glm::vec3(1.0, 1.0, 0.0);
+    }
+
+    glm::vec3 c = gridIndexToCellCenter(i, j, k);
+    glm::vec3 minp = c + (float)(0.5*dx)*normal - trans;
+    glm::vec3 maxp = c + (float)(0.5*dx)*normal + trans;
+
+    return CellFace(normal, minp, maxp);
+}
+
+std::vector<FluidSimulation::CellFace> FluidSimulation::
+             _getNeighbourSolidCellFaces(int i, int j, int k) {
+
+    assert(_isCellIndexInRange(i, j, k));
+
+    std::vector<CellFace> faces;
+    glm::vec3 normals[6] = { glm::vec3(-1.0, 0.0, 0.0), glm::vec3(1.0, 0.0, 0.0),
+                             glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 1.0, 0.0), 
+                             glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 1.0) };
+    GridIndex nc[26];
+    _getNeighbourGridIndices26(i, j, k, nc);
+    for (int idx = 0; idx < 26; idx++) {
+        GridIndex c = nc[idx];
+        if (_isCellIndexInRange(c.i, c.j, c.k) && _isCellSolid(c.i, c.j, c.k)) {
+            for (int normidx = 0; normidx < 6; normidx++) {
+                faces.push_back(_getCellFace(c.i, c.j, c.k, normals[normidx]));
+            }
+        }
+    }
+
+    return faces;
+}
+
+bool FluidSimulation::_getVectorFaceIntersection(glm::vec3 p0, glm::vec3 vnorm, CellFace f, 
+                                                 glm::vec3 *intersect) {
+
+    // perpendicular or p0 is on the plane
+    double eps = 10e-9;
+    double dot = glm::dot(vnorm, f.normal);
+    if (fabs(dot) < eps) {
+        return false;
+    }
+
+    glm::vec3 planep = glm::vec3(f.minx, f.miny, f.minz);
+    double d = glm::dot((planep - p0), f.normal) / dot;
+
+    *intersect = p0 + (float)d*vnorm;
+
+    if (_isPointOnCellFace(*intersect, f)) {
+        return true;
+    }
+
+    return false;
+}
+
+glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0, 
+                                                        glm::vec3 p1, 
+                                                        glm::vec3 *normal) {
+    // TODO test this method
+
+    int fi, fj, fk;
+    _positionToGridIndex(p0.x, p0.y, p0.z, &fi, &fj, &fk);
+    assert(!_isCellSolid(fi, fj, fk));
+
+    int si, sj, sk;
+    _positionToGridIndex(p1.x, p1.y, p1.z, &si, &sj, &sk);
+    assert(_isCellSolid(si, sj, sk));
+
+    assert(fi != si || fj != sj || fk != sk);
+
+    glm::vec3 vnorm = glm::normalize(p1 - p0);
+    glm::vec3 closestIntersection = p0;
+    double mindistsq = std::numeric_limits<double>::infinity();
+    bool isFoundCollision = false;
+    std::vector<CellFace> faces = _getNeighbourSolidCellFaces(fi, fj, fk);
+    for (int idx = 0; idx < faces.size(); idx++) {
+        CellFace f = faces[idx];
+
+        // must be acute angle
+        if (glm::dot(vnorm, f.normal) > 0) {
+
+            // p0 might be close enough to the face to be on it
+            if (_isPointOnCellFace(p0, f)) {
+                *normal = f.normal;
+                return p0;
+            }
+
+            glm::vec3 intersect;
+            bool isIntersecting = _getVectorFaceIntersection(p0, vnorm, f, &intersect);
+
+            if (isIntersecting) {
+                double distsq = glm::dot(p0, intersect);
+                if (distsq < mindistsq) {
+                    mindistsq = distsq;
+                    closestIntersection = intersect;
+                    *normal = f.normal;
+                    isFoundCollision = true;
+                }
+            }
+        }
+    }
+
+    if (isFoundCollision) {
+        return closestIntersection;
+    }
+    else {
+        *normal = glm::vec3(0.0, 0.0, 0.0);
+        return p0;
+    }
+}
+
 bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt,
                                        glm::vec3 *p1, glm::vec3 *v1) {
     *p1 = _RK4(p0, v0, dt);
@@ -198,7 +360,12 @@ bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt,
     _positionToGridIndex((*p1).x, (*p1).y, (*p1).z, &ni, &nj, &nk);
 
     if (_isCellSolid(ni, nj, nk)) {
-        *v1 = _getExtrapolatedVelocityAtPosition(*p1);
+        glm::vec3 collisionNormal;
+        *p1 = _calculateSolidCellCollision(p0, *p1, &collisionNormal);
+        
+        // jog p1 back a bit from cell face
+        *p1 = *p1 - (float)(0.01*dx)*collisionNormal;
+        *v1 = MACVelocity.evaluateVelocityAtPosition(*p1);
         return false;
     }
     else {
@@ -299,6 +466,14 @@ void FluidSimulation::gridIndexToCellCenter(int i, int j, int k, double *x, doub
     *x = (double)i*dx + 0.5*dx;
     *y = (double)j*dx + 0.5*dx;
     *z = (double)k*dx + 0.5*dx;
+}
+
+glm::vec3 FluidSimulation::gridIndexToCellCenter(int i, int j, int k) {
+    assert(_isCellIndexInRange(i, j, k));
+
+    return glm::vec3((double)i*dx + 0.5*dx,
+                     (double)j*dx + 0.5*dx,
+                     (double)k*dx + 0.5*dx);
 }
 
 void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
@@ -798,7 +973,9 @@ int FluidSimulation::_GridIndexToVectorIndex(int i, int j, int k) {
 
 int FluidSimulation::_GridIndexToVectorIndex(GridIndex index) {
     unsigned long long h = _calculateGridIndexHash(index);
-    assert(GridIndexToEigenVectorXdIndex.find(h) != GridIndexToEigenVectorXdIndex.end());
+    if (GridIndexToEigenVectorXdIndex.find(h) == GridIndexToEigenVectorXdIndex.end()) {
+        return -1;
+    }
 
     return GridIndexToEigenVectorXdIndex[h];
 }
@@ -817,10 +994,10 @@ Eigen::VectorXd FluidSimulation::_applyPreconditioner(Eigen::VectorXd residualVe
         int j = g.j;
         int k = g.k;
 
-        double t = r.vector(i, j, k) - 
-                   A.plusi(i - 1, j, k)*p.vector(i - 1, j, k)*q.vector(i - 1, j, k) - 
-                   A.plusj(i, j - 1, k)*p.vector(i, j - 1, k)*q.vector(i, j - 1, k) - 
-                   A.plusk(i, j, k - 1)*p.vector(i, j, k - 1)*q.vector(i, j, k - 1);
+        double t = r.vector(i, j, k) -
+            A.plusi(i - 1, j, k)*p.vector(i - 1, j, k)*q.vector(i - 1, j, k) -
+            A.plusj(i, j - 1, k)*p.vector(i, j - 1, k)*q.vector(i, j - 1, k) -
+            A.plusk(i, j, k - 1)*p.vector(i, j, k - 1)*q.vector(i, j, k - 1);
 
         t = t*p.vector(i, j, k);
         q.vector.set(i, j, k, t);
@@ -836,9 +1013,9 @@ Eigen::VectorXd FluidSimulation::_applyPreconditioner(Eigen::VectorXd residualVe
 
         double precon = p.vector(i, j, k);
         double t = q.vector(i, j, k) -
-                   A.plusi(i, j, k)*precon*z.vector(i + 1, j, k) -
-                   A.plusj(i, j, k)*precon*z.vector(i, j + 1, k) -
-                   A.plusk(i, j, k)*precon*z.vector(i, j, k + 1);
+            A.plusi(i, j, k)*precon*z.vector(i + 1, j, k) -
+            A.plusj(i, j, k)*precon*z.vector(i, j + 1, k) -
+            A.plusk(i, j, k)*precon*z.vector(i, j, k + 1);
 
         t = t*precon;
         z.vector.set(i, j, k, t);
@@ -861,8 +1038,6 @@ int FluidSimulation::_getNumFluidOrAirCellNeighbours(int i, int j, int k) {
 
 Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMatrix(
                                                     MatrixCoefficients &A, double dt) {
-    // TODO: test this method
-
     int size = (int)fluidCellIndices.size();
     double scale = dt / (density * dx*dx);
 
@@ -920,6 +1095,35 @@ Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMat
     return m;
 }
 
+// Solve (A*p = b) with Eigen's conjugate gradient method
+Eigen::VectorXd FluidSimulation::_solvePressureSystemWithEigen(MatrixCoefficients &A,
+                                                               VectorCoefficients &b,
+                                                               VectorCoefficients &precon,
+                                                               double dt) {
+    int size = (int)fluidCellIndices.size();
+    Eigen::VectorXd pressureVector(size); pressureVector.setZero();
+    Eigen::VectorXd bVector = _VectorCoefficientsToEigenVectorXd(b, fluidCellIndices);
+    Eigen::VectorXd residualVector(bVector);
+
+    if (fabs(residualVector.maxCoeff()) < pressureSolveTolerance) {
+        std::cout << "\tCG Iterations: " << 0 << std::endl;
+        return pressureVector;
+    }
+
+    Eigen::SparseMatrix<double> aMatrix = _MatrixCoefficientsToEigenSparseMatrix(A, dt);
+
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > cg;
+    cg.setMaxIterations(maxPressureSolveIterations); 
+    cg.setTolerance(pressureSolveTolerance);
+
+    cg.compute(aMatrix);
+    pressureVector = cg.solve(bVector);
+    std::cout << "\tCG Iterations:     " << cg.iterations() << std::endl;
+    std::cout << "\testimated error: " << cg.error() << std::endl;
+
+    return pressureVector;
+}
+
 // Solve (A*p = b) with Modified Incomplete Cholesky Conjugate Gradient menthod
 // (MICCG(0))
 Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
@@ -968,6 +1172,9 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
         sigma = sigmaNew;
 
         iterationNumber++;
+
+        std::cout << iterationNumber << " " << 
+            fabs(residualVector.maxCoeff()) << std::endl;
     }
 
     std::cout << "\tIterations limit reached.\t Error: " << 

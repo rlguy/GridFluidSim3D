@@ -237,7 +237,7 @@ void FluidRenderer::drawImplicitFluidPoints() {
 }
 
 void FluidRenderer::drawMarkerParticles() {
-    std::vector<glm::vec3> points = fluidsim->getMarkerParticles();
+    std::vector<glm::vec3> points = fluidsim->getMarkerParticles(3);
 
     _setTransforms();
 

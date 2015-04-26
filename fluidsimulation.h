@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <Eigen\Core>
 #include <Eigen\SparseCore>
+#include <Eigen\IterativeLinearSolvers>
 
 #include <gl\glew.h>
 #include <SDL_opengl.h>
@@ -45,6 +46,7 @@ public:
 
     std::vector<ImplicitPointData> getImplicitFluidPoints();
     std::vector<glm::vec3> getMarkerParticles();
+    std::vector<glm::vec3> getMarkerParticles(int skip);
     Array3d<int> getLayerGrid() { return layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
@@ -59,12 +61,18 @@ public:
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
     }
     void addImplicitFluidPoint(glm::vec3 p, double radius);
+    void addFluidCuboid(double x, double y, double z, double w, double h, double d) {
+        addFluidCuboid(glm::vec3(x, y, z), w, h, d);
+    }
+    void addFluidCuboid(glm::vec3 p, double width, double height, double depth);
+    void addFluidCuboid(glm::vec3 p1, glm::vec3 p2);
 
     void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
     void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
+    glm::vec3 gridIndexToCellCenter(int i, int j, int k);
     void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
     bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
-
+    
 private:
     struct MarkerParticle {
         glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
@@ -80,6 +88,23 @@ private:
         MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                         position(glm::vec3(x, y, z)),
                         i(ii), j(jj), k(kk) {}
+    };
+
+    struct CellFace {
+        glm::vec3 normal;
+        double minx, maxx;
+        double miny, maxy;
+        double minz, maxz;
+
+        CellFace() : normal(glm::vec3(0.0, 0.0, 0.0)),
+                     minx(0.0), maxx(0.0),
+                     miny(0.0), maxy(0.0),
+                     minz(0.0), maxz(0.0) {}
+
+        CellFace(glm::vec3 n, glm::vec3 minp, glm::vec3 maxp) :
+                                    normal(n), minx(minp.x), maxx(maxp.x),
+                                               miny(minp.y), maxy(maxp.y),
+                                               minz(minp.z), maxz(maxp.z) {}
     };
 
     struct MatrixCoefficients {
@@ -148,6 +173,10 @@ private:
                                          VectorCoefficients &b, 
                                          VectorCoefficients &precon,
                                          double dt);
+    Eigen::VectorXd _solvePressureSystemWithEigen(MatrixCoefficients &A,
+                                                  VectorCoefficients &b,
+                                                  VectorCoefficients &precon,
+                                                  double dt);
     void _applyPressureToVelocityField(double dt);
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
@@ -162,6 +191,12 @@ private:
     int _GridIndexToVectorIndex(int i, int j, int k);
     int _GridIndexToVectorIndex(GridIndex index);
     GridIndex _VectorIndexToGridIndex(int index);
+
+    std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
+    bool _isPointOnCellFace(glm::vec3 p, CellFace f);
+    CellFace _getCellFace(int i, int j, int k, glm::vec3 normal);
+    bool _getVectorFaceIntersection(glm::vec3 p0, glm::vec3 normal, CellFace f, glm::vec3 *intersect);
+    glm::vec3 _calculateSolidCellCollision(glm::vec3 p0, glm::vec3 p1, glm::vec3 *normal);
 
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
@@ -303,7 +338,7 @@ private:
 
     double CFLConditionNumber = 5.0;
     double minTimeStep = 1.0 / 1200.0;
-    double maxTimeStep = 1.0 / 30.0;
+    double maxTimeStep = 1.0 / 15.0;
     double pressureSolveTolerance = 10e-6;
     int maxPressureSolveIterations = 300;
     int numAdvanceMarkerParticleThreads = 8;

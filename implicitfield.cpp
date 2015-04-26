@@ -18,6 +18,10 @@ void ImplicitField::addPoint(glm::vec3 p, double r) {
     points.push_back(ImplicitPointPrimitive(p, r));
 }
 
+void ImplicitField::addCuboid(glm::vec3 p, double w, double h, double d) {
+    cuboids.push_back(Cuboid(p, w, h, d));
+}
+
 void ImplicitField::clear() {
     points.clear();
 }
@@ -34,6 +38,19 @@ double ImplicitField::getFieldValue(glm::vec3 p) {
             sum += powl(pi.getFieldValue(p), ricciBlend);
         } else {
             sum += pi.getFieldValue(p);
+        }
+    }
+
+    Cuboid ci;
+    for (int i = 0; i < (int)cuboids.size(); i++) {
+        ci = cuboids[i];
+        if (_isPointInsideCuboid(p, ci)) {
+            if (isBlending) {
+                sum += powl(surfaceThreshold + eps, ricciBlend);
+            }
+            else {
+                sum += surfaceThreshold + eps;
+            }
         }
     }
 
@@ -68,4 +85,10 @@ std::vector<ImplicitPointData> ImplicitField::getImplicitPointData() {
     }
 
     return data;
+}
+
+bool ImplicitField::_isPointInsideCuboid(glm::vec3 p, Cuboid c) {
+    return p.x >= c.position.x && p.x < c.position.x + c.width &&
+           p.y >= c.position.y && p.y < c.position.y + c.height &&
+           p.z >= c.position.z && p.z < c.position.z + c.depth;
 }
