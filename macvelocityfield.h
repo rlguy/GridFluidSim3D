@@ -26,9 +26,15 @@ public:
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
     void setW(int i, int j, int k, double val);
+    void addU(int i, int j, int k, double val);
+    void addV(int i, int j, int k, double val);
+    void addW(int i, int j, int k, double val);
     void setTempU(int i, int j, int k, double val);
     void setTempV(int i, int j, int k, double val);
     void setTempW(int i, int j, int k, double val);
+    void addTempU(int i, int j, int k, double val);
+    void addTempV(int i, int j, int k, double val);
+    void addTempW(int i, int j, int k, double val);
     void resetTemporaryVelocityField();
     void commitTemporaryVelocityFieldValues();
 

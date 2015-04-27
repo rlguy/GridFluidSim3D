@@ -195,6 +195,30 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
     _w.set(i, j, k, val);
 }
 
+void MACVelocityField::addU(int i, int j, int k, double val) {
+    if (!isIndexInRangeU(i, j, k)) {
+        return;
+    }
+
+    _u.add(i, j, k, val);
+}
+
+void MACVelocityField::addV(int i, int j, int k, double val) {
+    if (!isIndexInRangeV(i, j, k)) {
+        return;
+    }
+
+    _v.add(i, j, k, val);
+}
+
+void MACVelocityField::addW(int i, int j, int k, double val) {
+    if (!isIndexInRangeW(i, j, k)) {
+        return;
+    }
+
+    _w.add(i, j, k, val);
+}
+
 void MACVelocityField::setTempU(int i, int j, int k, double val) {
     if (!isIndexInRangeU(i, j, k)) {
         return;
@@ -219,6 +243,33 @@ void MACVelocityField::setTempW(int i, int j, int k, double val) {
     }
 
     _temp_w.set(i, j, k, val);
+    _is_set_w.set(i, j, k, true);
+}
+
+void MACVelocityField::addTempU(int i, int j, int k, double val) {
+    if (!isIndexInRangeU(i, j, k)) {
+        return;
+    }
+
+    _temp_u.add(i, j, k, val);
+    _is_set_u.set(i, j, k, true);
+}
+
+void MACVelocityField::addTempV(int i, int j, int k, double val) {
+    if (!isIndexInRangeV(i, j, k)) {
+        return;
+    }
+
+    _temp_v.add(i, j, k, val);
+    _is_set_v.set(i, j, k, true);
+}
+
+void MACVelocityField::addTempW(int i, int j, int k, double val) {
+    if (!isIndexInRangeW(i, j, k)) {
+        return;
+    }
+
+    _temp_w.add(i, j, k, val);
     _is_set_w.set(i, j, k, true);
 }
 

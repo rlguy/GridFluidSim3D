@@ -33,29 +33,29 @@ public:
     void run();
     void pause();
         
-    double getCellSize() { return dx; }
-    void getGridDimensions(int *i, int *j, int *k) { *i = i_voxels; *j = j_voxels; *k = k_voxels; }
-    void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)i_voxels*dx;
-                                                                    *h = (double)j_voxels*dx;
-                                                                    *d = (double)k_voxels*dx; }
-    double getSimulationWidth() {  return (double)i_voxels*dx; }
-    double getSimulationHeight() { return (double)j_voxels*dx; }
-    double getSimulationDepth() {  return (double)k_voxels*dx; }
+    double getCellSize() { return _dx; }
+    void getGridDimensions(int *i, int *j, int *k) { *i = _j_voxels; *j = _j_voxels; *k = _k_voxels; }
+    void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)_j_voxels*_dx;
+                                                                    *h = (double)_j_voxels*_dx;
+                                                                    *d = (double)_k_voxels*_dx; }
+    double getSimulationWidth() {  return (double)_j_voxels*_dx; }
+    double getSimulationHeight() { return (double)_j_voxels*_dx; }
+    double getSimulationDepth() {  return (double)_k_voxels*_dx; }
 
-    int getMaterial(int i, int j, int k) { return materialGrid(i, j, k); }
+    int getMaterial(int i, int j, int k) { return _materialGrid(i, j, k); }
 
     std::vector<ImplicitPointData> getImplicitFluidPoints();
     std::vector<glm::vec3> getMarkerParticles();
     std::vector<glm::vec3> getMarkerParticles(int skip);
-    Array3d<int> getLayerGrid() { return layerGrid; }
+    Array3d<int> getLayerGrid() { return _layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
     void addBodyForce(glm::vec3 f);
     void setBodyForce(double fx, double fy, double fz) { setBodyForce(glm::vec3(fx, fy, fz)); }
     void setBodyForce(glm::vec3 f);
 
-    double getDensity() { return density; }
-    double setDensity(double p) { assert(p > 0); density = p; }
+    double getDensity() { return _density; }
+    double setDensity(double p) { assert(p > 0); _density = p; }
 
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
@@ -135,37 +135,48 @@ private:
     int M_FLUID = 1;
     int M_SOLID = 2;
 
+    // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(int i, int j, int k);
 
+    // Simulation step
     double _calculateNextTimeStep();
     void _stepFluid(double dt);
+
+    // Find fluid cells at this step. Fluid cells must contain at
+    // least 1 marker particle
     void _updateFluidCells();
+
+    // Extrapolate fluid velocities into surrounding air and solids so
+    // that velocities can be computed when marker particles move to cells
+    // outside of current fluid region
     void _extrapolateFluidVelocities();
     void _resetExtrapolatedFluidVelocities();
     int _updateExtrapolationLayers();
     void _updateExtrapolationLayer(int layerIndex);
-    void _getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]);
-    void _getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
     void _extrapolateVelocitiesForLayerIndex(int layerIndex);
     double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
-    glm::vec3 _getExtrapolatedVelocityAtPosition(glm::vec3 p);
+
+    // Add gravity to fluid velocities and extrapolated velocities
     void _applyBodyForcesToVelocityField(double dt);
+
+    // Advect fluid velocities, but not extrapolated velocities
     void _advectVelocityField(double dt);
     void _advectVelocityFieldU(double dt);
     void _advectVelocityFieldV(double dt);
     void _advectVelocityFieldW(double dt);
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
+
+    // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(double dt);
     double _calculateNegativeDivergenceVector(VectorCoefficients &b);
     void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
     void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
-    int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
     Eigen::VectorXd _applyPreconditioner(Eigen::VectorXd r, 
                                          VectorCoefficients &precon,
                                          MatrixCoefficients &A);
@@ -177,151 +188,114 @@ private:
                                                   VectorCoefficients &b,
                                                   VectorCoefficients &precon,
                                                   double dt);
-    void _applyPressureToVelocityField(double dt);
-    void _advanceMarkerParticles(double dt);
-    void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
 
+    // Methods for seting up system of equations for the pressure update
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
     Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
-                                                       std::vector<GridIndex> indices);
-    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A, 
-                                                                       double dt);
+        std::vector<GridIndex> indices);
+    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A,
+        double dt);
     void _updateFluidGridIndexToEigenVectorXdIndexHashTable();
     unsigned long long int _calculateGridIndexHash(GridIndex &index);
     int _GridIndexToVectorIndex(int i, int j, int k);
     int _GridIndexToVectorIndex(GridIndex index);
     GridIndex _VectorIndexToGridIndex(int index);
+    int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
 
+    // Alter fluid velocities according to calculated pressures
+    // to create a divercence free velocity field
+    void _applyPressureToVelocityField(double dt);
+
+    // Move marker particles through the velocity field
+    void _advanceMarkerParticles(double dt);
+    void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
+
+    // Methods for finding collisions between marker particles and solid cell
+    // boundaries. Also used for advecting fluid when particle enters a solid.
     std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
     bool _isPointOnCellFace(glm::vec3 p, CellFace f);
+    bool _isPointOnSolidFluidBoundary(glm::vec3 p, CellFace *f);
     CellFace _getCellFace(int i, int j, int k, glm::vec3 normal);
+    void _getCellFaces(int i, int j, int k, CellFace[6]);
     bool _getVectorFaceIntersection(glm::vec3 p0, glm::vec3 normal, CellFace f, glm::vec3 *intersect);
     glm::vec3 _calculateSolidCellCollision(glm::vec3 p0, glm::vec3 p1, glm::vec3 *normal);
+    void _getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]);
+    void _getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
 
+    // Runge-Kutta integrators used in advection and advancing marker particles
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK4(glm::vec3 p0, glm::vec3 v0, double dt);
 
-    inline bool _isCellAir(int i, int j, int k) { return materialGrid(i, j, k) == M_AIR; }
-    inline bool _isCellFluid(int i, int j, int k) { return materialGrid(i, j, k) == M_FLUID; }
-    inline bool _isCellSolid(int i, int j, int k) { return materialGrid(i, j, k) == M_SOLID; }
+    // misc bool functions for checking cell contents and borders
+    inline bool _isCellAir(int i, int j, int k) { return _materialGrid(i, j, k) == M_AIR; }
+    inline bool _isCellFluid(int i, int j, int k) { return _materialGrid(i, j, k) == M_FLUID; }
+    inline bool _isCellSolid(int i, int j, int k) { return _materialGrid(i, j, k) == M_SOLID; }
 
-    inline bool _isFaceBorderingFluidU(int i, int j, int k) {
-        if (i == i_voxels) {
-            return materialGrid(i - 1, j, k) == M_FLUID;
-        } else if (i > 0) {
-            return materialGrid(i, j, k) == M_FLUID || materialGrid(i-1, j, k) == M_FLUID;
-        } else {
-            return materialGrid(i, j, k) == M_FLUID;
-        }
+    inline bool _isFaceBorderingMaterialU(int i, int j, int k, int mat) {
+        if (i == _i_voxels) { return _materialGrid(i - 1, j, k) == mat; }
+        else if (i > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i - 1, j, k) == mat; }
+        else { return _materialGrid(i, j, k) == mat; }
     }
 
-    inline bool _isFaceBorderingFluidV(int i, int j, int k) {
-        if (j == j_voxels) {
-            return materialGrid(i, j - 1, k) == M_FLUID;
-        } else if (j > 0) {
-            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j - 1, k) == M_FLUID;
-        } else {
-            return materialGrid(i, j, k) == M_FLUID;
-        }
+    inline bool _isFaceBorderingMaterialV(int i, int j, int k, int mat) {
+        if (j == _j_voxels) { return _materialGrid(i, j - 1, k) == mat; }
+        else if (j > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i, j - 1, k) == mat; }
+        else {  return _materialGrid(i, j, k) == mat; }
     }
 
-    inline bool _isFaceBorderingFluidW(int i, int j, int k) {
-        if (k == k_voxels) {
-            return materialGrid(i, j, k - 1) == M_FLUID;
-        }
-        else if (k > 0) {
-            return materialGrid(i, j, k) == M_FLUID || materialGrid(i, j, k - 1) == M_FLUID;
-        }
-        else {
-            return materialGrid(i, j, k) == M_FLUID;
-        }
+    inline bool _isFaceBorderingMaterialW(int i, int j, int k, int mat) {
+        if (k == _k_voxels) { return _materialGrid(i, j, k - 1) == mat; }
+        else if (k > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i, j, k - 1) == mat; }
+        else {  return _materialGrid(i, j, k) == mat; }
     }
 
     inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer) {
-        if (i == i_voxels) {
-            return layerGrid(i - 1, j, k) == layer;
-        }
-        else if (i > 0) {
-            return layerGrid(i, j, k) == layer || layerGrid(i - 1, j, k) == layer;
-        }
-        else {
-            return layerGrid(i, j, k) == layer;
-        }
+        if (i == _i_voxels) { return _layerGrid(i - 1, j, k) == layer; }
+        else if (i > 0) { return _layerGrid(i, j, k) == layer || _layerGrid(i - 1, j, k) == layer; }
+        else { return _layerGrid(i, j, k) == layer; }
     }
 
     inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer) {
-        if (j == j_voxels) {
-            return layerGrid(i, j - 1, k) == layer;
-        }
-        else if (j > 0) {
-            return layerGrid(i, j, k) == layer || layerGrid(i, j - 1, k) == layer;
-        }
-        else {
-            return layerGrid(i, j, k) == layer;
-        }
+        if (j == _j_voxels) { return _layerGrid(i, j - 1, k) == layer; }
+        else if (j > 0) {  return _layerGrid(i, j, k) == layer || _layerGrid(i, j - 1, k) == layer; }
+        else { return _layerGrid(i, j, k) == layer; }
     }
 
     inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer) {
-        if (k == k_voxels) {
-            return layerGrid(i, j, k - 1) == layer;
-        }
-        else if (k > 0) {
-            return layerGrid(i, j, k) == layer || layerGrid(i, j, k - 1) == layer;
-        }
-        else {
-            return layerGrid(i, j, k) == layer;
-        }
+        if (k == _k_voxels) { return _layerGrid(i, j, k - 1) == layer; }
+        else if (k > 0) {  return _layerGrid(i, j, k) == layer || _layerGrid(i, j, k - 1) == layer; }
+        else { return _layerGrid(i, j, k) == layer; }
     }
 
     inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k) {
-        if (i == i_voxels) {
-            return layerGrid(i - 1, j, k) >= 1.0;
-        }
-        else if (i > 0) {
-            return layerGrid(i, j, k) >= 1.0 || layerGrid(i - 1, j, k) >= 1.0;
-        }
-        else {
-            return layerGrid(i, j, k) >= 1.0;
-        }
+        if (i == _i_voxels) {  return _layerGrid(i - 1, j, k) >= 1.0; }
+        else if (i > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i - 1, j, k) >= 1.0; }
+        else { return _layerGrid(i, j, k) >= 1.0; }
     }
 
     inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k) {
-        if (j == j_voxels) {
-            return layerGrid(i, j - 1, k) >= 1.0;
-        }
-        else if (j > 0) {
-            return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j - 1, k) >= 1.0;
-        }
-        else {
-            return layerGrid(i, j, k) >= 1.0;
-        }
+        if (j == _j_voxels) { return _layerGrid(i, j - 1, k) >= 1.0; }
+        else if (j > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i, j - 1, k) >= 1.0; }
+        else { return _layerGrid(i, j, k) >= 1.0; }
     }
 
     inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k) {
-        if (k == k_voxels) {
-            return layerGrid(i, j, k - 1) >= 1.0;
-        }
-        else if (k > 0) {
-            return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0;
-        }
-        else {
-            return layerGrid(i, j, k) >= 1.0;
-        }
+        if (k == _k_voxels) { return _layerGrid(i, j, k - 1) >= 1.0; }
+        else if (k > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i, j, k - 1) >= 1.0; }
+        else { return _layerGrid(i, j, k) >= 1.0; }
     }
 
     inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
+        return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
     }
     inline bool _isPositionInGrid(double x, double y, double z) {
-        return x >= 0 && y >= 0 && z >= 0 && x <= dx*i_voxels && y <= dx*j_voxels && z <= dx*k_voxels;
+        return x >= 0 && y >= 0 && z >= 0 && x <= _dx*_i_voxels && y <= _dx*_j_voxels && z <= _dx*_k_voxels;
     }
 
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }
-
-    void _positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
 
     bool _isSimulationInitialized = false;
     bool _isSimulationRunning = false;
@@ -330,30 +304,30 @@ private:
     int _currentFrame = 0;
     bool _isCurrentFrameFinished = true;
 
-    double dx = 0.1;
-    double density = 10.0;
-    int i_voxels = 10;
-    int j_voxels = 10;
-    int k_voxels = 10;
+    double _dx = 0.1;
+    double _density = 10.0;
+    int _i_voxels = 10;
+    int _j_voxels = 10;
+    int _k_voxels = 10;
 
-    double CFLConditionNumber = 5.0;
-    double minTimeStep = 1.0 / 1200.0;
-    double maxTimeStep = 1.0 / 15.0;
-    double pressureSolveTolerance = 10e-6;
-    int maxPressureSolveIterations = 300;
-    int numAdvanceMarkerParticleThreads = 8;
+    double _CFLConditionNumber = 5.0;
+    double _minTimeStep = 1.0 / 1200.0;
+    double _maxTimeStep = 1.0 / 15.0;
+    double _pressureSolveTolerance = 10e-6;
+    int _maxPressureSolveIterations = 300;
+    int _numAdvanceMarkerParticleThreads = 8;
 
-    glm::vec3 bodyForce;
+    glm::vec3 _bodyForce;
 
-    MACVelocityField MACVelocity;
-    Array3d<int> materialGrid;
-    Array3d<double> pressureGrid;
-    Array3d<int> layerGrid;
+    MACVelocityField _MACVelocity;
+    Array3d<int> _materialGrid;
+    Array3d<double> _pressureGrid;
+    Array3d<int> _layerGrid;
 
-    ImplicitField implicitFluidField;
+    ImplicitField _implicitFluidField;
 
-    std::vector<MarkerParticle> markerParticles;
-    std::vector<GridIndex> fluidCellIndices;
-    std::unordered_map<unsigned long long, int> GridIndexToEigenVectorXdIndex;
+    std::vector<MarkerParticle> _markerParticles;
+    std::vector<GridIndex> _fluidCellIndices;
+    std::unordered_map<unsigned long long, int> _GridIndexToEigenVectorXdIndex;
 };
 

@@ -97,6 +97,11 @@ public:
         grid[k][j][i] = value;
     }
 
+    void add(int i, int j, int k, T value) {
+        assert(_isIndexInRange(i, j, k));
+        grid[k][j][i] += value;
+    }
+
     int width = 0;
     int height = 0;
     int depth = 0;
