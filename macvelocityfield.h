@@ -91,6 +91,7 @@ private:
     double _cubicInterpolate(double p[4], double x);
     double _bicubicInterpolate(double p[4][4], double x, double y);
     double _tricubicInterpolate(double p[4][4][4], double x, double y, double z);
+    double _fasttricubicInterpolate(double p[4][4][4], double x, double y, double z);
 
     double _interpolateU(double x, double y, double z);
     double _interpolateV(double x, double y, double z);

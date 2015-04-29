@@ -443,6 +443,7 @@ bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt,
         // jog p1 back a bit from cell face
         *p1 = *p1 + (float)(0.01*_dx)*collisionNormal;
         *v1 = _MACVelocity.evaluateVelocityAtPosition(*p1);
+
         return false;
     }
     else {
@@ -843,7 +844,7 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
                 for (int i = 0; i < _i_voxels; i++) {
                     if (_isFaceBorderingMaterialW(i, j, k, M_FLUID) ||
                             _isFaceVelocityExtrapolatedW(i, j, k)) {
-                        _MACVelocity.addW(i, j, k, _bodyForce.x * dt);
+                        _MACVelocity.addW(i, j, k, _bodyForce.z * dt);
                     }
                 }
             }
@@ -1287,13 +1288,6 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
             // jog p back a bit from cell face
             p = coll + (float)(0.001*_dx)*norm;
             positionToGridIndex(p.x, p.y, p.z, &i, &j, &k);
-
-            if (!_isCellSolid(i, j, k)) {
-                std::cout << "Success: " << idx << std::endl;
-            }
-            else {
-                std::cout << "Failure: " << idx << std::endl;
-            }
         }
 
         if (!_isCellSolid(i, j, k)) {

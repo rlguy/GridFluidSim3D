@@ -34,15 +34,20 @@ public:
     void pause();
         
     double getCellSize() { return _dx; }
-    void getGridDimensions(int *i, int *j, int *k) { *i = _j_voxels; *j = _j_voxels; *k = _k_voxels; }
-    void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)_j_voxels*_dx;
+    void getGridDimensions(int *i, int *j, int *k) { *i = _i_voxels; *j = _j_voxels; *k = _k_voxels; }
+    void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)_i_voxels*_dx;
                                                                     *h = (double)_j_voxels*_dx;
                                                                     *d = (double)_k_voxels*_dx; }
     double getSimulationWidth() {  return (double)_j_voxels*_dx; }
     double getSimulationHeight() { return (double)_j_voxels*_dx; }
     double getSimulationDepth() {  return (double)_k_voxels*_dx; }
 
-    int getMaterial(int i, int j, int k) { return _materialGrid(i, j, k); }
+    int getMaterial(int i, int j, int k) { 
+        if (!_isCellIndexInRange(i, j, k)) {
+            return M_SOLID;
+        }
+        return _materialGrid(i, j, k); 
+    }
 
     std::vector<ImplicitPointData> getImplicitFluidPoints();
     std::vector<glm::vec3> getMarkerParticles();
@@ -233,21 +238,21 @@ private:
     inline bool _isCellSolid(int i, int j, int k) { return _materialGrid(i, j, k) == M_SOLID; }
 
     inline bool _isFaceBorderingMaterialU(int i, int j, int k, int mat) {
-        if (i == _i_voxels) { return _materialGrid(i - 1, j, k) == mat; }
-        else if (i > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i - 1, j, k) == mat; }
-        else { return _materialGrid(i, j, k) == mat; }
+        if (i == _i_voxels) { return getMaterial(i - 1, j, k) == mat; }
+        else if (i > 0) { return getMaterial(i, j, k) == mat || getMaterial(i - 1, j, k) == mat; }
+        else { return getMaterial(i, j, k) == mat; }
     }
 
     inline bool _isFaceBorderingMaterialV(int i, int j, int k, int mat) {
-        if (j == _j_voxels) { return _materialGrid(i, j - 1, k) == mat; }
-        else if (j > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i, j - 1, k) == mat; }
-        else {  return _materialGrid(i, j, k) == mat; }
+        if (j == _j_voxels) { return getMaterial(i, j - 1, k) == mat; }
+        else if (j > 0) { return getMaterial(i, j, k) == mat || getMaterial(i, j - 1, k) == mat; }
+        else {  return getMaterial(i, j, k) == mat; }
     }
 
     inline bool _isFaceBorderingMaterialW(int i, int j, int k, int mat) {
-        if (k == _k_voxels) { return _materialGrid(i, j, k - 1) == mat; }
-        else if (k > 0) { return _materialGrid(i, j, k) == mat || _materialGrid(i, j, k - 1) == mat; }
-        else {  return _materialGrid(i, j, k) == mat; }
+        if (k == _k_voxels) { return getMaterial(i, j, k - 1) == mat; }
+        else if (k > 0) { return getMaterial(i, j, k) == mat || getMaterial(i, j, k - 1) == mat; }
+        else {  return getMaterial(i, j, k) == mat; }
     }
 
     inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer) {
