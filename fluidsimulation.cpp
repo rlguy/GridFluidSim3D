@@ -67,12 +67,72 @@ void FluidSimulation::addFluidCuboid(glm::vec3 p, double w, double h, double d) 
     _implicitFluidField.addCuboid(p, w, h, d);
 }
 
+void FluidSimulation::addSolidCell(int i, int j, int k) {
+    if (_isSimulationInitialized) { return; }
+    assert(_isCellIndexInRange(i, j, k));
+    _materialGrid.set(i, j, k, M_SOLID);
+}
+
+void FluidSimulation::addSolidCells(std::vector<glm::vec3> indices) {
+    for (int i = 0; i < indices.size(); i++) {
+        addSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
+    }
+}
+
+void FluidSimulation::removeSolidCell(int i, int j, int k) {
+    assert(_isCellIndexInRange(i, j, k));
+
+    // Cannot remove border cells
+    if (_isCellIndexOnBorder(i, j, k)) { return; }
+
+    if (_isCellSolid(i, j, k)) {
+        _materialGrid.set(i, j, k, M_AIR);
+    }
+}
+
+void FluidSimulation::removeSolidCells(std::vector<glm::vec3> indices) {
+    for (int i = 0; i < indices.size(); i++) {
+        removeSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
+    }
+}
+
+std::vector<glm::vec3> FluidSimulation::getSolidCells() {
+    std::vector<glm::vec3> indices;
+    for (int k = 1; k < _materialGrid.depth - 1; k++) {
+        for (int j = 1; j < _materialGrid.height - 1; j++) {
+            for (int i = 1; i < _materialGrid.width - 1; i++) {
+                if (_isCellSolid(i, j, k)) {
+                    indices.push_back(glm::vec3(i, j, k));
+                }
+            }
+        }
+    }
+
+    return indices;
+}
+
+std::vector<glm::vec3> FluidSimulation::getSolidCellPositions() {
+    std::vector<glm::vec3> indices;
+    for (int k = 1; k < _materialGrid.depth - 1; k++) {
+        for (int j = 1; j < _materialGrid.height - 1; j++) {
+            for (int i = 1; i < _materialGrid.width - 1; i++) {
+                if (_isCellSolid(i, j, k)) {
+                    indices.push_back(gridIndexToCellCenter(i, j, k));
+                }
+            }
+        }
+    }
+
+    return indices;
+}
+
 std::vector<ImplicitPointData> FluidSimulation::getImplicitFluidPoints() {
     return _implicitFluidField.getImplicitPointData();
 }
 
 std::vector<glm::vec3> FluidSimulation::getMarkerParticles(int skip) {
     std::vector<glm::vec3> particles;
+    particles.reserve(_markerParticles.size());
 
     for (int i = 0; i < (int)_markerParticles.size(); i += skip) {
         particles.push_back(_markerParticles[i].position);
@@ -107,23 +167,6 @@ void FluidSimulation::_initializeSolidCells() {
             _materialGrid.set(_i_voxels-1, j, k, M_SOLID);
         }
     }
-
-    /*
-    double ci = floor(_i_voxels / 2);
-    double cj = floor(_j_voxels / 2);
-    double ck = floor(_k_voxels / 2);
-    double height = 5;
-    double width = 9;
-    for (int k = 0; k < _k_voxels; k++) {
-        for (int j = cj; j < cj + height; j++) {
-            for (int i = 0; i < _i_voxels; i++) {
-                if (!(i >= ci - width && i <= ci + width && k >= ck - width && k <= ck + width)) {
-                    _materialGrid.set(i, j, k, M_SOLID);
-                }
-            }
-        }
-    }
-    */
 }
 
 void FluidSimulation::_addMarkerParticlesToCell(int i, int j, int k) {

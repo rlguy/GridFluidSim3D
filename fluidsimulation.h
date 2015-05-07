@@ -73,6 +73,13 @@ public:
     void addFluidCuboid(glm::vec3 p, double width, double height, double depth);
     void addFluidCuboid(glm::vec3 p1, glm::vec3 p2);
 
+    void addSolidCell(int i, int j, int k);
+    void addSolidCells(std::vector<glm::vec3> indices);
+    void removeSolidCell(int i, int j, int k);
+    void removeSolidCells(std::vector<glm::vec3> indices);
+    std::vector<glm::vec3> getSolidCells();
+    std::vector<glm::vec3> getSolidCellPositions();
+
     void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
     glm::vec3 gridIndexToPosition(GridIndex g);
     void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
@@ -307,6 +314,10 @@ private:
     }
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
+    }
+    inline bool _isCellIndexOnBorder(int i, int j, int k) {
+        return i == 0 || j == 0 || k == 0 ||
+               i == _i_voxels - 1 || j == _j_voxels - 1 || k == _k_voxels - 1;
     }
     inline bool _isPositionInGrid(double x, double y, double z) {
         return x >= 0 && y >= 0 && z >= 0 && x < _dx*_i_voxels && y < _dx*_j_voxels && z < _dx*_k_voxels;

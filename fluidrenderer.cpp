@@ -92,6 +92,7 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
 
     _setTransforms();
 
+    glBegin(GL_POINTS);
     glm::vec3 p;
     double size = fluidsim->getCellSize();
     for (int k = 0; k < depth; k++) {
@@ -101,11 +102,12 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
                     double x, y, z;
                     fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
                     p = glm::vec3(x, y, z);
-                    _drawWireframeCube(p, 0.2*size);
+                    glVertex3f(p.x, p.y, p.z);
                 }
             }
         }
     }
+    glEnd();
 
     _unsetTransforms();
 }
@@ -250,8 +252,8 @@ void FluidRenderer::drawMarkerParticles() {
     _unsetTransforms();
 }
 
-bool compareByDistance(const glm::vec4 p1, const glm::vec4 p2) {
-    return p1.w > p2.w;
+bool compareByDistance(const std::pair<glm::vec4, bool> p1, std::pair<glm::vec4, bool> p2) {
+    return p1.first.w > p2.first.w;
 }
 
 void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *cam) {
@@ -264,19 +266,28 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     glBindTexture(GL_TEXTURE_2D, tex);
 
     std::vector<glm::vec3> points = fluidsim->getMarkerParticles();
-    std::vector<glm::vec4> sortedPoints;
+    std::vector<glm::vec3> solidpoints = fluidsim->getSolidCellPositions();
+    std::vector<std::pair<glm::vec4, bool> > sortedPoints;
 
     glm::vec3 r;
     for (int i = 0; i<points.size(); i++) {
         glm::vec3 p = points[i];
-        r = cp - points[i];
+        r = cp - p;
         double d = glm::dot(r, r);
-        sortedPoints.push_back(glm::vec4(p, d));
+        sortedPoints.push_back(std::pair<glm::vec4, bool>(glm::vec4(p, d), true));
     }
+    for (int i = 0; i<solidpoints.size(); i++) {
+        glm::vec3 p = solidpoints[i];
+        r = cp - p;
+        double d = glm::dot(r, r);
+        sortedPoints.push_back(std::pair<glm::vec4, bool>(glm::vec4(p, d), false));
+    }
+
     std::sort(sortedPoints.begin(), sortedPoints.end(), compareByDistance);
 
     for (int i = 0; i < (int)sortedPoints.size(); i++) {
-        glm::vec4 p4 = sortedPoints[i];
+        glm::vec4 p4 = sortedPoints[i].first;
+        bool isFluid = sortedPoints[i].second;
         glm::vec3 p = glm::vec3(p4.x, p4.y, p4.z);
 
         glm::vec3 look = glm::normalize(cp - p);
@@ -289,6 +300,13 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
                                                  0.0, 0.0, 0.0, 1.0));
         glPushMatrix();
         glMultMatrixf((GLfloat*)&mat);
+
+        if (isFluid) {
+            glColor4f(0.0, 0.753, 0.922, 1.0);
+        }
+        else {
+            glColor4f(0.5, 0.5, 0.5, 1.0);
+        }
 
         glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hw, 0.0f);
