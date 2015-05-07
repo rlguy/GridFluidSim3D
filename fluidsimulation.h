@@ -5,14 +5,14 @@
 #include <vector>
 #include <thread>
 #include <unordered_map>
+#include <assert.h>
+
 #include <Eigen\Core>
 #include <Eigen\SparseCore>
 #include <Eigen\IterativeLinearSolvers>
-
 #include <gl\glew.h>
 #include <SDL_opengl.h>
 #include <gl\glu.h>
-#include <assert.h>
 
 #include "stopwatch.h"
 #include "MACVelocityField.h"
@@ -38,12 +38,13 @@ public:
     void getSimulationDimensions(double *w, double *h, double *d) { *w = (double)_i_voxels*_dx;
                                                                     *h = (double)_j_voxels*_dx;
                                                                     *d = (double)_k_voxels*_dx; }
-    double getSimulationWidth() {  return (double)_j_voxels*_dx; }
+    double getSimulationWidth() {  return (double)_i_voxels*_dx; }
     double getSimulationHeight() { return (double)_j_voxels*_dx; }
     double getSimulationDepth() {  return (double)_k_voxels*_dx; }
 
     int getMaterial(int i, int j, int k) { 
         if (!_isCellIndexInRange(i, j, k)) {
+            std::cout << "Material index out of range" << std::endl;
             return M_SOLID;
         }
         return _materialGrid(i, j, k); 
@@ -72,10 +73,18 @@ public:
     void addFluidCuboid(glm::vec3 p, double width, double height, double depth);
     void addFluidCuboid(glm::vec3 p1, glm::vec3 p2);
 
+    void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
+    glm::vec3 gridIndexToPosition(GridIndex g);
     void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
+
+    void gridIndexToCellCenter(GridIndex g, double *x, double *y, double *z);
     void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
+    glm::vec3 gridIndexToCellCenter(GridIndex g);
     glm::vec3 gridIndexToCellCenter(int i, int j, int k);
+
+    void positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
     void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
+
     bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
     
 private:
@@ -175,7 +184,7 @@ private:
     void _advectVelocityFieldV(double dt);
     void _advectVelocityFieldW(double dt);
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
-    bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
+    bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(double dt);
@@ -224,6 +233,8 @@ private:
     void _getCellFaces(int i, int j, int k, CellFace[6]);
     bool _getVectorFaceIntersection(glm::vec3 p0, glm::vec3 normal, CellFace f, glm::vec3 *intersect);
     glm::vec3 _calculateSolidCellCollision(glm::vec3 p0, glm::vec3 p1, glm::vec3 *normal);
+    std::vector<CellFace> _getSolidCellFaceCollisionCandidates(int i, int j, int k, glm::vec3 dir);
+    bool _findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *face, glm::vec3 *intersection);
     void _getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]);
     void _getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
 
@@ -291,11 +302,14 @@ private:
         else { return _layerGrid(i, j, k) >= 1.0; }
     }
 
+    inline bool _isCellNeighbours(int i1, int j1, int k1, int i2, int j2, int k2) {
+        return abs(i1 - i2) <= 1 && abs(j1 - j2) <= 1 && abs(k1 - k2) <= 1;
+    }
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
     }
     inline bool _isPositionInGrid(double x, double y, double z) {
-        return x >= 0 && y >= 0 && z >= 0 && x <= _dx*_i_voxels && y <= _dx*_j_voxels && z <= _dx*_k_voxels;
+        return x >= 0 && y >= 0 && z >= 0 && x < _dx*_i_voxels && y < _dx*_j_voxels && z < _dx*_k_voxels;
     }
 
     inline double _randomFloat(double min, double max) {
@@ -310,7 +324,7 @@ private:
     bool _isCurrentFrameFinished = true;
 
     double _dx = 0.1;
-    double _density = 10.0;
+    double _density = 20.0;
     int _i_voxels = 10;
     int _j_voxels = 10;
     int _k_voxels = 10;
@@ -318,7 +332,7 @@ private:
     double _CFLConditionNumber = 5.0;
     double _minTimeStep = 1.0 / 1200.0;
     double _maxTimeStep = 1.0 / 15.0;
-    double _pressureSolveTolerance = 10e-6;
+    double _pressureSolveTolerance = 10e-4;
     int _maxPressureSolveIterations = 300;
     int _numAdvanceMarkerParticleThreads = 8;
 

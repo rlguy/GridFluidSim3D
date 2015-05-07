@@ -250,6 +250,62 @@ void FluidRenderer::drawMarkerParticles() {
     _unsetTransforms();
 }
 
+bool compareByDistance(const glm::vec4 p1, const glm::vec4 p2) {
+    return p1.w > p2.w;
+}
+
+void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *cam) {
+    glm::vec3 cp = cam->getPosition();
+    glm::vec3 cup = cam->up;
+    float hw = 0.5*width;
+
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    std::vector<glm::vec3> points = fluidsim->getMarkerParticles();
+    std::vector<glm::vec4> sortedPoints;
+
+    glm::vec3 r;
+    for (int i = 0; i<points.size(); i++) {
+        glm::vec3 p = points[i];
+        r = cp - points[i];
+        double d = glm::dot(r, r);
+        sortedPoints.push_back(glm::vec4(p, d));
+    }
+    std::sort(sortedPoints.begin(), sortedPoints.end(), compareByDistance);
+
+    for (int i = 0; i < (int)sortedPoints.size(); i++) {
+        glm::vec4 p4 = sortedPoints[i];
+        glm::vec3 p = glm::vec3(p4.x, p4.y, p4.z);
+
+        glm::vec3 look = glm::normalize(cp - p);
+        glm::vec3 right = glm::normalize(glm::cross(cup, look));
+        glm::vec3 up = glm::cross(look, right);
+
+        glm::mat4 mat = glm::transpose(glm::mat4(right.x, up.x, look.x, p.x,
+                                                 right.y, up.y, look.y, p.y,
+                                                 right.z, up.z, look.z, p.z,
+                                                 0.0, 0.0, 0.0, 1.0));
+        glPushMatrix();
+        glMultMatrixf((GLfloat*)&mat);
+
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hw, 0.0f);
+        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hw, 0.0f);
+        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hw, 0.0f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hw, 0.0f);
+        glEnd();
+
+        glPopMatrix();
+    }
+
+
+    glEnable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+}
+
 void FluidRenderer::drawLayerGrid() {
     Array3d<int> grid = fluidsim->getLayerGrid();
     double size = fluidsim->getCellSize();

@@ -35,6 +35,7 @@ public:
     double getSurfaceThreshold() { return surfaceThreshold; }
     double getRicciBlend() { return ricciBlend; }
     int getNumPoints() { return (int)points.size(); }
+    int getNumCuboids() { return (int)cuboids.size(); }
 
     void setSurfaceThreshold(double t) { surfaceThreshold = t; }
     void setRicciBlend(double k) { assert(k > 0.0); ricciBlend = k; }

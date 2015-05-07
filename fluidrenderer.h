@@ -12,6 +12,7 @@
 #include "fluidsimulation.h"
 #include "ImplicitField.h"
 #include "Array3d.h"
+#include "game/camera/camera3d.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -36,6 +37,7 @@ public:
     void drawImplicitFluidPoints();
     void drawMarkerParticles();
     void drawLayerGrid();
+    void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
 
 private:
     int M_AIR = 0;
