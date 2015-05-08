@@ -24,15 +24,13 @@ public:
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
 
 private:
-    void _getCellVertexIndices(int i, int j, int k, GridIndex vertices[8]);
+    void _getCellVertexIndices(GridIndex g, GridIndex vertices[8]);
     glm::vec3 _getVertexPosition(GridIndex v);
-    glm::vec3 _getVertexPosition(int i, int j, int k);
     double _getVertexFieldValue(GridIndex v);
-    double _getVertexFieldValue(int i, int j, int k);
-    bool _isCellOutsideSurface(int i, int j, int k);
-    bool _isCellInsideSurface(int i, int j, int k);
-    bool _isCellOnSurface(int i, int j, int k);
-    int _getCellSurfaceStatus(int i, int j, int k);
+    bool _isCellOutsideSurface(GridIndex g);
+    bool _isCellInsideSurface(GridIndex g);
+    bool _isCellOnSurface(GridIndex g);
+    int _getCellSurfaceStatus(GridIndex g);
 
     std::vector<GridIndex> _findSurfaceCells();
     void _resetVertexValues();
@@ -41,6 +39,9 @@ private:
 
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < _isize && j < _jsize && k < _ksize;
+    }
+    inline bool _isCellIndexInRange(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _isize && g.j < _jsize && g.k < _ksize;
     }
 
     bool _isInitialized = false;

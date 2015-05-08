@@ -147,6 +147,30 @@ double MACVelocityField::W(int i, int j, int k) {
     return _w(i, j, k);
 }
 
+double MACVelocityField::U(GridIndex g) {
+    if (!isIndexInRangeU(g)) {
+        return _default_out_of_range_value;
+    }
+
+    return _u(g);
+}
+
+double MACVelocityField::V(GridIndex g) {
+    if (!isIndexInRangeV(g)) {
+        return _default_out_of_range_value;
+    }
+
+    return _v(g);
+}
+
+double MACVelocityField::W(GridIndex g) {
+    if (!isIndexInRangeW(g)) {
+        return _default_out_of_range_value;
+    }
+
+    return _w(g);
+}
+
 double MACVelocityField::tempU(int i, int j, int k) {
     if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;

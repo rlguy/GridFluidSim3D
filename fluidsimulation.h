@@ -44,10 +44,6 @@ public:
     double getSimulationDepth() {  return (double)_k_voxels*_dx; }
 
     int getMaterial(int i, int j, int k) { 
-        if (!_isCellIndexInRange(i, j, k)) {
-            std::cout << "Material index out of range" << std::endl;
-            return M_SOLID;
-        }
         return _materialGrid(i, j, k); 
     }
 
@@ -99,18 +95,16 @@ public:
 private:
     struct MarkerParticle {
         glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
-        int i = 0;
-        int j = 0;
-        int k = 0;
+        GridIndex index = GridIndex(0, 0, 0);
 
-        MarkerParticle() : position(glm::vec3(0.0, 0.0, 0.0)), i(0), j(0), k(0) {}
+        MarkerParticle() : position(glm::vec3(0.0, 0.0, 0.0)), index(GridIndex(0, 0, 0)) {}
 
         MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
-                                                              i(ii), j(jj), k(kk) {}
+                                                              index(GridIndex(ii, jj, kk)) {}
 
         MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                         position(glm::vec3(x, y, z)),
-                        i(ii), j(jj), k(kk) {}
+                        index(GridIndex(ii, jj, kk)) {}
     };
 
     struct CellFace {
@@ -257,41 +251,63 @@ private:
     inline bool _isCellAir(int i, int j, int k) { return _materialGrid(i, j, k) == M_AIR; }
     inline bool _isCellFluid(int i, int j, int k) { return _materialGrid(i, j, k) == M_FLUID; }
     inline bool _isCellSolid(int i, int j, int k) { return _materialGrid(i, j, k) == M_SOLID; }
+    inline bool _isCellAir(GridIndex g) { return _materialGrid(g) == M_AIR; }
+    inline bool _isCellFluid(GridIndex g) { return _materialGrid(g) == M_FLUID; }
+    inline bool _isCellSolid(GridIndex g) { return _materialGrid(g) == M_SOLID; }
+
+    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (i == grid.width) { return grid(i - 1, j, k) == value; }
+        else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (j == grid.height) { return grid(i, j - 1, k) == value; }
+        else if (j > 0) { return grid(i, j, k) == value || grid(i, j - 1, k) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (k == grid.depth) { return grid(i, j, k - 1) == value; }
+        else if (k > 0) { return grid(i, j, k) == value || grid(i, j, k - 1) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+
+    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueU(g.i, g.j, g.k, value, grid);
+    }
+    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueV(g.i, g.j, g.k, value, grid);
+    }
+    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
+    }
 
     inline bool _isFaceBorderingMaterialU(int i, int j, int k, int mat) {
-        if (i == _i_voxels) { return getMaterial(i - 1, j, k) == mat; }
-        else if (i > 0) { return getMaterial(i, j, k) == mat || getMaterial(i - 1, j, k) == mat; }
-        else { return getMaterial(i, j, k) == mat; }
+        return _isFaceBorderingGridValueU(i, j, k, mat, _materialGrid);
     }
-
     inline bool _isFaceBorderingMaterialV(int i, int j, int k, int mat) {
-        if (j == _j_voxels) { return getMaterial(i, j - 1, k) == mat; }
-        else if (j > 0) { return getMaterial(i, j, k) == mat || getMaterial(i, j - 1, k) == mat; }
-        else {  return getMaterial(i, j, k) == mat; }
+        return _isFaceBorderingGridValueV(i, j, k, mat, _materialGrid);
     }
-
     inline bool _isFaceBorderingMaterialW(int i, int j, int k, int mat) {
-        if (k == _k_voxels) { return getMaterial(i, j, k - 1) == mat; }
-        else if (k > 0) { return getMaterial(i, j, k) == mat || getMaterial(i, j, k - 1) == mat; }
-        else {  return getMaterial(i, j, k) == mat; }
+        return _isFaceBorderingGridValueW(i, j, k, mat, _materialGrid);
     }
 
     inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer) {
-        if (i == _i_voxels) { return _layerGrid(i - 1, j, k) == layer; }
-        else if (i > 0) { return _layerGrid(i, j, k) == layer || _layerGrid(i - 1, j, k) == layer; }
-        else { return _layerGrid(i, j, k) == layer; }
+        return _isFaceBorderingGridValueU(i, j, k, layer, _layerGrid);
     }
-
     inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer) {
-        if (j == _j_voxels) { return _layerGrid(i, j - 1, k) == layer; }
-        else if (j > 0) {  return _layerGrid(i, j, k) == layer || _layerGrid(i, j - 1, k) == layer; }
-        else { return _layerGrid(i, j, k) == layer; }
+        return _isFaceBorderingGridValueV(i, j, k, layer, _layerGrid);
     }
-
     inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer) {
-        if (k == _k_voxels) { return _layerGrid(i, j, k - 1) == layer; }
-        else if (k > 0) {  return _layerGrid(i, j, k) == layer || _layerGrid(i, j, k - 1) == layer; }
-        else { return _layerGrid(i, j, k) == layer; }
+        return _isFaceBorderingGridValueW(i, j, k, layer, _layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexU(GridIndex g, int layer) {
+        return _isFaceBorderingGridValueU(g, layer, _layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexV(GridIndex g, int layer) {
+        return _isFaceBorderingGridValueV(g, layer, _layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexW(GridIndex g, int layer) {
+        return _isFaceBorderingGridValueW(g, layer, _layerGrid);
     }
 
     inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k) {
@@ -317,6 +333,9 @@ private:
     }
     inline bool _isCellIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
+    }
+    inline bool _isCellIndexInRange(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _i_voxels && g.j < _j_voxels && g.k < _k_voxels;
     }
     inline bool _isCellIndexOnBorder(int i, int j, int k) {
         return i == 0 || j == 0 || k == 0 ||

@@ -19,6 +19,9 @@ public:
     double U(int i, int j, int k);
     double V(int i, int j, int k);
     double W(int i, int j, int k);
+    double U(GridIndex g);
+    double V(GridIndex g);
+    double W(GridIndex g);
     double tempU(int i, int j, int k);
     double tempV(int i, int j, int k);
     double tempW(int i, int j, int k);
@@ -54,6 +57,15 @@ public:
     }
     inline bool isIndexInRangeW(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels + 1;
+    }
+    inline bool isIndexInRangeU(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels + 1 && g.j < j_voxels && g.k < k_voxels;
+    }
+    inline bool isIndexInRangeV(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels && g.j < j_voxels + 1 && g.k < k_voxels;
+    }
+    inline bool isIndexInRangeW(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels && g.j < j_voxels && g.k < k_voxels + 1;
     }
 
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);

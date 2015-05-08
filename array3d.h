@@ -92,9 +92,25 @@ public:
         return grid[k][j][i];
     }
 
+    T& operator()(GridIndex g)
+    {
+        bool isInRange = _isIndexInRange(g.i, g.j, g.k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
+        return grid[g.k][g.j][g.i];
+    }
+
     void set(int i, int j, int k, T value) {
         assert(_isIndexInRange(i, j, k));
         grid[k][j][i] = value;
+    }
+
+    void set(GridIndex g, T value) {
+        assert(_isIndexInRange(g.i, g.j, g.k));
+        grid[g.k][g.j][g.i] = value;
     }
 
     void add(int i, int j, int k, T value) {
@@ -102,8 +118,26 @@ public:
         grid[k][j][i] += value;
     }
 
+    void add(GridIndex g, T value) {
+        assert(_isIndexInRange(g.i, g.j, g.k));
+        grid[g.k][g.j][g.i] += value;
+    }
+
+
+    void setOutOfRangeValue() {
+        _isOutOfrangeValueSet = false;
+    }
+    void setOutOfRangeValue(T val) {
+        _outOfRangeValue = val;
+        _isOutOfRangeValueSet = true;
+    }
+
     inline bool isIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 || i < width || j < height || k < depth;
+    }
+
+    inline bool isIndexInRange(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 || g.i < width || g.j < height || g.k < depth;
     }
 
     int width = 0;
@@ -127,5 +161,8 @@ private:
     }
 
     T ***grid;
+
+    bool _isOutOfRangeValueSet = false;
+    T _outOfRangeValue;
 };
 
