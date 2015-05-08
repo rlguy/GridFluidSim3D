@@ -10,14 +10,15 @@ FluidSimulation::FluidSimulation() :
 {
 }
 
-FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) : 
-                                 _i_voxels(x_voxels), _j_voxels(y_voxels), _k_voxels(z_voxels), _dx(cell_size), 
-                                 _bodyForce(glm::vec3(0.0, 0.0, 0.0)),
-                                 _MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
-                                 _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
-                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
-                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
-                                 _implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size)
+FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) :
+                                _i_voxels(x_voxels), _j_voxels(y_voxels), _k_voxels(z_voxels), _dx(cell_size),
+                                _bodyForce(glm::vec3(0.0, 0.0, 0.0)),
+                                _MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
+                                _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
+                                _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
+                                _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
+                                _implicitFluidField(x_voxels*cell_size, y_voxels*cell_size, z_voxels*cell_size),
+                                _polygonizer(x_voxels, y_voxels, z_voxels, cell_size, &_implicitFluidField)
 {
 }
 
@@ -225,6 +226,15 @@ void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
+
+    // testing
+    glm::vec3 n;
+
+    //5.69354, 1.12925, 7.87488 5.69245, 1.10229, 7.87567
+    //_calculateSolidCellCollision(glm::vec3(5.69354, 1.12925, 7.87488),
+    //                             glm::vec3(5.69245, 1.10229, 7.87567), &n);
+
+    std::cout << "Test Finished\n";
 }
 
 glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
@@ -479,6 +489,8 @@ bool FluidSimulation::_findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *f
 glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0, 
                                                         glm::vec3 p1, 
                                                         glm::vec3 *normal) {
+    glm::vec3 op0 = p0; // debugging
+    glm::vec3 op1 = p1; // debugging
 
     // p0 might lie right on a boundary face. In this case, the cell index of 
     // p0 may be calculated as a solid cell
@@ -502,15 +514,16 @@ glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0,
     glm::vec3 vnorm = glm::normalize(p1 - p0);
     int numSteps = 1;
     while (!_isCellNeighbours(fi, fj, fk, si, sj, sk)) {
-        p0 = p1 - (float)(_dx - 10e-6)*vnorm;
+        glm::vec3 newp = p1 - (float)(_dx - 10e-6)*vnorm;
         int newi, newj, newk;
-        positionToGridIndex(p0, &newi, &newj, &newk);
+        positionToGridIndex(newp, &newi, &newj, &newk);
 
         if (_isCellSolid(newi, newj, newk)) {
-            p1 = p0;
+            p1 = newp;
             si = newi; sj = newj; sk = newk;
         }
         else {
+            p0 = newp;
             fi = newi, fj = newj, fk = newk;
         }
 
@@ -533,7 +546,7 @@ glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0,
         
         if (_isCellSolid(i, j, k)) {
             std::cout << "Error: Solid collision " <<
-                p0.x << " " << p0.y << " " << p0.z << " " << p1.x << " " << p1.y << " " << p1.z << std::endl;
+                op0.x << " " << op0.y << " " << op0.z << " " << op1.x << " " << op1.y << " " << op1.z << std::endl;
             std::cout << vnorm.x << " " << vnorm.y << " " << vnorm.z << std::endl;
             std::cout << fi << " " << fj << " " << fk << " " << si << " " << sj << " " << sk << std::endl;
         }
@@ -543,7 +556,7 @@ glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0,
     }
     else {
         std::cout << "Error: collision not found " << 
-            p0.x << " " << p0.y << " " << p0.z << " " << p1.x << " " << p1.y << " " << p1.z << std::endl;
+            op0.x << " " << op0.y << " " << op0.z << " " << op1.x << " " << op1.y << " " << op1.z << std::endl;
         std::cout << vnorm.x << " " << vnorm.y << " " << vnorm.z << std::endl;
         std::cout << fi << " " << fj << " " << fk << " " << si << " " << sj << " " << sk << std::endl;
         *normal = glm::vec3(0.0, 0.0, 0.0);

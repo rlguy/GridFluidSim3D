@@ -18,6 +18,7 @@
 #include "MACVelocityField.h"
 #include "array3d.h"
 #include "implicitfield.h"
+#include "polygonizer3d.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -355,6 +356,7 @@ private:
     Array3d<int> _layerGrid;
 
     ImplicitField _implicitFluidField;
+    Polygonizer3d _polygonizer;
 
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
