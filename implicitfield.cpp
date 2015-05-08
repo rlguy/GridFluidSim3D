@@ -5,8 +5,11 @@ ImplicitField::ImplicitField()
 {
 }
 
-ImplicitField::ImplicitField(double w, double h, double d) :
-                             width(w), height(h), depth(d)
+ImplicitField::ImplicitField(int w, int h, int d, double cell_size) :
+                             i_width(w), j_height(h), k_depth(d), dx(cell_size),
+                             width((double)w*cell_size), 
+                             height((double)h*cell_size), 
+                             depth((double)d*cell_size)
 {
 }
 

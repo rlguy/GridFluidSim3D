@@ -344,6 +344,21 @@ void FluidRenderer::drawLayerGrid() {
         }
     }
 
+}
+
+void FluidRenderer::drawSurfaceCells() {
+    std::vector<GridIndex> cells = fluidsim->getFluidSurfaceCells();
+
+    _setTransforms();
+
+    for (int i = 0; i < cells.size(); i++) {
+        GridIndex c = cells[i];
+        double x, y, z;
+        fluidsim->gridIndexToCellCenter(c.i, c.j, c.k, &x, &y, &z);
+        glm::vec3 p = glm::vec3(x, y, z);
+        _drawWireframeCube(p, 0.2*fluidsim->getCellSize());
+    }
+
     _unsetTransforms();
 }
 

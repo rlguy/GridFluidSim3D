@@ -17,7 +17,7 @@ class ImplicitField
 {
 public:
     ImplicitField();
-    ImplicitField(double width, double height, double depth);
+    ImplicitField(int i_width, int j_height, int k_depth, double cell_size);
     ~ImplicitField();
 
     void addPoint(double x, double y, double z, double r) { addPoint(glm::vec3(x, y, z), r); };
@@ -51,10 +51,7 @@ public:
 
     std::vector<ImplicitPointData> getImplicitPointData();
 
-    double width = 0;
-    double height = 0;
-    double depth = 0;
-
+    double width, height, depth;
 private:
 
     // cuboid has a field value of (surfaceThreshold + epsilon) within
@@ -71,6 +68,9 @@ private:
     };
 
     bool _isPointInsideCuboid(glm::vec3 p, Cuboid c);
+
+    int i_width, j_height, k_depth;
+    double dx = 1.0;
 
     std::vector<ImplicitPointPrimitive> points;
     std::vector<Cuboid> cuboids;

@@ -38,7 +38,7 @@ public:
     void drawMarkerParticles();
     void drawLayerGrid();
     void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
-
+    void drawSurfaceCells();
 private:
     int M_AIR = 0;
     int M_FLUID = 1;

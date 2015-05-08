@@ -102,6 +102,10 @@ public:
         grid[k][j][i] += value;
     }
 
+    inline bool isIndexInRange(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 || i < width || j < height || k < depth;
+    }
+
     int width = 0;
     int height = 0;
     int depth = 0;

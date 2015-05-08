@@ -80,6 +80,7 @@ public:
     void removeSolidCells(std::vector<glm::vec3> indices);
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
+    std::vector<GridIndex> getFluidSurfaceCells() { return _polygonizer.getSurfaceCells(); }
 
     void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
     glm::vec3 gridIndexToPosition(GridIndex g);
@@ -160,6 +161,7 @@ private:
     // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();
+    void _initializePolygonizer();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(int i, int j, int k);
 
