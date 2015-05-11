@@ -9,6 +9,23 @@
 #include "glm/glm.hpp"
 
 #pragma once
+
+struct Triangle {
+    glm::vec3 tri[3];
+
+    Triangle() {
+        tri[0] = glm::vec3(0.0, 0.0, 0.0);
+        tri[1] = glm::vec3(0.0, 0.0, 0.0);
+        tri[2] = glm::vec3(0.0, 0.0, 0.0);
+    }
+
+    Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
+        tri[0] = p1;
+        tri[1] = p2;
+        tri[2] = p3;
+    }
+};
+
 class Polygonizer3d
 {
 public:
@@ -22,15 +39,21 @@ public:
     void polygonizeSurface();
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
+    std::vector<Triangle> getSurfaceTriangles() { return _surfaceTriangles; }
 
 private:
     void _getCellVertexIndices(GridIndex g, GridIndex vertices[8]);
+    void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
     glm::vec3 _getVertexPosition(GridIndex v);
     double _getVertexFieldValue(GridIndex v);
     bool _isCellOutsideSurface(GridIndex g);
     bool _isCellInsideSurface(GridIndex g);
     bool _isCellOnSurface(GridIndex g);
     int _getCellSurfaceStatus(GridIndex g);
+    int _polygonizeCell(GridIndex g, double isolevel, Triangle triangles[5]);
+    int _calculateCubeIndex(GridIndex g, double isolevel);
+    void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, glm::vec3 vertList[12]);
+    glm::vec3 _vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2);
 
     std::vector<GridIndex> _findSurfaceCells();
     void _resetVertexValues();
@@ -44,6 +67,9 @@ private:
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _isize && g.j < _jsize && g.k < _ksize;
     }
 
+    static const int edgeTable[256];
+    static const int triTable[256][16];
+
     bool _isInitialized = false;
     int _isize, _jsize, _ksize;
     double _dx;
@@ -55,5 +81,6 @@ private:
     // cell indices that are fully or partially within the iso surface
     std::vector<GridIndex> _insideIndices;
     std::vector<GridIndex> _surfaceCells;
+    std::vector<Triangle> _surfaceTriangles;
 };
 
