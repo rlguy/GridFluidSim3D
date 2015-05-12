@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <sstream>
+#include <fstream>
 #include <assert.h>
 
 #include "implicitfield.h"
@@ -46,6 +48,7 @@ public:
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
     TriangleSurface getSurfaceTriangles() { return _surface; }
+    bool writeSurfaceToOBJ(std::string filename);
 
 private:
     struct EdgeGrid {
@@ -72,6 +75,7 @@ private:
                      isSetW(Array3d<bool>(i + 1, j + 1, k, false)) {}
     };
 
+    void _getVertexCellNeighbours(GridIndex v, GridIndex cells[8]);
     void _getCellVertexIndices(GridIndex g, GridIndex vertices[8]);
     void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
     glm::vec3 _getVertexPosition(GridIndex v);

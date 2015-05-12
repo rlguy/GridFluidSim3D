@@ -322,6 +322,56 @@ void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
     }
 }
 
+bool Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
+    std::ostringstream str;
+
+    str << "# OBJ file format with ext .obj" << std::endl;
+    str << "# vertex count = " << _surface.vertices.size() << std::endl;
+    str << "# face count = " << _surface.triangles.size() << std::endl;
+
+    glm::vec3 p;
+    for (int i = 0; i < _surface.vertices.size(); i++) {
+        p = _surface.vertices[i];
+        str << "v " << p.x << " " << p.y << " " << p.z << std::endl;
+    }
+
+    glm::vec3 n;
+    for (int i = 0; i < _surface.normals.size(); i++) {
+        n = _surface.normals[i];
+        str << "vn " << n.x << " " << n.y << " " << n.z << std::endl;
+    }
+
+    Triangle t;
+    int v1, v2, v3;
+    for (int i = 0; i < _surface.triangles.size(); i++) {
+        t = _surface.triangles[i];
+        v1 = t.tri[0] + 1;
+        v2 = t.tri[1] + 1;
+        v3 = t.tri[2] + 1;
+
+        str << "f " << v1 << "//" << v1 << " " << 
+                       v2 << "//" << v2 << " " <<
+                       v3 << "//" << v3 << std::endl;
+    }
+
+    std::ofstream out(filename);
+    out << str.str();
+    out.close();
+
+    return true;
+}
+
+void Polygonizer3d::_getVertexCellNeighbours(GridIndex v, GridIndex cells[8]) {
+    cells[0] = GridIndex(v.i,     v.j,     v.k);
+    cells[1] = GridIndex(v.i - 1, v.j,     v.k);
+    cells[2] = GridIndex(v.i,     v.j,     v.k - 1);
+    cells[3] = GridIndex(v.i - 1, v.j,     v.k - 1);
+    cells[4] = GridIndex(v.i,     v.j - 1, v.k);
+    cells[5] = GridIndex(v.i - 1, v.j - 1, v.k);
+    cells[6] = GridIndex(v.i,     v.j - 1, v.k - 1);
+    cells[7] = GridIndex(v.i - 1, v.j - 1, v.k - 1);
+}
+
 void Polygonizer3d::_getCellVertexIndices(GridIndex g, GridIndex vertices[8]){
     vertices[0] = GridIndex(g.i, g.j,         g.k);
     vertices[1] = GridIndex(g.i + 1, g.j,     g.k);
@@ -345,7 +395,6 @@ glm::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
     return (float)_dx*glm::vec3((float)g.i, (float)g.j, (float)g.k);
 }
-
 
 double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
@@ -452,7 +501,7 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
     std::vector<GridIndex> surfaceCells;
     Array3d<bool> isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
-    for (int i = _insideIndices.size() - 1; i >= 0; i--) {
+    for (int i = 0; i < _insideIndices.size(); i++) {
         GridIndex cell = _insideIndices[i];
         
         if (isCellDone(cell)) {
@@ -467,9 +516,9 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
                 break;
             }
 
-            // march left until cell surface is found or index is out of range
+            // march +z until cell surface is found or index is out of range
             isCellDone.set(cell, true);
-            cell = GridIndex(cell.i - 1, cell.j, cell.k);
+            cell = GridIndex(cell.i, cell.j, cell.k + 1);
         }
     }
 
@@ -477,18 +526,18 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
 }
 
 int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
-    GridIndex vertices[8];
-    _getCellVertexIndices(g, vertices);
+    GridIndex vs[8];
+    _getCellVertexIndices(g, vs);
 
     int cubeIndex = 0;
-    if (_getVertexFieldValue(vertices[0]) > isolevel) { cubeIndex |= 1; }
-    if (_getVertexFieldValue(vertices[1]) > isolevel) { cubeIndex |= 2; }
-    if (_getVertexFieldValue(vertices[2]) > isolevel) { cubeIndex |= 4; }
-    if (_getVertexFieldValue(vertices[3]) > isolevel) { cubeIndex |= 8; }
-    if (_getVertexFieldValue(vertices[4]) > isolevel) { cubeIndex |= 16; }
-    if (_getVertexFieldValue(vertices[5]) > isolevel) { cubeIndex |= 32; }
-    if (_getVertexFieldValue(vertices[6]) > isolevel) { cubeIndex |= 64; }
-    if (_getVertexFieldValue(vertices[7]) > isolevel) { cubeIndex |= 128; }
+    if (_getVertexFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
+    if (_getVertexFieldValue(vs[1]) > isolevel) { cubeIndex |= 2; }
+    if (_getVertexFieldValue(vs[2]) > isolevel) { cubeIndex |= 4; }
+    if (_getVertexFieldValue(vs[3]) > isolevel) { cubeIndex |= 8; }
+    if (_getVertexFieldValue(vs[4]) > isolevel) { cubeIndex |= 16; }
+    if (_getVertexFieldValue(vs[5]) > isolevel) { cubeIndex |= 32; }
+    if (_getVertexFieldValue(vs[6]) > isolevel) { cubeIndex |= 64; }
+    if (_getVertexFieldValue(vs[7]) > isolevel) { cubeIndex |= 128; }
 
     return cubeIndex;
 }

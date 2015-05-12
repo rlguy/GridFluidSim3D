@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "implicitpointprimitive.h"
+#include "array3d.h"
 #include "glm/glm.hpp"
 
 struct ImplicitPointData {
@@ -40,6 +41,16 @@ public:
     void setSurfaceThreshold(double t) { surfaceThreshold = t; }
     void setRicciBlend(double k) { assert(k > 0.0); ricciBlend = k; }
 
+    void setMaterialGrid(Array3d<int> matGrid) {
+        materialGrid = matGrid;
+        isMaterialGridSet = true;
+    }
+
+    void setMaterialGrid() {
+        materialGrid = Array3d<int>();
+        isMaterialGridSet = false;
+    }
+
     void clear();
 
     double getFieldValue(double x, double y, double z) { getFieldValue(glm::vec3(x, y, z)); }
@@ -68,6 +79,8 @@ private:
     };
 
     bool _isPointInsideCuboid(glm::vec3 p, Cuboid c);
+    bool _isPointNearSolid(glm::vec3 p);
+    void _positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
 
     int i_width, j_height, k_depth;
     double dx = 1.0;
@@ -78,5 +91,7 @@ private:
     double surfaceThreshold = 0.5;
     double ricciBlend = 1.0;
 
+    Array3d<int> materialGrid;
+    bool isMaterialGridSet = false;
 };
 

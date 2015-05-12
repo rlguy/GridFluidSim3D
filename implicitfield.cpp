@@ -29,8 +29,61 @@ void ImplicitField::clear() {
     points.clear();
 }
 
+void ImplicitField::_positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
+    double invdx = 1.0 / dx;
+    *i = (int)floor(p.x*invdx);
+    *j = (int)floor(p.y*invdx);
+    *k = (int)floor(p.z*invdx);
+}
+
+bool ImplicitField::_isPointNearSolid(glm::vec3 p) {
+    double eps = 10e-6;
+
+    glm::vec3 x = glm::vec3(eps, 0.0, 0.0);
+    glm::vec3 y = glm::vec3(0.0, eps, 0.0);
+    glm::vec3 z = glm::vec3(0.0, 0.0, eps);
+
+    glm::vec3 points[26];
+    points[0] = p - x;
+    points[1] = p + x;
+    points[2] = p - y;
+    points[3] = p + y;
+    points[4] = p - z;
+    points[5] = p + z;
+    points[6] = p - x - y;
+    points[7] = p - x + y;
+    points[8] = p + x - y;
+    points[9] = p + x + y;
+    points[10] = p - x - z;
+    points[11] = p - x + z;
+    points[12] = p + x - z;
+    points[13] = p + x + z;
+    points[14] = p - y - z;
+    points[15] = p - y + z;
+    points[16] = p + y - z;
+    points[17] = p + y + z;
+    points[18] = p - x - y - z;
+    points[19] = p - x - y + z;
+    points[20] = p - x + y - z;
+    points[21] = p - x + y + z;
+    points[22] = p + x - y - z;
+    points[23] = p + x - y + z;
+    points[24] = p + x + y - z;
+    points[25] = p + x + y + z;
+    
+    int i, j, k;
+    for (int idx = 0; idx < 26; idx++) {
+        _positionToGridIndex(points[idx], &i, &j, &k);
+        if (materialGrid(i, j, k) == 2) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 double ImplicitField::getFieldValue(glm::vec3 p) {
-    double eps = 10e-3;
+    double eps = 10e-6;
     bool isBlending = fabs(ricciBlend - 1.0) > eps;
     double sum = 0.0;
 
@@ -65,6 +118,10 @@ double ImplicitField::getFieldValue(glm::vec3 p) {
         sum = 0.0;
     } else if (sum > 1.0) {
         sum = 1.0;
+    }
+
+    if (isMaterialGridSet && sum > surfaceThreshold && _isPointNearSolid(p)) {
+        return surfaceThreshold - eps;
     }
 
     return sum;

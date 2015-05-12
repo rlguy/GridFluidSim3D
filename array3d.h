@@ -44,6 +44,11 @@ public:
                 }
             }
         }
+
+        if (obj.isOutOfRangeValueSet()) {
+            _outOfRangeValue = obj.getOutOfRangeValue();
+            _isOutOfRangeValueSet = true;
+        }
     }
 
     Array3d operator=(Array3d & rhs)
@@ -60,6 +65,11 @@ public:
                     set(i, j, k, rhs(i, j, k));
                 }
             }
+        }
+
+        if (rhs.isOutOfRangeValueSet()) {
+            _outOfRangeValue = rhs.getOutOfRangeValue();
+            _isOutOfRangeValueSet = true;
         }
 
         return *this;
@@ -88,7 +98,12 @@ public:
 
     T& operator()(int i, int j, int k)
     {
-        assert(_isIndexInRange(i, j, k));
+        bool isInRange = _isIndexInRange(i, j, k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
         return grid[k][j][i];
     }
 
@@ -130,6 +145,13 @@ public:
     void setOutOfRangeValue(T val) {
         _outOfRangeValue = val;
         _isOutOfRangeValueSet = true;
+    }
+
+    bool isOutOfRangeValueSet() {
+        return _isOutOfRangeValueSet;
+    }
+    T getOutOfRangeValue() {
+        return _outOfRangeValue;
     }
 
     inline bool isIndexInRange(int i, int j, int k) {
