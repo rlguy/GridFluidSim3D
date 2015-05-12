@@ -1598,6 +1598,9 @@ void FluidSimulation::_stepFluid(double dt) {
         floor(timer2.getTime()*10000.0) / 10000.0 << "s" << std::endl;
     std::cout << "\tNum Fluid Cells: " << _fluidCellIndices.size() << std::endl;
 
+    _polygonizer.setInsideCellIndices(_fluidCellIndices);
+    _polygonizer.polygonizeSurface();
+
     timer3.start();
     _extrapolateFluidVelocities();
     timer3.stop();

@@ -363,6 +363,12 @@ void Polygonizer3d::_resetVertexValues() {
     _isVertexSet.fill(false);
 }
 
+void Polygonizer3d::_resetTriangleSurface() {
+    _surface.vertices.clear();
+    _surface.normals.clear();
+    _surface.triangles.clear();
+}
+
 bool Polygonizer3d::_isCellOutsideSurface(GridIndex g) {
     return _getCellSurfaceStatus(g) == 1;
 }
@@ -441,6 +447,8 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
 }
 
 std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
+    _resetVertexValues();
+
     std::vector<GridIndex> surfaceCells;
     Array3d<bool> isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
@@ -498,7 +506,7 @@ glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 
 }
 
 void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeIndex, 
-                                         glm::vec3 vertexList[12]) {
+                                         int vertexList[12], EdgeGrid &edges) {
     GridIndex vertices[8];
     double vertexValues[8];
     glm::vec3 vertexPositions[8];
@@ -510,91 +518,198 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
 
     if (edgeTable[cubeIndex] & 1) {
-        vertexList[0] = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
-                                                   vertexValues[0],    vertexValues[1]);
+        if (!edges.isSetU(vertices[0])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
+                                                     vertexValues[0],    vertexValues[1]);
+            _surface.vertices.push_back(v);
+            edges.U.set(vertices[0], _surface.vertices.size() - 1);
+            edges.isSetU.set(vertices[0], true);
+        }
+        vertexList[0] = edges.U(vertices[0]);
     }
     if (edgeTable[cubeIndex] & 2) {
-        vertexList[1] = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2],
-                                                   vertexValues[1],    vertexValues[2]);
+        if (!edges.isSetW(vertices[1])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2], 
+                                                     vertexValues[1],    vertexValues[2]);
+            _surface.vertices.push_back(v);
+            edges.W.set(vertices[1], _surface.vertices.size() - 1);
+            edges.isSetW.set(vertices[1], true);
+        }
+        vertexList[1] = edges.W(vertices[1]);
     }
     if (edgeTable[cubeIndex] & 4) {
-        vertexList[2] = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3],
-                                                   vertexValues[2],    vertexValues[3]);
+        if (!edges.isSetU(vertices[3])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3], 
+                                                     vertexValues[2],    vertexValues[3]);
+            _surface.vertices.push_back(v);
+            edges.U.set(vertices[3], _surface.vertices.size() - 1);
+            edges.isSetU.set(vertices[3], true);
+        }
+        vertexList[2] = edges.U(vertices[3]);
     }
     if (edgeTable[cubeIndex] & 8) {
-        vertexList[3] = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0],
-                                                   vertexValues[3],    vertexValues[0]);
+        if (!edges.isSetW(vertices[0])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0], 
+                                                     vertexValues[3],    vertexValues[0]);
+            _surface.vertices.push_back(v);
+            edges.W.set(vertices[0], _surface.vertices.size() - 1);
+            edges.isSetW.set(vertices[0], true);
+        }
+        vertexList[3] = edges.W(vertices[0]);
     }
     if (edgeTable[cubeIndex] & 16) {
-        vertexList[4] = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5],
-                                                   vertexValues[4],    vertexValues[5]);
+        if (!edges.isSetU(vertices[4])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5], 
+                                                     vertexValues[4],    vertexValues[5]);
+            _surface.vertices.push_back(v);
+            edges.U.set(vertices[4], _surface.vertices.size() - 1);
+            edges.isSetU.set(vertices[4], true);
+        }
+        vertexList[4] = edges.U(vertices[4]);
     }
     if (edgeTable[cubeIndex] & 32) {
-        vertexList[5] = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6],
-                                                   vertexValues[5],    vertexValues[6]);
+        if (!edges.isSetW(vertices[5])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6], 
+                                                     vertexValues[5],    vertexValues[6]);
+            _surface.vertices.push_back(v);
+            edges.W.set(vertices[5], _surface.vertices.size() - 1);
+            edges.isSetW.set(vertices[5], true);
+        }
+        vertexList[5] = edges.W(vertices[5]);
     }
     if (edgeTable[cubeIndex] & 64) {
-        vertexList[6] = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7],
-                                                   vertexValues[6],    vertexValues[7]);
+        if (!edges.isSetU(vertices[7])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7], 
+                                                     vertexValues[6],    vertexValues[7]);
+            _surface.vertices.push_back(v);
+            edges.U.set(vertices[7], _surface.vertices.size() - 1);
+            edges.isSetU.set(vertices[7], true);
+        }
+        vertexList[6] = edges.U(vertices[7]);
     }
     if (edgeTable[cubeIndex] & 128) {
-        vertexList[7] = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4],
-                                                   vertexValues[7],    vertexValues[4]);
+        if (!edges.isSetW(vertices[4])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4], 
+                                                     vertexValues[7],    vertexValues[4]);
+            _surface.vertices.push_back(v);
+            edges.W.set(vertices[4], _surface.vertices.size() - 1);
+            edges.isSetW.set(vertices[4], true);
+        }
+        vertexList[7] = edges.W(vertices[4]);
     }
     if (edgeTable[cubeIndex] & 256) {
-        vertexList[8] = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4],
-                                                   vertexValues[0],    vertexValues[4]);
+        if (!edges.isSetV(vertices[0])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4], 
+                                                     vertexValues[0],    vertexValues[4]);
+            _surface.vertices.push_back(v);
+            edges.V.set(vertices[0], _surface.vertices.size() - 1);
+            edges.isSetV.set(vertices[0], true);
+        }
+        vertexList[8] = edges.V(vertices[0]);
     }
     if (edgeTable[cubeIndex] & 512) {
-        vertexList[9] = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5],
-                                                   vertexValues[1],    vertexValues[5]);
+        if (!edges.isSetV(vertices[1])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5], 
+                                                     vertexValues[1],    vertexValues[5]);
+            _surface.vertices.push_back(v);
+            edges.V.set(vertices[1], _surface.vertices.size() - 1);
+            edges.isSetV.set(vertices[1], true);
+        }
+        vertexList[9] = edges.V(vertices[1]);
     }
     if (edgeTable[cubeIndex] & 1024) {
-        vertexList[10] = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6],
-                                                    vertexValues[2],    vertexValues[6]);
+        if (!edges.isSetV(vertices[2])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6], 
+                                                     vertexValues[2],    vertexValues[6]);
+            _surface.vertices.push_back(v);
+            edges.V.set(vertices[2], _surface.vertices.size() - 1);
+            edges.isSetV.set(vertices[2], true);
+        }
+        vertexList[10] = edges.V(vertices[2]);
     }
     if (edgeTable[cubeIndex] & 2048) {
-        vertexList[11] = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7],
-                                                    vertexValues[3],    vertexValues[7]);
+        if (!edges.isSetV(vertices[3])) {
+            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7], 
+                                                     vertexValues[3],    vertexValues[7]);
+            _surface.vertices.push_back(v);
+            edges.V.set(vertices[3], _surface.vertices.size() - 1);
+            edges.isSetV.set(vertices[3], true);
+        }
+        vertexList[11] = edges.V(vertices[3]);
     }
 }
 
 // method of polygonizing a cell is adapted from:
 // http://paulbourke.net/geometry/polygonise/
-int Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, Triangle tris[5]) {
+void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges) {
     int cubeIndex = _calculateCubeIndex(g, isolevel);
 
     /* Cube is entirely in/out of the surface */
     if (edgeTable[cubeIndex] == 0) {
-        return(0);
+        return;
     }
 
-    glm::vec3 vertexList[12];
-    _calculateVertexList(g, isolevel, cubeIndex, vertexList);
+    int vertexList[12];
+    _calculateVertexList(g, isolevel, cubeIndex, vertexList, edges);
 
-    int numTris = 0;
     for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
-        tris[numTris] = Triangle(vertexList[triTable[cubeIndex][i]],
-                                 vertexList[triTable[cubeIndex][i + 1]], 
-                                 vertexList[triTable[cubeIndex][i + 2]]);
-        numTris++;
+        Triangle t = Triangle(vertexList[triTable[cubeIndex][i]],
+                              vertexList[triTable[cubeIndex][i + 1]],
+                              vertexList[triTable[cubeIndex][i + 2]]);
+        _surface.triangles.push_back(t);
+    }
+}
+
+void Polygonizer3d::_calculateSurfaceTriangles() {
+    _resetTriangleSurface();
+    EdgeGrid edges(_isize, _jsize, _ksize);
+    double isolevel = _field->getSurfaceThreshold();
+    for (int i = 0; i < _surfaceCells.size(); i++) {
+        _polygonizeCell(_surfaceCells[i], isolevel, edges);
+    }
+}
+
+void Polygonizer3d::_calculateVertexNormals() {
+    std::vector <std::vector<int> > vertexTriangles;
+    vertexTriangles.reserve(_surface.vertices.size());
+
+    for (int i = 0; i < _surface.vertices.size(); i++) {
+        std::vector<int> triangles;
+        triangles.reserve(9);  // I think a vertex can have a max of 9 adjacent triangles
+                               // todo: find out exact numbe
+
+        vertexTriangles.push_back(triangles);
     }
 
-    return numTris;
+    std::vector<glm::vec3> normals;
+    normals.reserve(_surface.triangles.size());
+    Triangle t;
+    glm::vec3 v1, v2;
+    for (int i = 0; i < _surface.triangles.size(); i++) {
+        t = _surface.triangles[i];
+        vertexTriangles[t.tri[0]].push_back(i);
+        vertexTriangles[t.tri[1]].push_back(i);
+        vertexTriangles[t.tri[2]].push_back(i);
+
+        v1 = _surface.vertices[t.tri[1]] - _surface.vertices[t.tri[0]];
+        v2 = _surface.vertices[t.tri[2]] - _surface.vertices[t.tri[0]];
+        normals.push_back(glm::normalize(glm::cross(v1, v2)));
+    }
+
+    glm::vec3 n;
+    for (int i = 0; i < vertexTriangles.size(); i++) {
+        n = glm::vec3(0.0, 0.0, 0.0);
+        for (int j = 0; j < vertexTriangles[i].size(); j++) {
+            n += normals[vertexTriangles[i][j]];
+        }
+
+        n = glm::normalize(n / (float)vertexTriangles[i].size());
+        _surface.normals.push_back(n);
+    }
 }
 
 void Polygonizer3d::polygonizeSurface() {
-    _resetVertexValues();
     _surfaceCells = _findSurfaceCells();
-
-    _surfaceTriangles.clear();
-    Triangle tris[5];
-    double isolevel = _field->getSurfaceThreshold();
-    for (int i = 0; i < _surfaceCells.size(); i++) {
-        int n = _polygonizeCell(_surfaceCells[i], isolevel, tris);
-
-        for (int j = 0; j < n; j++) {
-            _surfaceTriangles.push_back(tris[j]);
-        }
-    }
+    _calculateSurfaceTriangles();
+    _calculateVertexNormals();
 }

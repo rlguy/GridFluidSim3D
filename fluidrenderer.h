@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "fluidsimulation.h"
+#include "polygonizer3d.h"
 #include "ImplicitField.h"
 #include "Array3d.h"
 #include "game/camera/camera3d.h"
@@ -39,6 +40,7 @@ public:
     void drawLayerGrid();
     void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
     void drawSurfaceCells();
+    void drawSurfaceTriangles();
 private:
     int M_AIR = 0;
     int M_FLUID = 1;

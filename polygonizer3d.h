@@ -11,19 +11,25 @@
 #pragma once
 
 struct Triangle {
-    glm::vec3 tri[3];
+    int tri[3];     // indices to a vertex
 
     Triangle() {
-        tri[0] = glm::vec3(0.0, 0.0, 0.0);
-        tri[1] = glm::vec3(0.0, 0.0, 0.0);
-        tri[2] = glm::vec3(0.0, 0.0, 0.0);
+        tri[0] = 0;
+        tri[1] = 0;
+        tri[2] = 0;
     }
 
-    Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
+    Triangle(int p1, int p2, int p3) {
         tri[0] = p1;
         tri[1] = p2;
         tri[2] = p3;
     }
+};
+
+struct TriangleSurface {
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<Triangle> triangles;
 };
 
 class Polygonizer3d
@@ -39,9 +45,33 @@ public:
     void polygonizeSurface();
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
-    std::vector<Triangle> getSurfaceTriangles() { return _surfaceTriangles; }
+    TriangleSurface getSurfaceTriangles() { return _surface; }
 
 private:
+    struct EdgeGrid {
+        Array3d<int> U;         // store index to vertex
+        Array3d<int> V;
+        Array3d<int> W;
+        Array3d<bool> isSetU;
+        Array3d<bool> isSetV;
+        Array3d<bool> isSetW;
+
+        EdgeGrid() : U(Array3d<int>(0, 0, 0)),
+                     V(Array3d<int>(0, 0, 0)),
+                     W(Array3d<int>(0, 0, 0)),
+                     isSetU(Array3d<bool>(0, 0, 0)),
+                     isSetV(Array3d<bool>(0, 0, 0)), 
+                     isSetW(Array3d<bool>(0, 0, 0)) {}
+
+        EdgeGrid(int i, int j, int k) : 
+                     U(Array3d<int>(i, j + 1, k + 1)),
+                     V(Array3d<int>(i + 1, j, k + 1)),
+                     W(Array3d<int>(i + 1, j + 1, k)),
+                     isSetU(Array3d<bool>(i, j + 1, k + 1, false)),
+                     isSetV(Array3d<bool>(i + 1, j, k + 1, false)),
+                     isSetW(Array3d<bool>(i + 1, j + 1, k, false)) {}
+    };
+
     void _getCellVertexIndices(GridIndex g, GridIndex vertices[8]);
     void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
     glm::vec3 _getVertexPosition(GridIndex v);
@@ -50,13 +80,16 @@ private:
     bool _isCellInsideSurface(GridIndex g);
     bool _isCellOnSurface(GridIndex g);
     int _getCellSurfaceStatus(GridIndex g);
-    int _polygonizeCell(GridIndex g, double isolevel, Triangle triangles[5]);
+    void _polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges);
     int _calculateCubeIndex(GridIndex g, double isolevel);
-    void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, glm::vec3 vertList[12]);
+    void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, int vertList[12], EdgeGrid &edges);
     glm::vec3 _vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2);
+    void _calculateSurfaceTriangles();
+    void _calculateVertexNormals();
 
     std::vector<GridIndex> _findSurfaceCells();
     void _resetVertexValues();
+    void _resetTriangleSurface();
     std::vector<GridIndex> _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
     void _getNeighbourGridIndices6(GridIndex cell, GridIndex n[6]);
 
@@ -81,6 +114,6 @@ private:
     // cell indices that are fully or partially within the iso surface
     std::vector<GridIndex> _insideIndices;
     std::vector<GridIndex> _surfaceCells;
-    std::vector<Triangle> _surfaceTriangles;
+    TriangleSurface _surface;
 };
 
