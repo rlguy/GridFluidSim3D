@@ -19,6 +19,7 @@
 #include "array3d.h"
 #include "implicitfield.h"
 #include "polygonizer3d.h"
+#include "logfile.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -383,5 +384,10 @@ private:
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
     std::unordered_map<unsigned long long, int> _GridIndexToEigenVectorXdIndex;
+
+    LogFile _logfile;
+    double _simulationTime = 0;
+    double _realTime = 0;
+
 };
 

@@ -20,6 +20,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size)                         
 {
     _materialGrid.setOutOfRangeValue(M_SOLID);
+    _logfile = LogFile();
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -1356,7 +1357,7 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
         residualVector -= alpha*auxillaryVector;
 
         if (fabs(residualVector.maxCoeff()) < tol) {
-            std::cout << "\tCG Iterations: " << iterationNumber << std::endl;
+            _logfile.log("CG Iterations: ", iterationNumber, 1);
             return pressureVector;
         }
 
@@ -1369,13 +1370,13 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
         iterationNumber++;
 
         if (iterationNumber % 10 == 0) {
-        std::cout << "\tIteration #: " << iterationNumber << "\tError:  " <<
-            fabs(residualVector.maxCoeff()) << std::endl;
+            std::cout << "\tIteration #: " << iterationNumber <<
+                         "\tEstimated Error: " << fabs(residualVector.maxCoeff()) << std::endl;
         }
     }
 
-    std::cout << "\tIterations limit reached.\t Error: " << 
-        fabs(residualVector.maxCoeff()) << std::endl;
+    _logfile.log("Iterations limit reached.\t Estimated error : ",
+                 fabs(residualVector.maxCoeff()), 1);
 
     return pressureVector;
 }
@@ -1573,6 +1574,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
 }
 
 void FluidSimulation::_stepFluid(double dt) {
+    _simulationTime += dt;
 
     StopWatch timer1 = StopWatch();
     StopWatch timer2 = StopWatch();
@@ -1583,10 +1585,12 @@ void FluidSimulation::_stepFluid(double dt) {
     StopWatch timer7 = StopWatch();
     StopWatch timer8 = StopWatch();
 
-    std::cout << "--------------------------------------------------" << std::endl;
-    std::cout << "Frame: " << _currentFrame <<
-                 "\tStep time: " << floor(dt*10000.0) / 10000.0 << "s" << std::endl;
-    std::cout << std::endl;
+    _logfile.separator();
+    _logfile.timestamp();
+    _logfile.newline();
+    _logfile.log("Frame: ", _currentFrame, 0);
+    _logfile.log("StepTime: ", dt, 4);
+    _logfile.newline();
 
     timer1.start();
 
@@ -1594,9 +1598,8 @@ void FluidSimulation::_stepFluid(double dt) {
     _updateFluidCells();
     timer2.stop();
 
-    std::cout << "Update Fluid Cells:          \t" << 
-        floor(timer2.getTime()*10000.0) / 10000.0 << "s" << std::endl;
-    std::cout << "\tNum Fluid Cells: " << _fluidCellIndices.size() << std::endl;
+    _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
+    _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
 
     _implicitFluidField.setMaterialGrid(_materialGrid);
     _polygonizer.setInsideCellIndices(_fluidCellIndices);
@@ -1607,49 +1610,45 @@ void FluidSimulation::_stepFluid(double dt) {
     _extrapolateFluidVelocities();
     timer3.stop();
 
-    std::cout << "Extrapolate Fluid Velocities:\t" << 
-        floor(timer3.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Extrapolate Fluid Velocities:\t", timer3.getTime(), 4);
 
     timer4.start();
     _applyBodyForcesToVelocityField(dt);
     timer4.stop();
 
-    std::cout << "Apply Body Forces:           \t" << 
-        floor(timer4.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Apply Body Forces:           \t", timer4.getTime(), 4);
 
     timer5.start();
     _advectVelocityField(dt);
     timer5.stop();
 
-    std::cout << "Advect Velocity Field:       \t" << 
-        floor(timer5.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Advect Velocity Field:       \t", timer5.getTime(), 4);
 
     timer6.start();
     _updatePressureGrid(dt);
     timer6.stop();
 
-    std::cout << "Update Pressure Grid:        \t" << 
-        floor(timer6.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Update Pressure Grid:        \t", timer6.getTime(), 4);
 
     timer7.start();
     _applyPressureToVelocityField(dt);
     timer7.stop();
 
-    std::cout << "Apply Pressure:              \t" << 
-        floor(timer7.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Apply Pressure:              \t", timer7.getTime(), 4);
 
     timer8.start();
     _advanceMarkerParticles(dt);
     timer8.stop();
 
-    std::cout << "Advance Marker Particles:    \t" << 
-        floor(timer8.getTime()*10000.0) / 10000.0 << "s" << std::endl;
+    _logfile.log("Advance Marker Particles:    \t", timer8.getTime(), 4);
 
     timer1.stop();
 
     double totalTime = floor(timer1.getTime()*1000.0) / 1000.0;
-    std::cout << "Simulation Time:           \t" << totalTime << "s" << std::endl;
-    std::cout << std::endl;
+    _realTime += totalTime;
+    _logfile.newline();
+    _logfile.log("Update Time:           \t", totalTime, 3, 1);
+    _logfile.newline();
 
     double p2 = floor(1000 * timer2.getTime() / totalTime) / 10.0;
     double p3 = floor(1000 * timer3.getTime() / totalTime) / 10.0;
@@ -1659,17 +1658,20 @@ void FluidSimulation::_stepFluid(double dt) {
     double p7 = floor(1000 * timer7.getTime() / totalTime) / 10.0;
     double p8 = floor(1000 * timer8.getTime() / totalTime) / 10.0;
 
-    std::cout << "Percentage Breakdown" << std::endl << std::endl;
-    std::cout << "Update Fluid Cells:          \t" << p2 << "%" << std::endl;
-    std::cout << "Extrapolate Fluid Velocities:\t" << p3 << "%" << std::endl;
-    std::cout << "Apply Body Forces:           \t" << p4 << "%" << std::endl;
-    std::cout << "Advect Velocity Field:       \t" << p5 << "%" << std::endl;
-    std::cout << "Update Pressure Grid:        \t" << p6 << "%" << std::endl;
-    std::cout << "Apply Pressure:              \t" << p7 << "%" << std::endl;
-    std::cout << "Advance Marker Particles:    \t" << p8 << "%" << std::endl;
-    std::cout << std::endl;
+    _logfile.log("---Percentage Breakdown---", "");
+    _logfile.log("Update Fluid Cells:          \t", p2, 3);
+    _logfile.log("Extrapolate Fluid Velocities:\t", p3, 3);
+    _logfile.log("Apply Body Forces:           \t", p4, 3);
+    _logfile.log("Advect Velocity Field:       \t", p5, 3);
+    _logfile.log("Update Pressure Grid:        \t", p6, 3);
+    _logfile.log("Apply Pressure:              \t", p7, 3);
+    _logfile.log("Advance Marker Particles:    \t", p8, 3);
+    _logfile.newline();
 
-
+    _logfile.log("Simulation time: ", _simulationTime, 3);
+    _logfile.log("Real time: ", _realTime, 2);
+    _logfile.newline();
+    _logfile.write();
 }
 
 void FluidSimulation::update(double dt) {
