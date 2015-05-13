@@ -19,6 +19,7 @@
 #include "array3d.h"
 #include "implicitfield.h"
 #include "polygonizer3d.h"
+#include "triangleMesh.h"
 #include "logfile.h"
 #include "glm/glm.hpp"
 
@@ -78,7 +79,7 @@ public:
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
     std::vector<GridIndex> getFluidSurfaceCells() { return _polygonizer.getSurfaceCells(); }
-    TriangleSurface getFluidSurfaceTriangles() { return _polygonizer.getSurfaceTriangles(); }
+    TriangleMesh getFluidSurfaceTriangles() { return _polygonizer.getSurfaceTriangles(); }
 
     void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
     glm::vec3 gridIndexToPosition(GridIndex g);

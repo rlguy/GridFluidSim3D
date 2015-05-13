@@ -8,31 +8,10 @@
 
 #include "implicitfield.h"
 #include "array3d.h"
+#include "trianglemesh.h"
 #include "glm/glm.hpp"
 
 #pragma once
-
-struct Triangle {
-    int tri[3];     // indices to a vertex
-
-    Triangle() {
-        tri[0] = 0;
-        tri[1] = 0;
-        tri[2] = 0;
-    }
-
-    Triangle(int p1, int p2, int p3) {
-        tri[0] = p1;
-        tri[1] = p2;
-        tri[2] = p3;
-    }
-};
-
-struct TriangleSurface {
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec3> normals;
-    std::vector<Triangle> triangles;
-};
 
 class Polygonizer3d
 {
@@ -47,8 +26,8 @@ public:
     void polygonizeSurface();
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
-    TriangleSurface getSurfaceTriangles() { return _surface; }
-    bool writeSurfaceToOBJ(std::string filename);
+    TriangleMesh getSurfaceTriangles() { return _surface; }
+    void writeSurfaceToOBJ(std::string filename);
 
 private:
     struct EdgeGrid {
@@ -89,11 +68,9 @@ private:
     void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, int vertList[12], EdgeGrid &edges);
     glm::vec3 _vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2);
     void _calculateSurfaceTriangles();
-    void _calculateVertexNormals();
 
     std::vector<GridIndex> _findSurfaceCells();
     void _resetVertexValues();
-    void _resetTriangleSurface();
     std::vector<GridIndex> _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
     void _getNeighbourGridIndices6(GridIndex cell, GridIndex n[6]);
 
@@ -118,6 +95,6 @@ private:
     // cell indices that are fully or partially within the iso surface
     std::vector<GridIndex> _insideIndices;
     std::vector<GridIndex> _surfaceCells;
-    TriangleSurface _surface;
+    TriangleMesh _surface;
 };
 

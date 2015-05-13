@@ -322,43 +322,8 @@ void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
     }
 }
 
-bool Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
-    std::ostringstream str;
-
-    str << "# OBJ file format with ext .obj" << std::endl;
-    str << "# vertex count = " << _surface.vertices.size() << std::endl;
-    str << "# face count = " << _surface.triangles.size() << std::endl;
-
-    glm::vec3 p;
-    for (int i = 0; i < _surface.vertices.size(); i++) {
-        p = _surface.vertices[i];
-        str << "v " << p.x << " " << p.y << " " << p.z << std::endl;
-    }
-
-    glm::vec3 n;
-    for (int i = 0; i < _surface.normals.size(); i++) {
-        n = _surface.normals[i];
-        str << "vn " << n.x << " " << n.y << " " << n.z << std::endl;
-    }
-
-    Triangle t;
-    int v1, v2, v3;
-    for (int i = 0; i < _surface.triangles.size(); i++) {
-        t = _surface.triangles[i];
-        v1 = t.tri[0] + 1;
-        v2 = t.tri[1] + 1;
-        v3 = t.tri[2] + 1;
-
-        str << "f " << v1 << "//" << v1 << " " << 
-                       v2 << "//" << v2 << " " <<
-                       v3 << "//" << v3 << std::endl;
-    }
-
-    std::ofstream out(filename);
-    out << str.str();
-    out.close();
-
-    return true;
+void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
+    _surface.writeMeshToOBJ(filename);
 }
 
 void Polygonizer3d::_getVertexCellNeighbours(GridIndex v, GridIndex cells[8]) {
@@ -410,12 +375,6 @@ double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
 void Polygonizer3d::_resetVertexValues() {
     _vertexValues.fill(0.0);
     _isVertexSet.fill(false);
-}
-
-void Polygonizer3d::_resetTriangleSurface() {
-    _surface.vertices.clear();
-    _surface.normals.clear();
-    _surface.triangles.clear();
 }
 
 bool Polygonizer3d::_isCellOutsideSurface(GridIndex g) {
@@ -483,7 +442,7 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
         _getNeighbourGridIndices6(c, neighbours);
         for (int idx = 0; idx < 6; idx++) {
             GridIndex n = neighbours[idx];
-            if (_isCellIndexInRange(n) &&  !isCellDone(n) && _isCellOnSurface(n)) {
+            if (_isCellIndexInRange(n) && !isCellDone(n) && _isCellOnSurface(n)) {
                 isCellDone.set(n, true);
                 queue.push(n);
             }
@@ -710,7 +669,7 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
 }
 
 void Polygonizer3d::_calculateSurfaceTriangles() {
-    _resetTriangleSurface();
+    _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
     double isolevel = _field->getSurfaceThreshold();
     for (int i = 0; i < _surfaceCells.size(); i++) {
@@ -718,47 +677,8 @@ void Polygonizer3d::_calculateSurfaceTriangles() {
     }
 }
 
-void Polygonizer3d::_calculateVertexNormals() {
-    std::vector <std::vector<int> > vertexTriangles;
-    vertexTriangles.reserve(_surface.vertices.size());
-
-    for (int i = 0; i < _surface.vertices.size(); i++) {
-        std::vector<int> triangles;
-        triangles.reserve(9);  // I think a vertex can have a max of 9 adjacent triangles
-                               // todo: find out exact numbe
-
-        vertexTriangles.push_back(triangles);
-    }
-
-    std::vector<glm::vec3> normals;
-    normals.reserve(_surface.triangles.size());
-    Triangle t;
-    glm::vec3 v1, v2;
-    for (int i = 0; i < _surface.triangles.size(); i++) {
-        t = _surface.triangles[i];
-        vertexTriangles[t.tri[0]].push_back(i);
-        vertexTriangles[t.tri[1]].push_back(i);
-        vertexTriangles[t.tri[2]].push_back(i);
-
-        v1 = _surface.vertices[t.tri[1]] - _surface.vertices[t.tri[0]];
-        v2 = _surface.vertices[t.tri[2]] - _surface.vertices[t.tri[0]];
-        normals.push_back(glm::normalize(glm::cross(v1, v2)));
-    }
-
-    glm::vec3 n;
-    for (int i = 0; i < vertexTriangles.size(); i++) {
-        n = glm::vec3(0.0, 0.0, 0.0);
-        for (int j = 0; j < vertexTriangles[i].size(); j++) {
-            n += normals[vertexTriangles[i][j]];
-        }
-
-        n = glm::normalize(n / (float)vertexTriangles[i].size());
-        _surface.normals.push_back(n);
-    }
-}
-
 void Polygonizer3d::polygonizeSurface() {
     _surfaceCells = _findSurfaceCells();
     _calculateSurfaceTriangles();
-    _calculateVertexNormals();
+    _surface.updateVertexNormals();
 }

@@ -363,7 +363,7 @@ void FluidRenderer::drawSurfaceCells() {
 }
 
 void FluidRenderer::drawSurfaceTriangles() {
-    TriangleSurface surface = fluidsim->getFluidSurfaceTriangles();
+    TriangleMesh surface = fluidsim->getFluidSurfaceTriangles();
 
     _setTransforms();
     glEnable(GL_NORMALIZE);

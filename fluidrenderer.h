@@ -13,6 +13,7 @@
 #include "polygonizer3d.h"
 #include "ImplicitField.h"
 #include "Array3d.h"
+#include "trianglemesh.h"
 #include "game/camera/camera3d.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
