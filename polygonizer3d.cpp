@@ -503,10 +503,19 @@ int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
 
 glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, 
                                                         double valp1, double valp2) {
-    double eps = 10e-9;
-    if (fabs(isolevel - valp1) < eps) { return p1; }
-    if (fabs(isolevel - valp2) < eps) { return p2; }
-    if (fabs(valp1 - valp2) < eps) {    return p1; }
+
+    // Don't return a point that is exactly on p1 or p2.
+    // This could result in a triangle with equal vertices and
+    // its normal will be calculated as undefined.
+    double eps = 10e-6;
+    if (fabs(isolevel - valp1) < eps || fabs(valp1 - valp2) < eps) {
+        glm::vec3 v = glm::normalize(p2 - p1);
+        return p1 + (float)(eps*_dx)*v;
+    }
+    if (fabs(isolevel - valp2) < eps) { 
+        glm::vec3 v = glm::normalize(p2 - p1);
+        return p2 - (float)(eps*_dx)*v; 
+    }
 
     double mu = (isolevel - valp1) / (valp2 - valp1);
 
@@ -664,6 +673,7 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
         Triangle t = Triangle(vertexList[triTable[cubeIndex][i]],
                               vertexList[triTable[cubeIndex][i + 1]],
                               vertexList[triTable[cubeIndex][i + 2]]);
+
         _surface.triangles.push_back(t);
     }
 }
