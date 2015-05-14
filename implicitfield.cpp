@@ -37,11 +37,17 @@ void ImplicitField::_positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
 }
 
 bool ImplicitField::_isPointNearSolid(glm::vec3 p) {
-    double eps = 10e-6;
+    double eps = 10e-9;
 
     glm::vec3 x = glm::vec3(eps, 0.0, 0.0);
     glm::vec3 y = glm::vec3(0.0, eps, 0.0);
     glm::vec3 z = glm::vec3(0.0, 0.0, eps);
+
+    int i, j, k;
+    _positionToGridIndex(p, &i, &j, &k);
+    if (materialGrid(i, j, k) == 2) {
+        return true;
+    }
 
     glm::vec3 points[26];
     points[0] = p - x;
@@ -71,7 +77,6 @@ bool ImplicitField::_isPointNearSolid(glm::vec3 p) {
     points[24] = p + x + y - z;
     points[25] = p + x + y + z;
     
-    int i, j, k;
     for (int idx = 0; idx < 26; idx++) {
         _positionToGridIndex(points[idx], &i, &j, &k);
         if (materialGrid(i, j, k) == 2) {
@@ -123,6 +128,8 @@ double ImplicitField::getFieldValue(glm::vec3 p) {
     if (isMaterialGridSet && sum > surfaceThreshold && _isPointNearSolid(p)) {
         return surfaceThreshold - eps;
     }
+
+    sum = 0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - 0)));
 
     return sum;
 }

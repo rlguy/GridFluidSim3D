@@ -70,12 +70,11 @@ void TriangleMesh::updateVertexNormals() {
 
     for (int i = 0; i < vertices.size(); i++) {
         std::vector<int> triangles;
-        triangles.reserve(9);  // I think a vertex can have a max of 9 adjacent triangles
-                               // todo: find out exact number
-
+        triangles.reserve(14);  // 14 is the maximum number of adjacent triangles
+                                // to a vertex
         vertexTriangles.push_back(triangles);
     }
-
+    
     std::vector<glm::vec3> facenormals;
     facenormals.reserve(triangles.size());
     Triangle t;
@@ -101,6 +100,4 @@ void TriangleMesh::updateVertexNormals() {
         n = glm::normalize(n / (float)vertexTriangles[i].size());
         normals.push_back(n);
     }
-
-    std::cout << normals.size() << " " << vertices.size() << std::endl;
 }
