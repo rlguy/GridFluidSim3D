@@ -381,7 +381,7 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
         return true;
     }
 
-    glm::vec3 boxcenter = position + glm::vec3(width, height, depth);
+    glm::vec3 boxcenter = position + (float)0.5 * glm::vec3(width, height, depth);
 
     glm::vec3 v0 = tv0 - boxcenter;
     glm::vec3 v1 = tv1 - boxcenter;
@@ -436,8 +436,7 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
         return false;
     }
 
-    return true;   /* box and triangle overlaps */
-
+    return true;
 }
 
 
