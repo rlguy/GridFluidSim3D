@@ -21,6 +21,7 @@
 #include "polygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
+#include "collision.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation

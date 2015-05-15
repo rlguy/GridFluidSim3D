@@ -138,6 +138,17 @@ public:
         grid[g.k][g.j][g.i] += value;
     }
 
+    T *getPointer(int i, int j, int k) {
+        assert(_isIndexInRange(i, j, k));
+        return &grid[k][j][i];
+    }
+
+    T *getPointer(GridIndex g) {
+        assert(_isIndexInRange(g.i, g.j, g.k));
+        return &grid[g.k][g.j][g.i];
+    }
+
+
 
     void setOutOfRangeValue() {
         _isOutOfrangeValueSet = false;

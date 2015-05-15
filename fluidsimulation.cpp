@@ -349,17 +349,9 @@ std::vector<FluidSimulation::CellFace> FluidSimulation::
 bool FluidSimulation::_getVectorFaceIntersection(glm::vec3 p0, glm::vec3 vnorm, CellFace f, 
                                                  glm::vec3 *intersect) {
 
-    // perpendicular or p0 is on the plane
-    double eps = 10e-30;
-    double dot = glm::dot(vnorm, f.normal);
-    if (fabs(dot) < eps) {
-        return false;
-    }
-
     glm::vec3 planep = glm::vec3(f.minx, f.miny, f.minz);
-    double d = glm::dot((planep - p0), f.normal) / dot;
-
-    *intersect = p0 + (float)d*vnorm;
+    bool isIntersecting = Collision::lineIntersectsPlane(
+        p0, vnorm, planep, f.normal, intersect);
 
     if (_isPointOnCellFace(*intersect, f)) {
         return true;
@@ -1605,6 +1597,8 @@ void FluidSimulation::_stepFluid(double dt) {
     _polygonizer.setInsideCellIndices(_fluidCellIndices);
     _polygonizer.polygonizeSurface();
     _polygonizer.writeSurfaceToOBJ("screenshots/test.obj");
+
+
 
     timer3.start();
     _extrapolateFluidVelocities();

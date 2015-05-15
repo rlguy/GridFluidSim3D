@@ -129,8 +129,6 @@ double ImplicitField::getFieldValue(glm::vec3 p) {
         return surfaceThreshold - eps;
     }
 
-    sum = 0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - 0)));
-
     return sum;
 }
 

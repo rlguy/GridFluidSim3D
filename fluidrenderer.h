@@ -18,6 +18,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "aabb.h"
+
 class FluidRenderer
 {
 public:

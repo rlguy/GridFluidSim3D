@@ -344,6 +344,7 @@ void FluidRenderer::drawLayerGrid() {
         }
     }
 
+    _unsetTransforms();
 }
 
 void FluidRenderer::drawSurfaceCells() {
@@ -367,6 +368,9 @@ void FluidRenderer::drawSurfaceTriangles() {
 
     _setTransforms();
     glEnable(GL_NORMALIZE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glShadeModel(GL_FLAT);
     glBegin(GL_TRIANGLES);
 
     glm::vec3 p1, p2, p3, n1, n2, n3;
@@ -396,5 +400,4 @@ void FluidRenderer::drawSurfaceTriangles() {
 }
 
 void FluidRenderer::draw() {
-
 }
