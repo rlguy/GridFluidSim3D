@@ -1,4 +1,5 @@
 #include <queue>
+#include <vector>
 #include <sstream>
 #include <fstream>
 #include <assert.h>
@@ -7,6 +8,7 @@
 #include "implicitfield.h"
 #include "array3d.h"
 #include "aabb.h"
+#include "collision.h"
 #include "glm/glm.hpp"
 
 #pragma once
@@ -22,11 +24,11 @@ public:
     int numTriangles() { return numFaces(); }
     void clear();
     void writeMeshToOBJ(std::string filename);
+    void removeDuplicateTriangles();
     void updateVertexNormals();
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
-    void getSurfaceCells();
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
@@ -39,11 +41,20 @@ public:
 private:
     void _updateVertexTriangles();
     bool _trianglesEqual(Triangle &t1, Triangle &t2);
-    bool _isPointInsideMesh(glm::vec3 p);
+    bool _isOnTriangleEdge(double u, double v);
+    void _getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
+    bool _isTriangleInVector(int index, std::vector<int> &tris);
+    bool _isIntInVector(int i, std::vector<int> &ints);
+    int _getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm::vec3 dir, 
+                                        std::vector<int> &tris, bool *success);
+    bool _isCellInsideMesh(const GridIndex g);
+    void _floodfill(GridIndex g, Array3d<bool> &cells);
     void _updateTriangleGrid();
+    void _destroyTriangleGrid();
     void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
     void _getSurfaceCells(std::vector<GridIndex> &cells);
 
+    void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     GridIndex _positionToGridIndex(glm::vec3 p);
     glm::vec3 _gridIndexToPosition(GridIndex g) {
         assert(_isCellIndexInRange(g));
@@ -53,6 +64,9 @@ private:
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
                g.i < _gridi && g.j < _gridj && g.k < _gridk;
     }
+    inline double _randomFloat(double min, double max) {
+        return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+    }
 
     double _gridi = 0;
     double _gridj = 0;
@@ -61,6 +75,6 @@ private:
 
     std::vector <std::vector<int> > _vertexTriangles;
 
-    Array3d<std::vector<int>> triGrid;
+    Array3d<std::vector<int>> _triGrid;
 };
 

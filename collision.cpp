@@ -5,13 +5,13 @@
 // http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
 bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, 
-                                      glm::vec3 *collision) {
+                                      glm::vec3 *collision, double *iu, double *iv) {
     glm::vec3 e1, e2, h, s, q;
     float a, f, u, v;
 
     e1 = v1 - v0;
     e2 = v2 - v0;
-    h = glm::cross(e1, h);
+    h = glm::cross(dir, e2);
     a = glm::dot(e1, h);
 
     double eps = 10e-9;
@@ -40,6 +40,8 @@ bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
     if (t > 0) {
         *collision = p + (float)t*dir;
+        *iu = u;
+        *iv = v;
         return true;
     } 
     else {
@@ -51,13 +53,13 @@ bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 // http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
 bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
                                        glm::vec3 v0, glm::vec3 v1, glm::vec3 v2,
-    glm::vec3 *collision) {
+                                       glm::vec3 *collision, double *iu, double *iv) {
     glm::vec3 e1, e2, h, s, q;
     float a, f, u, v;
 
     e1 = v1 - v0;
     e2 = v2 - v0;
-    h = glm::cross(e1, h);
+    h = glm::cross(dir, e2);
     a = glm::dot(e1, h);
 
     double eps = 10e-9;
@@ -84,6 +86,8 @@ bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
     // the intersection point is on the line
     double t = f * glm::dot(e2, q);
     *collision = p + (float)t*dir;
+    *iu = u;
+    *iv = v;
 
     return true;
 }
@@ -144,77 +148,53 @@ glm::vec3 Collision::findClosestPointOnTriangle(glm::vec3 p0, glm::vec3 v0, glm:
     double s = b*e - c*d;
     double t = b*d - a*e;
 
-    if (s + t < det)
-    {
-        if (s < 0.0)
-        {
-            if (t < 0.0)
-            {
-                if (d < 0.0)
-                {
+    if (s + t < det) {
+        if (s < 0.0) {
+            if (t < 0.0) {
+                if (d < 0.0) {
                     s = _clamp(-d / a, 0.0, 1.0);
                     t = 0.0;
                 }
-                else
-                {
+                else {
                     s = 0.0;
                     t = _clamp(-e / c, 0.0, 1.0);
                 }
-            }
-            else
-            {
+            } else {
                 s = 0.0;
                 t = _clamp(-e / c, 0.0, 1.0);
             }
-        }
-        else if (t < 0.0)
-        {
+        } else if (t < 0.0) {
             s = _clamp(-d / a, 0.0, 1.0);
             t = 0.0;
-        }
-        else
-        {
+        } else {
             double invDet = 1.0 / det;
             s *= invDet;
             t *= invDet;
         }
-    }
-    else
-    {
-        if (s < 0.0)
-        {
+    } else {
+        if (s < 0.0) {
             double tmp0 = b + d;
             double tmp1 = c + e;
-            if (tmp1 > tmp0)
-            {
+            if (tmp1 > tmp0) {
                 double numer = tmp1 - tmp0;
                 double denom = a - 2 * b + c;
                 s = _clamp(numer / denom, 0.0, 1.0);
                 t = 1 - s;
-            }
-            else
-            {
+            } else {
                 t = _clamp(-e / c, 0.0, 1.0);
                 s = 0.0;
             }
-        }
-        else if (t < 0.0)
-        {
-            if (a + d > b + e)
-            {
+        } else if (t < 0.0) {
+            if (a + d > b + e) {
                 double numer = c + e - b - d;
                 double denom = a - 2 * b + c;
                 s = _clamp(numer / denom, 0.0, 1.0);
                 t = 1 - s;
-            }
-            else
-            {
+            } else {
                 s = _clamp(-e / c, 0.0, 1.0);
                 t = 0.0;
             }
-        }
-        else
-        {
+        } else {
             double numer = c + e - b - d;
             double denom = a - 2 * b + c;
             s = _clamp(numer / denom, 0.0, 1.0);
@@ -228,13 +208,27 @@ glm::vec3 Collision::findClosestPointOnTriangle(glm::vec3 p0, glm::vec3 v0, glm:
 bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) {
     glm::vec3 i;
-    return rayIntersectsTriangle(p, dir, v0, v1, v2, &i);
+    double u, v;
+    return rayIntersectsTriangle(p, dir, v0, v1, v2, &i, &u, &v);
+}
+
+bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
+                                      glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 *i) {
+    double u, v;
+    return rayIntersectsTriangle(p, dir, v0, v1, v2, i, &u, &v);
 }
 
 bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
                                        glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) {
     glm::vec3 i;
-    return lineIntersectsTriangle(p, dir, v0, v1, v2, &i);
+    double u, v;
+    return lineIntersectsTriangle(p, dir, v0, v1, v2, &i, &u, &v);
+}
+
+bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
+                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 *i) {
+    double u, v;
+    return lineIntersectsTriangle(p, dir, v0, v1, v2, i, &u, &v);
 }
 
 bool Collision::rayIntersectsPlane(glm::vec3 p0, glm::vec3 dir,

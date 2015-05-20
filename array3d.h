@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <assert.h>
 
 struct GridIndex {
@@ -126,6 +127,12 @@ public:
     void set(GridIndex g, T value) {
         assert(_isIndexInRange(g.i, g.j, g.k));
         grid[g.k][g.j][g.i] = value;
+    }
+
+    void set(std::vector<GridIndex> cells, T value) {
+        for (int i = 0; i < (int)cells.size(); i++) {
+            set(cells[i], value);
+        }
     }
 
     void add(int i, int j, int k, T value) {

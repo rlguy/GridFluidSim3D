@@ -64,6 +64,37 @@ void TriangleMesh::writeMeshToOBJ(std::string filename) {
     out.close();
 }
 
+bool triangleSort(const Triangle &a, const Triangle &b)
+{
+    if (a.tri[0]==b.tri[0]) {
+        if (a.tri[1]==b.tri[1]) {
+            return a.tri[2] < b.tri[2];
+        } else {
+            return a.tri[1] < b.tri[1];
+        }
+    } else {
+        return a.tri[0] < b.tri[0];
+    }
+}
+
+void TriangleMesh::removeDuplicateTriangles() {
+    std::vector<Triangle> uniqueTriangles;
+
+    std::sort(triangles.begin(), triangles.end(), triangleSort);
+    Triangle last;
+    for (int i = 0; i < triangles.size(); i++) {
+        Triangle t = triangles[i];
+
+        if (!_trianglesEqual(t, last)) {
+            uniqueTriangles.push_back(t);
+        }
+        last = t;
+    }
+
+    triangles.clear();
+    triangles.insert(triangles.end(), uniqueTriangles.begin(), uniqueTriangles.end());
+}
+
 void TriangleMesh::updateVertexNormals() {
     normals.clear();
     _updateVertexTriangles();
@@ -101,8 +132,8 @@ void TriangleMesh::getFaceNeighbours(Triangle t, std::vector<int> &n) {
 }
 
 bool TriangleMesh::_trianglesEqual(Triangle &t1, Triangle &t2) {
-    return t1.tri[0] == t2.tri[0] ||
-           t1.tri[1] == t2.tri[1] ||
+    return t1.tri[0] == t2.tri[0] &&
+           t1.tri[1] == t2.tri[1] &&
            t1.tri[2] == t2.tri[2];
 }
 
@@ -119,6 +150,7 @@ bool TriangleMesh::isNeighbours(Triangle t1, Triangle t2) {
 }
 
 void TriangleMesh::_updateVertexTriangles() {
+    _vertexTriangles.clear();
     _vertexTriangles.reserve(vertices.size());
 
     for (int i = 0; i < vertices.size(); i++) {
@@ -128,8 +160,6 @@ void TriangleMesh::_updateVertexTriangles() {
         _vertexTriangles.push_back(triangles);
     }
 
-    std::vector<glm::vec3> facenormals;
-    facenormals.reserve(triangles.size());
     Triangle t;
     for (int i = 0; i < triangles.size(); i++) {
         t = triangles[i];
@@ -142,19 +172,8 @@ void TriangleMesh::_updateVertexTriangles() {
 GridIndex TriangleMesh::_positionToGridIndex(glm::vec3 p) {
     double invdx = 1.0 / _dx;
     return GridIndex((int)floor(p.x*invdx),
-        (int)floor(p.y*invdx),
-        (int)floor(p.z*invdx));
-}
-
-bool TriangleMesh::_isPointInsideMesh(glm::vec3 p) {
-    // count how many intersections between point and edge of grid
-    // even intersections: outside
-    // odd intersections: inside
-
-    glm::vec3 rightdir = glm::vec3(1.0, 0.0, 0.0);
-    glm::vec3 leftdir = glm::vec3(-1.0, 0.0, 0.0);
-
-    return false;
+                     (int)floor(p.y*invdx),
+                     (int)floor(p.z*invdx));
 }
 
 void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells) {
@@ -172,7 +191,7 @@ void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex
 }
 
 void TriangleMesh::_updateTriangleGrid() {
-    triGrid = Array3d<std::vector<int>>(_gridi, _gridj, _gridk);
+    _triGrid = Array3d<std::vector<int>>(_gridi, _gridj, _gridk);
 
     std::vector<GridIndex> cells;
     std::vector<int> *triVector;
@@ -185,18 +204,22 @@ void TriangleMesh::_updateTriangleGrid() {
 
         for (int j = 0; j < cells.size(); j++) {
             g = cells[j];
-            triVector = triGrid.getPointer(g);
+            triVector = _triGrid.getPointer(g);
             triVector->push_back(i);
         }
     }
 }
 
+void TriangleMesh::_destroyTriangleGrid() {
+    _triGrid = Array3d<std::vector<int> >();
+}
+
 void TriangleMesh::_getSurfaceCells(std::vector<GridIndex> &cells) {
     std::vector<int> *tris;
-    for (int k = 0; k < triGrid.depth; k++) {
-        for (int j = 0; j < triGrid.height; j++) {
-            for (int i = 0; i < triGrid.width; i++) {
-                tris = triGrid.getPointer(i, j, k);
+    for (int k = 0; k < _triGrid.depth; k++) {
+        for (int j = 0; j < _triGrid.height; j++) {
+            for (int i = 0; i < _triGrid.width; i++) {
+                tris = _triGrid.getPointer(i, j, k);
                 if (tris->size() > 0) {
                     cells.push_back(GridIndex(i, j, k));
                 }
@@ -205,15 +228,244 @@ void TriangleMesh::_getSurfaceCells(std::vector<GridIndex> &cells) {
     }
 }
 
+void TriangleMesh::_getNeighbourGridIndices6(GridIndex g, GridIndex n[6]) {
+    n[0] = GridIndex(g.i-1, g.j, g.k);
+    n[1] = GridIndex(g.i+1, g.j, g.k);
+    n[2] = GridIndex(g.i, g.j-1, g.k);
+    n[3] = GridIndex(g.i, g.j+1, g.k);
+    n[4] = GridIndex(g.i, g.j, g.k-1);
+    n[5] = GridIndex(g.i, g.j, g.k+1);
+}
+
+void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
+    assert(_isCellIndexInRange(g));
+    if (cells(g)) {
+        return;
+    }
+
+    Array3d<bool> isCellDone = Array3d<bool>(_gridi, _gridj, _gridk, false);
+    std::queue<GridIndex> queue;
+    queue.push(g);
+    isCellDone.set(g, true);
+
+    GridIndex gp;
+    GridIndex ns[6];
+    while (!queue.empty()) {
+        gp = queue.front();
+        queue.pop();
+
+        _getNeighbourGridIndices6(gp, ns);
+        for (int i = 0; i < 6; i++) {
+            if (_isCellIndexInRange(ns[i]) && !cells(ns[i]) && !isCellDone(ns[i])) {
+                isCellDone.set(ns[i], true);
+                queue.push(ns[i]);
+            }
+        }
+
+        cells.set(gp, true);
+    }
+}
+
+void TriangleMesh::_getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
+    assert(index < triangles.size());
+
+    Triangle t = triangles[index];
+    int size = vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    tri[0] = vertices[t.tri[0]];
+    tri[1] = vertices[t.tri[1]];
+    tri[2] = vertices[t.tri[2]];
+}
+
+bool TriangleMesh::_isOnTriangleEdge(double u, double v) {
+    double eps = 10e-6*_dx;
+
+    if (fabs(u) < eps) {
+        return true;
+    }
+
+    if (fabs(v) < eps || fabs(u + v - 1.0) < eps) {
+        return true;
+    }
+
+    return false;
+}
+
+bool TriangleMesh::_isTriangleInVector(int index, std::vector<int> &tris) {
+    for (int i = 0; i < tris.size(); i++) {
+        if (_trianglesEqual(triangles[index], triangles[tris[i]])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int TriangleMesh::_getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm::vec3 dir,
+                                                  std::vector<int> &tris, bool *success) {
+    if (_triGrid(g).size() == 0) {
+        *success = true;
+        return 0;
+    }
+
+    // There are cases where this method could return an incorrect number of
+    // surface intersections. If a line intersects at exactly an edge or vertex,
+    // the number of intersections could be counted incorrectly as 2 or 3.
+    // If it is detected that a line has intersected with an edge or vertex,
+    // mark *success as false and return 0
+    std::vector<int> *indices = _triGrid.getPointer(g);
+    glm::vec3 collision;
+    glm::vec3 tri[3];
+    double u, v;
+    int numIntersections = 0;
+
+    numIntersections = 0;
+    for (int i = 0; i < indices->size(); i++) {
+        _getTrianglePosition(indices->at(i), tri);
+
+        bool isIntersecting = Collision::lineIntersectsTriangle(p, dir, 
+                                                                tri[0], tri[1], tri[2],
+                                                                &collision, &u, &v);
+        if (!isIntersecting) { continue; }
+
+        if (_isOnTriangleEdge(u, v)) {
+            *success = false;
+            return 0;
+        }
+
+        if (!_isTriangleInVector(indices->at(i), tris)) {
+            tris.push_back(indices->at(i));
+            numIntersections++;
+        }
+    }
+
+    *success = true;
+    return numIntersections;
+}
+
+bool TriangleMesh::_isIntInVector(int v, std::vector<int> &ints) {
+    for (int i = 0; i < ints.size(); i++) {
+        if (ints[i] == v) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
+    // count how many intersections between point and edge of grid
+    // even intersections: outside
+    // odd intersections: inside
+    assert(_isCellIndexInRange(g));
+    assert(_triGrid(g).size() == 0);
+
+    // Add a random jitter to the center position of the cell.
+    // If the line position is exactly in the center, intersections
+    // will be more likely to occur on triangle edges and the method
+    // _getIntersectingTrianglesInCell method will choose to safely fail.
+    // The likeliness of edge intersections is due to symmetries in the 
+    // polygonization method. 
+    double jit = 0.1*_dx;
+    glm::vec3 jitter = glm::vec3(_randomFloat(-jit, jit),
+                                 _randomFloat(-jit, jit),
+                                 _randomFloat(-jit, jit));
+
+    glm::vec3 p = _gridIndexToPosition(g) + 0.5f*glm::vec3(_dx, _dx, _dx) + jitter;
+    glm::vec3 dir = glm::vec3(1.0, 0.0, 0.0);
+    
+
+    std::vector<int> allIntersections;
+    std::vector<int> leftIntersections;
+    std::vector<int> rightIntersections;
+    std::vector<int> intersections;
+    GridIndex n = GridIndex(g.i - 1, g.j, g.k);
+    while (_isCellIndexInRange(n)) {
+        intersections.clear();
+        bool success;
+        int num = _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
+        if (!success) {
+            std::cout << "Error finding cell intersections: " <<
+                          n.i << " " << n.j << " " << n.k << std::endl;
+            return false;
+        }
+
+        for (int i = 0; i < intersections.size(); i++) {
+            int idx = intersections[i];
+            if (!_isIntInVector(idx, allIntersections) && !_isTriangleInVector(idx, allIntersections)) {
+                leftIntersections.push_back(idx);
+                allIntersections.push_back(idx);
+            }
+        }
+        n = GridIndex(n.i - 1, n.j, n.k);
+    }
+
+    n = GridIndex(g.i + 1, g.j, g.k);
+    while (_isCellIndexInRange(n)) {
+        intersections.clear();
+        bool success;
+        int num = _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
+        
+        if (!success) {
+            std::cout << "Error finding cell intersections: " <<
+                          n.i << " " << n.j << " " << n.k << std::endl;
+            return false;
+        }
+
+        for (int i = 0; i < intersections.size(); i++) {
+            int idx = intersections[i];
+            if (!_isIntInVector(idx, allIntersections) && !_isTriangleInVector(idx, allIntersections)) {
+                rightIntersections.push_back(idx);
+                allIntersections.push_back(idx);
+            }
+        }
+        n = GridIndex(n.i + 1, n.j, n.k);
+    }
+
+    assert(leftIntersections.size() % 2 == rightIntersections.size() % 2);
+
+    return leftIntersections.size() % 2 == 1;
+}
+
 void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
     if (_gridi == 0 || _gridj == 0 || _gridk == 0) {
         return;
     }
+
+    // find all cells that are on the surface boundary.
+    // Iterate through surface cells and test if any of their
+    // 6 neighbours are inside the mesh. If a cell is inside the mesh,
+    // floodfill that region.
 
     _updateTriangleGrid();
 
     std::vector<GridIndex> surfaceCells;
     _getSurfaceCells(surfaceCells);
 
-    triGrid = Array3d<std::vector<int> >();
+    Array3d<bool> insideCellGrid = Array3d<bool>(_gridi, _gridj, _gridk, false);
+    insideCellGrid.set(surfaceCells, true);
+
+    GridIndex neighbours[6];
+    GridIndex n;
+    for (int i = 0; i < surfaceCells.size(); i++) {
+        _getNeighbourGridIndices6(surfaceCells[i], neighbours);
+        for (int j = 0; j < 6; j++) {
+            n = neighbours[j];
+            if (_isCellIndexInRange(n) && !insideCellGrid(n) && _isCellInsideMesh(n)) {
+                _floodfill(n, insideCellGrid);
+                break;
+            }
+        }
+    }
+    
+    for (int k = 0; k < _triGrid.depth; k++) {
+        for (int j = 0; j < _triGrid.height; j++) {
+            for (int i = 0; i < _triGrid.width; i++) {
+                if (insideCellGrid(i, j, k)) {
+                    cells.push_back(GridIndex(i, j, k));
+                }
+            }
+        }
+    }
+    
+    _destroyTriangleGrid();
 }
