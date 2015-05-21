@@ -364,7 +364,7 @@ void FluidRenderer::drawSurfaceCells() {
 }
 
 void FluidRenderer::drawSurfaceTriangles() {
-    TriangleMesh surface = fluidsim->getFluidSurfaceTriangles();
+    TriangleMesh *surface = fluidsim->getFluidSurfaceTriangles();
 
     _setTransforms();
     glEnable(GL_NORMALIZE);
@@ -374,14 +374,14 @@ void FluidRenderer::drawSurfaceTriangles() {
     glBegin(GL_TRIANGLES);
 
     glm::vec3 p1, p2, p3, n1, n2, n3;
-    for (int i = 0; i < surface.triangles.size(); i++) {
-        Triangle t = surface.triangles[i];
-        p1 = surface.vertices[t.tri[0]];
-        p2 = surface.vertices[t.tri[1]];
-        p3 = surface.vertices[t.tri[2]];
-        n1 = surface.normals[t.tri[0]];
-        n2 = surface.normals[t.tri[1]];
-        n3 = surface.normals[t.tri[2]];
+    for (int i = 0; i < surface->triangles.size(); i++) {
+        Triangle t = surface->triangles[i];
+        p1 = surface->vertices[t.tri[0]];
+        p2 = surface->vertices[t.tri[1]];
+        p3 = surface->vertices[t.tri[2]];
+        n1 = surface->normals[t.tri[0]];
+        n2 = surface->normals[t.tri[1]];
+        n3 = surface->normals[t.tri[2]];
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3d(p1.x, p1.y, p1.z);

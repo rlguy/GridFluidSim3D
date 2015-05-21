@@ -171,20 +171,19 @@ void FluidSimulation::_initializeSolidCells() {
     }
 }
 
-void FluidSimulation::_addMarkerParticlesToCell(int i, int j, int k) {
+void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
     double q = 0.25*_dx;
-    double cx, cy, cz;
-    gridIndexToCellCenter(i, j, k, &cx, &cy, &cz);
+    glm::vec3 c = gridIndexToCellCenter(g);
 
     glm::vec3 points[] = {
-        glm::vec3(cx - q, cy - q, cz - q),
-        glm::vec3(cx + q, cy - q, cz - q),
-        glm::vec3(cx + q, cy - q, cz + q),
-        glm::vec3(cx - q, cy - q, cz + q),
-        glm::vec3(cx - q, cy + q, cz - q),
-        glm::vec3(cx + q, cy + q, cz - q),
-        glm::vec3(cx + q, cy + q, cz + q),
-        glm::vec3(cx - q, cy + q, cz + q)
+        glm::vec3(c.x - q, c.y - q, c.z - q),
+        glm::vec3(c.x + q, c.y - q, c.z - q),
+        glm::vec3(c.x + q, c.y - q, c.z + q),
+        glm::vec3(c.x - q, c.y - q, c.z + q),
+        glm::vec3(c.x - q, c.y + q, c.z - q),
+        glm::vec3(c.x + q, c.y + q, c.z - q),
+        glm::vec3(c.x + q, c.y + q, c.z + q),
+        glm::vec3(c.x - q, c.y + q, c.z + q)
     };
 
     double eps = 10e-6;
@@ -196,7 +195,7 @@ void FluidSimulation::_addMarkerParticlesToCell(int i, int j, int k) {
                                   _randomFloat(-jitter, jitter));
 
         glm::vec3 p = points[idx] + jit;
-        _markerParticles.push_back(MarkerParticle(p, i, j, k));
+        _markerParticles.push_back(MarkerParticle(p, g.i, g.j, g.k));
     }
 }
 
@@ -213,25 +212,48 @@ void FluidSimulation::_initializeFluidMaterial() {
         return;
     }
 
+    // Polygonizer needs an estimate of cells that are inside the surface
+    std::vector<GridIndex> fluidCells;
     for (int k = 0; k < _materialGrid.depth; k++) {
         for (int j = 0; j < _materialGrid.height; j++) {
             for (int i = 0; i < _materialGrid.width; i++) {
-                double x, y, z;
-                gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                GridIndex g(i, j, k);
+                glm::vec3 p = gridIndexToCellCenter(g);
 
-                if (_implicitFluidField.isInside(x, y, z) && _isCellAir(i, j, k)) {
-                    _materialGrid.set(i, j, k, M_FLUID);
-                    _addMarkerParticlesToCell(i, j, k);
+                if (_implicitFluidField.isInside(p) && _isCellAir(g)) {
+                    fluidCells.push_back(g);
                 }
             }
         }
     }
+
+    _implicitFluidField.setMaterialGrid(_materialGrid);
+    _polygonizer.setInsideCellIndices(fluidCells);
+    _polygonizer.polygonizeSurface();
+
+    // now we can get all cells inside the surface
+    fluidCells.clear();
+    TriangleMesh *surface = _polygonizer.getTriangleMesh();
+    surface->setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+    surface->getCellsInsideMesh(fluidCells);
+
+    GridIndex g;
+    for (int i = 0; i < fluidCells.size(); i++) {
+        g = fluidCells[i];
+
+        if (_isCellAir(g)) {
+            _materialGrid.set(g, M_FLUID);
+            _addMarkerParticlesToCell(g);
+        }
+    }
+
+    _fluidCellIndices = fluidCells;
 }
 
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
-    _initializeFluidMaterial();
     _initializePolygonizer();
+    _initializeFluidMaterial();
     _isSimulationInitialized = true;
 }
 
@@ -1593,12 +1615,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
     _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
 
-    _implicitFluidField.setMaterialGrid(_materialGrid);
-    _polygonizer.setInsideCellIndices(_fluidCellIndices);
-    _polygonizer.polygonizeSurface();
     _polygonizer.writeSurfaceToOBJ("screenshots/test.obj");
-
-
 
     timer3.start();
     _extrapolateFluidVelocities();

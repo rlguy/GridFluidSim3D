@@ -324,10 +324,6 @@ void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
 
 void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
     _surface.writeMeshToOBJ(filename);
-
-    _surface.setGridDimensions(_isize, _jsize, _ksize, _dx);
-    std::vector<GridIndex> c;
-    _surface.getCellsInsideMesh(c);
 }
 
 void Polygonizer3d::_getVertexCellNeighbours(GridIndex v, GridIndex cells[8]) {
