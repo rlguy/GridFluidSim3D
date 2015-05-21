@@ -51,10 +51,19 @@ void FluidSimulation::setBodyForce(glm::vec3 f) {
 }
 
 void FluidSimulation::addImplicitFluidPoint(glm::vec3 p, double r) {
+    if (_fluidInitializationType == MESH) {
+        return;
+    }
+
     _implicitFluidField.addPoint(p, r);
+    _fluidInitializationType = IMPLICIT;
 }
 
 void FluidSimulation::addFluidCuboid(glm::vec3 p1, glm::vec3 p2) {
+    if (_fluidInitializationType == MESH) {
+        return;
+    }
+
     glm::vec3 minp = glm::vec3(fmin(p1.x, p2.x),
                                fmin(p1.y, p2.y), 
                                fmin(p1.z, p2.z));
@@ -63,10 +72,28 @@ void FluidSimulation::addFluidCuboid(glm::vec3 p1, glm::vec3 p2) {
     double depth = fabs(p2.z - p1.z);
 
     addFluidCuboid(minp, width, height, depth);
+    _fluidInitializationType = IMPLICIT;
 }
 
 void FluidSimulation::addFluidCuboid(glm::vec3 p, double w, double h, double d) {
+    if (_fluidInitializationType == MESH) {
+        return;
+    }
+
     _implicitFluidField.addCuboid(p, w, h, d);
+    _fluidInitializationType = IMPLICIT;
+}
+
+bool FluidSimulation::addFluidMesh(std::string OBJFilename, glm::vec3 offset, double scale) {
+    if (_fluidInitializationType == IMPLICIT) {
+        return false;
+    }
+    _fluidMeshFilename = OBJFilename;
+    _fluidMeshOffset = offset;
+    _fluidMeshScale = scale;
+    _fluidInitializationType = MESH;
+
+    return true;
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
@@ -205,37 +232,46 @@ void FluidSimulation::_initializePolygonizer() {
 }
 
 void FluidSimulation::_initializeFluidMaterial() {
-    _isFluidInSimulation = _implicitFluidField.getNumPoints() > 0 ||
-                           _implicitFluidField.getNumCuboids() > 0;
+    _isFluidInSimulation = _fluidInitializationType == MESH ||
+                           _fluidInitializationType == IMPLICIT;
 
     if (!_isFluidInSimulation) {
         return;
     }
 
-    // Polygonizer needs an estimate of cells that are inside the surface
     std::vector<GridIndex> fluidCells;
-    for (int k = 0; k < _materialGrid.depth; k++) {
-        for (int j = 0; j < _materialGrid.height; j++) {
-            for (int i = 0; i < _materialGrid.width; i++) {
-                GridIndex g(i, j, k);
-                glm::vec3 p = gridIndexToCellCenter(g);
+    if (_fluidInitializationType == IMPLICIT) {
+        // Polygonizer needs an estimate of cells that are inside the surface
+        for (int k = 0; k < _materialGrid.depth; k++) {
+            for (int j = 0; j < _materialGrid.height; j++) {
+                for (int i = 0; i < _materialGrid.width; i++) {
+                    GridIndex g(i, j, k);
+                    glm::vec3 p = gridIndexToCellCenter(g);
 
-                if (_implicitFluidField.isInside(p) && _isCellAir(g)) {
-                    fluidCells.push_back(g);
+                    if (_implicitFluidField.isInside(p) && _isCellAir(g)) {
+                        fluidCells.push_back(g);
+                    }
                 }
             }
         }
+
+        _implicitFluidField.setMaterialGrid(_materialGrid);
+        _polygonizer.setInsideCellIndices(fluidCells);
+        _polygonizer.polygonizeSurface();
+
+        // now we can get all cells inside the surface
+        fluidCells.clear();
+        TriangleMesh *surface = _polygonizer.getTriangleMesh();
+        surface->setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        surface->getCellsInsideMesh(fluidCells);
+    } else if (_fluidInitializationType == MESH) {
+        TriangleMesh mesh;
+        bool success = mesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
+        assert(success);
+        mesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        mesh.getCellsInsideMesh(fluidCells);
     }
 
-    _implicitFluidField.setMaterialGrid(_materialGrid);
-    _polygonizer.setInsideCellIndices(fluidCells);
-    _polygonizer.polygonizeSurface();
-
-    // now we can get all cells inside the surface
-    fluidCells.clear();
-    TriangleMesh *surface = _polygonizer.getTriangleMesh();
-    surface->setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
-    surface->getCellsInsideMesh(fluidCells);
 
     GridIndex g;
     for (int i = 0; i < fluidCells.size(); i++) {

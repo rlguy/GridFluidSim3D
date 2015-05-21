@@ -34,7 +34,7 @@ bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale)
     std::vector<Triangle> temp_triangles;
 
     FILE * file;
-    fopen_s(&file, filename.c_str(), "r");
+    fopen_s(&file, filename.c_str(), "rb");
     if( file == NULL ){
         printf("Unable to open the OBJ file!\n");
         return false;
@@ -43,33 +43,37 @@ bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale)
     while( true ){
         char lineHeader[128];
         // read the first word of the line
-        int res = fscanf_s(file, "%s", lineHeader);
+        int res = fscanf(file, "%s", lineHeader);
         if (res == EOF) {
             break; // EOF = End Of File. Quit the loop.
         }
         
         if ( strcmp( lineHeader, "v" ) == 0 ){
             glm::vec3 vertex;
-            fscanf_s(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+            fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
             temp_vertices.push_back((float)scale*vertex + offset);
         } else if (strcmp( lineHeader, "vn" ) == 0) {
             glm::vec3 normal;
-            fscanf_s(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
+            fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
             temp_normals.push_back(normal);
         } else if ( strcmp( lineHeader, "f" ) == 0 ) {
             long start = ftell(file);
             unsigned int vertexIndex[3];
             unsigned int uvIndex[3];
             unsigned int normalIndex[3];
-            int matches = fscanf_s(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+            int matches = fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+
             if (matches != 3){
-                fseek (file, start , SEEK_SET);
-                matches = fscanf_s(file, "%d//%d %d//%d %d//%d\n", &vertexIndex[0], &normalIndex[0], 
-                                                                   &vertexIndex[1], &normalIndex[1],
-                                                                   &vertexIndex[2], &normalIndex[2]);
+                long diff = ftell(file) - start;
+                fseek (file, -diff , SEEK_CUR);
+                start = ftell(file);
+                matches = fscanf(file, "%d//%d %d//%d %d//%d\n", &vertexIndex[0], &normalIndex[0], 
+                                                                 &vertexIndex[1], &normalIndex[1],
+                                                                 &vertexIndex[2], &normalIndex[2]);
                 if (matches != 6) {
-                    fseek (file, start , SEEK_SET);
-                    matches = fscanf_s(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", 
+                    long diff = ftell(file) - start;
+                    fseek (file, -diff , SEEK_CUR);
+                    matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", 
                                               &vertexIndex[0], &normalIndex[0], &uvIndex[0],
                                               &vertexIndex[1], &normalIndex[1], &uvIndex[1],
                                               &vertexIndex[2], &normalIndex[2], &uvIndex[2]);

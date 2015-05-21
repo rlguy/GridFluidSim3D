@@ -22,6 +22,7 @@
 #include "triangleMesh.h"
 #include "logfile.h"
 #include "collision.h"
+#include "aabb.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -72,6 +73,17 @@ public:
     }
     void addFluidCuboid(glm::vec3 p, double width, double height, double depth);
     void addFluidCuboid(glm::vec3 p1, glm::vec3 p2);
+
+    bool addFluidMesh(std::string OBJFilename) {
+        return addFluidMesh(OBJFilename, glm::vec3(0.0, 0.0, 0.0), 1.0);
+    }
+    bool addFluidMesh(std::string OBJFilename, glm::vec3 offset) {
+        return addFluidMesh(OBJFilename, offset, 1.0);
+    }
+    bool addFluidMesh(std::string OBJFilename, double scale) {
+        return addFluidMesh(OBJFilename, glm::vec3(0.0, 0.0, 0.0), scale);
+    }
+    bool addFluidMesh(std::string OBJFilename, glm::vec3 offset, double scale);
 
     void addSolidCell(int i, int j, int k);
     void addSolidCells(std::vector<glm::vec3> indices);
@@ -356,6 +368,14 @@ private:
     bool _isSimulationInitialized = false;
     bool _isSimulationRunning = false;
     bool _isFluidInSimulation = false;
+
+    int MESH = 0;
+    int IMPLICIT = 1;
+    int _fluidInitializationType = 2;
+    std::string _fluidMeshFilename;
+    glm::vec3 _fluidMeshOffset;
+    double _fluidMeshScale = 1.0;
+    
 
     int _currentFrame = 0;
     bool _isCurrentFrameFinished = true;
