@@ -5,7 +5,6 @@ TriangleMesh::TriangleMesh()
 {
 }
 
-
 TriangleMesh::~TriangleMesh()
 {
 }
@@ -23,6 +22,86 @@ void TriangleMesh::clear() {
     normals.clear();
     triangles.clear();
     _vertexTriangles.clear();
+}
+
+// method of loading OBJ from:
+// http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
+bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale) {
+    clear();
+
+    std::vector<glm::vec3> temp_vertices;
+    std::vector<glm::vec3> temp_normals;
+    std::vector<Triangle> temp_triangles;
+
+    FILE * file;
+    fopen_s(&file, filename.c_str(), "r");
+    if( file == NULL ){
+        printf("Unable to open the OBJ file!\n");
+        return false;
+    }
+
+    while( true ){
+        char lineHeader[128];
+        // read the first word of the line
+        int res = fscanf_s(file, "%s", lineHeader);
+        if (res == EOF) {
+            break; // EOF = End Of File. Quit the loop.
+        }
+        
+        if ( strcmp( lineHeader, "v" ) == 0 ){
+            glm::vec3 vertex;
+            fscanf_s(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
+            temp_vertices.push_back((float)scale*vertex + offset);
+        } else if (strcmp( lineHeader, "vn" ) == 0) {
+            glm::vec3 normal;
+            fscanf_s(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
+            temp_normals.push_back(normal);
+        } else if ( strcmp( lineHeader, "f" ) == 0 ) {
+            long start = ftell(file);
+            unsigned int vertexIndex[3];
+            unsigned int uvIndex[3];
+            unsigned int normalIndex[3];
+            int matches = fscanf_s(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+            if (matches != 3){
+                fseek (file, start , SEEK_SET);
+                matches = fscanf_s(file, "%d//%d %d//%d %d//%d\n", &vertexIndex[0], &normalIndex[0], 
+                                                                   &vertexIndex[1], &normalIndex[1],
+                                                                   &vertexIndex[2], &normalIndex[2]);
+                if (matches != 6) {
+                    fseek (file, start , SEEK_SET);
+                    matches = fscanf_s(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", 
+                                              &vertexIndex[0], &normalIndex[0], &uvIndex[0],
+                                              &vertexIndex[1], &normalIndex[1], &uvIndex[1],
+                                              &vertexIndex[2], &normalIndex[2], &uvIndex[2]);
+
+                    if (matches != 9) {
+                        printf("File can't be read by our simple parser : ( Try exporting with other options\n");
+                        return false;
+                    }
+                }
+            }
+
+            Triangle t = Triangle(vertexIndex[0] - 1,
+                                  vertexIndex[1] - 1,
+                                  vertexIndex[2] - 1);
+            temp_triangles.push_back(t);
+        }
+    }
+
+    fclose(file);
+
+    vertices.insert(vertices.end(), temp_vertices.begin(), temp_vertices.end());
+    triangles.insert(triangles.end(), temp_triangles.begin(), temp_triangles.end());
+    removeDuplicateTriangles();
+
+    if (normals.size() == vertices.size()) {
+        normals.clear();
+        normals.insert(normals.end(), normals.begin(), normals.end());
+    } else {
+        updateVertexNormals();
+    }
+
+    return true;
 }
 
 void TriangleMesh::writeMeshToOBJ(std::string filename) {

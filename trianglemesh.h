@@ -19,6 +19,14 @@ public:
     TriangleMesh();
     ~TriangleMesh();
 
+    bool loadOBJ(std::string OBJFilename, glm::vec3 offset) {
+        loadOBJ(OBJFilename, offset, 1.0);
+    }
+    bool loadOBJ(std::string OBJFilename, double scale) {
+        loadOBJ(OBJFilename, glm::vec3(0.0, 0.0, 0.0), scale);
+    }
+    bool loadOBJ(std::string OBJFilename, glm::vec3 offset, double scale);
+
     int numVertices();
     int numFaces();
     int numTriangles() { return numFaces(); }
