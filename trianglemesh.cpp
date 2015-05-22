@@ -373,6 +373,16 @@ glm::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
     return glm::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
 }
 
+glm::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
+    assert(index < triangles.size());
+
+    Triangle t = triangles[index];
+    int size = vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    return normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]];
+}
+
 glm::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
     assert(index < triangles.size());
 

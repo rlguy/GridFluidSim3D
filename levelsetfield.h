@@ -1,7 +1,6 @@
 #pragma once
 #include "surfacefield.h"
 
-#include "levelset.h"
 
 class LevelSetField : public SurfaceField
 {
@@ -13,7 +12,7 @@ public:
     virtual void clear();
     virtual double getFieldValue(glm::vec3 p);
 
-    void setSignedDistanceField(LevelSet levelset);
+    void setSignedDistanceField(Array3d<double> distField);
 
 private:
 

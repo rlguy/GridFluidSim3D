@@ -259,8 +259,8 @@ void FluidSimulation::_initializeFluidMaterial() {
             }
         }
 
-        Polygonizer3d polygonizer = Polygonizer3d(_i_voxels, _j_voxels, _j_voxels, _dx, 
-                                                  &_implicitFluidField);
+        Polygonizer3d polygonizer(_i_voxels, _j_voxels, _j_voxels, _dx, &_implicitFluidField);
+        polygonizer.setSurfaceThreshold(0.5);
 
         _implicitFluidField.setMaterialGrid(_materialGrid);
         polygonizer.setInsideCellIndices(fluidCells);
@@ -271,6 +271,7 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh = polygonizer.getTriangleMesh();
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
+
     } else if (_fluidInitializationType == MESH) {
         bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
         assert(success);
@@ -278,9 +279,9 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
         _levelset.setSurfaceMesh(_surfaceMesh);
-        _levelset.calculateSignedDistanceField();
+        _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
         _levelsetField.setMaterialGrid(_materialGrid);
-        _levelsetField.setSignedDistanceField(_levelset);
+        _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
         _levelsetPolygonizer.setInsideCellIndices(fluidCells);
         _levelsetPolygonizer.polygonizeSurface();
 
@@ -350,12 +351,10 @@ double FluidSimulation::_calculateNextTimeStep() {
 
 void FluidSimulation::_updateLevelSet(double dt) {
     _levelset.setSurfaceMesh(_surfaceMesh);
-    _levelset.calculateSignedDistanceField();
-    
-    // TODO: Advect levelset
-
+    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
+    _levelset.advectSignedDistanceField(_MACVelocity, dt);
     _levelsetField.setMaterialGrid(_materialGrid);
-    _levelsetField.setSignedDistanceField(_levelset);
+    _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
     _levelsetPolygonizer.setInsideCellIndices(_fluidCellIndices);
     _levelsetPolygonizer.polygonizeSurface();
     _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
@@ -788,33 +787,11 @@ void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, 
 }
 
 void FluidSimulation::_updateFluidCells() {
-    for (int k = 0; k < _materialGrid.depth; k++) {
-        for (int j = 0; j < _materialGrid.height; j++) {
-            for (int i = 0; i < _materialGrid.width; i++) {
-                if (_isCellFluid(i, j, k)) {
-                    _materialGrid.set(i, j, k, M_AIR);
-                }
-            }
-        }
-    }
-
-    MarkerParticle p;
-    for (int i = 0; i < (int)_markerParticles.size(); i++) {
-        p = _markerParticles[i];
-        assert(!_isCellSolid(p.index));
-        _materialGrid.set(p.index, M_FLUID);
-    }
-
+    _materialGrid.set(_fluidCellIndices, M_AIR);
     _fluidCellIndices.clear();
-    for (int k = 0; k < _materialGrid.depth; k++) {
-        for (int j = 0; j < _materialGrid.height; j++) {
-            for (int i = 0; i < _materialGrid.width; i++) {
-                if (_isCellFluid(i, j, k)) {
-                    _fluidCellIndices.push_back(GridIndex(i, j, k));
-                }
-            }
-        }
-    }
+    _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+    _surfaceMesh.getCellsInsideMesh(_fluidCellIndices);
+    _materialGrid.set(_fluidCellIndices, M_FLUID);
 }
 
 void FluidSimulation::_getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]) {
@@ -1724,7 +1701,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Apply Pressure:              \t", timer8.getTime(), 4);
 
     timer9.start();
-    _advanceMarkerParticles(dt);
+    //_advanceMarkerParticles(dt);
     timer9.stop();
 
     _logfile.log("Advance Marker Particles:    \t", timer9.getTime(), 4);

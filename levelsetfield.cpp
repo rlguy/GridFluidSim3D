@@ -58,8 +58,8 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     return val;
 }
 
-void LevelSetField::setSignedDistanceField(LevelSet levelset) {
-    _distanceField = levelset.getSignedDistanceField();
+void LevelSetField::setSignedDistanceField(Array3d<double> distField) {
+    _distanceField = distField;
 }
 
 GridIndex LevelSetField::_positionToGridIndex(glm::vec3 p) {

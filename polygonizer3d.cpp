@@ -398,6 +398,7 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     double thresh = _field->getSurfaceThreshold();
     for (int idx = 0; idx < 8; idx ++) {
         double val = _getVertexFieldValue(vertices[idx]);
+
         if (val > thresh) {
             hasInside = true;
         }

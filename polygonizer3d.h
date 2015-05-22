@@ -22,6 +22,7 @@ public:
 
     ~Polygonizer3d();
 
+    void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
     void setInsideCellIndices(std::vector<GridIndex> indices);
     void polygonizeSurface();
 
