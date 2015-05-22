@@ -225,7 +225,7 @@ void LevelSet::_calculateDistanceFieldSigns() {
     }
 }
 
-void LevelSet::calculateSignedDistance() {
+void LevelSet::calculateSignedDistanceField() {
     _resetSignedDistanceField();
     _calculateUnsignedSurfaceDistance();
     _calculateUnsignedDistance();

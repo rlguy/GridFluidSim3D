@@ -19,7 +19,8 @@ public:
     ~LevelSet();
 
     void setSurfaceMesh(TriangleMesh mesh);
-    void calculateSignedDistance();
+    void calculateSignedDistanceField();
+    Array3d<double> getSignedDistanceField() { return _signedDistance; }
 
 private:
     void _resetSignedDistanceField();

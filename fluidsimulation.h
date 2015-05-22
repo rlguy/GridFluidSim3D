@@ -18,6 +18,7 @@
 #include "MACVelocityField.h"
 #include "array3d.h"
 #include "surfacefield.h"
+#include "levelsetfield.h"
 #include "polygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
@@ -171,6 +172,7 @@ private:
     // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();
+    void _initializeLevelSetPolygonizer();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
 
@@ -403,6 +405,7 @@ private:
     Array3d<int> _layerGrid;
 
     ImplicitSurfaceField _implicitFluidField;
+    LevelSetField _levelsetField;
 
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
@@ -414,6 +417,7 @@ private:
 
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
+    Polygonizer3d _levelsetPolygonizer;
 
 };
 

@@ -8,6 +8,7 @@ FluidSimulation::FluidSimulation() :
                                 _pressureGrid(Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1)),
                                 _implicitFluidField(_i_voxels, _j_voxels, _k_voxels, _dx),
+                                _levelsetField(_i_voxels, _j_voxels, _k_voxels, _dx),
                                 _levelset(_i_voxels, _j_voxels, _k_voxels, _dx)
 {
 }
@@ -20,6 +21,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
                                 _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size),
+                                _levelsetField(x_voxels, y_voxels, z_voxels, cell_size),
                                 _levelset(x_voxels, y_voxels, z_voxels, cell_size)
 {
     _materialGrid.setOutOfRangeValue(M_SOLID);
@@ -229,6 +231,10 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
     }
 }
 
+void FluidSimulation::_initializeLevelSetPolygonizer() {
+    _levelsetPolygonizer = Polygonizer3d(_i_voxels, _j_voxels, _k_voxels, _dx, &_levelsetField);
+}
+
 void FluidSimulation::_initializeFluidMaterial() {
     _isFluidInSimulation = _fluidInitializationType == MESH ||
                            _fluidInitializationType == IMPLICIT;
@@ -270,6 +276,18 @@ void FluidSimulation::_initializeFluidMaterial() {
         assert(success);
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
+
+        _levelset.setSurfaceMesh(_surfaceMesh);
+        _levelset.calculateSignedDistanceField();
+        _levelsetField.setMaterialGrid(_materialGrid);
+        _levelsetField.setSignedDistanceField(_levelset);
+        _levelsetPolygonizer.setInsideCellIndices(fluidCells);
+        _levelsetPolygonizer.polygonizeSurface();
+
+        fluidCells.clear();
+        _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
+        _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        _surfaceMesh.getCellsInsideMesh(fluidCells);
     }
 
 
@@ -288,6 +306,7 @@ void FluidSimulation::_initializeFluidMaterial() {
 
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
+    _initializeLevelSetPolygonizer();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
 }
@@ -331,7 +350,17 @@ double FluidSimulation::_calculateNextTimeStep() {
 
 void FluidSimulation::_updateLevelSet(double dt) {
     _levelset.setSurfaceMesh(_surfaceMesh);
-    _levelset.calculateSignedDistance();
+    _levelset.calculateSignedDistanceField();
+    
+    // TODO: Advect levelset
+
+    _levelsetField.setMaterialGrid(_materialGrid);
+    _levelsetField.setSignedDistanceField(_levelset);
+    _levelsetPolygonizer.setInsideCellIndices(_fluidCellIndices);
+    _levelsetPolygonizer.polygonizeSurface();
+    _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
+
+    //_surfaceMesh.writeMeshToOBJ(filename);
 }
 
 bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
