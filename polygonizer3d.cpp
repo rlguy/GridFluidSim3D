@@ -8,7 +8,7 @@ Polygonizer3d::Polygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
 }
 
 Polygonizer3d::Polygonizer3d(int i_width, int j_height, int k_depth, double cellsize,
-                             ImplicitField *field) : 
+                             SurfaceField *field) : 
                              _isize(i_width), _jsize(j_height), _ksize(k_depth), _dx(cellsize),
                              _field(field),
                              _vertexValues(Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0)),

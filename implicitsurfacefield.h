@@ -1,25 +1,18 @@
 #pragma once
-
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <assert.h>
-
-#include "implicitpointprimitive.h"
-#include "array3d.h"
-#include "glm/glm.hpp"
+#include "surfacefield.h"
 
 struct ImplicitPointData {
     glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
     double radius = 0.0;
 };
 
-class ImplicitField
+
+class ImplicitSurfaceField : public SurfaceField
 {
 public:
-    ImplicitField();
-    ImplicitField(int i_width, int j_height, int k_depth, double cell_size);
-    ~ImplicitField();
+    ImplicitSurfaceField();
+    ImplicitSurfaceField(int i_width, int j_height, int k_depth, double cell_size);
+    ~ImplicitSurfaceField();
 
     void addPoint(double x, double y, double z, double r) { addPoint(glm::vec3(x, y, z), r); };
     void addPoint(glm::vec3 p, double r);
@@ -27,11 +20,6 @@ public:
         addCuboid(glm::vec3(x, y, z), w, h, d);
     }
     void addCuboid(glm::vec3 p, double width, double height, double depth);
-
-    void getDimensions(double *w, double *h, double *d) { *w = width; *h = height; *d = depth; }
-    double getWidth()  { return width; }
-    double getHeight() { return height; }
-    double getDepth()  { return depth; }
 
     double getSurfaceThreshold() { return surfaceThreshold; }
     double getRicciBlend() { return ricciBlend; }
@@ -41,30 +29,12 @@ public:
     void setSurfaceThreshold(double t) { surfaceThreshold = t; }
     void setRicciBlend(double k) { assert(k > 0.0); ricciBlend = k; }
 
-    void setMaterialGrid(Array3d<int> matGrid) {
-        materialGrid = matGrid;
-        isMaterialGridSet = true;
-    }
-
-    void setMaterialGrid() {
-        materialGrid = Array3d<int>();
-        isMaterialGridSet = false;
-    }
-
-    void clear();
-
-    double getFieldValue(double x, double y, double z) { getFieldValue(glm::vec3(x, y, z)); }
-    double getFieldValue(glm::vec3 p);
-    bool isInside(double x, double y, double z) { return isInside(glm::vec3(x, y, z)); }
-    bool isInside(glm::vec3 p);
-    bool isOutside(double x, double y, double z) { return isOutside(glm::vec3(x, y, z)); }
-    bool isOutside(glm::vec3 p);
-
     std::vector<ImplicitPointData> getImplicitPointData();
 
-    double width, height, depth;
-private:
+    virtual void clear();
+    virtual double getFieldValue(glm::vec3 p);
 
+private: 
     // cuboid has a field value of (surfaceThreshold + epsilon) within
     // its volume, 0 outside
     struct Cuboid {
@@ -79,11 +49,6 @@ private:
     };
 
     bool _isPointInsideCuboid(glm::vec3 p, Cuboid c);
-    bool _isPointNearSolid(glm::vec3 p);
-    void _positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
-
-    int i_width, j_height, k_depth;
-    double dx = 1.0;
 
     std::vector<ImplicitPointPrimitive> points;
     std::vector<Cuboid> cuboids;
@@ -91,7 +56,6 @@ private:
     double surfaceThreshold = 0.5;
     double ricciBlend = 1.0;
 
-    Array3d<int> materialGrid;
-    bool isMaterialGridSet = false;
+
 };
 

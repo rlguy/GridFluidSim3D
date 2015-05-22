@@ -6,7 +6,7 @@
 #include <fstream>
 #include <assert.h>
 
-#include "implicitfield.h"
+#include "implicitsurfacefield.h"
 #include "array3d.h"
 #include "trianglemesh.h"
 #include "glm/glm.hpp"
@@ -18,7 +18,7 @@ class Polygonizer3d
 public:
     Polygonizer3d();
     Polygonizer3d(int i_width, int j_height, int k_depth, double cellsize, 
-                  ImplicitField *field);
+                  SurfaceField *field);
 
     ~Polygonizer3d();
 
@@ -88,7 +88,7 @@ private:
     int _isize, _jsize, _ksize;
     double _dx;
 
-    ImplicitField *_field;
+    SurfaceField *_field;
     Array3d<double> _vertexValues;
     Array3d<bool> _isVertexSet;
 

@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #include "triangle.h"
-#include "implicitfield.h"
+#include "surfacefield.h"
 #include "array3d.h"
 #include "aabb.h"
 #include "collision.h"

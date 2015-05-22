@@ -11,7 +11,7 @@
 
 #include "fluidsimulation.h"
 #include "polygonizer3d.h"
-#include "ImplicitField.h"
+#include "surfacefield.h"
 #include "Array3d.h"
 #include "trianglemesh.h"
 #include "game/camera/camera3d.h"

@@ -17,7 +17,7 @@
 #include "stopwatch.h"
 #include "MACVelocityField.h"
 #include "array3d.h"
-#include "implicitfield.h"
+#include "surfacefield.h"
 #include "polygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
@@ -402,7 +402,7 @@ private:
     Array3d<double> _pressureGrid;
     Array3d<int> _layerGrid;
 
-    ImplicitField _implicitFluidField;
+    ImplicitSurfaceField _implicitFluidField;
 
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
