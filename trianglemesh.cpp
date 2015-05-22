@@ -26,6 +26,8 @@ void TriangleMesh::clear() {
 
 // method of loading OBJ from:
 // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
+// .obj must be a closed watertight mesh with triangle with either shared triangle
+// vertices in correct winding order, or vertices with pre-computed vertex normals.
 bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale) {
     clear();
 
@@ -349,7 +351,7 @@ void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
     }
 }
 
-void TriangleMesh::_getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
+void TriangleMesh::getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
@@ -359,6 +361,26 @@ void TriangleMesh::_getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
     tri[0] = vertices[t.tri[0]];
     tri[1] = vertices[t.tri[1]];
     tri[2] = vertices[t.tri[2]];
+}
+
+glm::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
+    assert(index < triangles.size());
+
+    Triangle t = triangles[index];
+    int size = vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    return glm::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
+}
+
+glm::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
+    assert(index < triangles.size());
+
+    Triangle t = triangles[index];
+    int size = vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    return (vertices[t.tri[0]] + vertices[t.tri[1]] + vertices[t.tri[2]]) / 3.0f;
 }
 
 bool TriangleMesh::_isOnTriangleEdge(double u, double v) {
@@ -404,7 +426,7 @@ int TriangleMesh::_getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm:
 
     numIntersections = 0;
     for (int i = 0; i < indices->size(); i++) {
-        _getTrianglePosition(indices->at(i), tri);
+        getTrianglePosition(indices->at(i), tri);
 
         bool isIntersecting = Collision::lineIntersectsTriangle(p, dir, 
                                                                 tri[0], tri[1], tri[2],

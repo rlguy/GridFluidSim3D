@@ -23,6 +23,7 @@
 #include "logfile.h"
 #include "collision.h"
 #include "aabb.h"
+#include "levelset.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -91,8 +92,7 @@ public:
     void removeSolidCells(std::vector<glm::vec3> indices);
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
-    std::vector<GridIndex> getFluidSurfaceCells() { return _polygonizer.getSurfaceCells(); }
-    TriangleMesh* getFluidSurfaceTriangles() { return _polygonizer.getTriangleMesh(); }
+    TriangleMesh* getFluidSurfaceTriangles() { return &_surfaceMesh; }
 
     void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
     glm::vec3 gridIndexToPosition(GridIndex g);
@@ -171,13 +171,15 @@ private:
     // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();
-    void _initializePolygonizer();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
 
     // Simulation step
     double _calculateNextTimeStep();
     void _stepFluid(double dt);
+
+    // Update level set surface
+    void _updateLevelSet(double dt);
 
     // Find fluid cells at this step. Fluid cells must contain at
     // least 1 marker particle
@@ -401,7 +403,6 @@ private:
     Array3d<int> _layerGrid;
 
     ImplicitField _implicitFluidField;
-    Polygonizer3d _polygonizer;
 
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
@@ -410,6 +411,9 @@ private:
     LogFile _logfile;
     double _simulationTime = 0;
     double _realTime = 0;
+
+    TriangleMesh _surfaceMesh;
+    LevelSet _levelset;
 
 };
 

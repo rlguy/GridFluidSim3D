@@ -42,6 +42,9 @@ public:
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
+    void getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
+    glm::vec3 getTriangleNormal(unsigned int index);
+    glm::vec3 getTriangleCenter(unsigned int index);
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
@@ -55,7 +58,6 @@ private:
     void _updateVertexTriangles();
     bool _trianglesEqual(Triangle &t1, Triangle &t2);
     bool _isOnTriangleEdge(double u, double v);
-    void _getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
     bool _isTriangleInVector(int index, std::vector<int> &tris);
     bool _isIntInVector(int i, std::vector<int> &ints);
     int _getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm::vec3 dir, 

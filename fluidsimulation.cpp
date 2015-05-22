@@ -6,7 +6,9 @@ FluidSimulation::FluidSimulation() :
                                 _MACVelocity(_i_voxels, _j_voxels, _k_voxels, _dx),
                                 _materialGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0)),
-                                _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1))
+                                _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1)),
+                                _implicitFluidField(_i_voxels, _j_voxels, _k_voxels, _dx),
+                                _levelset(_i_voxels, _j_voxels, _k_voxels, _dx)
 {
 }
 
@@ -17,7 +19,8 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
-                                _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size)                         
+                                _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size),
+                                _levelset(x_voxels, y_voxels, z_voxels, cell_size)
 {
     _materialGrid.setOutOfRangeValue(M_SOLID);
     _logfile = LogFile();
@@ -226,11 +229,6 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
     }
 }
 
-void FluidSimulation::_initializePolygonizer() {
-    _polygonizer = Polygonizer3d(_i_voxels, _j_voxels, _j_voxels, _dx, 
-                                 &_implicitFluidField);
-}
-
 void FluidSimulation::_initializeFluidMaterial() {
     _isFluidInSimulation = _fluidInitializationType == MESH ||
                            _fluidInitializationType == IMPLICIT;
@@ -255,21 +253,23 @@ void FluidSimulation::_initializeFluidMaterial() {
             }
         }
 
+        Polygonizer3d polygonizer = Polygonizer3d(_i_voxels, _j_voxels, _j_voxels, _dx, 
+                                                  &_implicitFluidField);
+
         _implicitFluidField.setMaterialGrid(_materialGrid);
-        _polygonizer.setInsideCellIndices(fluidCells);
-        _polygonizer.polygonizeSurface();
+        polygonizer.setInsideCellIndices(fluidCells);
+        polygonizer.polygonizeSurface();
 
         // now we can get all cells inside the surface
         fluidCells.clear();
-        TriangleMesh *surface = _polygonizer.getTriangleMesh();
-        surface->setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
-        surface->getCellsInsideMesh(fluidCells);
+        _surfaceMesh = polygonizer.getTriangleMesh();
+        _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        _surfaceMesh.getCellsInsideMesh(fluidCells);
     } else if (_fluidInitializationType == MESH) {
-        TriangleMesh mesh;
-        bool success = mesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
+        bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
         assert(success);
-        mesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
-        mesh.getCellsInsideMesh(fluidCells);
+        _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        _surfaceMesh.getCellsInsideMesh(fluidCells);
     }
 
 
@@ -288,7 +288,6 @@ void FluidSimulation::_initializeFluidMaterial() {
 
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
-    _initializePolygonizer();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
 }
@@ -328,6 +327,11 @@ double FluidSimulation::_calculateNextTimeStep() {
     timeStep = fminf(_maxTimeStep, timeStep);
 
     return timeStep;
+}
+
+void FluidSimulation::_updateLevelSet(double dt) {
+    _levelset.setSurfaceMesh(_surfaceMesh);
+    _levelset.calculateSignedDistance();
 }
 
 bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
@@ -1634,6 +1638,7 @@ void FluidSimulation::_stepFluid(double dt) {
     StopWatch timer6 = StopWatch();
     StopWatch timer7 = StopWatch();
     StopWatch timer8 = StopWatch();
+    StopWatch timer9 = StopWatch();
 
     _logfile.separator();
     _logfile.timestamp();
@@ -1645,49 +1650,55 @@ void FluidSimulation::_stepFluid(double dt) {
     timer1.start();
 
     timer2.start();
-    _updateFluidCells();
+    _updateLevelSet(dt);
     timer2.stop();
 
-    _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
-    _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
-
-    _polygonizer.writeSurfaceToOBJ("screenshots/test.obj");
+    _logfile.log("Update Level set:           \t", timer2.getTime(), 4);
 
     timer3.start();
-    _extrapolateFluidVelocities();
+    _updateFluidCells();
     timer3.stop();
 
-    _logfile.log("Extrapolate Fluid Velocities:\t", timer3.getTime(), 4);
+    _logfile.log("Update Fluid Cells:          \t", timer3.getTime(), 4);
+    _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
+
+    _surfaceMesh.writeMeshToOBJ("screenshots/test.obj");
 
     timer4.start();
-    _applyBodyForcesToVelocityField(dt);
+    _extrapolateFluidVelocities();
     timer4.stop();
 
-    _logfile.log("Apply Body Forces:           \t", timer4.getTime(), 4);
+    _logfile.log("Extrapolate Fluid Velocities:\t", timer4.getTime(), 4);
 
     timer5.start();
-    _advectVelocityField(dt);
+    _applyBodyForcesToVelocityField(dt);
     timer5.stop();
 
-    _logfile.log("Advect Velocity Field:       \t", timer5.getTime(), 4);
+    _logfile.log("Apply Body Forces:           \t", timer5.getTime(), 4);
 
     timer6.start();
-    _updatePressureGrid(dt);
+    _advectVelocityField(dt);
     timer6.stop();
 
-    _logfile.log("Update Pressure Grid:        \t", timer6.getTime(), 4);
+    _logfile.log("Advect Velocity Field:       \t", timer6.getTime(), 4);
 
     timer7.start();
-    _applyPressureToVelocityField(dt);
+    _updatePressureGrid(dt);
     timer7.stop();
 
-    _logfile.log("Apply Pressure:              \t", timer7.getTime(), 4);
+    _logfile.log("Update Pressure Grid:        \t", timer7.getTime(), 4);
 
     timer8.start();
-    _advanceMarkerParticles(dt);
+    _applyPressureToVelocityField(dt);
     timer8.stop();
 
-    _logfile.log("Advance Marker Particles:    \t", timer8.getTime(), 4);
+    _logfile.log("Apply Pressure:              \t", timer8.getTime(), 4);
+
+    timer9.start();
+    _advanceMarkerParticles(dt);
+    timer9.stop();
+
+    _logfile.log("Advance Marker Particles:    \t", timer9.getTime(), 4);
 
     timer1.stop();
 
@@ -1704,15 +1715,17 @@ void FluidSimulation::_stepFluid(double dt) {
     double p6 = floor(1000 * timer6.getTime() / totalTime) / 10.0;
     double p7 = floor(1000 * timer7.getTime() / totalTime) / 10.0;
     double p8 = floor(1000 * timer8.getTime() / totalTime) / 10.0;
+    double p9 = floor(1000 * timer9.getTime() / totalTime) / 10.0;
 
     _logfile.log("---Percentage Breakdown---", "");
-    _logfile.log("Update Fluid Cells:          \t", p2, 3);
-    _logfile.log("Extrapolate Fluid Velocities:\t", p3, 3);
-    _logfile.log("Apply Body Forces:           \t", p4, 3);
-    _logfile.log("Advect Velocity Field:       \t", p5, 3);
-    _logfile.log("Update Pressure Grid:        \t", p6, 3);
-    _logfile.log("Apply Pressure:              \t", p7, 3);
-    _logfile.log("Advance Marker Particles:    \t", p8, 3);
+    _logfile.log("Update Level Set:            \t", p2, 3);
+    _logfile.log("Update Fluid Cells:          \t", p3, 3);
+    _logfile.log("Extrapolate Fluid Velocities:\t", p4, 3);
+    _logfile.log("Apply Body Forces:           \t", p5, 3);
+    _logfile.log("Advect Velocity Field:       \t", p6, 3);
+    _logfile.log("Update Pressure Grid:        \t", p7, 3);
+    _logfile.log("Apply Pressure:              \t", p8, 3);
+    _logfile.log("Advance Marker Particles:    \t", p9, 3);
     _logfile.newline();
 
     _logfile.log("Simulation time: ", _simulationTime, 3);

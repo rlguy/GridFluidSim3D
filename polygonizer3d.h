@@ -26,7 +26,7 @@ public:
     void polygonizeSurface();
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
-    TriangleMesh* getTriangleMesh() { return &_surface; };
+    TriangleMesh getTriangleMesh() { return _surface; };
     void writeSurfaceToOBJ(std::string filename);
 
 private:
