@@ -279,7 +279,7 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
         _levelset.setSurfaceMesh(_surfaceMesh);
-        _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
+        _levelset.calculateSignedDistanceField();
         _levelsetField.setMaterialGrid(_materialGrid);
         _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
         _levelsetPolygonizer.setInsideCellIndices(fluidCells);
@@ -349,17 +349,37 @@ double FluidSimulation::_calculateNextTimeStep() {
     return timeStep;
 }
 
-void FluidSimulation::_updateLevelSet(double dt) {
+void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.setSurfaceMesh(_surfaceMesh);
     _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
+}
+
+void FluidSimulation::_advectLevelSetSignedDistance(double dt) {
+    _levelset.setSurfaceMesh(_surfaceMesh);
+    _levelset.calculateSignedDistanceField();
+
     _levelset.advectSignedDistanceField(_MACVelocity, dt);
     _levelsetField.setMaterialGrid(_materialGrid);
     _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
-    _levelsetPolygonizer.setInsideCellIndices(_fluidCellIndices);
+
+    std::vector<GridIndex> cells;
+    for (int k = 0; k < _materialGrid.depth; k++) {
+        for (int j = 0; j < _materialGrid.height; j++) {
+            for (int i = 0; i < _materialGrid.width; i++) {
+                GridIndex g(i, j, k);
+
+                if (_levelsetField.isCellInside(g) && !_isCellSolid(g)) {
+                    cells.push_back(g);
+                }
+            }
+        }
+    }
+
+    _levelsetPolygonizer.setInsideCellIndices(cells);
     _levelsetPolygonizer.polygonizeSurface();
+
     _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
 
-    //_surfaceMesh.writeMeshToOBJ(filename);
 }
 
 bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
@@ -1656,7 +1676,7 @@ void FluidSimulation::_stepFluid(double dt) {
     timer1.start();
 
     timer2.start();
-    _updateLevelSet(dt);
+    //_updateLevelSetSignedDistance();
     timer2.stop();
 
     _logfile.log("Update Level set:           \t", timer2.getTime(), 4);
@@ -1680,9 +1700,12 @@ void FluidSimulation::_stepFluid(double dt) {
     _applyBodyForcesToVelocityField(dt);
     timer5.stop();
 
+    _advectLevelSetSignedDistance(dt);
+
     _logfile.log("Apply Body Forces:           \t", timer5.getTime(), 4);
 
     timer6.start();
+    
     _advectVelocityField(dt);
     timer6.stop();
 

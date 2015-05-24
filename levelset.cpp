@@ -22,7 +22,7 @@ void LevelSet::setSurfaceMesh(TriangleMesh m) {
 
 void LevelSet::_resetSignedDistanceField() {
     _signedDistance.fill(0.0);
-    _indexGrid.fill(-1);
+    _indexGrid.fill(0.0);
     _isDistanceSet.fill(false);
 }
 
@@ -42,21 +42,15 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &c
 
 void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
     Triangle t = _surfaceMesh.triangles[index];
-    glm::vec3 tri[3];
-    _surfaceMesh.getTrianglePosition(index, tri);
 
     std::vector<GridIndex> cells;
     _getTriangleGridCellOverlap(t, cells);
 
     GridIndex g;
-    glm::vec3 p, d, v;
     double distsq;
     for (int i = 0; i < cells.size(); i++) {
         g = cells[i];
-        p = _gridIndexToCellCenter(g);
-        d = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
-        v = d - p;
-        distsq = glm::dot(v, v);
+        distsq = _minDistToTriangleSquared(g, index);
 
         if (!_isDistanceSet(g) || distsq < _signedDistance(g)) {
             _setLevelSetCell(g, distsq, index);
@@ -129,7 +123,7 @@ void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
 }
 
 void LevelSet::_convertToQueues(std::vector<std::vector<GridIndex>> &layers,
-                      std::vector<std::queue<GridIndex>> &queues) {
+                                std::vector<std::queue<GridIndex>> &queues) {
     for (int j = 0; j < layers.size(); j++) {
         std::queue<GridIndex> q;
         queues.push_back(q);
@@ -155,8 +149,6 @@ void LevelSet::_calculateUnsignedDistanceSquaredForQueue(std::queue<GridIndex> &
 
     GridIndex g, n;
     GridIndex ns[6];
-    glm::vec3 p, d, v;
-    glm::vec3 tri[3];
     double distsq;
 
     while (!q.empty()) {
@@ -168,11 +160,7 @@ void LevelSet::_calculateUnsignedDistanceSquaredForQueue(std::queue<GridIndex> &
             n = ns[j];
             if (_isCellIndexInRange(n) && _isDistanceSet(n)) {
                 int tidx = _indexGrid(n);
-                _surfaceMesh.getTrianglePosition(tidx, tri);
-                p = _gridIndexToCellCenter(g);
-                d = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
-                v = d - p;
-                distsq = glm::dot(v, v);
+                distsq = _minDistToTriangleSquared(n, tidx);
 
                 if (!_isDistanceSet(g) || distsq < _signedDistance(g)) {
                     _setLevelSetCell(g, distsq, tidx);
@@ -272,6 +260,11 @@ void LevelSet::calculateSignedDistanceField(int numLayers) {
     _distanceField.setSignedDistanceField(_signedDistance);
 }
 
+double LevelSet::_minDistToTriangleSquared(GridIndex g, int tidx) {
+    glm::vec3 p = _gridIndexToCellCenter(g);
+    return _minDistToTriangleSquared(p, tidx);
+}
+
 double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
     glm::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(tidx, tri);
@@ -333,7 +326,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
 glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p) {
     if (_isPointInsideSurface(p)) {
         return vgrid.evaluateVelocityAtPosition(p);
-    } else {;
+    } else {
         p = _findClosestPointOnSurface(p);
         return vgrid.evaluateVelocityAtPosition(p);
     }
@@ -342,7 +335,7 @@ glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::ve
 glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {
     if (_isCellInsideSurface(g)) {
         return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
-    } else {;
+    } else {
         glm::vec3 p = _findClosestPointOnSurface(g);
         return vgrid.evaluateVelocityAtPosition(p);
     }
@@ -385,6 +378,7 @@ glm::vec3 LevelSet::_backwardsAdvectVelocity(MACVelocityField &vgrid,
         }
 
         p0 = p1;
+        v0 = v1;
         timeleft -= timestep;
     }
 
@@ -404,7 +398,7 @@ void LevelSet::_advectCell(MACVelocityField &vgrid,
 void LevelSet::advectSignedDistanceField(MACVelocityField &vgrid, double dt) {
     Array3d<double> tempSignedDistance(_isize, _jsize, _ksize, -_numLayers);
 
-    double maxDist = _numLayers*_dx;
+    double maxDist = 5*_dx;
     GridIndex g;
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {

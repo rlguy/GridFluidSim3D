@@ -500,12 +500,12 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     double cy = gy + 0.5*dx;
     double cz = gz + 0.5*dx;
 
-    if (y > cy) {
+    if (y >= cy) {
         refj++;
         refy += dx;
     }
 
-    if (z > cz) {
+    if (z >= cz) {
         refk++;
         refz += dx;
     }
@@ -515,7 +515,7 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     double iy = (y - refy)*invdx;
     double iz = (z - refz)*invdx;
 
-    assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     refi--; refj--; refk--;
     double points[4][4][4];
@@ -548,12 +548,12 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     double cx = gx + 0.5*dx;
     double cz = gz + 0.5*dx;
 
-    if (x > cx) {
+    if (x >= cx) {
         refi++;
         refx += dx;
     }
 
-    if (z > cz) {
+    if (z >= cz) {
         refk++;
         refz += dx;
     }
@@ -563,7 +563,7 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     double iy = (y - refy)*invdx;
     double iz = (z - refz)*invdx;
 
-    assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     refi--; refj--; refk--;
     double points[4][4][4];
@@ -596,12 +596,12 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     double cx = gx + 0.5*dx;
     double cy = gy + 0.5*dx;
 
-    if (x > cx) {
+    if (x >= cx) {
         refi++;
         refx += dx;
     }
 
-    if (y > cy) {
+    if (y >= cy) {
         refj++;
         refy += dx;
     }
@@ -611,7 +611,7 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     double iy = (y - refy)*invdx;
     double iz = (z - refz)*invdx;
 
-    assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     refi--; refj--; refk--;
     double points[4][4][4];

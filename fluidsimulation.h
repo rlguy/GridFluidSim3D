@@ -181,7 +181,7 @@ private:
     void _stepFluid(double dt);
 
     // Update level set surface
-    void _updateLevelSet(double dt);
+    void _updateLevelSetSignedDistance();
 
     // Find fluid cells at this step. Fluid cells must contain at
     // least 1 marker particle
@@ -209,6 +209,9 @@ private:
     void _advectVelocityFieldW(double dt);
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
+
+    // Advect Levelset Signed Distance
+    void _advectLevelSetSignedDistance(double dt);
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(double dt);

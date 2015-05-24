@@ -17,22 +17,42 @@ LevelSetField::~LevelSetField()
 }
 
 void LevelSetField::clear() {
-    _distanceField.fill(1.0);
+    _distanceField.fill(0.0);
 }
 
 double LevelSetField::getFieldValue(glm::vec3 p) {
     GridIndex g = _positionToGridIndex(p);
     glm::vec3 gp = _gridIndexToPosition(g);
 
-    g = GridIndex(g.i - 1, g.j - 1, g.k - 1);
-    
+    double refx = gp.x - 0.5*dx;
+    double refy = gp.y - 0.5*dx;
+    double refz = gp.z - 0.5*dx;
+    int refi = g.i - 1; 
+    int refj = g.j - 1; 
+    int refk = g.k - 1;
+
+    glm::vec3 offset = p - gp;
+    if (offset.x >= 0.5*dx) {
+        refi++;
+        refx += dx;
+    }
+    if (offset.y >= 0.5*dx) {
+        refj++;
+        refy += dx;
+    }
+    if (offset.z >= 0.5*dx) {
+        refk++;
+        refz += dx;
+    }
+
     double invdx = 1 / dx;
-    double ix = (p.x - gp.x)*invdx;
-    double iy = (p.y - gp.y)*invdx;
-    double iz = (p.z - gp.z)*invdx;
+    double ix = (p.x - refx)*invdx;
+    double iy = (p.y - refy)*invdx;
+    double iz = (p.z - refz)*invdx;
 
-    assert(ix >= 0 && ix <= 1 && iy >= 0 && iy <= 1 && iz >= 0 && iz <= 1);
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
+    g = GridIndex(refi - 1, refj - 1, refk - 1);
     double points[4][4][4];
     GridIndex c;
     for (int pk = 0; pk < 4; pk++) {
@@ -71,6 +91,10 @@ GridIndex LevelSetField::_positionToGridIndex(glm::vec3 p) {
 
 glm::vec3 LevelSetField::_gridIndexToPosition(GridIndex g) {
     return glm::vec3((double)g.i*dx, (double)g.j*dx, (double)g.k*dx);
+}
+
+glm::vec3 LevelSetField::_gridIndexToCellCenter(GridIndex g) {
+    return glm::vec3((double)g.i*dx + 0.5*dx, (double)g.j*dx + 0.5*dx, (double)g.k*dx + 0.5*dx);
 }
 
 /* 

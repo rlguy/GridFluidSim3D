@@ -690,6 +690,7 @@ void Polygonizer3d::_calculateSurfaceTriangles() {
 
 void Polygonizer3d::polygonizeSurface() {
     _surfaceCells = _findSurfaceCells();
+
     _calculateSurfaceTriangles();
     _surface.removeDuplicateTriangles(); // Polygonization method produces
                                          // some identical triangles for some

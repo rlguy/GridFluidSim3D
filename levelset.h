@@ -55,6 +55,7 @@ private:
     glm::vec3 _evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p);
     glm::vec3 _evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx);
+    double _minDistToTriangleSquared(GridIndex g, int tidx);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
     glm::vec3 _backwardsAdvectVelocity(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, double dt);
     bool _integrateVelocity(MACVelocityField &vgrid, 
@@ -101,5 +102,6 @@ private:
     Array3d<bool> _isDistanceSet;
 
     LevelSetField _distanceField;
+
 };
 
