@@ -25,8 +25,6 @@ public:
     void calculateSignedDistanceField(int numLayers);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
 
-    void advectSignedDistanceField(MACVelocityField &velocityGrid, double dt);
-
 private:
     void _resetSignedDistanceField();
     void _calculateUnsignedSurfaceDistanceSquared();
@@ -48,16 +46,13 @@ private:
     void _updateCellSign(GridIndex g, std::vector<glm::vec3> &triangleCenters, 
                                       std::vector<glm::vec3> &triangleDirections);
 
-    void _advectCell(MACVelocityField &vgrid, Array3d<double> &tempGrid, GridIndex g, double dt);
     glm::vec3 _findClosestPointOnSurface(GridIndex g);
     glm::vec3 _findClosestPointOnSurface(glm::vec3 p);
-    glm::vec3 _RK4(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p);
     glm::vec3 _evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx);
     double _minDistToTriangleSquared(GridIndex g, int tidx);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
-    glm::vec3 _backwardsAdvectVelocity(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, double dt);
 
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
