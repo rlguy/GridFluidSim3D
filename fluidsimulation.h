@@ -180,6 +180,9 @@ private:
     double _calculateNextTimeStep();
     void _stepFluid(double dt);
 
+    // Convert marker particles to fluid surface
+    void _reconstructFluidSurface();
+
     // Update level set surface
     void _updateLevelSetSignedDistance();
 
