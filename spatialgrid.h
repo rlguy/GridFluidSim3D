@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <assert.h>
 
 #include "glm/glm.hpp"
@@ -11,15 +12,15 @@ class SpatialGrid
 public:
     SpatialGrid() : _isize(0), _jsize(0), _ksize(0),
                     _dx(0.0),
-                    _grid(Array3d<SpatialGridObject>(0, 0, 0)) {
+                    _grid(0, 0, 0) {
     }
 
     SpatialGrid(int i, int j, int k, double cellsize) :  _isize(i), _jsize(j), _ksize(k),
                                                          _dx(cellsize),
-                                                         _grid(Array3d<SpatialGridObject>(i, j, k)) {
+                                                         _grid(i, j, k) {
     }
 
-    SpatialGrid(Array3d &obj) {
+    SpatialGrid(SpatialGrid &obj) {
         _isize = obj._isize;
         _jsize = obj._jsize;
         _ksize = obj._ksize;
@@ -28,7 +29,7 @@ public:
         _grid = obj._grid;
     }
 
-    SpatialGrid operator=(Array3d & rhs) {
+    SpatialGrid operator=(SpatialGrid & rhs) {
         _isize = rhs._isize;
         _jsize = rhs._jsize;
         _ksize = rhs._ksize;
@@ -48,7 +49,7 @@ public:
             for (int j = 0; j < _grid.height; j++) {
                 for (int i = 0; i < _grid.depth; i++) {
                     objs = _grid.getPointer(i, j, k);
-                    objs.clear();
+                    objs->clear();
                 }
             }
         }
@@ -74,10 +75,10 @@ public:
 
         std::vector<SpatialGridObject> *objs;
         for (int k = gmin.k; k <= gmax.k; k++) {
-            for (int j = gmin.j; j <= gmax.j, j++) {
+            for (int j = gmin.j; j <= gmax.j; j++) {
                 for (int i = gmin.i; i <= gmax.i; i++) {
                     objs = _grid.getPointer(i, j, k);
-                    objs.push_back(obj);
+                    objs->push_back(obj);
                 }
             }
         }
@@ -97,11 +98,12 @@ public:
                     objs = _grid.getPointer(i, j, k);
                     
                     for (int idx = 0; idx < objs->size(); idx++) {
-                        o = objs[idx];
-                        if (isDuplicate.find(h) != _isDuplicate.end() && 
+                        o = objs->at(idx);
+                        if (isDuplicate.find(o.id) != _isDuplicate.end() && 
                             _isSphereCollision(pos, r, o.position, o.radius)) {
                             storage.push_back(o.object);
-                            isDuplicate(pair(o.id, true));
+                            std::pair<int, bool> pair(o.id, true);
+                            isDuplicate(pair);
                         }
                     }
 
@@ -110,9 +112,34 @@ public:
         }
     }
 
-    void query(glm::vec3 pos, double r) {
+    std::vector<T> query(glm::vec3 pos, double r) {
         std::vector<T> storage;
         query(pos, r, storage);
+        return storage;
+    }
+
+    void query(glm::vec3 pos, std::vector<T> &storage) {
+        GridIndex g = _positionToGridIndex(pos);
+
+        std::vector<SpatialGridObject> *objs = _grid.getPointer(g);
+        SpatialGridObject o;
+        objs = _grid.getPointer(g);
+                    
+        for (int idx = 0; idx < objs->size(); idx++) {
+            o = objs->at(idx);
+            glm::vec3 v = o.position - pos;
+            double distsq = glm::dot(v, v);
+            double maxdistsq = o.radius*o.radius;
+
+            if (distsq < maxdistsq) {
+                storage.push_back(o.object);
+            }
+        }
+    }
+
+    std::vector<T> query(glm::vec3 pos) {
+        std::vector<T> storage;
+        query(pos, storage);
         return storage;
     }
 
@@ -134,11 +161,7 @@ private:
 
     inline GridIndex _positionToGridIndex(glm::vec3 p) {
         double invdx = 1.0 / _dx;
-        return GridIndex(
-            floor(p.x*invdx);
-            floor(p.y*invdx);
-            floor(p.z*invdx);
-        );
+        return GridIndex(floor(p.x*invdx), floor(p.y*invdx), floor(p.z*invdx));
     }
 
     inline glm::vec3 _GridIndexToPosition(GridIndex g) {
@@ -160,9 +183,9 @@ private:
         int imin = c.i - fmax(0, ceil((r-trans.x)*inv));
         int jmin = c.j - fmax(0, ceil((r-trans.y)*inv));
         int kmin = c.k - fmax(0, ceil((r-trans.z)*inv));
-        int imax = c.i + fmax(0, ceil((r-size+trans.x)*inv));
-        int jmax = c.j + fmax(0, ceil((r-size+trans.y)*inv));
-        int kmax = c.k + fmax(0, ceil((r-size+trans.z)*inv));
+        int imax = c.i + fmax(0, ceil((r-_dx+trans.x)*inv));
+        int jmax = c.j + fmax(0, ceil((r-_dx+trans.y)*inv));
+        int kmax = c.k + fmax(0, ceil((r-_dx+trans.z)*inv));
 
         *gmin = GridIndex(fmax(imin, 0), fmax(jmin, 0), fmax(kmin, 0));
         *gmax = GridIndex(fmin(imax, _isize-1), fmin(jmax, _jsize-1), fmin(kmax, _ksize-1));
