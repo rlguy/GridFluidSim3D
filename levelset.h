@@ -24,6 +24,7 @@ public:
     void calculateSignedDistanceField();
     void calculateSignedDistanceField(int numLayers);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
+    glm::vec3 getClosestPointOnSurface(glm::vec3 p);
 
 private:
     void _resetSignedDistanceField();

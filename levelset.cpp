@@ -110,12 +110,7 @@ void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
     layers.push_back(q);
     _getLayerCells(1, layer, layers[0], layerGrid);
 
-    // Calculate signed distance field for twice as many layers as specified.
-    // During the advection stage, the maximum number of cells a particle will
-    // travel is _numLayers cells. Calculating twice the number will ensure that
-    // there will be values for interpolation when advecting _numLayers cells away from
-    // the surface.
-    for (int i = 2; layers[i-2].size() > 0 && i < 2*_numLayers; i++) {
+    for (int i = 2; layers[i-2].size() > 0 && i < _numLayers; i++) {
         std::vector<GridIndex> q;
         layers.push_back(q);
         _getLayerCells(i, layers[i - 2], layers[i - 1], layerGrid);
@@ -324,27 +319,25 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
 }
 
 glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p) {
-    /*
     if (_isPointInsideSurface(p)) {
         return vgrid.evaluateVelocityAtPosition(p);
     } else {
         p = _findClosestPointOnSurface(p);
         return vgrid.evaluateVelocityAtPosition(p);
     }
-    */
 
     return vgrid.evaluateVelocityAtPosition(p);
 }
 
 glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {
-    /*
     if (_isCellInsideSurface(g)) {
         return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
     } else {
         glm::vec3 p = _findClosestPointOnSurface(g);
         return vgrid.evaluateVelocityAtPosition(p);
     }
-    */
+}
 
-    return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
+glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p) {
+    return _findClosestPointOnSurface(p);
 }

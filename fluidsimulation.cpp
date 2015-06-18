@@ -363,7 +363,12 @@ double FluidSimulation::_calculateNextTimeStep() {
 
 void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.setSurfaceMesh(_surfaceMesh);
-    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
+
+    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
+    // In order find velocities at the fluid surface for all extrapolated
+    // velocity layers, the level set will need to calculate signed distance 
+    // for (_CFLConditionNumber + 3) layers
+    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 3.0);
 }
 
 bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
@@ -877,6 +882,15 @@ int FluidSimulation::_updateExtrapolationLayers() {
 }
 
 double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIdx) {
+
+    // First two layers are calculate by averaging neighbours so that values exist for tricubic
+    // interpolation at the fluid boundary for layers > 2
+    if (layerIdx > 2) {
+        glm::vec3 pos = _MACVelocity.velocityIndexToPositionU(i, j, k);
+        glm::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
+        return v.x;
+    }
+
     GridIndex n[6];
     _getNeighbourGridIndices6(i, j, k, n);
 
@@ -900,6 +914,13 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
 }
 
 double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIdx) {
+
+    if (layerIdx > 2) {
+        glm::vec3 pos = _MACVelocity.velocityIndexToPositionV(i, j, k);
+        glm::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
+        return v.y;
+    }
+
     GridIndex n[6];
     _getNeighbourGridIndices6(i, j, k, n);
 
@@ -923,6 +944,13 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, in
 }
 
 double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIdx) {
+
+    if (layerIdx > 2) {
+        glm::vec3 pos = _MACVelocity.velocityIndexToPositionW(i, j, k);
+        glm::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
+        return v.z;
+    }
+
     GridIndex n[6];
     _getNeighbourGridIndices6(i, j, k, n);
 
@@ -943,6 +971,11 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, in
     }
 
     return sum / weightsum;
+}
+
+glm::vec3 FluidSimulation::_getVelocityAtNearestPointOnFluidSurface(glm::vec3 p) {
+    p = _levelset.getClosestPointOnSurface(p);
+    return _MACVelocity.evaluateVelocityAtPosition(p);
 }
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {

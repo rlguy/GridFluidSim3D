@@ -198,6 +198,8 @@ private:
     double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
+    glm::vec3 _getVelocityAtNearestPointOnFluidSurface(glm::vec3 p);
+
 
     // Add gravity to fluid velocities and extrapolated velocities
     void _applyBodyForcesToVelocityField(double dt);
