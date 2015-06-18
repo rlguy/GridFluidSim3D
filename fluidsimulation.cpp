@@ -272,6 +272,18 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
+        _levelset.setSurfaceMesh(_surfaceMesh);
+        _levelset.calculateSignedDistanceField();
+        _levelsetField.setMaterialGrid(_materialGrid);
+        _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
+        _levelsetPolygonizer.setInsideCellIndices(fluidCells);
+        _levelsetPolygonizer.polygonizeSurface();
+
+        fluidCells.clear();
+        _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
+        _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
+        _surfaceMesh.getCellsInsideMesh(fluidCells);
+
     } else if (_fluidInitializationType == MESH) {
         bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
         assert(success);
@@ -352,34 +364,6 @@ double FluidSimulation::_calculateNextTimeStep() {
 void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.setSurfaceMesh(_surfaceMesh);
     _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 2.0);
-}
-
-void FluidSimulation::_advectLevelSetSignedDistance(double dt) {
-    _levelset.setSurfaceMesh(_surfaceMesh);
-    _levelset.calculateSignedDistanceField();
-
-    _levelset.advectSignedDistanceField(_MACVelocity, dt);
-    _levelsetField.setMaterialGrid(_materialGrid);
-    _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
-
-    std::vector<GridIndex> cells;
-    for (int k = 0; k < _materialGrid.depth; k++) {
-        for (int j = 0; j < _materialGrid.height; j++) {
-            for (int i = 0; i < _materialGrid.width; i++) {
-                GridIndex g(i, j, k);
-
-                if (_levelsetField.isCellInside(g) && !_isCellSolid(g)) {
-                    cells.push_back(g);
-                }
-            }
-        }
-    }
-
-    _levelsetPolygonizer.setInsideCellIndices(cells);
-    _levelsetPolygonizer.polygonizeSurface();
-
-    _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
-
 }
 
 bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
@@ -809,9 +793,23 @@ void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, 
 void FluidSimulation::_updateFluidCells() {
     _materialGrid.set(_fluidCellIndices, M_AIR);
     _fluidCellIndices.clear();
-    _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
-    _surfaceMesh.getCellsInsideMesh(_fluidCellIndices);
-    _materialGrid.set(_fluidCellIndices, M_FLUID);
+    
+    MarkerParticle p;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        assert(!_isCellSolid(p.index));
+        _materialGrid.set(p.index, M_FLUID);
+    }
+
+    for (int k = 0; k < _materialGrid.depth; k++) {
+        for (int j = 0; j < _materialGrid.height; j++) {
+            for (int i = 0; i < _materialGrid.width; i++) {
+                if (_isCellFluid(i, j, k)) {
+                    _fluidCellIndices.push_back(GridIndex(i, j, k));
+                }
+            }
+        }
+    }
 }
 
 void FluidSimulation::_getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]) {
@@ -1676,7 +1674,7 @@ void FluidSimulation::_stepFluid(double dt) {
     timer1.start();
 
     timer2.start();
-    //_updateLevelSetSignedDistance();
+    _updateLevelSetSignedDistance();
     timer2.stop();
 
     _logfile.log("Update Level set:           \t", timer2.getTime(), 4);
@@ -1700,12 +1698,9 @@ void FluidSimulation::_stepFluid(double dt) {
     _applyBodyForcesToVelocityField(dt);
     timer5.stop();
 
-    _advectLevelSetSignedDistance(dt);
-
     _logfile.log("Apply Body Forces:           \t", timer5.getTime(), 4);
 
     timer6.start();
-    
     _advectVelocityField(dt);
     timer6.stop();
 
@@ -1724,7 +1719,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Apply Pressure:              \t", timer8.getTime(), 4);
 
     timer9.start();
-    //_advanceMarkerParticles(dt);
+    _advanceMarkerParticles(dt);
     timer9.stop();
 
     _logfile.log("Advance Marker Particles:    \t", timer9.getTime(), 4);

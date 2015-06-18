@@ -1,6 +1,8 @@
 #pragma once
 #include "surfacefield.h"
 
+#include "spatialgrid.h"
+
 struct ImplicitPointData {
     glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
     double radius = 0.0;
@@ -55,6 +57,7 @@ private:
     double surfaceThreshold = 0.5;
     double ricciBlend = 1.0;
 
-
+    SpatialGrid<ImplicitPointPrimitive> pointGrid;
+    int gridi, gridj, gridk;
 };
 

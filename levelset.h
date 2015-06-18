@@ -58,8 +58,6 @@ private:
     double _minDistToTriangleSquared(GridIndex g, int tidx);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
     glm::vec3 _backwardsAdvectVelocity(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, double dt);
-    bool _integrateVelocity(MACVelocityField &vgrid, 
-                            glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
 
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;

@@ -210,9 +210,6 @@ private:
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
 
-    // Advect Levelset Signed Distance
-    void _advectLevelSetSignedDistance(double dt);
-
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(double dt);
     double _calculateNegativeDivergenceVector(VectorCoefficients &b);

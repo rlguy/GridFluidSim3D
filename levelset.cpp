@@ -324,21 +324,29 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
 }
 
 glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p) {
+    /*
     if (_isPointInsideSurface(p)) {
         return vgrid.evaluateVelocityAtPosition(p);
     } else {
         p = _findClosestPointOnSurface(p);
         return vgrid.evaluateVelocityAtPosition(p);
     }
+    */
+
+    return vgrid.evaluateVelocityAtPosition(p);
 }
 
 glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {
+    /*
     if (_isCellInsideSurface(g)) {
         return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
     } else {
         glm::vec3 p = _findClosestPointOnSurface(g);
         return vgrid.evaluateVelocityAtPosition(p);
     }
+    */
+
+    return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
 }
 
 glm::vec3 LevelSet::_RK4(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, double dt) {
@@ -351,19 +359,6 @@ glm::vec3 LevelSet::_RK4(MACVelocityField &vgrid, glm::vec3 p0, glm::vec3 v0, do
     return p1;
 }
 
-bool LevelSet::_integrateVelocity(MACVelocityField &vgrid,
-                                  glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1) {
-    *p1 = _RK4(vgrid, p0, v0, dt);
-    GridIndex n = _positionToGridIndex(*p1);
-    if (!_isCellInsideSurface(n)) {
-        *p1 = _findClosestPointOnSurface(*p1);
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
 glm::vec3 LevelSet::_backwardsAdvectVelocity(MACVelocityField &vgrid, 
                                              glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 v1, p1;
@@ -371,32 +366,34 @@ glm::vec3 LevelSet::_backwardsAdvectVelocity(MACVelocityField &vgrid,
     while (timeleft > 0.0) {
         double timestep = _dx / glm::length(v0);
         timestep = fminf(timeleft, timestep);
-        bool isInsideSurface = _integrateVelocity(vgrid, p0, v0, -timestep, &p1);
-        v1 = vgrid.evaluateVelocityAtPosition(p1);
-        if (!isInsideSurface) {
-            break;
-        }
+        p1 = _RK4(vgrid, p0, v0, -timestep);
 
-        p0 = p1;
-        v0 = v1;
         timeleft -= timestep;
+
+        if (timeleft > 0.0) {
+            v1 = vgrid.evaluateVelocityAtPosition(p1);
+            p0 = p1;
+            v0 = v1;
+        }
     }
 
     return p1;
 }
 
 void LevelSet::_advectCell(MACVelocityField &vgrid, 
-                           Array3d<double> &tempSignedDistance, 
+                           Array3d<double> &tempSignedDistance,
                            GridIndex g, double dt) {
     glm::vec3 p0 = _gridIndexToCellCenter(g);
     glm::vec3 v0 = _evaluateVelocityAtGridIndex(vgrid, g);
     glm::vec3 p1 = _backwardsAdvectVelocity(vgrid, p0, v0, dt);
+
     double signedDistance = _distanceField.getFieldValue(p1);
     tempSignedDistance.set(g, signedDistance);
 }
 
 void LevelSet::advectSignedDistanceField(MACVelocityField &vgrid, double dt) {
-    Array3d<double> tempSignedDistance(_isize, _jsize, _ksize, -_numLayers);
+    Array3d<double> tempSignedDistance(_isize, _jsize, _ksize, 0.0);
+    std::vector<GridIndex> advectedCells;
 
     double maxDist = 5*_dx;
     GridIndex g;
@@ -406,10 +403,15 @@ void LevelSet::advectSignedDistanceField(MACVelocityField &vgrid, double dt) {
                 g = GridIndex(i, j, k);
                 if (_isDistanceSet(g) && fabs(_signedDistance(g)) < maxDist) {
                     _advectCell(vgrid, tempSignedDistance, g, dt);
+                    advectedCells.push_back(g);
                 }
             }
         }
     }
 
-    _signedDistance = tempSignedDistance;
+    for (int i = 0; i < advectedCells.size(); i++) {
+        g = advectedCells[i];
+        _signedDistance.set(g, tempSignedDistance(g));
+    }
+
 }
