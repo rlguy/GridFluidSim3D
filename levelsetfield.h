@@ -25,10 +25,11 @@ private:
     glm::vec3 _gridIndexToCellCenter(GridIndex g);
 
     inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_width && g.j < j_height && g.k < k_depth;
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
+               g.i < i_width && g.j < j_height && g.k < k_depth;
     }
 
-
+    double _surfaceThreshold = 0.0;
     Array3d<double> _distanceField;
 };
 

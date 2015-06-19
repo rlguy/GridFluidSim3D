@@ -32,9 +32,9 @@ FluidSimulation::~FluidSimulation() {
 
 }
 
-/***************************************************************
+/*******************************************************************************
     PUBLIC
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::run() {
     if (!_isSimulationInitialized) {
@@ -242,9 +242,9 @@ void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, 
     *k = (int)floor(z*invdx);
 }
 
-/***************************************************************
+/********************************************************************************
     INITIALIZATION
-***************************************************************/
+********************************************************************************/
 void FluidSimulation::_initializeSolidCells() {
     // fill borders with solid cells
     for (int j = 0; j < _j_voxels; j++) {
@@ -297,10 +297,6 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
     }
 }
 
-void FluidSimulation::_initializeLevelSetPolygonizer() {
-    _levelsetPolygonizer = Polygonizer3d(_i_voxels, _j_voxels, _k_voxels, _dx, &_levelsetField);
-}
-
 void FluidSimulation::_initializeFluidMaterial() {
     _isFluidInSimulation = _fluidInitializationType == MESH ||
                            _fluidInitializationType == IMPLICIT;
@@ -325,8 +321,9 @@ void FluidSimulation::_initializeFluidMaterial() {
             }
         }
 
+        assert(fluidCells.size() > 0);
+
         Polygonizer3d polygonizer(_i_voxels, _j_voxels, _j_voxels, _dx, &_implicitFluidField);
-        polygonizer.setSurfaceThreshold(0.5);
 
         _implicitFluidField.setMaterialGrid(_materialGrid);
         polygonizer.setInsideCellIndices(fluidCells);
@@ -337,21 +334,25 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
+        _surfaceMesh.writeMeshToOBJ("screenshots/test01.obj");
+
     } else if (_fluidInitializationType == MESH) {
         bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
         assert(success);
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
+        Polygonizer3d levelsetPolygonizer = Polygonizer3d(_i_voxels, _j_voxels, _k_voxels, 
+                                                           _dx, &_levelsetField);
         _levelset.setSurfaceMesh(_surfaceMesh);
         _levelset.calculateSignedDistanceField();
         _levelsetField.setMaterialGrid(_materialGrid);
         _levelsetField.setSignedDistanceField(_levelset.getSignedDistanceField());
-        _levelsetPolygonizer.setInsideCellIndices(fluidCells);
-        _levelsetPolygonizer.polygonizeSurface();
+        levelsetPolygonizer.setInsideCellIndices(fluidCells);
+        levelsetPolygonizer.polygonizeSurface();
 
         fluidCells.clear();
-        _surfaceMesh = _levelsetPolygonizer.getTriangleMesh();
+        _surfaceMesh = levelsetPolygonizer.getTriangleMesh();
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
     }
@@ -372,22 +373,21 @@ void FluidSimulation::_initializeFluidMaterial() {
 
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
-    _initializeLevelSetPolygonizer();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
 }
 
-/***************************************************************
+/********************************************************************************
     FLUID SURFACE RECONSTRUCTION
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_reconstructFluidSurface() {
     // todo
 }
 
-/***************************************************************
+/********************************************************************************
     UPDATE LEVEL SET
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.setSurfaceMesh(_surfaceMesh);
@@ -399,9 +399,9 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 3.0);
 }
 
-/***************************************************************
+/********************************************************************************
     UPDATE FLUID CELLS
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_updateFluidCells() {
     _materialGrid.set(_fluidCellIndices, M_AIR);
@@ -425,9 +425,9 @@ void FluidSimulation::_updateFluidCells() {
     }
 }
 
-/***************************************************************
+/********************************************************************************
     EXTRAPOLATE FLUID VELOCITIES
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]) {
     n[0] = GridIndex(i-1, j, k);
@@ -676,9 +676,9 @@ void FluidSimulation::_extrapolateFluidVelocities() {
     }
 }
 
-/***************************************************************
+/********************************************************************************
     APPLY BODY FORCES
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     if (fabs(_bodyForce.x) > 0.0) {
@@ -721,9 +721,9 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
     }
 }
 
-/***************************************************************
+/********************************************************************************
     ADVECT FLUID VELOCITIES
-***************************************************************/
+********************************************************************************/
 
 glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 k1 = v0;
@@ -1117,9 +1117,9 @@ void FluidSimulation::_advectVelocityField(double dt) {
     _MACVelocity.commitTemporaryVelocityFieldValues();
 }
 
-/***************************************************************
+/********************************************************************************
     UPDATE PRESSURE GRID
-***************************************************************/
+********************************************************************************/
 
 double FluidSimulation::_calculateNegativeDivergenceVector(VectorCoefficients &b) {
     double scale = 1.0 / _dx;
@@ -1532,9 +1532,9 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     }
 }
 
-/***************************************************************
+/********************************************************************************
     ADVANCE MARKER PARTICLES
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt) {
     assert(startIdx <= endIdx);
@@ -1704,9 +1704,9 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
     _MACVelocity.commitTemporaryVelocityFieldValues();
 }
 
-/***************************************************************
+/********************************************************************************
     TIME STEP
-***************************************************************/
+********************************************************************************/
 
 void FluidSimulation::_stepFluid(double dt) {
     _simulationTime += dt;

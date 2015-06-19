@@ -50,22 +50,28 @@ public:
     void randomizeValues(double min, double max);
 
     inline bool isIndexInRangeU(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels + 1 && j < j_voxels && k < k_voxels;
+        return i >= 0 && j >= 0 && k >= 0 && 
+               i < _i_voxels + 1 && j < _j_voxels && k < _k_voxels;
     }
     inline bool isIndexInRangeV(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels + 1 && k < k_voxels;
+        return i >= 0 && j >= 0 && k >= 0 && 
+               i < _i_voxels && j < _j_voxels + 1 && k < _k_voxels;
     }
     inline bool isIndexInRangeW(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels + 1;
+        return i >= 0 && j >= 0 && k >= 0 && 
+               i < _i_voxels && j < _j_voxels && k < _k_voxels + 1;
     }
     inline bool isIndexInRangeU(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels + 1 && g.j < j_voxels && g.k < k_voxels;
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
+               g.i < _i_voxels + 1 && g.j < _j_voxels && g.k < _k_voxels;
     }
     inline bool isIndexInRangeV(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels && g.j < j_voxels + 1 && g.k < k_voxels;
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
+               g.i < _i_voxels && g.j < _j_voxels + 1 && g.k < _k_voxels;
     }
     inline bool isIndexInRangeW(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < i_voxels && g.j < j_voxels && g.k < k_voxels + 1;
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
+               g.i < _i_voxels && g.j < _j_voxels && g.k < _k_voxels + 1;
     }
 
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
@@ -88,10 +94,11 @@ private:
     void _initializeVelocityGrids();
 
     inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < i_voxels && j < j_voxels && k < k_voxels;
+        return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
     }
     inline bool _isPositionInGrid(double x, double y, double z) {
-        return x >= 0 && y >= 0 && z >= 0 && x <= dx*i_voxels && y <= dx*j_voxels && z <= dx*k_voxels;
+        return x >= 0 && y >= 0 && z >= 0 && 
+               x <= _dx*_i_voxels && y <= _dx*_j_voxels && z <= _dx*_k_voxels;
     }
 
     double _default_out_of_range_value = 0.0;
@@ -112,10 +119,10 @@ private:
     void _positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
     void _gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
 
-    double dx = 0.1;
-    int i_voxels = 10;
-    int j_voxels = 10;
-    int k_voxels = 10;
+    double _dx = 0.1;
+    int _i_voxels = 10;
+    int _j_voxels = 10;
+    int _k_voxels = 10;
 
     Array3d<double> _u;
     Array3d<double> _v;

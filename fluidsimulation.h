@@ -172,7 +172,6 @@ private:
     // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();
-    void _initializeLevelSetPolygonizer();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
 
@@ -422,7 +421,6 @@ private:
 
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
-    Polygonizer3d _levelsetPolygonizer;
 
 };
 

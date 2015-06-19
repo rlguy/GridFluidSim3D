@@ -40,7 +40,7 @@ public:
     double width, height, depth;
 
 protected:
-    void _positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
+    void positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
 
     int i_width, j_height, k_depth;
     double dx = 1.0;

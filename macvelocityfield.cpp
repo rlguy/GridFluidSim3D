@@ -7,8 +7,8 @@ MACVelocityField::MACVelocityField()
 }
 
 MACVelocityField::MACVelocityField(int x_voxels, int y_voxels, int z_voxels, double cell_size) :
-                                   i_voxels(x_voxels), j_voxels(y_voxels), k_voxels(z_voxels),
-                                   dx(cell_size) {
+                                   _i_voxels(x_voxels), _j_voxels(y_voxels), _k_voxels(z_voxels),
+                                   _dx(cell_size) {
 
     _initializeVelocityGrids();
 }
@@ -21,17 +21,17 @@ MACVelocityField::~MACVelocityField()
 
 void MACVelocityField::_initializeVelocityGrids() {
 
-    _u = Array3d<double>(i_voxels + 1, j_voxels, k_voxels, 0.0);
-    _v = Array3d<double>(i_voxels, j_voxels + 1, k_voxels, 0.0);
-    _w = Array3d<double>(i_voxels, j_voxels, k_voxels + 1, 0.0);
+    _u = Array3d<double>(_i_voxels + 1, _j_voxels, _k_voxels, 0.0);
+    _v = Array3d<double>(_i_voxels, _j_voxels + 1, _k_voxels, 0.0);
+    _w = Array3d<double>(_i_voxels, _j_voxels, _k_voxels + 1, 0.0);
 
-    _temp_u = Array3d<double>(i_voxels + 1, j_voxels, k_voxels, 0.0);
-    _temp_v = Array3d<double>(i_voxels, j_voxels + 1, k_voxels, 0.0);
-    _temp_w = Array3d<double>(i_voxels, j_voxels, k_voxels + 1, 0.0);
+    _temp_u = Array3d<double>(_i_voxels + 1, _j_voxels, _k_voxels, 0.0);
+    _temp_v = Array3d<double>(_i_voxels, _j_voxels + 1, _k_voxels, 0.0);
+    _temp_w = Array3d<double>(_i_voxels, _j_voxels, _k_voxels + 1, 0.0);
 
-    _is_set_u = Array3d<bool>(i_voxels + 1, j_voxels, k_voxels, false);
-    _is_set_v = Array3d<bool>(i_voxels, j_voxels + 1, k_voxels, false);
-    _is_set_w = Array3d<bool>(i_voxels, j_voxels, k_voxels + 1, false);
+    _is_set_u = Array3d<bool>(_i_voxels + 1, _j_voxels, _k_voxels, false);
+    _is_set_v = Array3d<bool>(_i_voxels, _j_voxels + 1, _k_voxels, false);
+    _is_set_w = Array3d<bool>(_i_voxels, _j_voxels, _k_voxels + 1, false);
 }
 
 void MACVelocityField::clearU() {
@@ -98,25 +98,25 @@ void MACVelocityField::randomizeValues() {
 }
 
 void MACVelocityField::randomizeValues(double min, double max) {
-    for (int k = 0; k < k_voxels; k++) {
-        for (int j = 0; j < j_voxels; j++) {
-            for (int i = 0; i < i_voxels + 1; i++) {
+    for (int k = 0; k < _k_voxels; k++) {
+        for (int j = 0; j < _j_voxels; j++) {
+            for (int i = 0; i < _i_voxels + 1; i++) {
                 _u.set(i, j, k, _randomFloat(min, max));
             }
         }
     }
 
-    for (int k = 0; k < k_voxels; k++) {
-        for (int j = 0; j < j_voxels + 1; j++) {
-            for (int i = 0; i < i_voxels; i++) {
+    for (int k = 0; k < _k_voxels; k++) {
+        for (int j = 0; j < _j_voxels + 1; j++) {
+            for (int i = 0; i < _i_voxels; i++) {
                 _v.set(i, j, k, _randomFloat(min, max));
             }
         }
     }
 
-    for (int k = 0; k < k_voxels + 1; k++) {
-        for (int j = 0; j < j_voxels; j++) {
-            for (int i = 0; i < i_voxels; i++) {
+    for (int k = 0; k < _k_voxels + 1; k++) {
+        for (int j = 0; j < _j_voxels; j++) {
+            for (int i = 0; i < _i_voxels; i++) {
                 _w.set(i, j, k, _randomFloat(min, max));
             }
         }
@@ -300,31 +300,31 @@ void MACVelocityField::addTempW(int i, int j, int k, double val) {
 glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
     assert(isIndexInRangeU(i, j, k));
 
-    double gx = (double)(i-1)*dx;
-    double gy = (double)j*dx;
-    double gz = (double)k*dx;
+    double gx = (double)(i-1)*_dx;
+    double gy = (double)j*_dx;
+    double gz = (double)k*_dx;
 
-    return glm::vec3(gx + dx, gy + 0.5*dx, gz + 0.5*dx);
+    return glm::vec3(gx + _dx, gy + 0.5*_dx, gz + 0.5*_dx);
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
     assert(isIndexInRangeV(i, j, k));
 
-    double gx = (double)i*dx;
-    double gy = (double)(j-1)*dx;
-    double gz = (double)k*dx;
+    double gx = (double)i*_dx;
+    double gy = (double)(j-1)*_dx;
+    double gz = (double)k*_dx;
 
-    return glm::vec3(gx + 0.5*dx, gy + dx, gz + 0.5*dx);
+    return glm::vec3(gx + 0.5*_dx, gy + _dx, gz + 0.5*_dx);
 }
 
 glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
     assert(isIndexInRangeW(i, j, k));
 
-    double gx = (double)i*dx;
-    double gy = (double)j*dx;
-    double gz = (double)(k-1)*dx;
+    double gx = (double)i*_dx;
+    double gy = (double)j*_dx;
+    double gz = (double)(k-1)*_dx;
 
-    return glm::vec3(gx + 0.5*dx, gy + 0.5*dx, gz + dx);
+    return glm::vec3(gx + 0.5*_dx, gy + 0.5*_dx, gz + _dx);
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
@@ -361,9 +361,9 @@ double MACVelocityField::evaluateVelocityMagnitudeAtCellCenter(int i, int j, int
 
 double MACVelocityField::evaluateMaximumVelocityMagnitude() {
     double maxsq = 0.0;
-    for (int k = 0; k < k_voxels; k++) {
-        for (int j = 0; j < j_voxels; j++) {
-            for (int i = 0; i < i_voxels; i++) {
+    for (int k = 0; k < _k_voxels; k++) {
+        for (int j = 0; j < _j_voxels; j++) {
+            for (int i = 0; i < _i_voxels; i++) {
                 
                 double m = evaluateVelocityMagnitudeSquaredAtCellCenter(i, j, k);
                 maxsq = fmax(maxsq, m);
@@ -491,29 +491,29 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
     double refx = gx;
-    double refy = gy - 0.5*dx;
-    double refz = gz - 0.5*dx;
+    double refy = gy - 0.5*_dx;
+    double refz = gz - 0.5*_dx;
     int refi = i;
     int refj = j - 1;
     int refk = k - 1;
 
-    double cy = gy + 0.5*dx;
-    double cz = gz + 0.5*dx;
+    double cy = gy + 0.5*_dx;
+    double cz = gz + 0.5*_dx;
 
     if (y >= cy) {
         refj++;
-        refy += dx;
+        refy += _dx;
     }
 
     if (z >= cz) {
         refk++;
-        refz += dx;
+        refz += _dx;
     }
 
-    double invdx = 1 / dx;
-    double ix = (x - refx)*invdx;
-    double iy = (y - refy)*invdx;
-    double iz = (z - refz)*invdx;
+    double inv_dx = 1 / _dx;
+    double ix = (x - refx)*inv_dx;
+    double iy = (y - refy)*inv_dx;
+    double iz = (z - refz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
@@ -538,30 +538,30 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     _positionToGridIndex(x, y, z, &i, &j, &k);
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
-    double refx = gx - 0.5*dx;
+    double refx = gx - 0.5*_dx;
     double refy = gy;
-    double refz = gz - 0.5*dx;
+    double refz = gz - 0.5*_dx;
     int refi = i - 1;
     int refj = j;
     int refk = k - 1;
 
-    double cx = gx + 0.5*dx;
-    double cz = gz + 0.5*dx;
+    double cx = gx + 0.5*_dx;
+    double cz = gz + 0.5*_dx;
 
     if (x >= cx) {
         refi++;
-        refx += dx;
+        refx += _dx;
     }
 
     if (z >= cz) {
         refk++;
-        refz += dx;
+        refz += _dx;
     }
 
-    double invdx = 1 / dx;
-    double ix = (x - refx)*invdx;
-    double iy = (y - refy)*invdx;
-    double iz = (z - refz)*invdx;
+    double inv_dx = 1 / _dx;
+    double ix = (x - refx)*inv_dx;
+    double iy = (y - refy)*inv_dx;
+    double iz = (z - refz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
@@ -586,30 +586,30 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     _positionToGridIndex(x, y, z, &i, &j, &k);
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
-    double refx = gx - 0.5*dx;
-    double refy = gy - 0.5*dx;
+    double refx = gx - 0.5*_dx;
+    double refy = gy - 0.5*_dx;
     double refz = gz;
     int refi = i - 1;
     int refj = j - 1;
     int refk = k;
 
-    double cx = gx + 0.5*dx;
-    double cy = gy + 0.5*dx;
+    double cx = gx + 0.5*_dx;
+    double cy = gy + 0.5*_dx;
 
     if (x >= cx) {
         refi++;
-        refx += dx;
+        refx += _dx;
     }
 
     if (y >= cy) {
         refj++;
-        refy += dx;
+        refy += _dx;
     }
 
-    double invdx = 1 / dx;
-    double ix = (x - refx)*invdx;
-    double iy = (y - refy)*invdx;
-    double iz = (z - refz)*invdx;
+    double inv_dx = 1 / _dx;
+    double ix = (x - refx)*inv_dx;
+    double iy = (y - refy)*inv_dx;
+    double iz = (z - refz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
@@ -629,18 +629,18 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
 void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
     assert(_isPositionInGrid(x, y, z));
 
-    double invdx = 1.0 / dx;
-    *i = fminf((int)floor(x*invdx), i_voxels);
-    *j = fminf((int)floor(y*invdx), j_voxels);
-    *k = fminf((int)floor(z*invdx), k_voxels);
+    double inv_dx = 1.0 / _dx;
+    *i = fminf((int)floor(x*inv_dx), _i_voxels);
+    *j = fminf((int)floor(y*inv_dx), _j_voxels);
+    *k = fminf((int)floor(z*inv_dx), _k_voxels);
 }
 
 void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
     assert(_isCellIndexInRange(i, j, k));
 
-    *x = (double)i*dx;
-    *y = (double)j*dx;
-    *z = (double)k*dx;
+    *x = (double)i*_dx;
+    *y = (double)j*_dx;
+    *z = (double)k*_dx;
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {

@@ -34,7 +34,7 @@ double SurfaceField::getFieldValue(glm::vec3 p) {
     return 0.0;
 }
 
-void SurfaceField::_positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
+void SurfaceField::positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
     double invdx = 1.0 / dx;
     *i = (int)floor(p.x*invdx);
     *j = (int)floor(p.y*invdx);
@@ -49,7 +49,7 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     glm::vec3 z = glm::vec3(0.0, 0.0, eps);
 
     int i, j, k;
-    _positionToGridIndex(p, &i, &j, &k);
+    positionToGridIndex(p, &i, &j, &k);
     if (materialGrid(i, j, k) == 2) {
         return true;
     }
@@ -83,7 +83,7 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     points[25] = p + x + y + z;
     
     for (int idx = 0; idx < 26; idx++) {
-        _positionToGridIndex(points[idx], &i, &j, &k);
+        positionToGridIndex(points[idx], &i, &j, &k);
         if (materialGrid(i, j, k) == 2) {
             return true;
         }

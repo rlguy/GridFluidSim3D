@@ -5,7 +5,7 @@ LevelSetField::LevelSetField(int width, int height, int depth, double dx) :
                              SurfaceField(width, height, depth, dx),
                              _distanceField(Array3d<double>(width, height, depth, 1.0))
 {
-    surfaceThreshold = 0.0;
+    setSurfaceThreshold(_surfaceThreshold);
 }
 
 LevelSetField::LevelSetField()

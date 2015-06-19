@@ -23,12 +23,12 @@ public:
     }
     void addCuboid(glm::vec3 p, double width, double height, double depth);
 
-    double getSurfaceThreshold() { return surfaceThreshold; }
-    double getRicciBlend() { return ricciBlend; }
-    int getNumPoints() { return (int)points.size(); }
-    int getNumCuboids() { return (int)cuboids.size(); }
+    double getSurfaceThreshold() { return _surfaceThreshold; }
+    double getRicciBlend() { return _ricciBlend; }
+    int getNumPoints() { return (int)_points.size(); }
+    int getNumCuboids() { return (int)_cuboids.size(); }
 
-    void setRicciBlend(double k) { assert(k > 0.0); ricciBlend = k; }
+    void setRicciBlend(double k) { assert(k > 0.0); _ricciBlend = k; }
 
     std::vector<ImplicitPointData> getImplicitPointData();
 
@@ -51,13 +51,13 @@ private:
 
     bool _isPointInsideCuboid(glm::vec3 p, Cuboid c);
 
-    std::vector<ImplicitPointPrimitive> points;
-    std::vector<Cuboid> cuboids;
+    std::vector<ImplicitPointPrimitive> _points;
+    std::vector<Cuboid> _cuboids;
 
-    double surfaceThreshold = 0.5;
-    double ricciBlend = 1.0;
+    double _surfaceThreshold = 0.5;
+    double _ricciBlend = 1.0;
 
-    SpatialGrid<ImplicitPointPrimitive> pointGrid;
-    int gridi, gridj, gridk;
+    SpatialGrid<ImplicitPointPrimitive> _pointGrid;
+    int _gridi, _gridj, _gridk;
 };
 

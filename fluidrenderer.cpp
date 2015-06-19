@@ -5,7 +5,7 @@ FluidRenderer::FluidRenderer()
 {
 }
 
-FluidRenderer::FluidRenderer(FluidSimulation *sim) : fluidsim(sim)
+FluidRenderer::FluidRenderer(FluidSimulation *sim) : _fluidsim(sim)
 {
 }
 
@@ -19,14 +19,14 @@ void FluidRenderer::update(float dt) {
 }
 
 void FluidRenderer::_setTransforms() {
-    glm::mat4 trans_mat = glm::transpose(glm::mat4(glm::vec4(1.0, 0.0, 0.0, tx),
-                                                   glm::vec4(0.0, 1.0, 0.0, ty),
-                                                   glm::vec4(0.0, 0.0, 1.0, tz),
+    glm::mat4 trans_mat = glm::transpose(glm::mat4(glm::vec4(1.0, 0.0, 0.0, _tx),
+                                                   glm::vec4(0.0, 1.0, 0.0, _ty),
+                                                   glm::vec4(0.0, 0.0, 1.0, _tz),
                                                    glm::vec4(0.0, 0.0, 0.0, 1.0)));
 
-    glm::mat4 scale_mat = glm::transpose(glm::mat4(glm::vec4(scale, 0.0, 0.0, 0.0),
-                                                   glm::vec4(0.0, scale, 0.0, 0.0),
-                                                   glm::vec4(0.0, 0.0, scale, 0.0),
+    glm::mat4 scale_mat = glm::transpose(glm::mat4(glm::vec4(_scale, 0.0, 0.0, 0.0),
+                                                   glm::vec4(0.0, _scale, 0.0, 0.0),
+                                                   glm::vec4(0.0, 0.0, _scale, 0.0),
                                                    glm::vec4(0.0, 0.0, 0.0, 1.0)));
 
     glm::mat4 transform = trans_mat * scale_mat;
@@ -88,19 +88,19 @@ void FluidRenderer::drawSolidCells() {
 
 void FluidRenderer::_drawFluidMaterialType(int mType) {
     int depth, height, width;
-    fluidsim->getGridDimensions(&width, &height, &depth);
+    _fluidsim->getGridDimensions(&width, &height, &depth);
 
     _setTransforms();
 
     glBegin(GL_POINTS);
     glm::vec3 p;
-    double size = fluidsim->getCellSize();
+    double size = _fluidsim->getCellSize();
     for (int k = 0; k < depth; k++) {
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
-                if (fluidsim->getMaterial(i, j, k) == mType) {
+                if (_fluidsim->getMaterial(i, j, k) == mType) {
                     double x, y, z;
-                    fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    _fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
                     p = glm::vec3(x, y, z);
                     glVertex3f(p.x, p.y, p.z);
                 }
@@ -114,8 +114,8 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
 
 void FluidRenderer::drawGridBoundingBox() {
     int i, j, k;
-    double dx = fluidsim->getCellSize();
-    fluidsim->getGridDimensions(&i, &j, &k);
+    double dx = _fluidsim->getCellSize();
+    _fluidsim->getGridDimensions(&i, &j, &k);
 
     double hw = (double)i * dx * 0.5;
     double hh = (double)j * dx * 0.5;
@@ -161,8 +161,8 @@ void FluidRenderer::drawGridBoundingBox() {
 
 void FluidRenderer::drawGrid() {
     int i, j, k;
-    double dx = fluidsim->getCellSize();
-    fluidsim->getGridDimensions(&i, &j, &k);
+    double dx = _fluidsim->getCellSize();
+    _fluidsim->getGridDimensions(&i, &j, &k);
 
     double x_len = (double)i * dx;
     double y_len = (double)j * dx;
@@ -228,7 +228,7 @@ void FluidRenderer::_drawImplicitPointData(ImplicitPointData point) {
 }
 
 void FluidRenderer::drawImplicitFluidPoints() {
-    std::vector<ImplicitPointData> points = fluidsim->getImplicitFluidPoints();
+    std::vector<ImplicitPointData> points = _fluidsim->getImplicitFluidPoints();
 
     _setTransforms();
     for (int i = 0; i < (int)points.size(); i++) {
@@ -239,7 +239,7 @@ void FluidRenderer::drawImplicitFluidPoints() {
 }
 
 void FluidRenderer::drawMarkerParticles() {
-    std::vector<glm::vec3> points = fluidsim->getMarkerParticles(3);
+    std::vector<glm::vec3> points = _fluidsim->getMarkerParticles(3);
 
     _setTransforms();
 
@@ -265,8 +265,8 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     glDisable(GL_LIGHTING);
     glBindTexture(GL_TEXTURE_2D, tex);
 
-    std::vector<glm::vec3> points = fluidsim->getMarkerParticles();
-    std::vector<glm::vec3> solidpoints = fluidsim->getSolidCellPositions();
+    std::vector<glm::vec3> points = _fluidsim->getMarkerParticles();
+    std::vector<glm::vec3> solidpoints = _fluidsim->getSolidCellPositions();
     std::vector<std::pair<glm::vec4, bool> > sortedPoints;
 
     glm::vec3 r;
@@ -325,8 +325,8 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 }
 
 void FluidRenderer::drawLayerGrid() {
-    Array3d<int> grid = fluidsim->getLayerGrid();
-    double size = fluidsim->getCellSize();
+    Array3d<int> grid = _fluidsim->getLayerGrid();
+    double size = _fluidsim->getCellSize();
     glm::vec3 p;
 
     _setTransforms();
@@ -336,7 +336,7 @@ void FluidRenderer::drawLayerGrid() {
             for (int i = 0; i < grid.width; i++) {
                 if (grid(i, j, k) > 0) {
                     double x, y, z;
-                    fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    _fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
                     p = glm::vec3(x, y, z);
                     _drawWireframeCube(p, 0.2*size);
                 }
@@ -348,7 +348,7 @@ void FluidRenderer::drawLayerGrid() {
 }
 
 void FluidRenderer::drawSurfaceTriangles() {
-    TriangleMesh *surface = fluidsim->getFluidSurfaceTriangles();
+    TriangleMesh *surface = _fluidsim->getFluidSurfaceTriangles();
 
     _setTransforms();
     glEnable(GL_NORMALIZE);

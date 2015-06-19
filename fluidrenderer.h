@@ -30,8 +30,8 @@ public:
     void update(float dt);
     void draw();
 
-    void setScale(double s) { scale = s; }
-    void setDrawOffset(double x, double y, double z) { tx = x; ty = y; tz = z; }
+    void setScale(double s) { _scale = s; }
+    void setDrawOffset(double x, double y, double z) { _tx = x; _ty = y; _tz = z; }
 
     void drawGrid();
     void drawGridBoundingBox();
@@ -55,12 +55,12 @@ private:
     void _setTransforms();
     void _unsetTransforms();
 
-    FluidSimulation *fluidsim;
+    FluidSimulation *_fluidsim;
 
-    double scale = 1.0;
-    double tx = 0.0;
-    double ty = 0.0;
-    double tz = 0.0;
+    double _scale = 1.0;
+    double _tx = 0.0;
+    double _ty = 0.0;
+    double _tz = 0.0;
 
 };
 

@@ -5,27 +5,27 @@ StopWatch::StopWatch()
 }
 
 void StopWatch::start() {
-    tbegin = (float)GetTickCount() / 1000.0;
-    isStarted = true;
+    _tbegin = (float)GetTickCount() / 1000.0;
+    _isStarted = true;
 }
 
 
 void StopWatch::stop() {
-    if (!isStarted) {
+    if (!_isStarted) {
         return;
     }
 
     // log current running time
-    tend = (float)GetTickCount() / 1000.0;
-    double time = tend - tbegin;
-    timeRunning += time;
+    _tend = (float)GetTickCount() / 1000.0;
+    double time = _tend - _tbegin;
+    _timeRunning += time;
 }
 
 void StopWatch::reset() {
-    isStarted = false;
-    timeRunning = 0.0;
+    _isStarted = false;
+    _timeRunning = 0.0;
 }
 
 double StopWatch::getTime() {
-    return timeRunning;
+    return _timeRunning;
 }

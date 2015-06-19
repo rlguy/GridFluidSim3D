@@ -82,8 +82,8 @@ private:
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _isize && g.j < _jsize && g.k < _ksize;
     }
 
-    static const int edgeTable[256];
-    static const int triTable[256][16];
+    static const int _edgeTable[256];
+    static const int _triTable[256][16];
 
     bool _isInitialized = false;
     int _isize, _jsize, _ksize;

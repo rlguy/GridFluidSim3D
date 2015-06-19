@@ -13,7 +13,7 @@ public:
     double getTime();    // in seconds
 
 private:
-    bool isStarted = false;
-    float tbegin, tend;
-    double timeRunning = 0.0;
+    bool _isStarted = false;
+    float _tbegin, _tend;
+    double _timeRunning = 0.0;
 };
