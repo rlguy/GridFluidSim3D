@@ -57,7 +57,7 @@ private:
     double _surfaceThreshold = 0.5;
     double _ricciBlend = 1.0;
 
-    SpatialGrid<ImplicitPointPrimitive> _pointGrid;
     int _gridi, _gridj, _gridk;
+    SpatialGrid<ImplicitPointPrimitive> _pointGrid;
 };
 

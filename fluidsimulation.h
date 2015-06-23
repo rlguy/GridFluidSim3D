@@ -64,7 +64,10 @@ public:
     void setBodyForce(glm::vec3 f);
 
     double getDensity() { return _density; }
-    double setDensity(double p) { assert(p > 0); _density = p; }
+    void setDensity(double p) { assert(p > 0); _density = p; }
+
+    void setMarkerParticleScale(double s) { _markerParticleScale = s; }
+    void setSurfaceReconstructionSubdivisionLevel(int level);
 
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
@@ -103,9 +106,11 @@ public:
     void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
     glm::vec3 gridIndexToCellCenter(GridIndex g);
     glm::vec3 gridIndexToCellCenter(int i, int j, int k);
+    glm::vec3 gridIndexToCellCenter(int i, int j, int k, double dx);
 
     void positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
     void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
+    GridIndex positionToGridIndex(glm::vec3 p);
 
     bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
     
@@ -174,20 +179,21 @@ private:
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
+    void _initializeSurfaceReconstructionObjects();
 
     // Simulation step
     double _calculateNextTimeStep();
     void _stepFluid(double dt);
+
+    // Find fluid cells. Fluid cells must contain at
+    // least 1 marker particle
+    void _updateFluidCells();
 
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();
 
     // Update level set surface
     void _updateLevelSetSignedDistance();
-
-    // Find fluid cells at this step. Fluid cells must contain at
-    // least 1 marker particle
-    void _updateFluidCells();
 
     // Extrapolate fluid velocities into surrounding air and solids so
     // that velocities can be computed when marker particles move to cells
@@ -422,5 +428,11 @@ private:
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
 
+    ImplicitSurfaceField _surfaceReconstructionField;
+    Polygonizer3d _surfaceReconstructionPolygonizer;
+    int _surfaceReconstructionSubdivisionLevel = 1;
+    double _markerParticleRadius;
+    double _markerParticleScale = 3.0;
+    
 };
 

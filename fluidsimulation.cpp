@@ -9,7 +9,8 @@ FluidSimulation::FluidSimulation() :
                                 _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1)),
                                 _implicitFluidField(_i_voxels, _j_voxels, _k_voxels, _dx),
                                 _levelsetField(_i_voxels, _j_voxels, _k_voxels, _dx),
-                                _levelset(_i_voxels, _j_voxels, _k_voxels, _dx)
+                                _levelset(_i_voxels, _j_voxels, _k_voxels, _dx),
+                                _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0))
 {
 }
 
@@ -22,7 +23,8 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
                                 _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size),
                                 _levelsetField(x_voxels, y_voxels, z_voxels, cell_size),
-                                _levelset(x_voxels, y_voxels, z_voxels, cell_size)
+                                _levelset(x_voxels, y_voxels, z_voxels, cell_size),
+                                _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0))
 {
     _materialGrid.setOutOfRangeValue(M_SOLID);
     _logfile = LogFile();
@@ -183,6 +185,15 @@ std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
     return getMarkerParticles(1);
 }
 
+void FluidSimulation::setSurfaceReconstructionSubdivisionLevel(int level) {
+    assert(level >= 1);
+    _surfaceReconstructionSubdivisionLevel = level;
+
+    if (_isSimulationInitialized) {
+        _initializeSurfaceReconstructionObjects();
+    }
+};
+
 glm::vec3 FluidSimulation::gridIndexToPosition(GridIndex g) {
     assert(_isCellIndexInRange(g.i, g.j, g.k));
 
@@ -228,6 +239,12 @@ glm::vec3 FluidSimulation::gridIndexToCellCenter(int i, int j, int k) {
                      (double)k*_dx + 0.5*_dx);
 }
 
+glm::vec3 FluidSimulation::gridIndexToCellCenter(int i, int j, int k, double dx) {
+    return glm::vec3((double)i*dx + 0.5*dx,
+                     (double)j*dx + 0.5*dx,
+                     (double)k*dx + 0.5*dx);
+}
+
 void FluidSimulation::positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
     double invdx = 1.0 / _dx;
     *i = (int)floor(p.x*invdx);
@@ -240,6 +257,13 @@ void FluidSimulation::positionToGridIndex(double x, double y, double z, int *i, 
     *i = (int)floor(x*invdx);
     *j = (int)floor(y*invdx);
     *k = (int)floor(z*invdx);
+}
+
+GridIndex FluidSimulation::positionToGridIndex(glm::vec3 p) {
+    double invdx = 1.0 / _dx;
+    return GridIndex((int)floor(p.x*invdx),
+                     (int)floor(p.y*invdx),
+                     (int)floor(p.z*invdx));
 }
 
 /********************************************************************************
@@ -323,7 +347,7 @@ void FluidSimulation::_initializeFluidMaterial() {
 
         assert(fluidCells.size() > 0);
 
-        Polygonizer3d polygonizer(_i_voxels, _j_voxels, _j_voxels, _dx, &_implicitFluidField);
+        Polygonizer3d polygonizer(&_implicitFluidField);
 
         _implicitFluidField.setMaterialGrid(_materialGrid);
         polygonizer.setInsideCellIndices(fluidCells);
@@ -334,16 +358,13 @@ void FluidSimulation::_initializeFluidMaterial() {
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
-        _surfaceMesh.writeMeshToOBJ("screenshots/test01.obj");
-
     } else if (_fluidInitializationType == MESH) {
         bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
         assert(success);
         _surfaceMesh.setGridDimensions(_i_voxels, _j_voxels, _k_voxels, _dx);
         _surfaceMesh.getCellsInsideMesh(fluidCells);
 
-        Polygonizer3d levelsetPolygonizer = Polygonizer3d(_i_voxels, _j_voxels, _k_voxels, 
-                                                           _dx, &_levelsetField);
+        Polygonizer3d levelsetPolygonizer = Polygonizer3d(&_levelsetField);
         _levelset.setSurfaceMesh(_surfaceMesh);
         _levelset.calculateSignedDistanceField();
         _levelsetField.setMaterialGrid(_materialGrid);
@@ -371,32 +392,22 @@ void FluidSimulation::_initializeFluidMaterial() {
     _fluidCellIndices = fluidCells;
 }
 
+void FluidSimulation::_initializeSurfaceReconstructionObjects() {
+    int level = _surfaceReconstructionSubdivisionLevel;
+
+    // field needs to have 1 extra cell padding since the polygonizer will
+    // query vertex positions on the very edge of the field grid
+    _surfaceReconstructionField = ImplicitSurfaceField(_i_voxels*level + 1,
+                                                       _j_voxels*level + 1,
+                                                       _k_voxels*level + 1, _dx / level);
+    _surfaceReconstructionPolygonizer = Polygonizer3d(&_surfaceReconstructionField);
+}
+
 void FluidSimulation::_initializeSimulation() {
+    _initializeSurfaceReconstructionObjects();
     _initializeSolidCells();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
-}
-
-/********************************************************************************
-    FLUID SURFACE RECONSTRUCTION
-********************************************************************************/
-
-void FluidSimulation::_reconstructFluidSurface() {
-    // todo
-}
-
-/********************************************************************************
-    UPDATE LEVEL SET
-********************************************************************************/
-
-void FluidSimulation::_updateLevelSetSignedDistance() {
-    _levelset.setSurfaceMesh(_surfaceMesh);
-
-    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
-    // In order find velocities at the fluid surface for all extrapolated
-    // velocity layers, the level set will need to calculate signed distance 
-    // for (_CFLConditionNumber + 3) layers
-    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 3.0);
 }
 
 /********************************************************************************
@@ -423,6 +434,73 @@ void FluidSimulation::_updateFluidCells() {
             }
         }
     }
+}
+
+/********************************************************************************
+    FLUID SURFACE RECONSTRUCTION
+********************************************************************************/
+
+void FluidSimulation::_reconstructFluidSurface() {
+    _surfaceReconstructionField.clear();
+    _surfaceReconstructionField.setMaterialGrid(_materialGrid);
+
+    double r = _markerParticleRadius*_markerParticleScale;
+    glm::vec3 p;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        p = _markerParticles[i].position;
+        _surfaceReconstructionField.addPoint(p.x, p.y, p.z, r);
+    }
+
+    if (_surfaceReconstructionSubdivisionLevel == 1) {
+        _surfaceReconstructionPolygonizer.setInsideCellIndices(_fluidCellIndices);
+    } else {
+        int level = _surfaceReconstructionSubdivisionLevel;
+        int isize = _i_voxels * level;
+        int jsize = _j_voxels * level;
+        int ksize = _k_voxels * level;
+        double dx = _dx / level;
+
+        std::vector<GridIndex> indices;
+        glm::vec3 c;
+        GridIndex g;
+        for (int k = 0; k < ksize; k++) {
+            for (int j = 0; j < jsize; j++) {
+                for (int i = 0; i < isize; i++) {
+                    c = gridIndexToCellCenter(i, j, k, dx);
+                    g = positionToGridIndex(c);
+                    if (_isCellFluid(g)) {
+                        indices.push_back(GridIndex(i, j, k));
+                    }
+                }
+            }
+        }
+
+        _surfaceReconstructionPolygonizer.setInsideCellIndices(indices);
+    }
+
+    _surfaceReconstructionPolygonizer.polygonizeSurface();
+    _surfaceMesh = _surfaceReconstructionPolygonizer.getTriangleMesh();
+
+    _surfaceMesh.writeMeshToOBJ("screenshots/currentmesh.obj");
+
+    // todo: handle case where polygonizer generates a non-closed mesh
+    // todo: memory spatial grid in implicitsurfacefield may become very fragmented
+    //       over time. Find a way to work around this.
+    // todo: surface reconstruction does not work when subdivision level != 1
+}
+
+/********************************************************************************
+    UPDATE LEVEL SET
+********************************************************************************/
+
+void FluidSimulation::_updateLevelSetSignedDistance() {
+    _levelset.setSurfaceMesh(_surfaceMesh);
+
+    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
+    // In order find velocities at the fluid surface for all extrapolated
+    // velocity layers, the level set will need to calculate signed distance 
+    // for (_CFLConditionNumber + 3) layers
+    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 3.0);
 }
 
 /********************************************************************************
@@ -1732,25 +1810,23 @@ void FluidSimulation::_stepFluid(double dt) {
     timer1.start();
 
     timer2.start();
-    _reconstructFluidSurface();
-    timer2.stop();
-
-    _logfile.log("Reconstruct Fluid Surface:  \t", timer3.getTime(), 4);
-
-    timer3.start();
-    _updateLevelSetSignedDistance();
-    timer3.stop();
-
-    _logfile.log("Update Level set:           \t", timer3.getTime(), 4);
-
-    timer4.start();
     _updateFluidCells();
-    timer4.stop();
+    timer2.stop();
 
     _logfile.log("Update Fluid Cells:          \t", timer4.getTime(), 4);
     _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
 
-    _surfaceMesh.writeMeshToOBJ("screenshots/test.obj");
+    timer3.start();
+    _reconstructFluidSurface();
+    timer3.stop();
+
+    _logfile.log("Reconstruct Fluid Surface:  \t", timer3.getTime(), 4);
+
+    timer4.start();
+    _updateLevelSetSignedDistance();
+    timer4.stop();
+
+    _logfile.log("Update Level set:           \t", timer3.getTime(), 4);
 
     timer5.start();
     _extrapolateFluidVelocities();
@@ -1807,9 +1883,9 @@ void FluidSimulation::_stepFluid(double dt) {
     double p10 = floor(1000 * timer10.getTime() / totalTime) / 10.0;
 
     _logfile.log("---Percentage Breakdown---", "");
-    _logfile.log("Reconstruct Fluid Surface    \t", p2, 3);
-    _logfile.log("Update Level Set:            \t", p3, 3);
-    _logfile.log("Update Fluid Cells:          \t", p4, 3);
+    _logfile.log("Update Fluid Cells:          \t", p2, 3);
+    _logfile.log("Reconstruct Fluid Surface    \t", p3, 3);
+    _logfile.log("Update Level Set:            \t", p4, 3);
     _logfile.log("Extrapolate Fluid Velocities:\t", p5, 3);
     _logfile.log("Apply Body Forces:           \t", p6, 3);
     _logfile.log("Advect Velocity Field:       \t", p7, 3);

@@ -7,13 +7,14 @@ Polygonizer3d::Polygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
 {
 }
 
-Polygonizer3d::Polygonizer3d(int i_width, int j_height, int k_depth, double cellsize,
-                             SurfaceField *field) : 
-                             _isize(i_width), _jsize(j_height), _ksize(k_depth), _dx(cellsize),
-                             _field(field),
-                             _vertexValues(Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0)),
-                             _isVertexSet(Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false))
+Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
 {
+    _field->getGridDimensions(&_isize, &_jsize, &_ksize);
+    _dx = _field->getCellSize();
+
+    _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
+    _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
+
     _isInitialized = true;
 }
 

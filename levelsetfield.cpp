@@ -1,8 +1,8 @@
 #include "levelsetfield.h"
 
 
-LevelSetField::LevelSetField(int width, int height, int depth, double dx) :
-                             SurfaceField(width, height, depth, dx),
+LevelSetField::LevelSetField(int i, int j, int k, double dx) :
+                             SurfaceField(i, j, k, dx),
                              _distanceField(Array3d<double>(width, height, depth, 1.0))
 {
     setSurfaceThreshold(_surfaceThreshold);

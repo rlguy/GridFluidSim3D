@@ -17,8 +17,7 @@ class Polygonizer3d
 {
 public:
     Polygonizer3d();
-    Polygonizer3d(int i_width, int j_height, int k_depth, double cellsize, 
-                  SurfaceField *field);
+    Polygonizer3d(SurfaceField *field);
 
     ~Polygonizer3d();
 

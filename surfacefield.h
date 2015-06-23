@@ -22,6 +22,9 @@ public:
     double getHeight() { return height; }
     double getDepth()  { return depth; }
 
+    void getGridDimensions(int *i, int *j, int *k) { *i = i_width; *j = j_height; *k = k_depth; }
+    double getCellSize() { return dx; }
+
     void setSurfaceThreshold(double val) { surfaceThreshold = val; }
     void setMaterialGrid(Array3d<int> matGrid);
     void setMaterialGrid();

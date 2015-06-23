@@ -5,14 +5,14 @@ ImplicitSurfaceField::ImplicitSurfaceField()
 {
 }
 
-ImplicitSurfaceField::ImplicitSurfaceField(int w, int h, int d, double dx) :
-                                SurfaceField(w, h, d, dx)
+ImplicitSurfaceField::ImplicitSurfaceField(int i, int j, int k, double dx) :
+                                SurfaceField(i, j, k, dx),
+                                _gridi(i), 
+                                _gridj(j), 
+                                _gridk(k),
+                                _pointGrid(_gridi, _gridj, _gridk, dx)
 {
     setSurfaceThreshold(_surfaceThreshold);
-    _gridi = ceil(w / dx);
-    _gridj = ceil(h / dx);
-    _gridk = ceil(d / dx);
-    _pointGrid = SpatialGrid<ImplicitPointPrimitive>(_gridi, _gridj, _gridk, dx);
 }
 
 ImplicitSurfaceField::~ImplicitSurfaceField()

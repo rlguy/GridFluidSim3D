@@ -297,7 +297,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
 
     bool isFound = false;
     double mindistsq = std::numeric_limits<double>::infinity();
-    glm::vec3 minpoint;
+    glm::vec3 minpoint = p;
     GridIndex n;
     for (int i = 0; i < 7; i++) {
         n = ns[i];
@@ -305,6 +305,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
         if (_isCellIndexInRange(n) && _isDistanceSet(n)) {
             glm::vec3 surfacePoint;
             double distsq = _minDistToTriangleSquared(p, _indexGrid(n), &surfacePoint);
+
             if (distsq < mindistsq) {
                 mindistsq = distsq;
                 minpoint = surfacePoint;
@@ -312,8 +313,6 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
             }
         }
     }
-
-    assert(isFound);
 
     return minpoint;
 }
