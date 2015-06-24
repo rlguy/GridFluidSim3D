@@ -21,7 +21,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
-                                _implicitFluidField(x_voxels, y_voxels, z_voxels, cell_size),
+                                _implicitFluidField(x_voxels + 1, y_voxels + 1, z_voxels + 1, cell_size),
                                 _levelsetField(x_voxels, y_voxels, z_voxels, cell_size),
                                 _levelset(x_voxels, y_voxels, z_voxels, cell_size),
                                 _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0))
@@ -188,10 +188,6 @@ std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
 void FluidSimulation::setSurfaceReconstructionSubdivisionLevel(int level) {
     assert(level >= 1);
     _surfaceReconstructionSubdivisionLevel = level;
-
-    if (_isSimulationInitialized) {
-        _initializeSurfaceReconstructionObjects();
-    }
 };
 
 glm::vec3 FluidSimulation::gridIndexToPosition(GridIndex g) {
@@ -392,19 +388,7 @@ void FluidSimulation::_initializeFluidMaterial() {
     _fluidCellIndices = fluidCells;
 }
 
-void FluidSimulation::_initializeSurfaceReconstructionObjects() {
-    int level = _surfaceReconstructionSubdivisionLevel;
-
-    // field needs to have 1 extra cell padding since the polygonizer will
-    // query vertex positions on the very edge of the field grid
-    _surfaceReconstructionField = ImplicitSurfaceField(_i_voxels*level + 1,
-                                                       _j_voxels*level + 1,
-                                                       _k_voxels*level + 1, _dx / level);
-    _surfaceReconstructionPolygonizer = Polygonizer3d(&_surfaceReconstructionField);
-}
-
 void FluidSimulation::_initializeSimulation() {
-    _initializeSurfaceReconstructionObjects();
     _initializeSolidCells();
     _initializeFluidMaterial();
     _isSimulationInitialized = true;
@@ -440,19 +424,34 @@ void FluidSimulation::_updateFluidCells() {
     FLUID SURFACE RECONSTRUCTION
 ********************************************************************************/
 
+void FluidSimulation::_writeSurfaceMeshToFile() {
+    std::string s = std::to_string(_currentFrame);
+    s.insert(s.begin(), 6 - s.size(), '0');
+    s = "bakefiles/" + s + ".obj";
+
+    _surfaceMesh.writeMeshToOBJ(s);
+}
+
 void FluidSimulation::_reconstructFluidSurface() {
-    _surfaceReconstructionField.clear();
-    _surfaceReconstructionField.setMaterialGrid(_materialGrid);
+    int level = _surfaceReconstructionSubdivisionLevel;
+
+    // field needs to have 1 extra cell padding since the polygonizer will
+    // query vertex positions on the very edge of the field grid
+    ImplicitSurfaceField field = ImplicitSurfaceField(_i_voxels*level + 1,
+                                                      _j_voxels*level + 1,
+                                                      _k_voxels*level + 1, _dx / level);
+    field.setMaterialGrid(_materialGrid);
+    Polygonizer3d polygonizer = Polygonizer3d(&field);
 
     double r = _markerParticleRadius*_markerParticleScale;
     glm::vec3 p;
     for (int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i].position;
-        _surfaceReconstructionField.addPoint(p.x, p.y, p.z, r);
+        field.addPoint(p.x, p.y, p.z, r);
     }
 
     if (_surfaceReconstructionSubdivisionLevel == 1) {
-        _surfaceReconstructionPolygonizer.setInsideCellIndices(_fluidCellIndices);
+        polygonizer.setInsideCellIndices(_fluidCellIndices);
     } else {
         int level = _surfaceReconstructionSubdivisionLevel;
         int isize = _i_voxels * level;
@@ -475,17 +474,14 @@ void FluidSimulation::_reconstructFluidSurface() {
             }
         }
 
-        _surfaceReconstructionPolygonizer.setInsideCellIndices(indices);
+        polygonizer.setInsideCellIndices(indices);
     }
 
-    _surfaceReconstructionPolygonizer.polygonizeSurface();
-    _surfaceMesh = _surfaceReconstructionPolygonizer.getTriangleMesh();
 
-    _surfaceMesh.writeMeshToOBJ("screenshots/currentmesh.obj");
+    polygonizer.polygonizeSurface();
+    _surfaceMesh = polygonizer.getTriangleMesh();
 
     // todo: handle case where polygonizer generates a non-closed mesh
-    // todo: memory spatial grid in implicitsurfacefield may become very fragmented
-    //       over time. Find a way to work around this.
     // todo: surface reconstruction does not work when subdivision level != 1
 }
 
@@ -1826,7 +1822,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _updateLevelSetSignedDistance();
     timer4.stop();
 
-    _logfile.log("Update Level set:           \t", timer3.getTime(), 4);
+    _logfile.log("Update Level set:           \t", timer4.getTime(), 4);
 
     timer5.start();
     _extrapolateFluidVelocities();
@@ -1916,7 +1912,7 @@ void FluidSimulation::update(double dt) {
     }
     _isCurrentFrameFinished = false;
 
-    int numsteps = 0;
+    _currentTimeStep = 0;
     double timeleft = dt;
     while (timeleft > 0.0) {
         double timestep = _calculateNextTimeStep();
@@ -1924,10 +1920,12 @@ void FluidSimulation::update(double dt) {
             timestep = timeleft;
         }
         timeleft -= timestep;
-        numsteps++;
         _stepFluid(timestep);
+
+        _currentTimeStep++;
     }
 
+    _writeSurfaceMeshToFile();
     _currentFrame++;
 
     _isCurrentFrameFinished = true;

@@ -39,6 +39,7 @@ public:
     void log(std::string str, double value, int precision = 0, int indentLevel = 0);
     void log(std::string str, std::string value = "", int indentLevel = 0);
     std::string getTime();
+    std::string getSrartTimeString() { return _startTimeString; }
 
 private:
     void _print(std::string str);

@@ -7,10 +7,11 @@ ImplicitSurfaceField::ImplicitSurfaceField()
 
 ImplicitSurfaceField::ImplicitSurfaceField(int i, int j, int k, double dx) :
                                 SurfaceField(i, j, k, dx),
-                                _gridi(i), 
-                                _gridj(j), 
-                                _gridk(k),
-                                _pointGrid(_gridi, _gridj, _gridk, dx)
+                                _gridi(i), _gridj(j), _gridk(k),
+                                _pointGrid(_gridi / _pointGridCellSize,
+                                           _gridj / _pointGridCellSize, 
+                                           _gridk / _pointGridCellSize, 
+                                           dx*_pointGridCellSize)
 {
     setSurfaceThreshold(_surfaceThreshold);
 }

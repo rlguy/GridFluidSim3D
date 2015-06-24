@@ -18,6 +18,7 @@ public:
     SpatialGrid(int i, int j, int k, double cellsize) :  _isize(i), _jsize(j), _ksize(k),
                                                          _dx(cellsize),
                                                          _grid(i, j, k) {
+        _grid.setOutOfRangeValue(std::vector<SpatialGridObject>());
     }
 
     SpatialGrid(SpatialGrid &obj) {
@@ -50,6 +51,7 @@ public:
                 for (int i = 0; i < _grid.depth; i++) {
                     objs = _grid.getPointer(i, j, k);
                     objs->clear();
+                    objs->shrink_to_fit();
                 }
             }
         }
@@ -120,6 +122,12 @@ public:
 
     void query(glm::vec3 pos, std::vector<T> &storage) {
         GridIndex g = _positionToGridIndex(pos);
+
+        if (!_grid.isIndexInRange(g)) {
+            std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
+            std::cout << g.i << " " << g.j << " " << g.k << std::endl;
+            return;
+        }
 
         std::vector<SpatialGridObject> *objs = _grid.getPointer(g);
         SpatialGridObject o;

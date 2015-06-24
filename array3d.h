@@ -79,8 +79,9 @@ public:
     ~Array3d()
     {
         for (int k = 0; k < depth; k++) {
-            for (int j = 0; j < height; j++)
+            for (int j = 0; j < height; j++) {
                 delete[] grid[k][j];
+            }
 
             delete[] grid[k];
         }
@@ -146,12 +147,22 @@ public:
     }
 
     T *getPointer(int i, int j, int k) {
-        assert(_isIndexInRange(i, j, k));
+        bool isInRange = _isIndexInRange(i, j, k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return &_outOfRangeValue;
+        }
+
+        assert(isInRange);
         return &grid[k][j][i];
     }
 
     T *getPointer(GridIndex g) {
-        assert(_isIndexInRange(g.i, g.j, g.k));
+        bool isInRange = _isIndexInRange(g.i, g.j, g.k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return &_outOfRangeValue;
+        }
+
+        assert(isInRange);
         return &grid[g.k][g.j][g.i];
     }
 

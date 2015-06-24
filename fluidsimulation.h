@@ -179,7 +179,6 @@ private:
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
-    void _initializeSurfaceReconstructionObjects();
 
     // Simulation step
     double _calculateNextTimeStep();
@@ -191,6 +190,7 @@ private:
 
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();
+    void _writeSurfaceMeshToFile();
 
     // Update level set surface
     void _updateLevelSetSignedDistance();
@@ -392,6 +392,7 @@ private:
     
 
     int _currentFrame = 0;
+    int _currentTimeStep = 0;
     bool _isCurrentFrameFinished = true;
 
     double _dx = 0.1;
@@ -428,8 +429,6 @@ private:
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
 
-    ImplicitSurfaceField _surfaceReconstructionField;
-    Polygonizer3d _surfaceReconstructionPolygonizer;
     int _surfaceReconstructionSubdivisionLevel = 1;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;

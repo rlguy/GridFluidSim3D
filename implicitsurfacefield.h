@@ -57,6 +57,7 @@ private:
     double _surfaceThreshold = 0.5;
     double _ricciBlend = 1.0;
 
+    double _pointGridCellSize = 2.0; // cell size for point grid = _pointGridCellSize*dx
     int _gridi, _gridj, _gridk;
     SpatialGrid<ImplicitPointPrimitive> _pointGrid;
 };
