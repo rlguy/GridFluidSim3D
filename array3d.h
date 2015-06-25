@@ -14,7 +14,7 @@ template <class T>
 class Array3d
 {
 public:
-    Array3d()
+    Array3d() : width(0), height(0), depth(0)
     {
         _initializeGrid();
     }
@@ -78,23 +78,12 @@ public:
 
     ~Array3d()
     {
-        for (int k = 0; k < depth; k++) {
-            for (int j = 0; j < height; j++) {
-                delete[] grid[k][j];
-            }
-
-            delete[] grid[k];
-        }
-        delete[] grid;
+        delete[] _grid;
     }
 
     void fill(T value) {
-        for (int k = 0; k < depth; k++) {
-            for (int j = 0; j < height; j++) {
-                for (int i = 0; i < width; i++) {
-                    set(i, j, k, value);
-                }
-            }
+        for (int idx = 0; idx < width*height*depth; idx++) {
+            _grid[idx] = value;
         }
     }
 
@@ -106,7 +95,7 @@ public:
         }
         assert(isInRange);
 
-        return grid[k][j][i];
+        return _grid[_getFlatIndex(i, j, k)];
     }
 
     T& operator()(GridIndex g)
@@ -117,17 +106,17 @@ public:
         }
         assert(isInRange);
 
-        return grid[g.k][g.j][g.i];
+        return _grid[_getFlatIndex(g)];;
     }
 
     void set(int i, int j, int k, T value) {
         assert(_isIndexInRange(i, j, k));
-        grid[k][j][i] = value;
+        _grid[_getFlatIndex(i, j, k)] = value;
     }
 
     void set(GridIndex g, T value) {
         assert(_isIndexInRange(g.i, g.j, g.k));
-        grid[g.k][g.j][g.i] = value;
+        _grid[_getFlatIndex(g)] = value;
     }
 
     void set(std::vector<GridIndex> cells, T value) {
@@ -138,12 +127,12 @@ public:
 
     void add(int i, int j, int k, T value) {
         assert(_isIndexInRange(i, j, k));
-        grid[k][j][i] += value;
+        _grid[_getFlatIndex(i, j, k)] += value;
     }
 
     void add(GridIndex g, T value) {
         assert(_isIndexInRange(g.i, g.j, g.k));
-        grid[g.k][g.j][g.i] += value;
+        _grid[_getFlatIndex(g)] += value;
     }
 
     T *getPointer(int i, int j, int k) {
@@ -153,7 +142,7 @@ public:
         }
 
         assert(isInRange);
-        return &grid[k][j][i];
+        return &_grid[_getFlatIndex(i, j, k)];
     }
 
     T *getPointer(GridIndex g) {
@@ -163,7 +152,7 @@ public:
         }
 
         assert(isInRange);
-        return &grid[g.k][g.j][g.i];
+        return &_grid[_getFlatIndex(g)];
     }
 
 
@@ -197,21 +186,24 @@ public:
 
 private:
     void _initializeGrid() {
-        grid = new T**[depth];
-        for (int k = 0; k < depth; k++) {
-            grid[k] = new T*[height];
-
-            for (int j = 0; j < height; j++) {
-                grid[k][j] = new T[width];
-            }
-        }
+        _grid = new T[width*height*depth];
     }
 
     inline bool _isIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth;
     }
 
-    T ***grid;
+    inline unsigned int _getFlatIndex(int i, int j, int k) {
+        return (unsigned int)i + (unsigned int)width *
+               ((unsigned int)j + (unsigned int)height * (unsigned int)k);
+    }
+
+    inline unsigned int _getFlatIndex(GridIndex g) {
+        return (unsigned int)g.i + (unsigned int)width *
+               ((unsigned int)g.j + (unsigned int)height * (unsigned int)g.k);
+    }
+
+    T *_grid;
 
     bool _isOutOfRangeValueSet = false;
     T _outOfRangeValue;
