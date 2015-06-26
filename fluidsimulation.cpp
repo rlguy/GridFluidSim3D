@@ -7,6 +7,8 @@ FluidSimulation::FluidSimulation() :
                                 _materialGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1)),
+                                _matrixA(_i_voxels, _j_voxels, _k_voxels),
+                                _preconditioner(_i_voxels, _j_voxels, _k_voxels),
                                 _implicitFluidScalarField(_i_voxels, _j_voxels, _k_voxels, _dx),
                                 _levelsetField(_i_voxels, _j_voxels, _k_voxels, _dx),
                                 _levelset(_i_voxels, _j_voxels, _k_voxels, _dx),
@@ -21,6 +23,8 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
+                                _matrixA(x_voxels, y_voxels, z_voxels),
+                                _preconditioner(x_voxels, y_voxels, z_voxels),
                                 _implicitFluidScalarField(x_voxels + 1, y_voxels + 1, z_voxels + 1, cell_size),
                                 _levelsetField(x_voxels, y_voxels, z_voxels, cell_size),
                                 _levelset(x_voxels, y_voxels, z_voxels, cell_size),
@@ -1560,6 +1564,17 @@ Eigen::VectorXd FluidSimulation::_solvePressureSystem(MatrixCoefficients &A,
     return pressureVector;
 }
 
+void FluidSimulation::_resetMatrixCoefficients() {
+    _matrixA.diag.fill(0.0);
+    _matrixA.plusi.fill(0.0);
+    _matrixA.plusj.fill(0.0);
+    _matrixA.plusk.fill(0.0);
+}
+
+void FluidSimulation::_resetPreconditioner() {
+    _preconditioner.vector.fill(0.0);
+}
+
 void FluidSimulation::_updatePressureGrid(double dt) {
     _pressureGrid.fill(0.0);
 
@@ -1570,13 +1585,13 @@ void FluidSimulation::_updatePressureGrid(double dt) {
         return;
     }
 
-    MatrixCoefficients A(_i_voxels, _j_voxels, _k_voxels);
-    VectorCoefficients precon(_i_voxels, _j_voxels, _k_voxels);
-    _calculateMatrixCoefficients(A, dt);
-    _calculatePreconditionerVector(precon, A);
+    _resetMatrixCoefficients();
+    _resetPreconditioner();
+    _calculateMatrixCoefficients(_matrixA, dt);
+    _calculatePreconditionerVector(_preconditioner, _matrixA);
 
     _updateFluidGridIndexToEigenVectorXdIndexHashTable();
-    Eigen::VectorXd pressures = _solvePressureSystem(A, b, precon, dt);
+    Eigen::VectorXd pressures = _solvePressureSystem(_matrixA, b, _preconditioner, dt);
 
     for (int idx = 0; idx < (int)_fluidCellIndices.size(); idx++) {
         GridIndex index = _VectorIndexToGridIndex(idx);

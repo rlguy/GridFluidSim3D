@@ -238,6 +238,8 @@ private:
                                                   double dt);
 
     // Methods for seting up system of equations for the pressure update
+    void _resetMatrixCoefficients();
+    void _resetPreconditioner();
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
     Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
         std::vector<GridIndex> indices);
@@ -414,6 +416,9 @@ private:
     Array3d<int> _materialGrid;
     Array3d<double> _pressureGrid;
     Array3d<int> _layerGrid;
+
+    MatrixCoefficients _matrixA;
+    VectorCoefficients _preconditioner;
 
     ImplicitSurfaceScalarField _implicitFluidScalarField;
     LevelSetField _levelsetField;
