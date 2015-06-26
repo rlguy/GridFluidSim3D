@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #include "implicitsurfacefield.h"
+#include "implicitsurfacescalarfield.h"
 #include "array3d.h"
 #include "trianglemesh.h"
 #include "glm/glm.hpp"
@@ -18,6 +19,7 @@ class Polygonizer3d
 public:
     Polygonizer3d();
     Polygonizer3d(SurfaceField *field);
+    Polygonizer3d(ImplicitSurfaceScalarField &scalarField);
 
     ~Polygonizer3d();
 
@@ -91,6 +93,8 @@ private:
     SurfaceField *_field;
     Array3d<double> _vertexValues;
     Array3d<bool> _isVertexSet;
+    double _surfaceThreshold = 0.5;
+    bool _isScalarFieldSet = false;
 
     // cell indices that are fully or partially within the iso surface
     std::vector<GridIndex> _insideIndices;

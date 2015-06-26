@@ -203,41 +203,6 @@ void FluidRenderer::drawGrid() {
 
 }
 
-void FluidRenderer::_drawImplicitPointData(ImplicitPointData point) {
-    double r = point.radius;
-    glm::vec3 p = point.position;
-
-    glBegin(GL_LINES);
-        glVertex3f(p.x - r, p.y, p.z);
-        glVertex3f(p.x + r, p.y, p.z);
-        glVertex3f(p.x, p.y - r, p.z);
-        glVertex3f(p.x, p.y + r, p.z);
-        glVertex3f(p.x, p.y, p.z - r);
-        glVertex3f(p.x, p.y, p.z + r);
-    glEnd();
-
-    glBegin(GL_POINTS);
-        glVertex3f(p.x, p.y, p.z);
-        glVertex3f(p.x - r, p.y, p.z);
-        glVertex3f(p.x + r, p.y, p.z);
-        glVertex3f(p.x, p.y - r, p.z);
-        glVertex3f(p.x, p.y + r, p.z);
-        glVertex3f(p.x, p.y, p.z - r);
-        glVertex3f(p.x, p.y, p.z + r);
-    glEnd();
-}
-
-void FluidRenderer::drawImplicitFluidPoints() {
-    std::vector<ImplicitPointData> points = _fluidsim->getImplicitFluidPoints();
-
-    _setTransforms();
-    for (int i = 0; i < (int)points.size(); i++) {
-        _drawImplicitPointData(points[i]);
-    }
-    _unsetTransforms();
-
-}
-
 void FluidRenderer::drawMarkerParticles() {
     std::vector<glm::vec3> points = _fluidsim->getMarkerParticles(3);
 

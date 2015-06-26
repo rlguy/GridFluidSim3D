@@ -38,7 +38,6 @@ public:
     void drawSolidCells();
     void drawFluidCells();
     void drawAirCells();
-    void drawImplicitFluidPoints();
     void drawMarkerParticles();
     void drawLayerGrid();
     void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
@@ -50,7 +49,6 @@ private:
 
     void _drawWireframeCube(glm::vec3 p, double size);
     void _drawFluidMaterialType(int mType);
-    void _drawImplicitPointData(ImplicitPointData p);
 
     void _setTransforms();
     void _unsetTransforms();

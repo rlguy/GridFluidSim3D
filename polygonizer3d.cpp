@@ -11,10 +11,31 @@ Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
 {
     _field->getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = _field->getCellSize();
+    _surfaceThreshold = _field->getSurfaceThreshold();
 
     _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
 
+    _isInitialized = true;
+}
+
+Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
+{
+    int i, j, k;
+    scalarField.getGridDimensions(&i, &j, &k);
+    _isize = i - 1;
+    _jsize = j - 1;
+    _ksize = k - 1;
+
+    _dx = scalarField.getCellSize();
+    _surfaceThreshold = scalarField.getSurfaceThreshold();
+
+    _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
+    scalarField.getScalarField(_vertexValues);
+
+    _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, true);
+
+    _isScalarFieldSet = true;
     _isInitialized = true;
 }
 
@@ -366,6 +387,8 @@ double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
 
     if (!_isVertexSet(g)) {
+        assert(!_isScalarFieldSet);
+
         glm::vec3 p = _getVertexPosition(g);
         _vertexValues.set(g, _field->getFieldValue(p));
     }
@@ -396,11 +419,10 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
 
     bool hasInside = false;
     bool hasOutside = false;
-    double thresh = _field->getSurfaceThreshold();
     for (int idx = 0; idx < 8; idx ++) {
         double val = _getVertexFieldValue(vertices[idx]);
 
-        if (val > thresh) {
+        if (val > _surfaceThreshold) {
             hasInside = true;
         }
         else {
@@ -457,7 +479,9 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
 }
 
 std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
-    _resetVertexValues();
+    if (!_isScalarFieldSet) {
+        _resetVertexValues();
+    }
 
     std::vector<GridIndex> surfaceCells;
     Array3d<bool> isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
@@ -683,9 +707,8 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
 void Polygonizer3d::_calculateSurfaceTriangles() {
     _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
-    double isolevel = _field->getSurfaceThreshold();
     for (int i = 0; i < _surfaceCells.size(); i++) {
-        _polygonizeCell(_surfaceCells[i], isolevel, edges);
+        _polygonizeCell(_surfaceCells[i], _surfaceThreshold, edges);
     }
 }
 

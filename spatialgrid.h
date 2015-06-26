@@ -95,7 +95,7 @@ public:
         std::vector<SpatialGridObject> *objs;
         SpatialGridObject o;
         for (int k = gmin.k; k <= gmax.k; k++) {
-            for (int j = gmin.j; j <= gmax.j, j++) {
+            for (int j = gmin.j; j <= gmax.j; j++) {
                 for (int i = gmin.i; i <= gmax.i; i++) {
                     objs = _grid.getPointer(i, j, k);
                     

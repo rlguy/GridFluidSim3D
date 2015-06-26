@@ -19,6 +19,7 @@
 #include "array3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
+#include "implicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
@@ -53,7 +54,6 @@ public:
         return _materialGrid(i, j, k); 
     }
 
-    std::vector<ImplicitPointData> getImplicitFluidPoints();
     std::vector<glm::vec3> getMarkerParticles();
     std::vector<glm::vec3> getMarkerParticles(int skip);
     Array3d<int> getLayerGrid() { return _layerGrid; }
@@ -395,11 +395,11 @@ private:
     int _currentTimeStep = 0;
     bool _isCurrentFrameFinished = true;
 
-    double _dx = 0.1;
+    double _dx = 0.0;
     double _density = 20.0;
-    int _i_voxels = 10;
-    int _j_voxels = 10;
-    int _k_voxels = 10;
+    int _i_voxels = 0;
+    int _j_voxels = 0;
+    int _k_voxels = 0;
 
     double _CFLConditionNumber = 5.0;
     double _minTimeStep = 1.0 / 1200.0;
@@ -415,7 +415,7 @@ private:
     Array3d<double> _pressureGrid;
     Array3d<int> _layerGrid;
 
-    ImplicitSurfaceField _implicitFluidField;
+    ImplicitSurfaceScalarField _implicitFluidScalarField;
     LevelSetField _levelsetField;
 
     std::vector<MarkerParticle> _markerParticles;
