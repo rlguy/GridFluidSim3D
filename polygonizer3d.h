@@ -12,6 +12,8 @@
 #include "trianglemesh.h"
 #include "glm/glm.hpp"
 
+#include "stopwatch.h"
+
 #pragma once
 
 class Polygonizer3d
@@ -25,6 +27,7 @@ public:
 
     void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
     void setInsideCellIndices(std::vector<GridIndex> indices);
+    void setScalarField(ImplicitSurfaceScalarField &field);
     void polygonizeSurface();
 
     std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
@@ -93,6 +96,7 @@ private:
     SurfaceField *_field;
     Array3d<double> _vertexValues;
     Array3d<bool> _isVertexSet;
+    Array3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
 

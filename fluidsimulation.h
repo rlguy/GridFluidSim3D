@@ -405,6 +405,8 @@ private:
     double _CFLConditionNumber = 5.0;
     double _minTimeStep = 1.0 / 1200.0;
     double _maxTimeStep = 1.0 / 15.0;
+    double _maxAdvectionDistanceFactor = 2.5; // max number of cells an advection
+                                              // integration can travel
     double _pressureSolveTolerance = 10e-6;
     int _maxPressureSolveIterations = 300;
     int _numAdvanceMarkerParticleThreads = 8;

@@ -2,8 +2,9 @@
 
 
 Polygonizer3d::Polygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
-                                 _vertexValues(Array3d<double>(0, 0, 0, 0.0)),
-                                 _isVertexSet(Array3d<bool>(0, 0, 0, false))
+                                 _vertexValues(0, 0, 0, 0.0),
+                                 _isVertexSet(0, 0, 0, false),
+                                 _isCellDone(0, 0, 0, false)
 {
 }
 
@@ -15,6 +16,7 @@ Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
 
     _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
+    _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
     _isInitialized = true;
 }
@@ -34,8 +36,10 @@ Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
     scalarField.getScalarField(_vertexValues);
 
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, true);
+    _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
     _isScalarFieldSet = true;
+
     _isInitialized = true;
 }
 
@@ -344,6 +348,26 @@ void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
     }
 }
 
+void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField &scalarField) {
+
+    int i, j, k;
+    double dx;
+    scalarField.getGridDimensions(&i, &j, &k);
+    dx = scalarField.getCellSize();
+
+    std::cout << i << " " << _isize <<  j << " " << _jsize <<  k << " " << _ksize << std::endl;
+    assert(_isize == i - 1 && _jsize == j - 1 && _ksize == k - 1);
+
+    _surfaceThreshold = scalarField.getSurfaceThreshold();
+
+    _vertexValues.fill(0.0);
+    scalarField.getScalarField(_vertexValues);
+
+    _isVertexSet.fill(true);
+
+    _isScalarFieldSet = true;
+}
+
 void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
     _surface.writeMeshToOBJ(filename);
 }
@@ -455,12 +479,12 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
     std::vector<GridIndex> seedSurfaceCells;
 
     isCellDone.set(seed, true);
-    std::queue<GridIndex> queue;
-    queue.push(seed);
+    std::vector<GridIndex> queue;
+    queue.push_back(seed);
 
     while (!queue.empty()) {
-        GridIndex c = queue.front();
-        queue.pop();
+        GridIndex c = queue[queue.size() - 1];
+        queue.pop_back();
 
         GridIndex neighbours[6];
         _getNeighbourGridIndices6(c, neighbours);
@@ -468,7 +492,7 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
             GridIndex n = neighbours[idx];
             if (_isCellIndexInRange(n) && !isCellDone(n) && _isCellOnSurface(n)) {
                 isCellDone.set(n, true);
-                queue.push(n);
+                queue.push_back(n);
             }
         }
 
@@ -484,25 +508,25 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
     }
 
     std::vector<GridIndex> surfaceCells;
-    Array3d<bool> isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
+    _isCellDone.fill(false);
 
     for (int i = 0; i < _insideIndices.size(); i++) {
         GridIndex cell = _insideIndices[i];
         
-        if (isCellDone(cell)) {
+        if (_isCellDone(cell)) {
             continue;
         }
 
         while (_isCellIndexInRange(cell)) {
 
             if (_isCellOnSurface(cell)) {
-                std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, isCellDone);
+                std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
                 surfaceCells.insert(surfaceCells.end(), seedSurfaceCells.begin(), seedSurfaceCells.end());
                 break;
             }
 
             // march +z until cell surface is found or index is out of range
-            isCellDone.set(cell, true);
+            _isCellDone.set(cell, true);
             cell = GridIndex(cell.i, cell.j, cell.k + 1);
         }
     }
@@ -714,7 +738,6 @@ void Polygonizer3d::_calculateSurfaceTriangles() {
 
 void Polygonizer3d::polygonizeSurface() {
     _surfaceCells = _findSurfaceCells();
-
     _calculateSurfaceTriangles();
     _surface.removeDuplicateTriangles(); // Polygonization method produces
                                          // some identical triangles for some

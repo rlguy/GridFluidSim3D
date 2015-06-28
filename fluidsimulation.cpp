@@ -436,17 +436,12 @@ void FluidSimulation::_writeSurfaceMeshToFile() {
 }
 
 void FluidSimulation::_reconstructFluidSurface() {
+    StopWatch t1 = StopWatch();
+    StopWatch t2 = StopWatch();
+    StopWatch t3 = StopWatch();
+    StopWatch t4 = StopWatch();
 
-    /*
-    // field needs to have 1 extra cell padding since the polygonizer will
-    // query vertex positions on the very edge of the field grid
-    ImplicitSurfaceField field = ImplicitSurfaceField(_i_voxels*level + 1,
-                                                      _j_voxels*level + 1,
-                                                      _k_voxels*level + 1, _dx / level);
-    field.setMaterialGrid(_materialGrid);
-    Polygonizer3d polygonizer = Polygonizer3d(&field);
-    */
-
+    t1.start();
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_i_voxels + 1, 
                                                                   _j_voxels + 1, 
                                                                   _k_voxels + 1, _dx);
@@ -463,7 +458,7 @@ void FluidSimulation::_reconstructFluidSurface() {
 
     Polygonizer3d polygonizer = Polygonizer3d(field);
     polygonizer.setInsideCellIndices(_fluidCellIndices);
-    
+
     polygonizer.polygonizeSurface();
     _surfaceMesh = polygonizer.getTriangleMesh();
 
@@ -1101,7 +1096,7 @@ void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, doubl
                                                glm::vec3 *p1, glm::vec3 *v1) {
     double timeleft = dt;
     while (timeleft > 0.0) {
-        double timestep = _dx / glm::length(v0);
+        double timestep = _maxAdvectionDistanceFactor * _dx / glm::length(v0);
         timestep = fminf(timeleft, timestep);
         bool isOutsideBoundary = _integrateVelocity(p0, v0, -timestep, p1);
         *v1 = _MACVelocity.evaluateVelocityAtPosition(*p1);
