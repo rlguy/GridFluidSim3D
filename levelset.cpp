@@ -117,17 +117,6 @@ void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
     }
 }
 
-void LevelSet::_convertToQueues(std::vector<std::vector<GridIndex>> &layers,
-                                std::vector<std::queue<GridIndex>> &queues) {
-    for (int j = 0; j < layers.size(); j++) {
-        std::queue<GridIndex> q;
-        queues.push_back(q);
-        for (int i = 0; i < layers[j].size(); i++) {
-            queues[j].push(layers[j][i]);
-        }
-    }
-}
-
 void LevelSet::_setLevelSetCell(GridIndex g, double dist, int tidx) {
     _signedDistance.set(g, dist);
     _indexGrid.set(g, tidx);
@@ -140,15 +129,15 @@ void LevelSet::_resetLevelSetCell(GridIndex g) {
     _isDistanceSet.set(g, false);
 }
 
-void LevelSet::_calculateUnsignedDistanceSquaredForQueue(std::queue<GridIndex> &q) {
+void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q) {
 
     GridIndex g, n;
     GridIndex ns[6];
     double distsq;
 
     while (!q.empty()) {
-        g = q.front();
-        q.pop();
+        g = q[q.size() - 1];
+        q.pop_back();
 
         _getNeighbourGridIndices6(g, ns);
         for (int j = 0; j < 6; j++) {
@@ -163,13 +152,13 @@ void LevelSet::_calculateUnsignedDistanceSquaredForQueue(std::queue<GridIndex> &
 
                 if (distsq < _signedDistance(n)) {
                     _resetLevelSetCell(n);
-                    q.push(n);
+                    q.push_back(n);
                 }
             }
         }
 
         if (!_isDistanceSet(g)) {
-            q.push(g);
+            q.push_back(g);
         }
     }
 }
@@ -178,12 +167,8 @@ void LevelSet::_calculateUnsignedDistanceSquared() {
     std::vector<std::vector<GridIndex>> cellLayers;
     _getCellLayers(cellLayers);
 
-    std::vector<std::queue<GridIndex>> cellQueues;
-    _convertToQueues(cellLayers, cellQueues);
-    cellLayers.clear();
-
-    for (int i = 0; i < cellQueues.size(); i++) {
-        _calculateUnsignedDistanceSquaredForQueue(cellQueues[i]);
+    for (int i = 0; i < cellLayers.size(); i++) {
+        _calculateUnsignedDistanceSquaredForLayer(cellLayers[i]);
     }
 }
 

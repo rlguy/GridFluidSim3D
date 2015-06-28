@@ -1,5 +1,6 @@
 #pragma once
 #include "surfacefield.h"
+#include "stopwatch.h"
 
 
 class LevelSetField : public SurfaceField

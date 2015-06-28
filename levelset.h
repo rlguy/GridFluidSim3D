@@ -37,9 +37,7 @@ private:
     void _getLayerCells(int idx, std::vector<GridIndex> &layer, 
                                  std::vector<GridIndex> &nextLayer,
                                  Array3d<int> &layerGrid);
-    void _convertToQueues(std::vector<std::vector<GridIndex>> &layers,
-                          std::vector<std::queue<GridIndex>> &queues);
-    void _calculateUnsignedDistanceSquaredForQueue(std::queue<GridIndex> &q);
+    void _calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q);
     void _setLevelSetCell(GridIndex g, double dist, int tidx);
     void _resetLevelSetCell(GridIndex g);
     void _squareRootDistanceField();
