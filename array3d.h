@@ -54,6 +54,8 @@ public:
 
     Array3d operator=(Array3d & rhs)
     {
+        delete[] _grid;
+
         width = rhs.width;
         height = rhs.height;
         depth = rhs.depth;
