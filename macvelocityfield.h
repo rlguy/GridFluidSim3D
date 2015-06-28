@@ -98,7 +98,7 @@ private:
     }
     inline bool _isPositionInGrid(double x, double y, double z) {
         return x >= 0 && y >= 0 && z >= 0 && 
-               x <= _dx*_i_voxels && y <= _dx*_j_voxels && z <= _dx*_k_voxels;
+               x < _dx*_i_voxels && y < _dx*_j_voxels && z < _dx*_k_voxels;
     }
 
     double _default_out_of_range_value = 0.0;

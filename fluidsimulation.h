@@ -246,7 +246,6 @@ private:
     Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A,
         double dt);
     void _updateFluidGridIndexToEigenVectorXdIndexHashTable();
-    unsigned long long int _calculateGridIndexHash(GridIndex &index);
     int _GridIndexToVectorIndex(int i, int j, int k);
     int _GridIndexToVectorIndex(GridIndex index);
     GridIndex _VectorIndexToGridIndex(int index);
@@ -406,7 +405,7 @@ private:
     double _CFLConditionNumber = 5.0;
     double _minTimeStep = 1.0 / 1200.0;
     double _maxTimeStep = 1.0 / 15.0;
-    double _pressureSolveTolerance = 10e-4;
+    double _pressureSolveTolerance = 10e-6;
     int _maxPressureSolveIterations = 300;
     int _numAdvanceMarkerParticleThreads = 8;
 
@@ -419,13 +418,13 @@ private:
 
     MatrixCoefficients _matrixA;
     VectorCoefficients _preconditioner;
+    Array3d<int> _GridIndexToEigenVectorXdIndex;
 
     ImplicitSurfaceScalarField _implicitFluidScalarField;
     LevelSetField _levelsetField;
 
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
-    std::unordered_map<unsigned long long, int> _GridIndexToEigenVectorXdIndex;
 
     LogFile _logfile;
     double _simulationTime = 0;

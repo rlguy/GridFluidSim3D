@@ -480,7 +480,9 @@ double MACVelocityField::_cubicInterpolate(double p[4], double x) {
 }
 
 double MACVelocityField::_interpolateU(double x, double y, double z) {
-    assert(_isPositionInGrid(x, y, z));
+    if (!_isPositionInGrid(x, y, z)) {
+        return 0.0;
+    }
 
     // Velocity positions are staggered from grid cell positions. We need to find the minimal
     // U coordinate (of the 8 that form a cube) that encloses point (x, y, z) so that we have
@@ -522,7 +524,11 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk);
+                if (_u.isIndexInRange(pi, pj, pk)) {
+                    points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk);
+                } else {
+                    points[pi][pj][pk] = 0;
+                }
             }
         }
     }
@@ -531,7 +537,9 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
 }
 
 double MACVelocityField::_interpolateV(double x, double y, double z) {
-    assert(_isPositionInGrid(x, y, z));
+    if (!_isPositionInGrid(x, y, z)) {
+        return 0.0;
+    }
 
     int i, j, k;
     double gx, gy, gz;
@@ -570,7 +578,11 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk);
+                if (_v.isIndexInRange(pi, pj, pk)) {
+                    points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk);
+                } else {
+                    points[pi][pj][pk] = 0;
+                }
             }
         }
     }
@@ -579,7 +591,9 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
 }
 
 double MACVelocityField::_interpolateW(double x, double y, double z) {
-    assert(_isPositionInGrid(x, y, z));
+    if (!_isPositionInGrid(x, y, z)) {
+        return 0.0;
+    }
 
     int i, j, k;
     double gx, gy, gz;
@@ -618,7 +632,11 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk);
+                if (_w.isIndexInRange(pi, pj, pk)) {
+                    points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk);
+                } else {
+                    points[pi][pj][pk] = 0;
+                }
             }
         }
     }

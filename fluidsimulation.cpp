@@ -25,6 +25,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
                                 _matrixA(x_voxels, y_voxels, z_voxels),
                                 _preconditioner(x_voxels, y_voxels, z_voxels),
+                                _GridIndexToEigenVectorXdIndex(x_voxels, y_voxels, z_voxels, -1),
                                 _implicitFluidScalarField(x_voxels + 1, y_voxels + 1, z_voxels + 1, cell_size),
                                 _levelsetField(x_voxels, y_voxels, z_voxels, cell_size),
                                 _levelset(x_voxels, y_voxels, z_voxels, cell_size),
@@ -376,16 +377,18 @@ void FluidSimulation::_initializeFluidMaterial() {
 
 
     GridIndex g;
+    std::vector<GridIndex> indices;
     for (int i = 0; i < fluidCells.size(); i++) {
         g = fluidCells[i];
 
         if (_isCellAir(g)) {
             _materialGrid.set(g, M_FLUID);
             _addMarkerParticlesToCell(g);
+            indices.push_back(g);
         }
     }
 
-    _fluidCellIndices = fluidCells;
+    _fluidCellIndices = indices;
 }
 
 void FluidSimulation::_initializeSimulation() {
@@ -1326,19 +1329,11 @@ void FluidSimulation::_EigenVectorXdToVectorCoefficients(Eigen::VectorXd v,
     }
 }
 
-unsigned long long int FluidSimulation::_calculateGridIndexHash(GridIndex &index) {
-    return (unsigned long long)index.i + (unsigned long long)_i_voxels *
-          ((unsigned long long)index.j +
-           (unsigned long long)_j_voxels * (unsigned long long)index.k);
-}
-
 void FluidSimulation::_updateFluidGridIndexToEigenVectorXdIndexHashTable() {
-    _GridIndexToEigenVectorXdIndex.clear();
+    _GridIndexToEigenVectorXdIndex.fill(-1);
 
     for (int idx = 0; idx < (int)_fluidCellIndices.size(); idx++) {
-        unsigned long long key = _calculateGridIndexHash(_fluidCellIndices[idx]);
-        std::pair<unsigned long long, int> keyvalue(key, idx);
-        _GridIndexToEigenVectorXdIndex.insert(keyvalue);
+        _GridIndexToEigenVectorXdIndex.set(_fluidCellIndices[idx], idx);
     }
 }
 
@@ -1352,12 +1347,9 @@ int FluidSimulation::_GridIndexToVectorIndex(int i, int j, int k) {
 }
 
 int FluidSimulation::_GridIndexToVectorIndex(GridIndex index) {
-    unsigned long long h = _calculateGridIndexHash(index);
-    if (_GridIndexToEigenVectorXdIndex.find(h) == _GridIndexToEigenVectorXdIndex.end()) {
-        return -1;
-    }
-
-    return _GridIndexToEigenVectorXdIndex[h];
+    int xdidx = _GridIndexToEigenVectorXdIndex(index);
+    assert(xdidx != -1);
+    return xdidx;
 }
 
 Eigen::VectorXd FluidSimulation::_applyPreconditioner(Eigen::VectorXd residualVector,
@@ -1587,12 +1579,12 @@ void FluidSimulation::_updatePressureGrid(double dt) {
 
     _resetMatrixCoefficients();
     _resetPreconditioner();
+
     _calculateMatrixCoefficients(_matrixA, dt);
     _calculatePreconditionerVector(_preconditioner, _matrixA);
-
     _updateFluidGridIndexToEigenVectorXdIndexHashTable();
     Eigen::VectorXd pressures = _solvePressureSystem(_matrixA, b, _preconditioner, dt);
-
+    
     for (int idx = 0; idx < (int)_fluidCellIndices.size(); idx++) {
         GridIndex index = _VectorIndexToGridIndex(idx);
         _pressureGrid.set(index, pressures(idx));
@@ -1628,19 +1620,12 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
 
             // jog p back a bit from cell face
             p = coll + (float)(0.001*_dx)*norm;
-
-            //assert(!_isCellSolid(i, j, k));
         }
 
         positionToGridIndex(p, &i, &j, &k);
         if (!_isCellSolid(i, j, k)) {
             _markerParticles[idx].position = p;
             _markerParticles[idx].index = GridIndex(i, j, k);
-        }
-        else {
-            std::cout << "solid cell: " << " " << p.x << " " << p.y << " " << p.z << " " <<
-                mp.position.x << " " << mp.position.y << " " << mp.position.z << std::endl;
-
         }
     }
     

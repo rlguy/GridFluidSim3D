@@ -193,7 +193,14 @@ void TriangleMesh::updateVertexNormals() {
 
         v1 = vertices[t.tri[1]] - vertices[t.tri[0]];
         v2 = vertices[t.tri[2]] - vertices[t.tri[0]];
-        facenormals.push_back(glm::normalize(glm::cross(v1, v2)));
+        glm::vec3 norm = glm::normalize(glm::cross(v1, v2));
+
+        if (norm.x != norm.x || norm.y != norm.y || norm.y != norm.y ) {
+            std::cout << "NaN: " << v1.x << " " << v1.y << " " << v1.z << std::endl;
+            std::cout << "NaN: " << v2.x << " " << v2.y << " " << v2.z << std::endl;
+        }
+
+        facenormals.push_back(norm);
     }
 
     glm::vec3 n;
@@ -276,6 +283,7 @@ void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex
 }
 
 void TriangleMesh::_updateTriangleGrid() {
+    _destroyTriangleGrid();
     _triGrid = Array3d<std::vector<int>>(_gridi, _gridj, _gridk);
 
     std::vector<GridIndex> cells;
@@ -296,6 +304,16 @@ void TriangleMesh::_updateTriangleGrid() {
 }
 
 void TriangleMesh::_destroyTriangleGrid() {
+    std::vector<int> *tris;
+    for (int k = 0; k < _triGrid.depth; k++) {
+        for (int j = 0; j < _triGrid.height; j++) {
+            for (int i = 0; i < _triGrid.width; i++) {
+                tris = _triGrid.getPointer(i, j, k);
+                tris->clear();
+                tris->shrink_to_fit();
+            }
+        }
+    }
     _triGrid = Array3d<std::vector<int> >();
 }
 
