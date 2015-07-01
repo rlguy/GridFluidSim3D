@@ -157,7 +157,13 @@ public:
         return &_grid[_getFlatIndex(g)];
     }
 
+    T *getRawArray() {
+        return _grid;
+    }
 
+    int getNumElements() {
+        return width*height*depth;
+    }
 
     void setOutOfRangeValue() {
         _isOutOfrangeValueSet = false;

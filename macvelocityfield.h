@@ -29,6 +29,9 @@ public:
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
     void setW(int i, int j, int k, double val);
+    void setU(Array3d<double> &ugrid);
+    void setV(Array3d<double> &vgrid);
+    void setW(Array3d<double> &wgrid);
     void addU(int i, int j, int k, double val);
     void addV(int i, int j, int k, double val);
     void addW(int i, int j, int k, double val);
@@ -40,6 +43,10 @@ public:
     void addTempW(int i, int j, int k, double val);
     void resetTemporaryVelocityField();
     void commitTemporaryVelocityFieldValues();
+
+    double* getRawArrayU();
+    double* getRawArrayV();
+    double* getRawArrayW();
 
     void clear();
     void clearU();

@@ -15,7 +15,7 @@
 #include <gl\glu.h>
 
 #include "stopwatch.h"
-#include "MACVelocityField.h"
+#include "macvelocityfield.h"
 #include "array3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
@@ -26,6 +26,7 @@
 #include "collision.h"
 #include "aabb.h"
 #include "levelset.h"
+#include "fluidsimulationsavestate.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -33,6 +34,7 @@ class FluidSimulation
 public:
     FluidSimulation();
     FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size);
+    FluidSimulation(FluidSimulationSaveState &state);
     ~FluidSimulation();
 
     void update(double dt);
@@ -68,6 +70,8 @@ public:
 
     void setMarkerParticleScale(double s) { _markerParticleScale = s; }
     void setSurfaceReconstructionSubdivisionLevel(int level);
+
+    MACVelocityField* getVelocityField() { return &_MACVelocity; }
 
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
@@ -113,6 +117,10 @@ public:
     GridIndex positionToGridIndex(glm::vec3 p);
 
     bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
+
+    void saveState();
+    void saveState(std::string filename);
+    int getCurrentFrame();
     
 private:
     struct MarkerParticle {
@@ -179,6 +187,11 @@ private:
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _addMarkerParticlesToCell(GridIndex g);
+    void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
+    void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
+    void _initializeFluidMaterialParticlesFromSaveState();
+    void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
+    void _initializeMACGridFromSaveState(FluidSimulationSaveState &state);
 
     // Simulation step
     double _calculateNextTimeStep();

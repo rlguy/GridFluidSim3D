@@ -34,6 +34,16 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
     _materialGrid.setOutOfRangeValue(M_SOLID);
     _implicitFluidScalarField.enableCellCenterValues();
     _logfile = LogFile();
+
+}
+
+FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
+    assert(state.isLoadStateInitialized());
+    _initializeSimulationFromSaveState(state);
+
+    _materialGrid.setOutOfRangeValue(M_SOLID);
+    _implicitFluidScalarField.enableCellCenterValues();
+    _logfile = LogFile();
 }
 
 FluidSimulation::~FluidSimulation() {
@@ -264,6 +274,19 @@ GridIndex FluidSimulation::positionToGridIndex(glm::vec3 p) {
                      (int)floor(p.z*invdx));
 }
 
+void FluidSimulation::saveState() {
+    saveState("savestates/autosave.state");
+}
+
+void FluidSimulation::saveState(std::string filename) {
+    FluidSimulationSaveState state = FluidSimulationSaveState();
+    state.saveState(filename, this);
+}
+
+int FluidSimulation::getCurrentFrame() {
+    return _currentFrame;
+}
+
 /********************************************************************************
     INITIALIZATION
 ********************************************************************************/
@@ -394,6 +417,91 @@ void FluidSimulation::_initializeFluidMaterial() {
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
     _initializeFluidMaterial();
+
+    // objects are no longer needed after simulation is initialized
+    _implicitFluidScalarField = ImplicitSurfaceScalarField();
+    _levelsetField = LevelSetField();
+
+    _isSimulationInitialized = true;
+}
+
+void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
+    MarkerParticle p;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        assert(!_isCellSolid(p.index));
+        _materialGrid.set(p.index, M_FLUID);
+    }
+
+    _fluidCellIndices.clear();
+    for (int k = 0; k < _materialGrid.depth; k++) {
+        for (int j = 0; j < _materialGrid.height; j++) {
+            for (int i = 0; i < _materialGrid.width; i++) {
+                if (_isCellFluid(i, j, k)) {
+                    _fluidCellIndices.push_back(GridIndex(i, j, k));
+                }
+            }
+        }
+    }
+}
+
+void FluidSimulation::_initializeMarkerParticlesFromSaveState(
+                                        FluidSimulationSaveState &state) {
+    std::vector<glm::vec3> positions = state.getMarkerParticles();
+
+    glm::vec3 p;
+    GridIndex g;
+    for (int i = 0; i < positions.size(); i++) {
+        p = positions[i];
+        g = positionToGridIndex(p);
+        _markerParticles.push_back(MarkerParticle(p, g.i, g.j, g.k));
+    }
+}
+
+void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveState &state) {
+    std::vector<GridIndex> indices = state.getSolidCellIndices();
+    GridIndex g;
+    for (int i = 0; i < indices.size(); i++) {
+        g = indices[i];
+        addSolidCell(g.i, g.j, g.k);
+    }
+}
+
+void FluidSimulation::_initializeMACGridFromSaveState(FluidSimulationSaveState &state) {
+    Array3d<double> U, V, W;
+    state.getVelocityField(U, V, W);
+
+    assert(U.width == _i_voxels + 1 && U.height == _j_voxels && U.depth == _k_voxels);
+    assert(V.width == _i_voxels && V.height == _j_voxels + 1 && V.depth == _k_voxels);
+    assert(W.width == _i_voxels && W.height == _j_voxels && W.depth == _k_voxels + 1);
+
+    _MACVelocity = MACVelocityField(_i_voxels, _j_voxels, _k_voxels, _dx);
+    _MACVelocity.setU(U);
+    _MACVelocity.setV(V);
+    _MACVelocity.setW(W);
+}
+
+void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveState &state) {
+    state.getGridDimensions(&_i_voxels, &_j_voxels, &_k_voxels);
+    _dx = state.getCellSize();
+    _currentFrame = state.getCurrentFrame();
+
+    _bodyForce = glm::vec3(0.0, 0.0, 0.0);
+    _materialGrid = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, M_AIR);
+    _pressureGrid = Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0);
+    _layerGrid = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1);
+    _matrixA = MatrixCoefficients(_i_voxels, _j_voxels, _k_voxels);
+    _preconditioner = VectorCoefficients(_i_voxels, _j_voxels, _k_voxels);
+    _GridIndexToEigenVectorXdIndex = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1);
+    _levelset = LevelSet(_i_voxels, _j_voxels, _k_voxels, _dx);
+    _markerParticleRadius = pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0);
+
+    _initializeSolidCellsFromSaveState(state);
+    _initializeMarkerParticlesFromSaveState(state);
+    _initializeFluidMaterialParticlesFromSaveState();
+    _initializeMACGridFromSaveState(state);
+
+    _isFluidInSimulation = _fluidCellIndices.size() > 0;
     _isSimulationInitialized = true;
 }
 
@@ -1885,6 +1993,8 @@ void FluidSimulation::update(double dt) {
     }
     _isCurrentFrameFinished = false;
 
+    saveState();
+
     _currentTimeStep = 0;
     double timeleft = dt;
     while (timeleft > 0.0) {
@@ -1898,7 +2008,7 @@ void FluidSimulation::update(double dt) {
         _currentTimeStep++;
     }
 
-    _writeSurfaceMeshToFile();
+    //_writeSurfaceMeshToFile();
     _currentFrame++;
 
     _isCurrentFrameFinished = true;

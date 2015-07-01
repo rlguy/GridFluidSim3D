@@ -123,6 +123,18 @@ void MACVelocityField::randomizeValues(double min, double max) {
     }
 }
 
+double* MACVelocityField::getRawArrayU() {
+    return _u.getRawArray();
+}
+
+double* MACVelocityField::getRawArrayV() {
+    return _v.getRawArray();
+}
+
+double* MACVelocityField::getRawArrayW() {
+    return _w.getRawArray();
+}
+
 double MACVelocityField::U(int i, int j, int k) {
     if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;
@@ -217,6 +229,27 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
     }
 
     _w.set(i, j, k, val);
+}
+
+void MACVelocityField::setU(Array3d<double> &ugrid) {
+    assert(ugrid.width == _u.width && 
+           ugrid.height == _u.height && 
+           ugrid.depth == _u.depth);
+    _u = ugrid;
+}
+
+void MACVelocityField::setV(Array3d<double> &vgrid) {
+    assert(vgrid.width == _v.width && 
+           vgrid.height == _v.height && 
+           vgrid.depth == _v.depth);
+    _v = vgrid;
+}
+
+void MACVelocityField::setW(Array3d<double> &wgrid) {
+    assert(wgrid.width == _w.width && 
+           wgrid.height == _w.height && 
+           wgrid.depth == _w.depth);
+    _w = wgrid;
 }
 
 void MACVelocityField::addU(int i, int j, int k, double val) {
