@@ -27,6 +27,9 @@
 #include "aabb.h"
 #include "levelset.h"
 #include "fluidsimulationsavestate.h"
+#include "fluidsource.h"
+#include "sphericalfluidsource.h"
+#include "cuboidfluidsource.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -93,6 +96,12 @@ public:
         return addFluidMesh(OBJFilename, glm::vec3(0.0, 0.0, 0.0), scale);
     }
     bool addFluidMesh(std::string OBJFilename, glm::vec3 offset, double scale);
+
+    SphericalFluidSource *addSphericalFluidSource(glm::vec3 pos, double r);
+    SphericalFluidSource *addSphericalFluidSource(glm::vec3 pos, double r, 
+                                                  glm::vec3 velocity);
+    CuboidFluidSource *addCuboidFluidSource(AABB bbox);
+    CuboidFluidSource *addCuboidFluidSource(AABB bbox, glm::vec3 velocity);
 
     void addSolidCell(int i, int j, int k);
     void addSolidCells(std::vector<glm::vec3> indices);
@@ -181,6 +190,8 @@ private:
     int M_AIR = 0;
     int M_FLUID = 1;
     int M_SOLID = 2;
+    int T_INFLOW = 0;
+    int T_OUTFLOW = 1;
 
     // Initialization before running simulation
     void _initializeSimulation();
@@ -200,6 +211,22 @@ private:
     // Find fluid cells. Fluid cells must contain at
     // least 1 marker particle
     void _updateFluidCells();
+    void _updateFluidSources();
+    void _updateFluidSource(FluidSource *source);
+    void _addNewFluidCells(std::vector<GridIndex> &cells, glm::vec3 velocity);
+    void _setVelocitiesForNewFluidCell(GridIndex g, glm::vec3 v);
+    void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
+    inline bool _isIndexInList(GridIndex g, 
+                               std::vector<GridIndex> &list) {
+        GridIndex c;
+        for (int idx = 0; idx < list.size(); idx++) {
+            c = list[idx];
+            if (g.i == c.i && g.j == c.j && g.k == c.k) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();
@@ -452,5 +479,9 @@ private:
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
     
+    std::vector<FluidSource*> _fluidSources;
+    std::vector<SphericalFluidSource*> _sphericalFluidSources;
+    std::vector<CuboidFluidSource*> _cuboidFluidSources;
+
 };
 

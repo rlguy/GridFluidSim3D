@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <stdio.h>
+#include <iostream>
 
 #include "glm/glm.hpp"
 #include "array3d.h"
@@ -28,6 +30,8 @@ public:
 
     virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
                                                     double dx);
+    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
+                                                 double dx);
 
 protected:
     int T_INFLOW = 0;

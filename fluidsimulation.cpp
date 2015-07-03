@@ -42,12 +42,13 @@ FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
     _initializeSimulationFromSaveState(state);
 
     _materialGrid.setOutOfRangeValue(M_SOLID);
-    _implicitFluidScalarField.enableCellCenterValues();
     _logfile = LogFile();
 }
 
 FluidSimulation::~FluidSimulation() {
-
+    for (int i = 0; i < _fluidSources.size(); i++) {
+        delete[] _fluidSources[i];
+    }
 }
 
 /*******************************************************************************
@@ -121,6 +122,35 @@ bool FluidSimulation::addFluidMesh(std::string OBJFilename, glm::vec3 offset, do
     _fluidInitializationType = MESH;
 
     return true;
+}
+
+SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, double r) {
+    SphericalFluidSource *source = new SphericalFluidSource(pos, r);
+    _fluidSources.push_back(source);
+    _sphericalFluidSources.push_back(source);
+    return source;
+}
+
+SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, double r, 
+                                             glm::vec3 velocity) {
+    SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
+    _fluidSources.push_back(source);
+    _sphericalFluidSources.push_back(source);
+    return source;
+}
+
+CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
+    CuboidFluidSource *source = new CuboidFluidSource(bbox);
+    _fluidSources.push_back(source);
+    _cuboidFluidSources.push_back(source);
+    return source;
+}
+
+CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, glm::vec3 velocity) {
+    CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
+    _fluidSources.push_back(source);
+    _cuboidFluidSources.push_back(source);
+    return source;
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
@@ -509,7 +539,87 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     UPDATE FLUID CELLS
 ********************************************************************************/
 
+void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &cells) {
+    std::vector<MarkerParticle> newv;
+    newv.reserve(_markerParticles.size());
+
+    MarkerParticle p;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        if (!_isIndexInList(p.index, cells)) {
+            newv.push_back(p);
+        }
+    }
+
+    _markerParticles = newv;
+}
+
+void FluidSimulation::_setVelocitiesForNewFluidCell(GridIndex g, glm::vec3 v) {
+    int i = g.i; int j = g.j; int k = g.k;
+
+    if (!_isFaceBorderingMaterialU(i, j, k, M_FLUID) &&
+        !_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
+        _MACVelocity.setU(i, j, k, v.x);
+    }
+    if (!_isFaceBorderingMaterialU(i + 1, j, k, M_FLUID) &&
+        !_isFaceBorderingMaterialU(i + 1, j, k, M_SOLID)) {
+        _MACVelocity.setU(i + 1, j, k, v.x);
+    }
+
+    if (!_isFaceBorderingMaterialV(i, j, k, M_FLUID) &&
+        !_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
+        _MACVelocity.setV(i, j, k, v.y);
+    }
+    if (!_isFaceBorderingMaterialV(i, j + 1, k, M_FLUID) &&
+        !_isFaceBorderingMaterialV(i, j + 1, k, M_SOLID)) {
+        _MACVelocity.setV(i, j + 1, k, v.y);
+    }
+
+    if (!_isFaceBorderingMaterialW(i, j, k, M_FLUID) &&
+        !_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
+        _MACVelocity.setW(i, j, k, v.z);
+    }
+    if (!_isFaceBorderingMaterialW(i, j + 1, k, M_FLUID) &&
+        !_isFaceBorderingMaterialW(i, j + 1, k, M_SOLID)) {
+        _MACVelocity.setW(i, j + 1, k, v.z);
+    }
+}
+
+void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
+                                        glm::vec3 velocity) {
+    GridIndex g;
+    for (int i = 0; i < cells.size(); i++) {
+        _setVelocitiesForNewFluidCell(cells[i], velocity);
+        _addMarkerParticlesToCell(cells[i]);
+    }
+}
+
+void FluidSimulation::_updateFluidSource(FluidSource *source) {
+    if (source->getSourceType() == T_INFLOW) {
+        std::vector<GridIndex> newCells = source->getNewFluidCells(_materialGrid, _dx);
+        glm::vec3 velocity = source->getVelocity();
+
+        if (newCells.size() > 0) {
+            _addNewFluidCells(newCells, velocity);
+        }
+    } else if (source->getSourceType() == T_OUTFLOW) {
+        std::vector<GridIndex> cells = source->getFluidCells(_materialGrid, _dx);
+
+        if (cells.size() > 0) {
+            _removeMarkerParticlesFromCells(cells);
+        }
+    }
+}
+
+void FluidSimulation::_updateFluidSources() {
+    for (int i = 0; i < _fluidSources.size(); i++) {
+        _updateFluidSource(_fluidSources[i]);
+    }
+}
+
 void FluidSimulation::_updateFluidCells() {
+    _updateFluidSources();
+
     _materialGrid.set(_fluidCellIndices, M_AIR);
     _fluidCellIndices.clear();
     
@@ -569,8 +679,6 @@ void FluidSimulation::_reconstructFluidSurface() {
 
     polygonizer.polygonizeSurface();
     _surfaceMesh = polygonizer.getTriangleMesh();
-
-    // todo: handle case where polygonizer generates a non-closed mesh
 }
 
 /********************************************************************************
@@ -1988,7 +2096,7 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::update(double dt) {
-    if (!_isSimulationRunning || !_isSimulationInitialized || !_isFluidInSimulation) {
+    if (!_isSimulationRunning || !_isSimulationInitialized) {
         return;
     }
     _isCurrentFrameFinished = false;
@@ -2015,6 +2123,5 @@ void FluidSimulation::update(double dt) {
 }
 
 void FluidSimulation::draw() {
-
 
 }
