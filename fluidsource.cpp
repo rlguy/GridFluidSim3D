@@ -95,6 +95,10 @@ void FluidSource::getGridIndexBounds(AABB bbox, int i, int j, int k, double dx,
     *gmin = positionToGridIndex(bbox.position, dx);
     *gmax = positionToGridIndex(bbox.position + trans, dx);
 
-    *gmin = GridIndex(fmax((*gmin).i, 0), fmax((*gmin).j, 0), fmax((*gmin).k, 0));
-    *gmax = GridIndex(fmin((*gmax).i, i-1), fmin((*gmax).j, j-1), fmin((*gmax).k, k-1));
+    *gmin = GridIndex((int)fmax((*gmin).i, 0), 
+                      (int)fmax((*gmin).j, 0), 
+                      (int)fmax((*gmin).k, 0));
+    *gmax = GridIndex((int)fmin((*gmax).i, i-1), 
+                      (int)fmin((*gmax).j, j-1), 
+                      (int)fmin((*gmax).k, k-1));
 }

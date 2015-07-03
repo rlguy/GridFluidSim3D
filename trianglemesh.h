@@ -1,7 +1,5 @@
 #pragma once
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <queue>
 #include <vector>
 #include <sstream>
@@ -86,9 +84,9 @@ private:
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }
 
-    double _gridi = 0;
-    double _gridj = 0;
-    double _gridk = 0;
+    int _gridi = 0;
+    int _gridj = 0;
+    int _gridk = 0;
     double _dx = 0;
 
     std::vector <std::vector<int> > _vertexTriangles;

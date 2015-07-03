@@ -148,15 +148,19 @@ void ImplicitSurfaceScalarField::_getGridIndexBounds(glm::vec3 pos, double r,
     glm::vec3 trans = pos - cpos;
     double inv = 1.0 / _dx;
 
-    int imin = c.i - fmax(0, ceil((r-trans.x)*inv));
-    int jmin = c.j - fmax(0, ceil((r-trans.y)*inv));
-    int kmin = c.k - fmax(0, ceil((r-trans.z)*inv));
-    int imax = c.i + fmax(0, ceil((r-_dx+trans.x)*inv));
-    int jmax = c.j + fmax(0, ceil((r-_dx+trans.y)*inv));
-    int kmax = c.k + fmax(0, ceil((r-_dx+trans.z)*inv));
+    int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
+    int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
+    int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
+    int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
+    int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
+    int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
 
-    *gmin = GridIndex(fmax(imin, 0), fmax(jmin, 0), fmax(kmin, 0));
-    *gmax = GridIndex(fmin(imax, _isize-1), fmin(jmax, _jsize-1), fmin(kmax, _ksize-1));
+    *gmin = GridIndex((int)fmax(imin, 0), 
+                      (int)fmax(jmin, 0), 
+                      (int)fmax(kmin, 0));
+    *gmax = GridIndex((int)fmin(imax, _isize-1), 
+                      (int)fmin(jmax, _jsize-1), 
+                      (int)fmin(kmax, _ksize-1));
 }
 
 double ImplicitSurfaceScalarField::_evaluateFieldFunctionForRadiusSquared(double rsq) {

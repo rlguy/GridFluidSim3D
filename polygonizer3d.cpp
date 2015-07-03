@@ -343,7 +343,7 @@ Polygonizer3d::~Polygonizer3d()
 void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
     _insideIndices.clear();
     _insideIndices.reserve(indices.size());
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < (int)indices.size(); i++) {
         _insideIndices.push_back(indices[i]);
     }
 }
@@ -510,7 +510,7 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
     std::vector<GridIndex> surfaceCells;
     _isCellDone.fill(false);
 
-    for (int i = 0; i < _insideIndices.size(); i++) {
+    for (int i = 0; i < (int)_insideIndices.size(); i++) {
         GridIndex cell = _insideIndices[i];
         
         if (_isCellDone(cell)) {
@@ -731,7 +731,7 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
 void Polygonizer3d::_calculateSurfaceTriangles() {
     _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
-    for (int i = 0; i < _surfaceCells.size(); i++) {
+    for (int i = 0; i < (int)_surfaceCells.size(); i++) {
         _polygonizeCell(_surfaceCells[i], _surfaceThreshold, edges);
     }
 }

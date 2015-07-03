@@ -49,7 +49,9 @@ protected:
 
     inline GridIndex positionToGridIndex(glm::vec3 p, double dx) {
         double invdx = 1.0 / dx;
-        return GridIndex(floor(p.x*invdx), floor(p.y*invdx), floor(p.z*invdx));
+        return GridIndex((int)floor(p.x*invdx), 
+                         (int)floor(p.y*invdx), 
+                         (int)floor(p.z*invdx));
     }
 
     inline glm::vec3 GridIndexToCellCenter(int i, int j, int k, double dx) {

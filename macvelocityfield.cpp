@@ -681,9 +681,9 @@ void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i
     assert(_isPositionInGrid(x, y, z));
 
     double inv_dx = 1.0 / _dx;
-    *i = fminf((int)floor(x*inv_dx), _i_voxels);
-    *j = fminf((int)floor(y*inv_dx), _j_voxels);
-    *k = fminf((int)floor(z*inv_dx), _k_voxels);
+    *i = (int)fminf((float)floor(x*inv_dx), (float)_i_voxels);
+    *j = (int)fminf((float)floor(y*inv_dx), (float)_j_voxels);
+    *k = (int)fminf((float)floor(z*inv_dx), (float)_k_voxels);
 }
 
 void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {

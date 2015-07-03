@@ -82,10 +82,10 @@ private:
     }
 
     double _dx = 0.0;
-    double _isize = 0;
-    double _jsize = 0;
-    double _ksize = 0;
-    double _numLayers;
+    int _isize = 0;
+    int _jsize = 0;
+    int _ksize = 0;
+    int _numLayers;
 
     TriangleMesh _surfaceMesh;
 

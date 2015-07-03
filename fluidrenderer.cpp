@@ -40,36 +40,36 @@ void FluidRenderer::_unsetTransforms() {
 }
 
 void FluidRenderer::_drawWireframeCube(glm::vec3 pos, double size) {
-    float h = 0.5*size;
+    double h = 0.5*size;
     glBegin(GL_LINES);
-    glVertex3f(pos.x - h, pos.y - h, pos.z - h);
-    glVertex3f(pos.x + h, pos.y - h, pos.z - h);
-    glVertex3f(pos.x - h, pos.y - h, pos.z - h);
-    glVertex3f(pos.x - h, pos.y + h, pos.z - h);
-    glVertex3f(pos.x - h, pos.y - h, pos.z - h);
-    glVertex3f(pos.x - h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z + h);
 
-    glVertex3f(pos.x + h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x - h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y - h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z - h);
 
-    glVertex3f(pos.x - h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x - h, pos.y - h, pos.z + h);
-    glVertex3f(pos.x - h, pos.y + h, pos.z + h);
-    glVertex3f(pos.x - h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z - h);
 
-    glVertex3f(pos.x + h, pos.y - h, pos.z + h);
-    glVertex3f(pos.x - h, pos.y - h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y - h, pos.z + h);
-    glVertex3f(pos.x + h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x - h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z + h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z - h);
 
-    glVertex3f(pos.x + h, pos.y + h, pos.z - h);
-    glVertex3f(pos.x + h, pos.y - h, pos.z - h);
-    glVertex3f(pos.x + h, pos.y + h, pos.z - h);
-    glVertex3f(pos.x - h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y - h, pos.z - h);
+    glVertex3d(pos.x + h, pos.y + h, pos.z - h);
+    glVertex3d(pos.x - h, pos.y + h, pos.z - h);
 
     glEnd();
 }
@@ -102,7 +102,7 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
                     double x, y, z;
                     _fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
                     p = glm::vec3(x, y, z);
-                    glVertex3f(p.x, p.y, p.z);
+                    glVertex3d(p.x, p.y, p.z);
                 }
             }
         }
@@ -126,34 +126,34 @@ void FluidRenderer::drawGridBoundingBox() {
     _setTransforms();
     glBegin(GL_LINES);
 
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z - hd);
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z - hd);
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z - hd);
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z - hd);
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z - hd);
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z + hd);
 
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z - hd);
 
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z + hd);
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z + hd);
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z - hd);
 
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z + hd);
-    glVertex3f(pos.x - hw, pos.y - hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z + hd);
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x - hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z + hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z - hd);
 
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z - hd);
-    glVertex3f(pos.x + hw, pos.y - hh, pos.z - hd);
-    glVertex3f(pos.x + hw, pos.y + hh, pos.z - hd);
-    glVertex3f(pos.x - hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y - hh, pos.z - hd);
+    glVertex3d(pos.x + hw, pos.y + hh, pos.z - hd);
+    glVertex3d(pos.x - hw, pos.y + hh, pos.z - hd);
 
     glEnd();
     _unsetTransforms();
@@ -210,7 +210,7 @@ void FluidRenderer::drawMarkerParticles() {
 
     glBegin(GL_POINTS);
     for (int i = 0; i < (int)points.size(); i++) {
-        glVertex3f(points[i].x, points[i].y, points[i].z);
+        (points[i].x, points[i].y, points[i].z);
     }
     glEnd();
 
@@ -224,7 +224,7 @@ bool compareByDistance(const std::pair<glm::vec4, bool> p1, std::pair<glm::vec4,
 void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *cam) {
     glm::vec3 cp = cam->getPosition();
     glm::vec3 cup = cam->up;
-    float hw = 0.5*width;
+    double hw = 0.5f*width;
 
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);
@@ -235,13 +235,13 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     std::vector<std::pair<glm::vec4, bool> > sortedPoints;
 
     glm::vec3 r;
-    for (int i = 0; i<points.size(); i++) {
+    for (int i = 0; i < (int)points.size(); i++) {
         glm::vec3 p = points[i];
         r = cp - p;
         double d = glm::dot(r, r);
         sortedPoints.push_back(std::pair<glm::vec4, bool>(glm::vec4(p, d), true));
     }
-    for (int i = 0; i<solidpoints.size(); i++) {
+    for (int i = 0; i < (int)solidpoints.size(); i++) {
         glm::vec3 p = solidpoints[i];
         r = cp - p;
         double d = glm::dot(r, r);
@@ -267,17 +267,17 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
         glMultMatrixf((GLfloat*)&mat);
 
         if (isFluid) {
-            glColor4f(0.0, 0.753, 0.922, 1.0);
+            glColor4d(0.0, 0.753, 0.922, 1.0);
         }
         else {
-            glColor4f(0.5, 0.5, 0.5, 1.0);
+            glColor4d(0.5, 0.5, 0.5, 1.0);
         }
 
         glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-hw, -hw, 0.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(hw, -hw, 0.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(hw, hw, 0.0f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(-hw, hw, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3d(-hw, -hw, 0.0f);
+        glTexCoord2f(1.0f, 0.0f); glVertex3d(hw, -hw, 0.0f);
+        glTexCoord2f(1.0f, 1.0f); glVertex3d(hw, hw, 0.0f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3d(-hw, hw, 0.0f);
         glEnd();
 
         glPopMatrix();
@@ -323,7 +323,7 @@ void FluidRenderer::drawSurfaceTriangles() {
     glBegin(GL_TRIANGLES);
 
     glm::vec3 p1, p2, p3, n1, n2, n3;
-    for (int i = 0; i < surface->triangles.size(); i++) {
+    for (int i = 0; i < (int)surface->triangles.size(); i++) {
         Triangle t = surface->triangles[i];
         p1 = surface->vertices[t.tri[0]];
         p2 = surface->vertices[t.tri[1]];

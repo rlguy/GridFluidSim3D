@@ -46,7 +46,7 @@ FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
 }
 
 FluidSimulation::~FluidSimulation() {
-    for (int i = 0; i < _fluidSources.size(); i++) {
+    for (int i = 0; i < (int)_fluidSources.size(); i++) {
         delete[] _fluidSources[i];
     }
 }
@@ -160,7 +160,7 @@ void FluidSimulation::addSolidCell(int i, int j, int k) {
 }
 
 void FluidSimulation::addSolidCells(std::vector<glm::vec3> indices) {
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < (int)indices.size(); i++) {
         addSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
     }
 }
@@ -177,7 +177,7 @@ void FluidSimulation::removeSolidCell(int i, int j, int k) {
 }
 
 void FluidSimulation::removeSolidCells(std::vector<glm::vec3> indices) {
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < (int)indices.size(); i++) {
         removeSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
     }
 }
@@ -426,7 +426,7 @@ void FluidSimulation::_initializeFluidMaterial() {
 
     GridIndex g;
     std::vector<GridIndex> indices;
-    for (int i = 0; i < fluidCells.size(); i++) {
+    for (int i = 0; i < (int)fluidCells.size(); i++) {
         g = fluidCells[i];
 
         if (_isCellAir(g)) {
@@ -476,7 +476,7 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
 
     glm::vec3 p;
     GridIndex g;
-    for (int i = 0; i < positions.size(); i++) {
+    for (int i = 0; i < (int)positions.size(); i++) {
         p = positions[i];
         g = positionToGridIndex(p);
         _markerParticles.push_back(MarkerParticle(p, g.i, g.j, g.k));
@@ -486,7 +486,7 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
 void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveState &state) {
     std::vector<GridIndex> indices = state.getSolidCellIndices();
     GridIndex g;
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < (int)indices.size(); i++) {
         g = indices[i];
         addSolidCell(g.i, g.j, g.k);
     }
@@ -539,7 +539,7 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
     newv.reserve(_markerParticles.size());
 
     MarkerParticle p;
-    for (int i = 0; i < _markerParticles.size(); i++) {
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
         p = _markerParticles[i];
         if (!_isIndexInList(p.index, cells)) {
             newv.push_back(p);
@@ -583,7 +583,7 @@ void FluidSimulation::_setVelocitiesForNewFluidCell(GridIndex g, glm::vec3 v) {
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
                                         glm::vec3 velocity) {
     GridIndex g;
-    for (int i = 0; i < cells.size(); i++) {
+    for (int i = 0; i < (int)cells.size(); i++) {
         _setVelocitiesForNewFluidCell(cells[i], velocity);
         _addMarkerParticlesToCell(cells[i]);
     }
@@ -607,7 +607,7 @@ void FluidSimulation::_updateFluidSource(FluidSource *source) {
 }
 
 void FluidSimulation::_updateFluidSources() {
-    for (int i = 0; i < _fluidSources.size(); i++) {
+    for (int i = 0; i < (int)_fluidSources.size(); i++) {
         _updateFluidSource(_fluidSources[i]);
     }
 }
@@ -664,7 +664,7 @@ void FluidSimulation::_reconstructFluidSurface() {
     field.setPointRadius(r);
 
     glm::vec3 p;
-    for (int i = 0; i < _markerParticles.size(); i++) {
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
         p = _markerParticles[i].position;
         field.addPoint(p);
     }
@@ -690,7 +690,7 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
     // In order find velocities at the fluid surface for all extrapolated
     // velocity layers, the level set will need to calculate signed distance 
     // for (_CFLConditionNumber + 3) layers
-    _levelset.calculateSignedDistanceField(ceil(_CFLConditionNumber) + 3.0);
+    _levelset.calculateSignedDistanceField((int)ceil(_CFLConditionNumber) + 3);
 }
 
 /********************************************************************************
@@ -753,7 +753,7 @@ int FluidSimulation::_updateExtrapolationLayers() {
 
     // add 2 extra layers to account for extra values needed during cubic 
     // interpolation calculations
-    int numLayers = ceil(_CFLConditionNumber) + 2;
+    int numLayers = (int)ceil(_CFLConditionNumber) + 2;
     for (int layer = 1; layer <= numLayers; layer++) {
         _updateExtrapolationLayer(layer);
     }
@@ -1176,7 +1176,7 @@ std::vector<FluidSimulation::CellFace> FluidSimulation::
     std::vector<CellFace> faces;
 
     std::vector<CellFace> allfaces = _getNeighbourSolidCellFaces(i, j, k);
-    for (int idx = 0; idx < allfaces.size(); idx++) {
+    for (int idx = 0; idx < (int)allfaces.size(); idx++) {
         // must be obtuse angle for a collision
         if (glm::dot(allfaces[idx].normal, dir) < 0) {
             faces.push_back(allfaces[idx]);
@@ -1196,7 +1196,7 @@ bool FluidSimulation::_findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *f
     CellFace closestFace;
     double mindistsq = std::numeric_limits<double>::infinity();
     bool isCollisionFound = false;
-    for (int idx = 0; idx < faces.size(); idx++) {
+    for (int idx = 0; idx < (int)faces.size(); idx++) {
         CellFace f = faces[idx];
 
         glm::vec3 intersect;
@@ -1311,7 +1311,7 @@ void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, doubl
     double timeleft = dt;
     while (timeleft > 0.0) {
         double timestep = _maxAdvectionDistanceFactor * _dx / glm::length(v0);
-        timestep = fminf(timeleft, timestep);
+        timestep = (double)fminf((float)timeleft, (float)timestep);
         bool isOutsideBoundary = _integrateVelocity(p0, v0, -timestep, p1);
         *v1 = _MACVelocity.evaluateVelocityAtPosition(*p1);
         if (!isOutsideBoundary) {
@@ -1532,7 +1532,7 @@ Eigen::VectorXd FluidSimulation::_VectorCoefficientsToEigenVectorXd(VectorCoeffi
 
 void FluidSimulation::_EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, 
                                                          VectorCoefficients &vc) {
-    for (int idx = 0; idx < v.size(); idx++) {
+    for (int idx = 0; idx < (int)v.size(); idx++) {
         GridIndex index = _VectorIndexToGridIndex(idx);
         vc.vector.set(index, v(idx));
     }
@@ -1841,13 +1841,13 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
-    int size = _markerParticles.size();
+    int size = (int)_markerParticles.size();
 
     std::vector<int> startIndices;
     std::vector<int> endIndices;
 
     int numThreads = _numAdvanceMarkerParticleThreads;
-    int chunksize = floor(size / numThreads);
+    int chunksize = (int)floor(size / numThreads);
     for (int i = 0; i < numThreads; i++) {
         int startIdx = (i == 0) ? 0 : endIndices[i - 1] + 1;
         int endIdx = (i == numThreads - 1) ? size - 1 : startIdx + chunksize - 1;
@@ -1881,7 +1881,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
         for (int j = 0; j < _j_voxels; j++) {
             for (int i = 0; i < _i_voxels + 1; i++) {
                 if (_isFaceBorderingMaterialU(i, j, k, M_FLUID)) {
-                    double ci = i - 1; double cj = j; double ck = k;
+                    int ci = i - 1; int cj = j; int ck = k;
 
                     double p0, p1;
                     if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci + 1, cj, ck)) {
@@ -1908,7 +1908,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
         for (int j = 0; j < _j_voxels + 1; j++) {
             for (int i = 0; i < _i_voxels; i++) {
                 if (_isFaceBorderingMaterialV(i, j, k, M_FLUID)) {
-                    double ci = i; double cj = j - 1; double ck = k;
+                    int ci = i; int cj = j - 1; int ck = k;
 
                     double p0, p1;
                     if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj + 1, ck)) {
@@ -1937,7 +1937,7 @@ void FluidSimulation::_applyPressureToVelocityField(double dt) {
         for (int j = 0; j < _j_voxels; j++) {
             for (int i = 0; i < _i_voxels; i++) {
                 if (_isFaceBorderingMaterialW(i, j, k, M_FLUID)) {
-                    double ci = i; double cj = j; double ck = k - 1;
+                    int ci = i; int cj = j; int ck = k - 1;
 
                     double p0, p1;
                     if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj, ck + 1)) {
@@ -2087,8 +2087,8 @@ double FluidSimulation::_calculateNextTimeStep() {
     double maxu = _MACVelocity.evaluateMaximumVelocityMagnitude();
     double timeStep = _CFLConditionNumber*_dx / maxu;
 
-    timeStep = fmaxf(_minTimeStep, timeStep);
-    timeStep = fminf(_maxTimeStep, timeStep);
+    timeStep = (double)fmaxf((float)_minTimeStep, (float)timeStep);
+    timeStep = (double)fminf((float)_maxTimeStep, (float)timeStep);
 
     return timeStep;
 }

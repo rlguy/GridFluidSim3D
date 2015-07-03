@@ -22,7 +22,7 @@ void LevelSet::setSurfaceMesh(TriangleMesh m) {
 
 void LevelSet::_resetSignedDistanceField() {
     _signedDistance.fill(0.0);
-    _indexGrid.fill(0.0);
+    _indexGrid.fill(-1);
     _isDistanceSet.fill(false);
 }
 
@@ -32,7 +32,7 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &c
     tbbox.getOverlappingGridCells(_dx, testcells);
 
     AABB cbbox = AABB(glm::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
-    for (int i = 0; i < testcells.size(); i++) {
+    for (int i = 0; i < (int)testcells.size(); i++) {
         cbbox.position = _gridIndexToPosition(testcells[i]);
         if (cbbox.isOverlappingTriangle(t, _surfaceMesh.vertices)) {
             cells.push_back(testcells[i]);
@@ -48,7 +48,7 @@ void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
 
     GridIndex g;
     double distsq;
-    for (int i = 0; i < cells.size(); i++) {
+    for (int i = 0; i < (int)cells.size(); i++) {
         g = cells[i];
         distsq = _minDistToTriangleSquared(g, index);
 
@@ -59,7 +59,7 @@ void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
 }
 
 void LevelSet::_calculateUnsignedSurfaceDistanceSquared() {
-    for (int i = 0; i < _surfaceMesh.triangles.size(); i++) {
+    for (int i = 0; i < (int)_surfaceMesh.triangles.size(); i++) {
         _calculateDistancesSquaredForTriangle(i);
     }
 }
@@ -78,7 +78,7 @@ void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer,
                                        Array3d<int> &layerGrid) {
     GridIndex ns[6];
     GridIndex g, n;
-    for (int i = 0; i < layer.size(); i++) {
+    for (int i = 0; i < (int)layer.size(); i++) {
         g = layer[i];
         _getNeighbourGridIndices6(g, ns);
         for (int j = 0; j < 6; j++) {
@@ -167,7 +167,7 @@ void LevelSet::_calculateUnsignedDistanceSquared() {
     std::vector<std::vector<GridIndex>> cellLayers;
     _getCellLayers(cellLayers);
 
-    for (int i = 0; i < cellLayers.size(); i++) {
+    for (int i = 0; i < (int)cellLayers.size(); i++) {
         _calculateUnsignedDistanceSquaredForLayer(cellLayers[i]);
     }
 }
@@ -207,7 +207,7 @@ void LevelSet::_calculateDistanceFieldSigns() {
     triangleFaceDirections.reserve(_surfaceMesh.triangles.size());
     triangleFaceCenters.reserve(_surfaceMesh.triangles.size());
 
-    for (int i = 0; i < _surfaceMesh.triangles.size(); i++) {
+    for (int i = 0; i < (int)_surfaceMesh.triangles.size(); i++) {
         triangleFaceDirections.push_back(_surfaceMesh.getTriangleFaceDirection(i));
         triangleFaceCenters.push_back(_surfaceMesh.getTriangleCenter(i));
     }
@@ -225,7 +225,7 @@ void LevelSet::_calculateDistanceFieldSigns() {
 }
 
 void LevelSet::calculateSignedDistanceField() {
-    calculateSignedDistanceField(fmax(fmax(_isize, _jsize), _ksize));
+    calculateSignedDistanceField((int)fmax(fmax(_isize, _jsize), _ksize));
 }
 
 void LevelSet::calculateSignedDistanceField(int numLayers) {

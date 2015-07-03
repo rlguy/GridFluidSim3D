@@ -218,7 +218,7 @@ private:
     inline bool _isIndexInList(GridIndex g, 
                                std::vector<GridIndex> &list) {
         GridIndex c;
-        for (int idx = 0; idx < list.size(); idx++) {
+        for (int idx = 0; idx < (int)list.size(); idx++) {
             c = list[idx];
             if (g.i == c.i && g.j == c.j && g.k == c.k) {
                 return true;
@@ -475,7 +475,7 @@ private:
     LevelSet _levelset;
 
     double _surfaceReconstructionSmoothingValue = 0.85;
-    double _surfaceReconstructionSmoothingIterations = 3.0;
+    int _surfaceReconstructionSmoothingIterations = 3;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
     

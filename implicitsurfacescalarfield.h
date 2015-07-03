@@ -32,7 +32,9 @@ public:
 private:
     inline GridIndex _positionToGridIndex(glm::vec3 p) {
         double invdx = 1.0 / _dx;
-        return GridIndex(floor(p.x*invdx), floor(p.y*invdx), floor(p.z*invdx));
+        return GridIndex((int)floor(p.x*invdx), 
+                         (int)floor(p.y*invdx), 
+                         (int)floor(p.z*invdx));
     }
 
     inline glm::vec3 _GridIndexToPosition(GridIndex g) {

@@ -3,7 +3,7 @@
 
 LevelSetField::LevelSetField(int i, int j, int k, double dx) :
                              SurfaceField(i, j, k, dx),
-                             _distanceField(Array3d<double>(width, height, depth, 1.0))
+                             _distanceField(Array3d<double>(i, j, k, 1.0))
 {
     setSurfaceThreshold(_surfaceThreshold);
 }

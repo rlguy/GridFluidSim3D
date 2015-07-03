@@ -133,7 +133,7 @@ public:
         SpatialGridObject o;
         objs = _grid.getPointer(g);
                     
-        for (int idx = 0; idx < objs->size(); idx++) {
+        for (int idx = 0; idx < (int)objs->size(); idx++) {
             o = objs->at(idx);
             glm::vec3 v = o.position - pos;
             double distsq = glm::dot(v, v);
@@ -169,7 +169,9 @@ private:
 
     inline GridIndex _positionToGridIndex(glm::vec3 p) {
         double invdx = 1.0 / _dx;
-        return GridIndex(floor(p.x*invdx), floor(p.y*invdx), floor(p.z*invdx));
+        return GridIndex((int)floor(p.x*invdx), 
+                         (int)floor(p.y*invdx), 
+                         (int)floor(p.z*invdx));
     }
 
     inline glm::vec3 _GridIndexToPosition(GridIndex g) {
@@ -188,15 +190,19 @@ private:
         glm::vec3 trans = pos - cpos;
         double inv = 1.0 / _dx;
 
-        int imin = c.i - fmax(0, ceil((r-trans.x)*inv));
-        int jmin = c.j - fmax(0, ceil((r-trans.y)*inv));
-        int kmin = c.k - fmax(0, ceil((r-trans.z)*inv));
-        int imax = c.i + fmax(0, ceil((r-_dx+trans.x)*inv));
-        int jmax = c.j + fmax(0, ceil((r-_dx+trans.y)*inv));
-        int kmax = c.k + fmax(0, ceil((r-_dx+trans.z)*inv));
+        int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
+        int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
+        int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
+        int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
+        int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
+        int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
 
-        *gmin = GridIndex(fmax(imin, 0), fmax(jmin, 0), fmax(kmin, 0));
-        *gmax = GridIndex(fmin(imax, _isize-1), fmin(jmax, _jsize-1), fmin(kmax, _ksize-1));
+        *gmin = GridIndex((int)fmax(imin, 0), 
+                          (int)fmax(jmin, 0), 
+                          (int)fmax(kmin, 0));
+        *gmax = GridIndex((int)fmin(imax, _isize-1), 
+                          (int)fmin(jmax, _jsize-1), 
+                          (int)fmin(kmax, _ksize-1));
     }
 
     bool _isSphereCollision(glm::vec3 p1, double r1, glm::vec3 p2, double r2) {
