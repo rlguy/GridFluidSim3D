@@ -602,3 +602,50 @@ void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
     
     _destroyTriangleGrid();
 }
+
+void TriangleMesh::_smoothTriangleMesh(double value) {
+    std::vector<glm::vec3> newvertices;
+    newvertices.reserve(vertices.size());
+
+    glm::vec3 v;
+    glm::vec3 nv;
+    glm::vec3 avg;
+    Triangle t;
+    for (int i = 0; i < vertices.size(); i++) {
+
+        avg = glm::vec3(0.0, 0.0, 0.0);
+        for (int j = 0; j < _vertexTriangles[i].size(); j++) {
+            t = triangles[_vertexTriangles[i][j]];
+            if (t.tri[0] != i) {
+                avg += vertices[t.tri[0]];
+            }
+            if (t.tri[1] != i) {
+                avg += vertices[t.tri[1]];
+            }
+            if (t.tri[2] != i) {
+                avg += vertices[t.tri[2]];
+            }
+        }
+
+        avg /= ((float)_vertexTriangles[i].size()*2.0);
+        v = vertices[i];
+        nv = v + (float)value * (avg - v);
+        newvertices.push_back(nv);
+    }
+
+    vertices = newvertices;
+}
+
+void TriangleMesh::smooth(double value, int iterations) {
+    value = value < 0.0 ? 0.0 : value;
+    value = value > 1.0 ? 1.0 : value;
+
+    _vertexTriangles.clear();
+    _updateVertexTriangles();
+
+    for (int i = 0; i < iterations; i++) {
+        _smoothTriangleMesh(value);
+    }
+
+    _vertexTriangles.clear();
+}

@@ -72,7 +72,6 @@ public:
     void setDensity(double p) { assert(p > 0); _density = p; }
 
     void setMarkerParticleScale(double s) { _markerParticleScale = s; }
-    void setSurfaceReconstructionSubdivisionLevel(int level);
 
     MACVelocityField* getVelocityField() { return &_MACVelocity; }
 
@@ -475,7 +474,8 @@ private:
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
 
-    int _surfaceReconstructionSubdivisionLevel = 1;
+    double _surfaceReconstructionSmoothingValue = 0.85;
+    double _surfaceReconstructionSmoothingIterations = 3.0;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
     

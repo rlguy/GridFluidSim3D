@@ -39,6 +39,7 @@ public:
     void writeMeshToOBJ(std::string filename);
     void removeDuplicateTriangles();
     void updateVertexNormals();
+    void smooth(double value, int iterations);
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
@@ -69,6 +70,7 @@ private:
     void _destroyTriangleGrid();
     void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
     void _getSurfaceCells(std::vector<GridIndex> &cells);
+    void _smoothTriangleMesh(double value);
 
     void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     GridIndex _positionToGridIndex(glm::vec3 p);

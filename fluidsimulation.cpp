@@ -227,11 +227,6 @@ std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
     return getMarkerParticles(1);
 }
 
-void FluidSimulation::setSurfaceReconstructionSubdivisionLevel(int level) {
-    assert(level >= 1);
-    _surfaceReconstructionSubdivisionLevel = level;
-};
-
 glm::vec3 FluidSimulation::gridIndexToPosition(GridIndex g) {
     assert(_isCellIndexInRange(g.i, g.j, g.k));
 
@@ -679,6 +674,9 @@ void FluidSimulation::_reconstructFluidSurface() {
 
     polygonizer.polygonizeSurface();
     _surfaceMesh = polygonizer.getTriangleMesh();
+
+    _surfaceMesh.smooth(_surfaceReconstructionSmoothingValue, 
+                        _surfaceReconstructionSmoothingIterations);
 }
 
 /********************************************************************************
