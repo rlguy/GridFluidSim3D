@@ -149,6 +149,161 @@ void TriangleMesh::writeMeshToOBJ(std::string filename) {
     out.close();
 }
 
+void TriangleMesh::writeMeshToSTL(std::string filename) {
+
+    // 80 char header, 4 byte num triangles, 50 bytes per triangle
+    int binsize = 80*sizeof(char) + sizeof(unsigned int) + 
+                  triangles.size() * (12*sizeof(float) + sizeof(unsigned short));
+    char *bin = new char[binsize];
+
+    for (int i = 0; i < binsize; i++) {
+        bin[i] = 0x00;
+    }
+
+    int offset = 80;
+    unsigned int numTriangles = triangles.size();
+    memcpy(bin + offset, &numTriangles, sizeof(unsigned int));
+    offset += sizeof(int);
+
+    float tri[12*sizeof(float)];
+    Triangle t;
+    glm::vec3 normal, v1, v2, v3;
+    for (int i = 0; i < (int)triangles.size(); i++) {
+        t = triangles[i];
+        normal = getTriangleNormal(i);
+        v1 = vertices[t.tri[0]];
+        v2 = vertices[t.tri[1]];
+        v3 = vertices[t.tri[2]];
+
+        tri[0] = normal.x;
+        tri[1] = normal.y;
+        tri[2] = normal.z;
+        tri[3] = v1.x;
+        tri[4] = v1.y;
+        tri[5] = v1.z;
+        tri[6] = v2.x;
+        tri[7] = v2.y;
+        tri[8] = v2.z;
+        tri[9] = v3.x;
+        tri[10] = v3.y;
+        tri[11] = v3.z;
+
+        memcpy(bin + offset, tri, 12*sizeof(float));
+        offset += 12*sizeof(float) + sizeof(unsigned short);
+    }
+
+    std::ofstream erasefile;
+    erasefile.open(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+    erasefile.close();
+
+    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+    file.write(bin, binsize);
+    file.close();
+
+    delete[] bin;
+}
+
+void TriangleMesh::writeMeshToPLY(std::string filename) {
+    // Header format:
+    /*
+        ply
+        format binary_little_endian 1.0
+        element vertex FILL_IN_NUMBER_OF_VERTICES
+        property float x
+        property float y
+        property float z
+        element face FILL_IN_NUMBER_OF_FACES
+        property list uchar int vertex_index
+        end_header
+    */
+    
+    char header1[48] = {'p', 'l', 'y', '\r', 
+                        'f', 'o', 'r', 'm', 'a', 't', ' ', 'b', 'i', 'n', 'a', 'r', 'y', '_', 'b', 
+                        'i', 'g', '_', 'e', 'n', 'd', 'i', 'a', 'n', ' ', '1', '.', '0', '\r',
+                        'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'v', 'e', 'r', 't', 'e', 'x', ' '};
+                    
+    char header2[65] = {'\r', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'x', '\r',
+                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'y', '\r',
+                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'z', '\r',
+                              'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'f', 'a', 'c', 'e', ' '};
+                          
+    char header3[49] = {'\r', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'l', 'i', 's', 't', ' ', 
+                              'u', 'c', 'h', 'a', 'r', ' ', 'i', 'n', 't', ' ', 
+                              'v', 'e', 'r', 't', 'e', 'x', '_', 'i', 'n', 'd', 'e', 'x', '\r',
+                              'e', 'n', 'd', '_', 'h', 'e', 'a', 'd', 'e', 'r', '\r'};
+
+    char vertstring[10];
+    char facestring[10];
+    int vertdigits = _numDigitsInInteger(vertices.size());
+    int facedigits = _numDigitsInInteger(triangles.size());
+    _itoa(vertices.size(), vertstring, 10);
+    _itoa(triangles.size(), facestring, 10);
+
+    int offset = 0;
+    int headersize = 48 + vertdigits + 65 + facedigits + 49;
+    int binsize = headersize + 3*sizeof(float)*vertices.size()
+                             + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
+    char *bin = new char[binsize];
+
+    memcpy(bin + offset, header1, 48);
+    offset += 48;
+    memcpy(bin + offset, vertstring, vertdigits*sizeof(char));
+    offset += vertdigits*sizeof(char);
+    memcpy(bin + offset, header2, 65);
+    offset += 65;
+    memcpy(bin + offset, facestring, facedigits*sizeof(char));
+    offset += facedigits*sizeof(char);
+    memcpy(bin + offset, header3, 49);
+    offset += 49;
+
+    float *vertdata = new float[3*vertices.size()];
+    glm::vec3 v;
+    for (int i = 0; i < (int)vertices.size(); i++) {
+        v = vertices[i];
+        vertdata[3*i] = v.x;
+        vertdata[3*i + 1] = v.y;
+        vertdata[3*i + 2] = v.z;
+    }
+    memcpy(bin + offset, vertdata, 3*sizeof(float)*vertices.size());
+    offset += 3*sizeof(float)*vertices.size();
+    delete[] vertdata;
+
+    Triangle t;
+    int verts[3];
+    for (int i = 0; i < (int)triangles.size(); i++) {
+        t = triangles[i];
+        verts[0] = t.tri[0];
+        verts[1] = t.tri[1];
+        verts[2] = t.tri[2];
+
+        bin[offset] = (unsigned char)'3';
+        offset += sizeof(unsigned char);
+
+        memcpy(bin + offset, verts, 3*sizeof(int));
+        offset += 3*sizeof(int);
+    }
+
+    std::ofstream erasefile;
+    erasefile.open(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+    erasefile.close();
+
+    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+    file.write(bin, binsize);
+    file.close();
+
+    delete[] bin;
+}
+
+int TriangleMesh::_numDigitsInInteger(int num) {
+    int count = 0;
+    while(num != 0) {
+        num /= 10;
+        count++;
+    }
+
+    return count;
+}
+
 bool triangleSort(const Triangle &a, const Triangle &b)
 {
     if (a.tri[0]==b.tri[0]) {

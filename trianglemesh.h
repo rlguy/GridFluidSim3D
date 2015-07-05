@@ -35,6 +35,8 @@ public:
     int numTriangles() { return numFaces(); }
     void clear();
     void writeMeshToOBJ(std::string filename);
+    void writeMeshToSTL(std::string filename);
+    void writeMeshToPLY(std::string filename);
     void removeDuplicateTriangles();
     void updateVertexNormals();
     void smooth(double value, int iterations);
@@ -69,6 +71,7 @@ private:
     void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
     void _getSurfaceCells(std::vector<GridIndex> &cells);
     void _smoothTriangleMesh(double value);
+    int _numDigitsInInteger(int num);
 
     void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     GridIndex _positionToGridIndex(glm::vec3 p);
