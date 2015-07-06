@@ -217,20 +217,20 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
         end_header
     */
     
-    char header1[48] = {'p', 'l', 'y', '\r', 
-                        'f', 'o', 'r', 'm', 'a', 't', ' ', 'b', 'i', 'n', 'a', 'r', 'y', '_', 'b', 
-                        'i', 'g', '_', 'e', 'n', 'd', 'i', 'a', 'n', ' ', '1', '.', '0', '\r',
+    char header1[51] = {'p', 'l', 'y', '\n', 
+                        'f', 'o', 'r', 'm', 'a', 't', ' ', 'b', 'i', 'n', 'a', 'r', 'y', '_', 'l', 
+                        'i', 't', 't', 'l', 'e', '_', 'e', 'n', 'd', 'i', 'a', 'n', ' ', '1', '.', '0', '\n',
                         'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'v', 'e', 'r', 't', 'e', 'x', ' '};
                     
-    char header2[65] = {'\r', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'x', '\r',
-                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'y', '\r',
-                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'z', '\r',
+    char header2[65] = {'\n', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'x', '\n',
+                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'y', '\n',
+                              'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'z', '\n',
                               'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'f', 'a', 'c', 'e', ' '};
                           
-    char header3[49] = {'\r', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'l', 'i', 's', 't', ' ', 
+    char header3[49] = {'\n', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'l', 'i', 's', 't', ' ', 
                               'u', 'c', 'h', 'a', 'r', ' ', 'i', 'n', 't', ' ', 
-                              'v', 'e', 'r', 't', 'e', 'x', '_', 'i', 'n', 'd', 'e', 'x', '\r',
-                              'e', 'n', 'd', '_', 'h', 'e', 'a', 'd', 'e', 'r', '\r'};
+                              'v', 'e', 'r', 't', 'e', 'x', '_', 'i', 'n', 'd', 'e', 'x', '\n',
+                              'e', 'n', 'd', '_', 'h', 'e', 'a', 'd', 'e', 'r', '\n'};
 
     char vertstring[10];
     char facestring[10];
@@ -240,13 +240,13 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
     _itoa(triangles.size(), facestring, 10);
 
     int offset = 0;
-    int headersize = 48 + vertdigits + 65 + facedigits + 49;
+    int headersize = 51 + vertdigits + 65 + facedigits + 49;
     int binsize = headersize + 3*sizeof(float)*vertices.size()
                              + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
     char *bin = new char[binsize];
 
-    memcpy(bin + offset, header1, 48);
-    offset += 48;
+    memcpy(bin + offset, header1, 51);
+    offset += 51;
     memcpy(bin + offset, vertstring, vertdigits*sizeof(char));
     offset += vertdigits*sizeof(char);
     memcpy(bin + offset, header2, 65);
@@ -276,7 +276,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
         verts[1] = t.tri[1];
         verts[2] = t.tri[2];
 
-        bin[offset] = (unsigned char)'3';
+        bin[offset] = 0x03;
         offset += sizeof(unsigned char);
 
         memcpy(bin + offset, verts, 3*sizeof(int));
