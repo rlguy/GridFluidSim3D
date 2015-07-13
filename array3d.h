@@ -181,11 +181,11 @@ public:
     }
 
     inline bool isIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 || i < width || j < height || k < depth;
+        return i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth;
     }
 
     inline bool isIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 || g.i < width || g.j < height || g.k < depth;
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth;
     }
 
     int width = 0;

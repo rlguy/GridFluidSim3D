@@ -20,14 +20,24 @@ public:
     void clear();
     void setPointRadius(double r);
     void enableCellCenterValues();
+    void enableWeightField();
+    void applyWeightField();
     void addPoint(glm::vec3 pos, double radius);
     void addPoint(glm::vec3 pos);
+    void addPointValue(glm::vec3 pos, double radius, double value);
+    void addPointValue(glm::vec3 pos, double value);
     void addCuboid(glm::vec3 pos, double w, double h, double d);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);
     void getScalarField(Array3d<double> &field);
     bool isCellInsideSurface(int i, int j, int k);
+    void setTricubicWeighting();
+    void setTrilinearWeighting();
+    double getWeight(int i, int j, int k);
+    double getWeight(GridIndex g);
+    int getWeightCount(int i, int j, int k);
+    int getWeightCount(GridIndex g);
 
 private:
     inline GridIndex _positionToGridIndex(glm::vec3 p) {
@@ -59,6 +69,9 @@ private:
     void _calculateCenterCellValueForCuboid(AABB &bbox, int i, int j, int k);
 
     int M_SOLID = 2;
+    int WEIGHT_TRICUBIC = 0;
+    int WEIGHT_TRILINEAR = 1;
+    int _weightType = 0;
 
     int _isize = 0;
     int _jsize = 0;
@@ -66,6 +79,7 @@ private:
     double _dx = 0.0;
 
     double _radius = 0.0;
+    double _invRadius = 1.0;
     double _coef1 = 0.0;
     double _coef2 = 0.0;
     double _coef3 = 0.0;
@@ -75,7 +89,10 @@ private:
     Array3d<double> _field;
     Array3d<double> _centerField;
     Array3d<bool> _isVertexSolid;
+    Array3d<double> _weightField;
+    Array3d<int> _weightCountField;
 
     bool _isCenterFieldEnabled = false;
+    bool _isWeightFieldEnabled = false;
 };
 

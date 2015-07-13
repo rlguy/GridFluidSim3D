@@ -29,6 +29,9 @@ public:
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
     void setW(int i, int j, int k, double val);
+    void setU(GridIndex g, double val);
+    void setV(GridIndex g, double val);
+    void setW(GridIndex g, double val);
     void setU(Array3d<double> &ugrid);
     void setV(Array3d<double> &vgrid);
     void setW(Array3d<double> &wgrid);
@@ -43,6 +46,7 @@ public:
     void addTempW(int i, int j, int k, double val);
     void resetTemporaryVelocityField();
     void commitTemporaryVelocityFieldValues();
+    void saveVelocityFieldState();
 
     double* getRawArrayU();
     double* getRawArrayV();
@@ -92,6 +96,7 @@ public:
 
     glm::vec3 evaluateVelocityAtPosition(double x, double y, double z);
     glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
+    glm::vec3 evaluateChangeInVelocityAtPosition(glm::vec3 pos);
 
     glm::vec3 velocityIndexToPositionU(int i, int j, int k);
     glm::vec3 velocityIndexToPositionV(int i, int j, int k);
@@ -122,6 +127,9 @@ private:
     double _interpolateU(double x, double y, double z);
     double _interpolateV(double x, double y, double z);
     double _interpolateW(double x, double y, double z);
+    double _interpolateDeltaVelocityU(double x, double y, double z);
+    double _interpolateDeltaVelocityV(double x, double y, double z);
+    double _interpolateDeltaVelocityW(double x, double y, double z);
 
     void _positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
     void _gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
@@ -134,6 +142,9 @@ private:
     Array3d<double> _u;
     Array3d<double> _v;
     Array3d<double> _w;
+    Array3d<double> _save_u;
+    Array3d<double> _save_v;
+    Array3d<double> _save_w;
     Array3d<double> _temp_u;
     Array3d<double> _temp_v;
     Array3d<double> _temp_w;

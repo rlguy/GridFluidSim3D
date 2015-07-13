@@ -484,4 +484,3 @@ private:
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
 
 };
-
