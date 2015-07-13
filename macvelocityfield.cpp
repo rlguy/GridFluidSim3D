@@ -517,42 +517,24 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
         return 0.0;
     }
 
-    // Velocity positions are staggered from grid cell positions. We need to find the minimal
-    // U coordinate (of the 8 that form a cube) that encloses point (x, y, z) so that we have
-    // a reference to construct a 4x4x4 array of U values for a tricubic interpolation
+    y -= 0.5*_dx;
+    z -= 0.5*_dx;
+
     int i, j, k;
     double gx, gy, gz;
     _positionToGridIndex(x, y, z, &i, &j, &k);
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
-    double refx = gx;
-    double refy = gy - 0.5*_dx;
-    double refz = gz - 0.5*_dx;
-    int refi = i;
-    int refj = j - 1;
-    int refk = k - 1;
-
-    double cy = gy + 0.5*_dx;
-    double cz = gz + 0.5*_dx;
-
-    if (y >= cy) {
-        refj++;
-        refy += _dx;
-    }
-
-    if (z >= cz) {
-        refk++;
-        refz += _dx;
-    }
-
     double inv_dx = 1 / _dx;
-    double ix = (x - refx)*inv_dx;
-    double iy = (y - refy)*inv_dx;
-    double iz = (z - refz)*inv_dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
-    refi--; refj--; refk--;
+    int refi = i - 1;
+    int refj = j - 1;
+    int refk = k - 1;
     double points[4][4][4];
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
@@ -574,39 +556,24 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
         return 0.0;
     }
 
+    x -= 0.5*_dx;
+    z -= 0.5*_dx;
+
     int i, j, k;
     double gx, gy, gz;
     _positionToGridIndex(x, y, z, &i, &j, &k);
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
-    double refx = gx - 0.5*_dx;
-    double refy = gy;
-    double refz = gz - 0.5*_dx;
-    int refi = i - 1;
-    int refj = j;
-    int refk = k - 1;
-
-    double cx = gx + 0.5*_dx;
-    double cz = gz + 0.5*_dx;
-
-    if (x >= cx) {
-        refi++;
-        refx += _dx;
-    }
-
-    if (z >= cz) {
-        refk++;
-        refz += _dx;
-    }
-
     double inv_dx = 1 / _dx;
-    double ix = (x - refx)*inv_dx;
-    double iy = (y - refy)*inv_dx;
-    double iz = (z - refz)*inv_dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
-    refi--; refj--; refk--;
+    int refi = i - 1;
+    int refj = j - 1;
+    int refk = k - 1;
     double points[4][4][4];
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
@@ -628,39 +595,24 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
         return 0.0;
     }
 
+    x -= 0.5*_dx;
+    y -= 0.5*_dx;
+
     int i, j, k;
     double gx, gy, gz;
     _positionToGridIndex(x, y, z, &i, &j, &k);
     _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
 
-    double refx = gx - 0.5*_dx;
-    double refy = gy - 0.5*_dx;
-    double refz = gz;
-    int refi = i - 1;
-    int refj = j - 1;
-    int refk = k;
-
-    double cx = gx + 0.5*_dx;
-    double cy = gy + 0.5*_dx;
-
-    if (x >= cx) {
-        refi++;
-        refx += _dx;
-    }
-
-    if (y >= cy) {
-        refj++;
-        refy += _dx;
-    }
-
     double inv_dx = 1 / _dx;
-    double ix = (x - refx)*inv_dx;
-    double iy = (y - refy)*inv_dx;
-    double iz = (z - refz)*inv_dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
-    refi--; refj--; refk--;
+    int refi = i - 1;
+    int refj = j - 1;
+    int refk = k - 1;
     double points[4][4][4];
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
@@ -678,7 +630,7 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
 }
 
 void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
-    assert(_isPositionInGrid(x, y, z));
+    //assert(_isPositionInGrid(x, y, z));
 
     double inv_dx = 1.0 / _dx;
     *i = (int)fminf((float)floor(x*inv_dx), (float)_i_voxels);
@@ -687,7 +639,7 @@ void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i
 }
 
 void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
-    assert(_isCellIndexInRange(i, j, k));
+    //assert(_isCellIndexInRange(i, j, k));
 
     *x = (double)i*_dx;
     *y = (double)j*_dx;
