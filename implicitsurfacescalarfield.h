@@ -29,7 +29,7 @@ public:
     void addCuboid(glm::vec3 pos, double w, double h, double d);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
-    void setMaterialGrid(Array3d<int> &matGrid);
+    void setMaterialGrid(Array3d<unsigned char> &matGrid);
     void getScalarField(Array3d<double> &field);
     bool isCellInsideSurface(int i, int j, int k);
     void setTricubicWeighting();
@@ -38,6 +38,7 @@ public:
     double getWeight(GridIndex g);
     int getWeightCount(int i, int j, int k);
     int getWeightCount(GridIndex g);
+    void getWeightField(Array3d<double> &field);
 
 private:
     inline GridIndex _positionToGridIndex(glm::vec3 p) {
@@ -59,10 +60,21 @@ private:
         return glm::vec3(i*_dx + 0.5*_dx, j*_dx + 0.5*_dx, k*_dx + 0.5*_dx);
     }
 
+    inline double _hatFunc(double r) {
+        if (r >= 0.0 && r <= 1.0) {
+            return 1 - r;
+        } else if (r >= -1.0 && r <= 0.0) {
+            return 1 + r;
+        }
+
+        return 0.0;
+    }
+
     void _getGridIndexBounds(glm::vec3 pos, double r, 
                              GridIndex *gmin, GridIndex *gmax);
 
-    double _evaluateFieldFunctionForRadiusSquared(double rsq);
+    double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
+    double _evaluateTrilinearFieldFunction(glm::vec3 v);
     void _getCellVertexIndices(int i, int j, int k, GridIndex vertices[8]);
 
     void _calculateCenterCellValueForPoint(glm::vec3 p, int i, int j, int k);

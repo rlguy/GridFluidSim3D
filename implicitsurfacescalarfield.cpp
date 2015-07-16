@@ -116,7 +116,12 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
                 v = gpos - p;
                 distsq = glm::dot(v, v);
                 if (distsq < rsq) {
-                    weight = _evaluateFieldFunctionForRadiusSquared(distsq);
+                    if (_weightType == WEIGHT_TRICUBIC) {
+                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
+                    } else {
+                        weight = _evaluateTrilinearFieldFunction(v);
+                    }
+
                     _field.add(i, j, k, weight);
 
                     if (_isWeightFieldEnabled) {
@@ -155,7 +160,12 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
                 v = gpos - p;
                 distsq = glm::dot(v, v);
                 if (distsq < rsq) {
-                    weight = _evaluateFieldFunctionForRadiusSquared(distsq);
+                    if (_weightType == WEIGHT_TRICUBIC) {
+                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
+                    } else {
+                        weight = _evaluateTrilinearFieldFunction(v);
+                    }
+
                     _field.add(i, j, k, weight*scale);
 
                     if (_isWeightFieldEnabled) {
@@ -197,7 +207,7 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     }
 }
 
-void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
+void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<unsigned char> &matGrid) {
     assert(matGrid.width == _isize-1 && 
            matGrid.height == _jsize-1 && 
            matGrid.depth == _ksize-1);
@@ -212,6 +222,24 @@ void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
                         _isVertexSolid.set(vertices[idx], true);
                     }
                 }
+            }
+        }
+    }
+}
+
+void ImplicitSurfaceScalarField::getWeightField(Array3d<double> &field) {
+    if (!_isWeightFieldEnabled) {
+        return;
+    }
+
+    assert(field.width == _field.width && 
+           field.height == _field.height && 
+           field.depth == _field.depth);
+
+    for (int k = 0; k < field.depth; k++) {
+        for (int j = 0; j < field.height; j++) {
+            for (int i = 0; i < field.width; i++) {
+                field.set(i, j, k, _weightField(i, j, k));
             }
         }
     }
@@ -274,14 +302,13 @@ void ImplicitSurfaceScalarField::_getGridIndexBounds(glm::vec3 pos, double r,
                       (int)fmin(kmax, _ksize-1));
 }
 
-double ImplicitSurfaceScalarField::_evaluateFieldFunctionForRadiusSquared(double rsq) {
-    if (_weightType == WEIGHT_TRICUBIC) {
-        return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
-    } else {
-        double r = sqrt(rsq);
-        return (_radius - r) * _invRadius;
-    }
-    
+double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {
+    return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
+}
+
+double ImplicitSurfaceScalarField::_evaluateTrilinearFieldFunction(glm::vec3 v) {
+    double invdx = 1 / _dx;
+    return _hatFunc(v.x*invdx) * _hatFunc(v.y*invdx) * _hatFunc(v.z*invdx);
 }
 
 void ImplicitSurfaceScalarField::_getCellVertexIndices(int i, int j, int k, GridIndex vertices[8]){
@@ -304,7 +331,7 @@ void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(glm::vec3 p, 
     glm::vec3 v = gpos - p;
     double distsq = glm::dot(v, v);
     if (distsq < _radius*_radius) {
-        double val = _evaluateFieldFunctionForRadiusSquared(distsq);
+        double val = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
         _centerField.add(i, j, k, val);
     }
 }

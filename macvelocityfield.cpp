@@ -25,10 +25,6 @@ void MACVelocityField::_initializeVelocityGrids() {
     _v = Array3d<double>(_i_voxels, _j_voxels + 1, _k_voxels, 0.0);
     _w = Array3d<double>(_i_voxels, _j_voxels, _k_voxels + 1, 0.0);
 
-    _save_u = Array3d<double>(_i_voxels + 1, _j_voxels, _k_voxels, 0.0);
-    _save_v = Array3d<double>(_i_voxels, _j_voxels + 1, _k_voxels, 0.0);
-    _save_w = Array3d<double>(_i_voxels, _j_voxels, _k_voxels + 1, 0.0);
-
     _temp_u = Array3d<double>(_i_voxels + 1, _j_voxels, _k_voxels, 0.0);
     _temp_v = Array3d<double>(_i_voxels, _j_voxels + 1, _k_voxels, 0.0);
     _temp_w = Array3d<double>(_i_voxels, _j_voxels, _k_voxels + 1, 0.0);
@@ -95,12 +91,6 @@ void MACVelocityField::commitTemporaryVelocityFieldValues() {
             }
         }
     }
-}
-
-void MACVelocityField::saveVelocityFieldState() {
-    _save_u = _u;
-    _save_v = _v;
-    _save_w = _w;
 }
 
 void MACVelocityField::randomizeValues() {
@@ -510,6 +500,20 @@ double MACVelocityField::_fasttricubicInterpolate(double p[4][4][4], double x, d
     return b1 + 0.5 * x*(b2 - b0 + x*(2.0*b0 - 5.0*b1 + 4.0*b2 - b3 + x*(3.0*(b1 - b2) + b3 - b0)));
 }
 
+// vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
+//                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
+// x, y, z, in range [0,1]
+double MACVelocityField::_trilinearInterpolate(double p[8], double x, double y, double z) {
+    return p[0] * (1 - x) * (1 - y) * (1 - z) +
+           p[1] * x * (1 - y) * (1 - z) + 
+           p[2] * (1 - x) * y * (1 - z) + 
+           p[3] * (1 - x) * (1 - y) * z +
+           p[4] * x * (1 - y) * z + 
+           p[5] * (1 - x) * y * z + 
+           p[6] * x * y * (1 - z) + 
+           p[7] * x * y * z;
+}
+
 double MACVelocityField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
     assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
 
@@ -651,127 +655,6 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     return _fasttricubicInterpolate(points, ix, iy, iz);
 }
 
-double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
-        return 0.0;
-    }
-
-    y -= 0.5*_dx;
-    z -= 0.5*_dx;
-
-    int i, j, k;
-    double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
-
-    double inv_dx = 1 / _dx;
-    double ix = (x - gx)*inv_dx;
-    double iy = (y - gy)*inv_dx;
-    double iz = (z - gz)*inv_dx;
-
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-    bool nonzero = false;
-
-    int refi = i - 1;
-    int refj = j - 1;
-    int refk = k - 1;
-    double points[4][4][4];
-    for (int pk = 0; pk < 4; pk++) {
-        for (int pj = 0; pj < 4; pj++) {
-            for (int pi = 0; pi < 4; pi++) {
-                if (_u.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk) - 
-                                         _save_u(pi + refi, pj + refj, pk + refk);
-                } else {
-                    points[pi][pj][pk] = 0;
-                }
-            }
-        }
-    }
-
-    return _fasttricubicInterpolate(points, ix, iy, iz);
-}
-
-double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
-        return 0.0;
-    }
-
-    x -= 0.5*_dx;
-    z -= 0.5*_dx;
-
-    int i, j, k;
-    double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
-
-    double inv_dx = 1 / _dx;
-    double ix = (x - gx)*inv_dx;
-    double iy = (y - gy)*inv_dx;
-    double iz = (z - gz)*inv_dx;
-
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
-    int refi = i - 1;
-    int refj = j - 1;
-    int refk = k - 1;
-    double points[4][4][4];
-    for (int pk = 0; pk < 4; pk++) {
-        for (int pj = 0; pj < 4; pj++) {
-            for (int pi = 0; pi < 4; pi++) {
-                if (_v.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk) - 
-                                         _save_v(pi + refi, pj + refj, pk + refk);;
-                } else {
-                    points[pi][pj][pk] = 0;
-                }
-            }
-        }
-    }
-
-    return _fasttricubicInterpolate(points, ix, iy, iz);
-}
-
-double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
-        return 0.0;
-    }
-
-    x -= 0.5*_dx;
-    y -= 0.5*_dx;
-
-    int i, j, k;
-    double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
-
-    double inv_dx = 1 / _dx;
-    double ix = (x - gx)*inv_dx;
-    double iy = (y - gy)*inv_dx;
-    double iz = (z - gz)*inv_dx;
-
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
-    int refi = i - 1;
-    int refj = j - 1;
-    int refk = k - 1;
-    double points[4][4][4];
-    for (int pk = 0; pk < 4; pk++) {
-        for (int pj = 0; pj < 4; pj++) {
-            for (int pi = 0; pi < 4; pi++) {
-                if (_w.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk) - 
-                                         _save_w(pi + refi, pj + refj, pk + refk);;
-                } else {
-                    points[pi][pj][pk] = 0;
-                }
-            }
-        }
-    }
-
-    return _fasttricubicInterpolate(points, ix, iy, iz);
-}
-
 void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
     double invdx = 1.0 / _dx;
     *i = (int)floor(x*invdx);
@@ -799,18 +682,6 @@ glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, doubl
     double xvel = _interpolateU(x, y, z);
     double yvel = _interpolateV(x, y, z);
     double zvel = _interpolateW(x, y, z);
-
-    return glm::vec3(xvel, yvel, zvel);
-}
-
-glm::vec3 MACVelocityField::evaluateChangeInVelocityAtPosition(glm::vec3 p) {
-    if (!_isPositionInGrid(p.x, p.y, p.z)) {
-        return glm::vec3(0.0, 0.0, 0.0);
-    }
-
-    double xvel = _interpolateDeltaVelocityU(p.x, p.y, p.z);
-    double yvel = _interpolateDeltaVelocityV(p.x, p.y, p.z);
-    double zvel = _interpolateDeltaVelocityW(p.x, p.y, p.z);
 
     return glm::vec3(xvel, yvel, zvel);
 }

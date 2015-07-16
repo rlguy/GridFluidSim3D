@@ -79,12 +79,12 @@ void FluidSource::deactivate() {
     isActive = false;
 }
 
-std::vector<GridIndex> FluidSource::getNewFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> FluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
                                                      double dx) {
     return std::vector<GridIndex>();
 }
 
-std::vector<GridIndex> FluidSource::getFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> FluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
                                                   double dx) {
     return std::vector<GridIndex>();
 }

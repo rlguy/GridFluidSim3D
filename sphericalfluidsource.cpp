@@ -40,7 +40,7 @@ void SphericalFluidSource::expand(double val) {
     }
 }
 
-std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
                                                               double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -69,7 +69,7 @@ std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &mate
     return newFluidCells;
 }
 
-std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
                                                            double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();

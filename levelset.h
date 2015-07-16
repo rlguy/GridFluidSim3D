@@ -24,8 +24,8 @@ public:
     void calculateSignedDistanceField();
     void calculateSignedDistanceField(int numLayers);
     void calculateSurfaceCurvature();
-    double calculateSurfaceCurvature(glm::vec3 p);
-    double calculateSurfaceCurvature(unsigned int tidx);
+    double getSurfaceCurvature(glm::vec3 p);
+    double getSurfaceCurvature(unsigned int tidx);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
     glm::vec3 getClosestPointOnSurface(glm::vec3 p);
 
@@ -39,7 +39,7 @@ private:
     void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     void _getLayerCells(int idx, std::vector<GridIndex> &layer, 
                                  std::vector<GridIndex> &nextLayer,
-                                 Array3d<int> &layerGrid);
+                                 Array3d<unsigned char> &layerGrid);
     void _calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q);
     void _setLevelSetCell(GridIndex g, double dist, int tidx);
     void _resetLevelSetCell(GridIndex g);
@@ -114,7 +114,7 @@ private:
     TriangleMesh _surfaceMesh;
 
     Array3d<double> _signedDistance;
-    Array3d<int> _indexGrid;
+    Array3d<unsigned char> _indexGrid;
     Array3d<bool> _isDistanceSet;
 
     LevelSetField _distanceField;

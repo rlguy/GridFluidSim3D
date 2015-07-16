@@ -61,7 +61,7 @@ public:
 
     std::vector<glm::vec3> getMarkerParticles();
     std::vector<glm::vec3> getMarkerParticles(int skip);
-    Array3d<int> getLayerGrid() { return _layerGrid; }
+    Array3d<unsigned char> getLayerGrid() { return _layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
     void addBodyForce(glm::vec3 f);
@@ -74,6 +74,7 @@ public:
     void setMarkerParticleScale(double s) { _markerParticleScale = s; }
 
     MACVelocityField* getVelocityField() { return &_MACVelocity; }
+    LevelSet* getLevelSet() { return &_levelset; };
 
     void addImplicitFluidPoint(double x, double y, double z, double r) {
         addImplicitFluidPoint(glm::vec3(x, y, z), r);
@@ -325,29 +326,29 @@ private:
     inline bool _isCellFluid(GridIndex g) { return _materialGrid(g) == M_FLUID; }
     inline bool _isCellSolid(GridIndex g) { return _materialGrid(g) == M_SOLID; }
 
-    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
         if (i == grid.width) { return grid(i - 1, j, k) == value; }
         else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
         else { return grid(i, j, k) == value; }
     }
-    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
         if (j == grid.height) { return grid(i, j - 1, k) == value; }
         else if (j > 0) { return grid(i, j, k) == value || grid(i, j - 1, k) == value; }
         else { return grid(i, j, k) == value; }
     }
-    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
         if (k == grid.depth) { return grid(i, j, k - 1) == value; }
         else if (k > 0) { return grid(i, j, k) == value || grid(i, j, k - 1) == value; }
         else { return grid(i, j, k) == value; }
     }
 
-    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<unsigned char> &grid) {
         return _isFaceBorderingGridValueU(g.i, g.j, g.k, value, grid);
     }
-    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<unsigned char> &grid) {
         return _isFaceBorderingGridValueV(g.i, g.j, g.k, value, grid);
     }
-    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
+    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<unsigned char> &grid) {
         return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
     }
 
@@ -453,9 +454,9 @@ private:
     glm::vec3 _bodyForce;
 
     MACVelocityField _MACVelocity;
-    Array3d<int> _materialGrid;
+    Array3d<unsigned char> _materialGrid;
     Array3d<double> _pressureGrid;
-    Array3d<int> _layerGrid;
+    Array3d<unsigned char> _layerGrid;
 
     MatrixCoefficients _matrixA;
     VectorCoefficients _preconditioner;

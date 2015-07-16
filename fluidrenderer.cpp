@@ -290,7 +290,7 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 }
 
 void FluidRenderer::drawLayerGrid() {
-    Array3d<int> grid = _fluidsim->getLayerGrid();
+    Array3d<unsigned char> grid = _fluidsim->getLayerGrid();
     double size = _fluidsim->getCellSize();
     glm::vec3 p;
 
@@ -314,6 +314,7 @@ void FluidRenderer::drawLayerGrid() {
 
 void FluidRenderer::drawSurfaceTriangles() {
     TriangleMesh *surface = _fluidsim->getFluidSurfaceTriangles();
+    LevelSet *levelset = _fluidsim->getLevelSet();
 
     _setTransforms();
     glEnable(GL_NORMALIZE);
@@ -331,6 +332,12 @@ void FluidRenderer::drawSurfaceTriangles() {
         n1 = surface->normals[t.tri[0]];
         n2 = surface->normals[t.tri[1]];
         n3 = surface->normals[t.tri[2]];
+
+        if (levelset->getSurfaceCurvature(i) > 10.0) {
+            glColor3d(1.0, 0.0, 0.0);
+        } else {
+            glColor3d(0.8, 0.8, 0.8);
+        }
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3d(p1.x, p1.y, p1.z);

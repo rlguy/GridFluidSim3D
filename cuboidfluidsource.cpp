@@ -83,7 +83,7 @@ void CuboidFluidSource::expand(double value) {
                     _bbox.depth + 2*value);
 }
 
-std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
                                                               double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -113,7 +113,7 @@ std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materia
     return newFluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
                                                         double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();

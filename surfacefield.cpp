@@ -17,13 +17,13 @@ SurfaceField::~SurfaceField()
 {
 }
 
-void SurfaceField::setMaterialGrid(Array3d<int> matGrid) {
+void SurfaceField::setMaterialGrid(Array3d<unsigned char> matGrid) {
     materialGrid = matGrid;
     isMaterialGridSet = true;
 }
 
 void SurfaceField::setMaterialGrid() {
-    materialGrid = Array3d<int>();
+    materialGrid = Array3d<unsigned char>();
     isMaterialGridSet = false;
 }
 

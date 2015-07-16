@@ -28,9 +28,9 @@ public:
     void activate();
     void deactivate();
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getNewFluidCells(Array3d<unsigned char> &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getFluidCells(Array3d<unsigned char> &materialGrid,
                                                  double dx);
 
 protected:

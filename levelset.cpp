@@ -7,7 +7,7 @@ LevelSet::LevelSet()
 LevelSet::LevelSet(int i, int j, int k, double dx) : 
                                  _isize(i), _jsize(j), _ksize(k), _dx(dx),
                                  _signedDistance(Array3d<double>(i, j, k, 0.0)),
-                                 _indexGrid(Array3d<int>(i, j, k, -1)),
+                                 _indexGrid(Array3d<unsigned char>(i, j, k, -1)),
                                  _isDistanceSet(Array3d<bool>(i, j, k, false)),
                                  _distanceField(LevelSetField(i, j, k, dx)) {
 }
@@ -75,7 +75,7 @@ void LevelSet::_getNeighbourGridIndices6(GridIndex g, GridIndex n[6]) {
 
 void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer, 
                                        std::vector<GridIndex> &nextLayer,
-                                       Array3d<int> &layerGrid) {
+                                       Array3d<unsigned char> &layerGrid) {
     GridIndex ns[6];
     GridIndex g, n;
     for (int i = 0; i < (int)layer.size(); i++) {
@@ -92,7 +92,7 @@ void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer,
 }
 
 void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
-    Array3d<int> layerGrid(_isize, _jsize, _ksize, -1);
+    Array3d<unsigned char> layerGrid(_isize, _jsize, _ksize, -1);
 
     std::vector<GridIndex> layer;
     for (int k = 0; k < _ksize; k++) {
@@ -458,12 +458,14 @@ void LevelSet::_calculateCurvatureAtVertex(int idx) {
 }
 
 void LevelSet::calculateSurfaceCurvature() {
+    _vertexCurvatures.clear();
+
     for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
         _calculateCurvatureAtVertex(i);
     }
 }
 
-double LevelSet::calculateSurfaceCurvature(glm::vec3 p) {
+double LevelSet::getSurfaceCurvature(glm::vec3 p) {
     assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
 
     int tidx;
@@ -480,9 +482,16 @@ double LevelSet::calculateSurfaceCurvature(glm::vec3 p) {
     return (float)bary.x*k0 + (float)bary.y*k1 + (float)bary.z*k2;
 }
 
-double LevelSet::calculateSurfaceCurvature(unsigned int tidx) {
+double LevelSet::getSurfaceCurvature(unsigned int tidx) {
+    if (_vertexCurvatures.size() != _surfaceMesh.vertices.size()) {
+        return 0.0;
+    }
+    if (tidx >= _surfaceMesh.triangles.size()) {
+        return 0.0;
+    }
+
     assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
-    assert(tidx <= _surfaceMesh.triangles.size());
+    assert(tidx < _surfaceMesh.triangles.size());
 
     Triangle t = _surfaceMesh.triangles[tidx];
     double k0 = _vertexCurvatures[t.tri[0]];

@@ -19,9 +19,9 @@ public:
     void setCenter(glm::vec3 p);
     void expand(double val);
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getNewFluidCells(Array3d<unsigned char> &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getFluidCells(Array3d<unsigned char> &materialGrid,
                                                  double dx);
 
 private:

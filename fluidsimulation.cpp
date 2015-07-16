@@ -4,9 +4,9 @@
 FluidSimulation::FluidSimulation() :
                                 _bodyForce(glm::vec3(0.0, 0.0, 0.0)),
                                 _MACVelocity(_i_voxels, _j_voxels, _k_voxels, _dx),
-                                _materialGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, M_AIR)),
+                                _materialGrid(Array3d<unsigned char>(_i_voxels, _j_voxels, _k_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0)),
-                                _layerGrid(Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1)),
+                                _layerGrid(Array3d<unsigned char>(_i_voxels, _j_voxels, _k_voxels, -1)),
                                 _matrixA(_i_voxels, _j_voxels, _k_voxels),
                                 _preconditioner(_i_voxels, _j_voxels, _k_voxels),
                                 _implicitFluidScalarField(_i_voxels, _j_voxels, _k_voxels, _dx),
@@ -20,9 +20,9 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _i_voxels(x_voxels), _j_voxels(y_voxels), _k_voxels(z_voxels), _dx(cell_size),
                                 _bodyForce(glm::vec3(0.0, 0.0, 0.0)),
                                 _MACVelocity(x_voxels, y_voxels, z_voxels, cell_size),
-                                _materialGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, M_AIR)),
+                                _materialGrid(Array3d<unsigned char>(x_voxels, y_voxels, z_voxels, M_AIR)),
                                 _pressureGrid(Array3d<double>(x_voxels, y_voxels, z_voxels, 0.0)),
-                                _layerGrid(Array3d<int>(x_voxels, y_voxels, z_voxels, -1)),
+                                _layerGrid(Array3d<unsigned char>(x_voxels, y_voxels, z_voxels, -1)),
                                 _matrixA(x_voxels, y_voxels, z_voxels),
                                 _preconditioner(x_voxels, y_voxels, z_voxels),
                                 _GridIndexToEigenVectorXdIndex(x_voxels, y_voxels, z_voxels, -1),
@@ -512,9 +512,9 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _currentFrame = state.getCurrentFrame();
 
     _bodyForce = glm::vec3(0.0, 0.0, 0.0);
-    _materialGrid = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, M_AIR);
+    _materialGrid = Array3d<unsigned char>(_i_voxels, _j_voxels, _k_voxels, M_AIR);
     _pressureGrid = Array3d<double>(_i_voxels, _j_voxels, _k_voxels, 0.0);
-    _layerGrid = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1);
+    _layerGrid = Array3d<unsigned char>(_i_voxels, _j_voxels, _k_voxels, -1);
     _matrixA = MatrixCoefficients(_i_voxels, _j_voxels, _k_voxels);
     _preconditioner = VectorCoefficients(_i_voxels, _j_voxels, _k_voxels);
     _GridIndexToEigenVectorXdIndex = Array3d<int>(_i_voxels, _j_voxels, _k_voxels, -1);
@@ -643,9 +643,9 @@ void FluidSimulation::_updateFluidCells() {
 void FluidSimulation::_writeSurfaceMeshToFile() {
     std::string s = std::to_string(_currentFrame);
     s.insert(s.begin(), 6 - s.size(), '0');
-    s = "bakefiles/" + s + ".obj";
+    s = "bakefiles/" + s + ".ply";
 
-    _surfaceMesh.writeMeshToOBJ(s);
+    _surfaceMesh.writeMeshToPLY(s);
 }
 
 void FluidSimulation::_reconstructFluidSurface() {
@@ -691,6 +691,13 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
     // velocity layers, the level set will need to calculate signed distance 
     // for (_CFLConditionNumber + 3) layers
     _levelset.calculateSignedDistanceField((int)ceil(_CFLConditionNumber) + 3);
+
+    StopWatch t1;
+    t1.start();
+    _levelset.calculateSurfaceCurvature();
+    t1.stop();
+
+    std::cout << "CALCULATE SURFACE CURVATURE: " << t1.getTime() << std::endl;
 }
 
 /********************************************************************************
