@@ -23,6 +23,9 @@ public:
     void setSurfaceMesh(TriangleMesh mesh);
     void calculateSignedDistanceField();
     void calculateSignedDistanceField(int numLayers);
+    void calculateSurfaceCurvature();
+    double calculateSurfaceCurvature(glm::vec3 p);
+    double calculateSurfaceCurvature(unsigned int tidx);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
     glm::vec3 getClosestPointOnSurface(glm::vec3 p);
 
@@ -47,11 +50,19 @@ private:
 
     glm::vec3 _findClosestPointOnSurface(GridIndex g);
     glm::vec3 _findClosestPointOnSurface(glm::vec3 p);
+    glm::vec3 _findClosestPointOnSurface(glm::vec3 p, int *tidx);
     glm::vec3 _evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p);
     glm::vec3 _evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx);
     double _minDistToTriangleSquared(GridIndex g, int tidx);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
+
+    void _calculateCurvatureAtVertex(int idx);
+    void _getCurvatureSamplePoints(glm::vec3 p, std::vector<glm::vec3> &points);
+    void _getCellsInsideSurfaceWithinRadius(glm::vec3 p, double r, 
+                                            std::vector<GridIndex> &cells);
+    void _getGridIndexBounds(glm::vec3 pos, double r, 
+                             GridIndex *gmin, GridIndex *gmax);
 
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
@@ -59,6 +70,10 @@ private:
     inline bool _isCellInsideSurface(GridIndex g) {
         assert(_isDistanceSet(g));
         return _signedDistance(g) > 0.0;
+    }
+    inline bool _isCellInsideSurface(int i, int j, int k) {
+        assert(_isDistanceSet(i, j, k));
+        return _signedDistance(i, j, k) > 0.0;
     }
 
     GridIndex _positionToGridIndex(glm::vec3 p) {
@@ -76,9 +91,18 @@ private:
         double hd = 0.5*_dx;
         return glm::vec3((double)g.i*_dx + hd, (double)g.j*_dx + hd, (double)g.k*_dx + hd);
     }
+    glm::vec3 _gridIndexToCellCenter(int i, int j, int k) {
+        assert(_isCellIndexInRange(i, j, k));
+        double hd = 0.5*_dx;
+        return glm::vec3((double)i*_dx + hd, (double)j*_dx + hd, (double)k*_dx + hd);
+    }
     inline bool _isCellIndexInRange(GridIndex g) {
         return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
                g.i < _isize && g.j < _jsize && g.k < _ksize;
+    }
+    inline bool _isCellIndexInRange(int i, int j, int k) {
+        return i >= 0 && j >= 0 && k >= 0 && 
+               i < _isize && j < _jsize && k < _ksize;
     }
 
     double _dx = 0.0;
@@ -95,5 +119,9 @@ private:
 
     LevelSetField _distanceField;
 
+    std::vector<double> _vertexCurvatures;
+    double _surfaceCurvatureSampleRadius = 1.5;  // radius in # of cells
+    int _maxSurfaceCurvatureSamples = 40;
+    
 };
 

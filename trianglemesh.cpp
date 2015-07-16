@@ -546,6 +546,39 @@ glm::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
     return glm::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
 }
 
+glm::vec3 TriangleMesh::getBarycentricCoordinates(unsigned int index, glm::vec3 p) {
+    Triangle t = triangles[index];
+    int size = (int)vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    glm::vec3 a = vertices[t.tri[0]];
+    glm::vec3 b = vertices[t.tri[1]];
+    glm::vec3 c = vertices[t.tri[2]];
+    glm::vec3 normal = getTriangleNormal(index);
+
+    float areaABC = glm::dot(normal, glm::cross((b - a), (c - a)));
+    float areaPBC = glm::dot(normal, glm::cross((b - p), (c - p)));
+    float areaPCA = glm::dot(normal, glm::cross((c - p), (a - p)));
+
+    float bx = areaPBC / areaABC;
+    float by = areaPCA / areaABC;
+    float bz = 1.0f - bx - by;
+
+    return glm::vec3(bx, by, bz);
+}
+
+glm::vec3 TriangleMesh::getTriangleNormalSmooth(unsigned int index, glm::vec3 p) {
+    assert(index < (int)triangles.size());
+
+    Triangle t = triangles[index];
+    int size = (int)vertices.size();
+    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+
+    glm::vec3 bary = getBarycentricCoordinates(index, p);
+
+    return bary.x*normals[t.tri[0]] + bary.y*normals[t.tri[1]] + bary.z*normals[t.tri[2]];
+}
+
 glm::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
     assert(index < (int)triangles.size());
 

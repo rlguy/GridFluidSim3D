@@ -302,6 +302,38 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
     return minpoint;
 }
 
+glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p, int *tidx) {
+    GridIndex g = _positionToGridIndex(p);
+
+    GridIndex ns[7];
+    _getNeighbourGridIndices6(g, ns);
+    ns[6] = g;
+
+    bool isFound = false;
+    double mindistsq = std::numeric_limits<double>::infinity();
+    glm::vec3 minpoint = p;
+    int mint;
+    GridIndex n;
+    for (int i = 0; i < 7; i++) {
+        n = ns[i];
+
+        if (_isCellIndexInRange(n) && _isDistanceSet(n)) {
+            glm::vec3 surfacePoint;
+            double distsq = _minDistToTriangleSquared(p, _indexGrid(n), &surfacePoint);
+
+            if (distsq < mindistsq) {
+                mindistsq = distsq;
+                minpoint = surfacePoint;
+                mint = _indexGrid(n);
+                isFound = true;
+            }
+        }
+    }
+
+    *tidx = mint;
+    return minpoint;
+}
+
 glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p) {
     if (_isPointInsideSurface(p)) {
         return vgrid.evaluateVelocityAtPosition(p);
@@ -324,4 +356,138 @@ glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIn
 
 glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p) {
     return _findClosestPointOnSurface(p);
+}
+
+void LevelSet::_getGridIndexBounds(glm::vec3 pos, double r, 
+                                   GridIndex *gmin, GridIndex *gmax) {
+    GridIndex c = _positionToGridIndex(pos);
+    glm::vec3 cpos = _gridIndexToPosition(c);
+    glm::vec3 trans = pos - cpos;
+    double inv = 1.0 / _dx;
+
+    int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
+    int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
+    int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
+    int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
+    int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
+    int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
+
+    *gmin = GridIndex((int)fmax(imin, 0), 
+                      (int)fmax(jmin, 0), 
+                      (int)fmax(kmin, 0));
+    *gmax = GridIndex((int)fmin(imax, _isize-1), 
+                      (int)fmin(jmax, _jsize-1), 
+                      (int)fmin(kmax, _ksize-1));
+}
+
+void LevelSet::_getCellsInsideSurfaceWithinRadius(glm::vec3 p, double r, 
+                                                  std::vector<GridIndex> &cells) {
+    GridIndex gmin, gmax;
+    _getGridIndexBounds(p, r, &gmin, &gmax);
+
+    double rsq = r*r;
+    glm::vec3 v;
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
+                if (_isDistanceSet(i, j, k) && _isCellInsideSurface(i, j, k)) {
+                    v = _gridIndexToCellCenter(i, j, k) - p;
+                    double distsq = glm::dot(v, v);
+                    if (distsq < rsq) {
+                        cells.push_back(GridIndex(i, j, k));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void LevelSet::_getCurvatureSamplePoints(glm::vec3 p, std::vector<glm::vec3> &points) {
+    std::vector<GridIndex> cells;
+    _getCellsInsideSurfaceWithinRadius(p, _surfaceCurvatureSampleRadius*_dx, cells);
+
+    if (cells.size() == 0) {
+        return;
+    }
+
+    int min = 0;
+    int max = cells.size() - 1;
+    int maxSamples = fmin(8*max, _maxSurfaceCurvatureSamples);
+    GridIndex g;
+    glm::vec3 jitter;
+    for (int i = 0; i < maxSamples; i++) {
+        int randIdx =  min + (rand() % (int)(max - min + 1));
+        g = cells[randIdx];
+        jitter = glm::vec3((float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)),
+                           (float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)),
+                           (float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)));
+        points.push_back(_gridIndexToPosition(g) + jitter);
+    }
+}
+
+void LevelSet::_calculateCurvatureAtVertex(int idx) {
+    glm::vec3 v = _surfaceMesh.vertices[idx];
+    std::vector<glm::vec3> samples;
+    _getCurvatureSamplePoints(v, samples);
+
+    double radius = _surfaceCurvatureSampleRadius;
+    glm::vec3 vnorm = _surfaceMesh.normals[idx];
+    glm::vec3 p, tnorm, xji;
+    int tidx;
+    double curvature = 0.0;
+    for (int i = 0; i < samples.size(); i++) {
+        p = samples[i];
+        p = _findClosestPointOnSurface(p, &tidx);
+
+        if (tidx < 0 || tidx >= _surfaceMesh.triangles.size()) {
+            continue;
+        }
+
+        tnorm = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
+
+        xji = p - v;
+        double k = (1 - glm::dot(vnorm, tnorm)) * (1 - (glm::length(xji)/radius));
+        if (glm::dot(glm::normalize(xji), vnorm) > 0.0) {
+            k = 0.0;
+        }
+
+        curvature += k;
+    }
+
+    _vertexCurvatures.push_back(curvature);
+}
+
+void LevelSet::calculateSurfaceCurvature() {
+    for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
+        _calculateCurvatureAtVertex(i);
+    }
+}
+
+double LevelSet::calculateSurfaceCurvature(glm::vec3 p) {
+    assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
+
+    int tidx;
+    p = _findClosestPointOnSurface(p, &tidx);
+
+    assert(tidx <= _surfaceMesh.triangles.size());
+
+    Triangle t = _surfaceMesh.triangles[tidx];
+    double k0 = _vertexCurvatures[t.tri[0]];
+    double k1 = _vertexCurvatures[t.tri[1]];
+    double k2 = _vertexCurvatures[t.tri[2]];
+    glm::vec3 bary = _surfaceMesh.getBarycentricCoordinates(tidx, p);
+
+    return (float)bary.x*k0 + (float)bary.y*k1 + (float)bary.z*k2;
+}
+
+double LevelSet::calculateSurfaceCurvature(unsigned int tidx) {
+    assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
+    assert(tidx <= _surfaceMesh.triangles.size());
+
+    Triangle t = _surfaceMesh.triangles[tidx];
+    double k0 = _vertexCurvatures[t.tri[0]];
+    double k1 = _vertexCurvatures[t.tri[1]];
+    double k2 = _vertexCurvatures[t.tri[2]];
+
+    return (k0 + k1 + k2) / 3.0;
 }

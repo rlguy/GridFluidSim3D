@@ -45,8 +45,10 @@ public:
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
     void getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
     glm::vec3 getTriangleNormal(unsigned int index);
+    glm::vec3 getTriangleNormalSmooth(unsigned int index, glm::vec3 p);
     glm::vec3 getTriangleFaceDirection(unsigned int index);
     glm::vec3 getTriangleCenter(unsigned int index);
+    glm::vec3 getBarycentricCoordinates(unsigned int index, glm::vec3 p);
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
