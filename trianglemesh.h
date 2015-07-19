@@ -39,8 +39,15 @@ public:
     void writeMeshToPLY(std::string filename);
     void removeDuplicateTriangles();
     void updateVertexNormals();
+    void updateVertexTriangles();
+    void clearVertexTriangles();
+    void updateTriangleAreas();
+    void clearTriangleAreas();
     void smooth(double value, int iterations);
+    void getFaceNeighbours(unsigned int tidx, std::vector<int> &n);
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
+    double getTriangleArea(int tidx);
+    void getVertexNeighbours(unsigned int vidx, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
     void getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
@@ -94,7 +101,8 @@ private:
     int _gridk = 0;
     double _dx = 0;
 
-    std::vector <std::vector<int> > _vertexTriangles;
+    std::vector<std::vector<int> > _vertexTriangles;
+    std::vector<double> _triangleAreas;
 
     Array3d<std::vector<int>> _triGrid;
 };

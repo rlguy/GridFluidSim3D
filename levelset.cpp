@@ -7,7 +7,7 @@ LevelSet::LevelSet()
 LevelSet::LevelSet(int i, int j, int k, double dx) : 
                                  _isize(i), _jsize(j), _ksize(k), _dx(dx),
                                  _signedDistance(Array3d<double>(i, j, k, 0.0)),
-                                 _indexGrid(Array3d<unsigned char>(i, j, k, -1)),
+                                 _indexGrid(Array3d<int>(i, j, k, -1)),
                                  _isDistanceSet(Array3d<bool>(i, j, k, false)),
                                  _distanceField(LevelSetField(i, j, k, dx)) {
 }
@@ -75,7 +75,7 @@ void LevelSet::_getNeighbourGridIndices6(GridIndex g, GridIndex n[6]) {
 
 void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer, 
                                        std::vector<GridIndex> &nextLayer,
-                                       Array3d<unsigned char> &layerGrid) {
+                                       Array3d<int> &layerGrid) {
     GridIndex ns[6];
     GridIndex g, n;
     for (int i = 0; i < (int)layer.size(); i++) {
@@ -92,7 +92,7 @@ void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer,
 }
 
 void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
-    Array3d<unsigned char> layerGrid(_isize, _jsize, _ksize, -1);
+    Array3d<int> layerGrid(_isize, _jsize, _ksize, -1);
 
     std::vector<GridIndex> layer;
     for (int k = 0; k < _ksize; k++) {
@@ -358,111 +358,152 @@ glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p) {
     return _findClosestPointOnSurface(p);
 }
 
-void LevelSet::_getGridIndexBounds(glm::vec3 pos, double r, 
-                                   GridIndex *gmin, GridIndex *gmax) {
-    GridIndex c = _positionToGridIndex(pos);
-    glm::vec3 cpos = _gridIndexToPosition(c);
-    glm::vec3 trans = pos - cpos;
-    double inv = 1.0 / _dx;
+void LevelSet::_getTrianglePatch(int vertidx, double *area, std::vector<int> &tris) {
+    std::vector<int> nbs;
+    std::vector<int> processedTriangles;
+    _surfaceMesh.getVertexNeighbours(vertidx, nbs);
 
-    int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
-    int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
-    int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
-    int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
-    int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
-    int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
+    std::queue<int> queue;
+    for (int i = 0; i < nbs.size(); i++) {
+        queue.push(nbs[i]);
+        _triangleHash.set(nbs[i], 0, 0, true);
+        processedTriangles.push_back(nbs[i]);
+    }
+    nbs.clear();
 
-    *gmin = GridIndex((int)fmax(imin, 0), 
-                      (int)fmax(jmin, 0), 
-                      (int)fmax(kmin, 0));
-    *gmax = GridIndex((int)fmin(imax, _isize-1), 
-                      (int)fmin(jmax, _jsize-1), 
-                      (int)fmin(kmax, _ksize-1));
-}
+    double totalarea = 0.0;
+    while (!queue.empty() && totalarea < *area) {
+        int t = queue.front();
+        queue.pop();
 
-void LevelSet::_getCellsInsideSurfaceWithinRadius(glm::vec3 p, double r, 
-                                                  std::vector<GridIndex> &cells) {
-    GridIndex gmin, gmax;
-    _getGridIndexBounds(p, r, &gmin, &gmax);
-
-    double rsq = r*r;
-    glm::vec3 v;
-    for (int k = gmin.k; k <= gmax.k; k++) {
-        for (int j = gmin.j; j <= gmax.j; j++) {
-            for (int i = gmin.i; i <= gmax.i; i++) {
-                if (_isDistanceSet(i, j, k) && _isCellInsideSurface(i, j, k)) {
-                    v = _gridIndexToCellCenter(i, j, k) - p;
-                    double distsq = glm::dot(v, v);
-                    if (distsq < rsq) {
-                        cells.push_back(GridIndex(i, j, k));
-                    }
-                }
+        _surfaceMesh.getFaceNeighbours(t, nbs);
+        for (int i = 0; i < (int)nbs.size(); i++) {
+            if (!_triangleHash(nbs[i], 0, 0)) {
+                queue.push(nbs[i]);
+                _triangleHash.set(nbs[i], 0, 0, true);
+                processedTriangles.push_back(nbs[i]);
             }
         }
+        nbs.clear();
+
+        totalarea += _surfaceMesh.getTriangleArea(t);
+        tris.push_back(t);
     }
+
+    for (int i = 0; i < (int)processedTriangles.size(); i++) {
+        _triangleHash.set(processedTriangles[i], 0, 0, false);
+    }
+
+    *area = totalarea;
 }
 
-void LevelSet::_getCurvatureSamplePoints(glm::vec3 p, std::vector<glm::vec3> &points) {
-    std::vector<GridIndex> cells;
-    _getCellsInsideSurfaceWithinRadius(p, _surfaceCurvatureSampleRadius*_dx, cells);
+int LevelSet::_getRandomTriangle(std::vector<int> &tris, 
+                                 std::vector<double> &distribution) {
+    if (tris.size() == 1) {
+        return tris[0];
+    }
 
-    if (cells.size() == 0) {
+    float r = (float)rand() / (float)(RAND_MAX);
+    for (int i = 0; i < tris.size()-1; i++) {
+        if (r >= distribution[i] && r < distribution[i + 1]) {
+            return tris[i];
+        }
+    }
+
+    return tris.size() - 1;
+}
+
+glm::vec3 LevelSet::_getRandomPointInTriangle(int tidx) {
+    Triangle t = _surfaceMesh.triangles[tidx];
+    glm::vec3 A = _surfaceMesh.vertices[t.tri[0]];
+    glm::vec3 B = _surfaceMesh.vertices[t.tri[1]];
+    glm::vec3 C = _surfaceMesh.vertices[t.tri[2]];
+
+    float r1 = (float)rand() / (float)(RAND_MAX);
+    float r2 = (float)rand() / (float)(RAND_MAX);
+    float sqrtr1 = sqrt(r1);
+    float sqrtr2 = sqrt(r2);
+
+    return (1.0f - sqrtr1)*A + (sqrtr1*(1.0f - sqrtr2))*B + (r2*sqrtr1)*C;
+}
+
+void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &points,
+                                                   std::vector<int> &tris) {
+    double r = _surfaceCurvatureSampleRadius*_dx;
+    double area = 3.141592653*r*r;
+    std::vector<int> patch;
+    _getTrianglePatch(vidx, &area, patch);
+
+    if (patch.size() == 0) {
         return;
     }
 
-    int min = 0;
-    int max = cells.size() - 1;
-    int maxSamples = fmin(8*max, _maxSurfaceCurvatureSamples);
-    GridIndex g;
-    glm::vec3 jitter;
+    std::vector<double> areaDistribution;
+    areaDistribution.reserve(patch.size());
+
+    double currentArea = 0.0;
+    for (int i = 0; i < (int)patch.size(); i++) {
+        areaDistribution.push_back(currentArea);
+        currentArea += _surfaceMesh.getTriangleArea(patch[i]) / area;
+    }
+
+    int maxSamples = fmin(_maxSurfaceCurvatureSamples, patch.size());
+    glm::vec3 p;
     for (int i = 0; i < maxSamples; i++) {
-        int randIdx =  min + (rand() % (int)(max - min + 1));
-        g = cells[randIdx];
-        jitter = glm::vec3((float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)),
-                           (float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)),
-                           (float)rand()) / ((float)(RAND_MAX / (_dx - 0.0)));
-        points.push_back(_gridIndexToPosition(g) + jitter);
+        int tidx = _getRandomTriangle(patch, areaDistribution);
+        p = _getRandomPointInTriangle(tidx);
+        tris.push_back(tidx);
+        points.push_back(p);
     }
 }
 
-void LevelSet::_calculateCurvatureAtVertex(int idx) {
-    glm::vec3 v = _surfaceMesh.vertices[idx];
-    std::vector<glm::vec3> samples;
-    _getCurvatureSamplePoints(v, samples);
+double LevelSet::_calculateCurvatureAtVertex(int idx) {
 
-    double radius = _surfaceCurvatureSampleRadius;
+    std::vector<glm::vec3> samples;
+    std::vector<int> sampletris;
+    _getCurvatureSamplePoints(idx, samples, sampletris);
+
+    double radius = _surfaceCurvatureSampleRadius*_dx;
+    double rsq = radius*radius;
     glm::vec3 vnorm = _surfaceMesh.normals[idx];
     glm::vec3 p, tnorm, xji;
+    glm::vec3 v = _surfaceMesh.vertices[idx];
     int tidx;
     double curvature = 0.0;
     for (int i = 0; i < samples.size(); i++) {
         p = samples[i];
-        p = _findClosestPointOnSurface(p, &tidx);
-
-        if (tidx < 0 || tidx >= _surfaceMesh.triangles.size()) {
-            continue;
-        }
-
-        tnorm = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
+        tidx = sampletris[i];
 
         xji = p - v;
-        double k = (1 - glm::dot(vnorm, tnorm)) * (1 - (glm::length(xji)/radius));
-        if (glm::dot(glm::normalize(xji), vnorm) > 0.0) {
-            k = 0.0;
-        }
+        double distsq = glm::dot(xji, xji);
+        if (distsq < rsq) {
+            tnorm = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
+            double k = (1 - glm::dot(vnorm, tnorm)) * (1 - (sqrt(distsq)/radius));
+            if (glm::dot(glm::normalize(xji), vnorm) > 0.0) {
+                k = 0.0;
+            }
 
-        curvature += k;
+            curvature += k;
+        }
     }
 
-    _vertexCurvatures.push_back(curvature);
+    return curvature;
 }
 
 void LevelSet::calculateSurfaceCurvature() {
-    _vertexCurvatures.clear();
+    _surfaceMesh.updateVertexTriangles();
+    _surfaceMesh.updateTriangleAreas();
+    _triangleHash = Array3d<bool>(_surfaceMesh.triangles.size(), 1, 1, false);
 
+    _vertexCurvatures.clear();
     for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
-        _calculateCurvatureAtVertex(i);
+        double k = _calculateCurvatureAtVertex(i);
+        _vertexCurvatures.push_back(k);
     }
+
+    _triangleHash = Array3d<bool>(0, 0, 0);
+    _surfaceMesh.clearTriangleAreas();
+    _surfaceMesh.clearVertexTriangles();
 }
 
 double LevelSet::getSurfaceCurvature(glm::vec3 p) {

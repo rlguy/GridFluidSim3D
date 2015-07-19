@@ -370,12 +370,41 @@ void TriangleMesh::updateVertexNormals() {
     }
 }
 
+void TriangleMesh::getFaceNeighbours(unsigned int tidx, std::vector<int> &n) {
+    assert(tidx < triangles.size());
+    getFaceNeighbours(triangles[tidx], n);
+}
+
 void TriangleMesh::getFaceNeighbours(Triangle t, std::vector<int> &n) {
+    assert(vertices.size() == _vertexTriangles.size());
+
     std::vector<int> vn;
     for (int i = 1; i < 3; i++) {
         vn = _vertexTriangles[t.tri[i]];
         n.insert(n.end(), vn.begin(), vn.end());
     }
+}
+
+void TriangleMesh::getVertexNeighbours(unsigned int vidx, std::vector<int> &n) {
+    assert(vertices.size() == _vertexTriangles.size());
+    assert(vidx < vertices.size());
+    std::vector<int> vn = _vertexTriangles[vidx];
+    n.insert(n.end(), vn.begin(), vn.end());
+}
+
+double TriangleMesh::getTriangleArea(int tidx) {
+    assert(tidx < triangles.size());
+
+    if (tidx < _triangleAreas.size()) {
+        return _triangleAreas[tidx];
+    }
+
+    Triangle t = triangles[tidx];
+
+    glm::vec3 AB = vertices[t.tri[1]] - vertices[t.tri[0]];
+    glm::vec3 AC = vertices[t.tri[2]] - vertices[t.tri[0]];
+
+    return 0.5f*glm::length(glm::cross(AB, AC));
 }
 
 bool TriangleMesh::_trianglesEqual(Triangle &t1, Triangle &t2) {
@@ -836,4 +865,23 @@ void TriangleMesh::smooth(double value, int iterations) {
     }
 
     _vertexTriangles.clear();
+}
+
+void TriangleMesh::updateVertexTriangles() {
+    _updateVertexTriangles();
+}
+
+void TriangleMesh::clearVertexTriangles() {
+    _vertexTriangles.clear();
+}
+
+void TriangleMesh::updateTriangleAreas() {
+    _triangleAreas.clear();
+    for (int i = 0; i < (int)triangles.size(); i++) {
+        _triangleAreas.push_back(getTriangleArea(i));
+    }
+}
+
+void TriangleMesh::clearTriangleAreas() {
+    _triangleAreas.clear();
 }

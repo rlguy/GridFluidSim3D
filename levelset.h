@@ -39,7 +39,7 @@ private:
     void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     void _getLayerCells(int idx, std::vector<GridIndex> &layer, 
                                  std::vector<GridIndex> &nextLayer,
-                                 Array3d<unsigned char> &layerGrid);
+                                 Array3d<int> &layerGrid);
     void _calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q);
     void _setLevelSetCell(GridIndex g, double dist, int tidx);
     void _resetLevelSetCell(GridIndex g);
@@ -57,12 +57,12 @@ private:
     double _minDistToTriangleSquared(GridIndex g, int tidx);
     double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
 
-    void _calculateCurvatureAtVertex(int idx);
-    void _getCurvatureSamplePoints(glm::vec3 p, std::vector<glm::vec3> &points);
-    void _getCellsInsideSurfaceWithinRadius(glm::vec3 p, double r, 
-                                            std::vector<GridIndex> &cells);
-    void _getGridIndexBounds(glm::vec3 pos, double r, 
-                             GridIndex *gmin, GridIndex *gmax);
+    double _calculateCurvatureAtVertex(int idx);
+    void _getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &points,
+                                             std::vector<int> &tris);
+    void _getTrianglePatch(int vertexIndex, double *area, std::vector<int> &tris);
+    int _getRandomTriangle(std::vector<int> &tris, std::vector<double> &distribution);
+    glm::vec3 _getRandomPointInTriangle(int tidx);
 
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
@@ -114,14 +114,15 @@ private:
     TriangleMesh _surfaceMesh;
 
     Array3d<double> _signedDistance;
-    Array3d<unsigned char> _indexGrid;
+    Array3d<int> _indexGrid;
     Array3d<bool> _isDistanceSet;
 
     LevelSetField _distanceField;
 
     std::vector<double> _vertexCurvatures;
-    double _surfaceCurvatureSampleRadius = 1.5;  // radius in # of cells
+    double _surfaceCurvatureSampleRadius = 4.0;  // radius in # of cells
     int _maxSurfaceCurvatureSamples = 40;
+    Array3d<bool> _triangleHash;
     
 };
 
