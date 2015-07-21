@@ -9,6 +9,7 @@
 #include "implicitsurfacefield.h"
 #include "implicitsurfacescalarfield.h"
 #include "array3d.h"
+#include "grid3d.h"
 #include "trianglemesh.h"
 #include "glm/glm.hpp"
 
@@ -59,8 +60,6 @@ private:
                      isSetW(Array3d<bool>(i + 1, j + 1, k, false)) {}
     };
 
-    void _getVertexCellNeighbours(GridIndex v, GridIndex cells[8]);
-    void _getCellVertexIndices(GridIndex g, GridIndex vertices[8]);
     void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
     glm::vec3 _getVertexPosition(GridIndex v);
     double _getVertexFieldValue(GridIndex v);
@@ -77,14 +76,6 @@ private:
     std::vector<GridIndex> _findSurfaceCells();
     void _resetVertexValues();
     std::vector<GridIndex> _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
-    void _getNeighbourGridIndices6(GridIndex cell, GridIndex n[6]);
-
-    inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < _isize && j < _jsize && k < _ksize;
-    }
-    inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _isize && g.j < _jsize && g.k < _ksize;
-    }
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];

@@ -83,7 +83,7 @@ void CuboidFluidSource::expand(double value) {
                     _bbox.depth + 2*value);
 }
 
-std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
                                                               double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -113,7 +113,7 @@ std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<unsigned char
     return newFluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<int> &materialGrid,
                                                         double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -147,7 +147,7 @@ void CuboidFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &indic
                                                    int isize, int jsize, int ksize, 
                                                    double dx) {
     GridIndex gmin, gmax;
-    getGridIndexBounds(_bbox, isize, jsize, ksize, dx, &gmin, &gmax);
+    Grid3d::getGridIndexBounds(_bbox, dx, isize, jsize, ksize, &gmin, &gmax);
 
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {

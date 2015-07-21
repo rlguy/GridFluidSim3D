@@ -17,13 +17,13 @@ SurfaceField::~SurfaceField()
 {
 }
 
-void SurfaceField::setMaterialGrid(Array3d<unsigned char> matGrid) {
+void SurfaceField::setMaterialGrid(Array3d<int> matGrid) {
     materialGrid = matGrid;
     isMaterialGridSet = true;
 }
 
 void SurfaceField::setMaterialGrid() {
-    materialGrid = Array3d<unsigned char>();
+    materialGrid = Array3d<int>();
     isMaterialGridSet = false;
 }
 
@@ -34,13 +34,6 @@ double SurfaceField::getFieldValue(glm::vec3 p) {
     return 0.0;
 }
 
-void SurfaceField::positionToGridIndex(glm::vec3 p, int *i, int *j, int *k) {
-    double invdx = 1.0 / dx;
-    *i = (int)floor(p.x*invdx);
-    *j = (int)floor(p.y*invdx);
-    *k = (int)floor(p.z*invdx);
-}
-
 bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     double eps = 10e-9;
 
@@ -49,7 +42,7 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     glm::vec3 z = glm::vec3(0.0, 0.0, eps);
 
     int i, j, k;
-    positionToGridIndex(p, &i, &j, &k);
+    Grid3d::positionToGridIndex(p, dx, &i, &j, &k);
     if (materialGrid(i, j, k) == 2) {
         return true;
     }
@@ -83,7 +76,7 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     points[25] = p + x + y + z;
     
     for (int idx = 0; idx < 26; idx++) {
-        positionToGridIndex(points[idx], &i, &j, &k);
+        Grid3d::positionToGridIndex(points[idx], dx, &i, &j, &k);
         if (materialGrid(i, j, k) == 2) {
             return true;
         }

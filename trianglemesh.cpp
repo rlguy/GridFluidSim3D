@@ -445,13 +445,6 @@ void TriangleMesh::_updateVertexTriangles() {
     }
 }
 
-GridIndex TriangleMesh::_positionToGridIndex(glm::vec3 p) {
-    double invdx = 1.0 / _dx;
-    return GridIndex((int)floor(p.x*invdx),
-                     (int)floor(p.y*invdx),
-                     (int)floor(p.z*invdx));
-}
-
 void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells) {
     std::vector<GridIndex> testcells;
     AABB tbbox = AABB(t, vertices);
@@ -459,7 +452,7 @@ void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex
 
     AABB cbbox = AABB(glm::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
     for (int i = 0; i < (int)testcells.size(); i++) {
-        cbbox.position = _gridIndexToPosition(testcells[i]);
+        cbbox.position = Grid3d::GridIndexToPosition(testcells[i], _dx);
         if (cbbox.isOverlappingTriangle(t, vertices)) {
             cells.push_back(testcells[i]);
         }
@@ -515,17 +508,8 @@ void TriangleMesh::_getSurfaceCells(std::vector<GridIndex> &cells) {
     }
 }
 
-void TriangleMesh::_getNeighbourGridIndices6(GridIndex g, GridIndex n[6]) {
-    n[0] = GridIndex(g.i-1, g.j, g.k);
-    n[1] = GridIndex(g.i+1, g.j, g.k);
-    n[2] = GridIndex(g.i, g.j-1, g.k);
-    n[3] = GridIndex(g.i, g.j+1, g.k);
-    n[4] = GridIndex(g.i, g.j, g.k-1);
-    n[5] = GridIndex(g.i, g.j, g.k+1);
-}
-
 void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
-    assert(_isCellIndexInRange(g));
+    assert(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
     if (cells(g)) {
         return;
     }
@@ -541,9 +525,10 @@ void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
         gp = queue.front();
         queue.pop();
 
-        _getNeighbourGridIndices6(gp, ns);
+        Grid3d::getNeighbourGridIndices6(gp, ns);
         for (int i = 0; i < 6; i++) {
-            if (_isCellIndexInRange(ns[i]) && !cells(ns[i]) && !isCellDone(ns[i])) {
+            if (Grid3d::isGridIndexInRange(ns[i], _gridi, _gridj, _gridk) && 
+                    !cells(ns[i]) && !isCellDone(ns[i])) {
                 isCellDone.set(ns[i], true);
                 queue.push(ns[i]);
             }
@@ -706,7 +691,7 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     // count how many intersections between point and edge of grid
     // even intersections: outside
     // odd intersections: inside
-    assert(_isCellIndexInRange(g));
+    assert(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
     assert(_triGrid(g).size() == 0);
 
     // Add a random jitter to the center position of the cell.
@@ -720,7 +705,7 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
                                  _randomFloat(-jit, jit),
                                  _randomFloat(-jit, jit));
 
-    glm::vec3 p = _gridIndexToPosition(g) + 0.5f*glm::vec3(_dx, _dx, _dx) + jitter;
+    glm::vec3 p = Grid3d::GridIndexToPosition(g, _dx) + 0.5f*glm::vec3(_dx, _dx, _dx) + jitter;
     glm::vec3 dir = glm::vec3(1.0, 0.0, 0.0);
     
 
@@ -729,7 +714,7 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     std::vector<int> rightIntersections;
     std::vector<int> intersections;
     GridIndex n = GridIndex(g.i - 1, g.j, g.k);
-    while (_isCellIndexInRange(n)) {
+    while (Grid3d::isGridIndexInRange(n, _gridi, _gridj, _gridk)) {
         intersections.clear();
         bool success;
         int num = _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
@@ -750,7 +735,7 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     }
 
     n = GridIndex(g.i + 1, g.j, g.k);
-    while (_isCellIndexInRange(n)) {
+    while (Grid3d::isGridIndexInRange(n, _gridi, _gridj, _gridk)) {
         intersections.clear();
         bool success;
         int num = _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
@@ -797,10 +782,11 @@ void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
     GridIndex neighbours[6];
     GridIndex n;
     for (int i = 0; i < (int)surfaceCells.size(); i++) {
-        _getNeighbourGridIndices6(surfaceCells[i], neighbours);
+        Grid3d::getNeighbourGridIndices6(surfaceCells[i], neighbours);
         for (int j = 0; j < 6; j++) {
             n = neighbours[j];
-            if (_isCellIndexInRange(n) && !insideCellGrid(n) && _isCellInsideMesh(n)) {
+            if (Grid3d::isGridIndexInRange(n, _gridi, _gridj, _gridk) && 
+                    !insideCellGrid(n) && _isCellInsideMesh(n)) {
                 _floodfill(n, insideCellGrid);
                 break;
             }

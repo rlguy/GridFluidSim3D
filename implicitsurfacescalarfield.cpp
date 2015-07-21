@@ -102,7 +102,7 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p, double r) {
 
 void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
     GridIndex gmin, gmax;
-    _getGridIndexBounds(p, _radius, &gmin, &gmax);
+    Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
     glm::vec3 gpos;
     glm::vec3 v;
@@ -112,7 +112,7 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                gpos = _GridIndexToPosition(i, j, k);
+                gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
                 distsq = glm::dot(v, v);
                 if (distsq < rsq) {
@@ -146,7 +146,7 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double r, double val
 
 void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
     GridIndex gmin, gmax;
-    _getGridIndexBounds(p, _radius, &gmin, &gmax);
+    Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
     glm::vec3 gpos;
     glm::vec3 v;
@@ -156,7 +156,7 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                gpos = _GridIndexToPosition(i, j, k);
+                gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
                 distsq = glm::dot(v, v);
                 if (distsq < rsq) {
@@ -180,8 +180,8 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
 }
 
 void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, double d) {
-    GridIndex gmin = _positionToGridIndex(pos);
-    GridIndex gmax = _positionToGridIndex(pos + glm::vec3(w, h, d));
+    GridIndex gmin = Grid3d::positionToGridIndex(pos, _dx);
+    GridIndex gmax = Grid3d::positionToGridIndex(pos + glm::vec3(w, h, d), _dx);
     AABB bbox = AABB(pos, w, h, d);
 
     double eps = 10e-6;
@@ -189,7 +189,7 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                gpos = _GridIndexToPosition(i, j, k);
+                gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 if (bbox.isPointInside(gpos)) {
                     _field.add(i, j, k, _surfaceThreshold + eps);
 
@@ -207,7 +207,7 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     }
 }
 
-void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<unsigned char> &matGrid) {
+void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
     assert(matGrid.width == _isize-1 && 
            matGrid.height == _jsize-1 && 
            matGrid.depth == _ksize-1);
@@ -217,7 +217,7 @@ void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<unsigned char> &matGrid
         for (int j = 0; j < _jsize-1; j++) {
             for (int i = 0; i < _isize-1; i++) {
                 if (matGrid(i, j, k) == M_SOLID) {
-                    _getCellVertexIndices(i, j, k, vertices);
+                    Grid3d::getGridIndexVertices(i, j, k, vertices);
                     for (int idx = 0; idx < 8; idx++) {
                         _isVertexSolid.set(vertices[idx], true);
                     }
@@ -280,28 +280,6 @@ void ImplicitSurfaceScalarField::setTrilinearWeighting() {
     _weightType = WEIGHT_TRILINEAR;
 }
 
-void ImplicitSurfaceScalarField::_getGridIndexBounds(glm::vec3 pos, double r, 
-                                                     GridIndex *gmin, GridIndex *gmax) {
-    GridIndex c = _positionToGridIndex(pos);
-    glm::vec3 cpos = _GridIndexToPosition(c);
-    glm::vec3 trans = pos - cpos;
-    double inv = 1.0 / _dx;
-
-    int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
-    int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
-    int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
-    int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
-    int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
-    int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
-
-    *gmin = GridIndex((int)fmax(imin, 0), 
-                      (int)fmax(jmin, 0), 
-                      (int)fmax(kmin, 0));
-    *gmax = GridIndex((int)fmin(imax, _isize-1), 
-                      (int)fmin(jmax, _jsize-1), 
-                      (int)fmin(kmax, _ksize-1));
-}
-
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {
     return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
 }
@@ -311,23 +289,12 @@ double ImplicitSurfaceScalarField::_evaluateTrilinearFieldFunction(glm::vec3 v) 
     return _hatFunc(v.x*invdx) * _hatFunc(v.y*invdx) * _hatFunc(v.z*invdx);
 }
 
-void ImplicitSurfaceScalarField::_getCellVertexIndices(int i, int j, int k, GridIndex vertices[8]){
-    vertices[0] = GridIndex(i,     j,     k);
-    vertices[1] = GridIndex(i + 1, j,     k);
-    vertices[2] = GridIndex(i + 1, j,     k + 1);
-    vertices[3] = GridIndex(i,     j,     k + 1);
-    vertices[4] = GridIndex(i,     j + 1, k);
-    vertices[5] = GridIndex(i + 1, j + 1, k);
-    vertices[6] = GridIndex(i + 1, j + 1, k + 1);
-    vertices[7] = GridIndex(i,     j + 1, k + 1);
-}
-
 void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(glm::vec3 p, int i, int j, int k) {
     if ( i == _isize - 1 || j == _jsize - 1 || k == _ksize - 1 ) {
         return;
     }
 
-    glm::vec3 gpos = _GridIndexToCellCenter(i, j, k);
+    glm::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     glm::vec3 v = gpos - p;
     double distsq = glm::dot(v, v);
     if (distsq < _radius*_radius) {
@@ -341,7 +308,7 @@ void ImplicitSurfaceScalarField::_calculateCenterCellValueForCuboid(AABB &bbox, 
         return;
     }
 
-    glm::vec3 gpos = _GridIndexToCellCenter(i, j, k);
+    glm::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     if (bbox.isPointInside(gpos)) {
         double eps = 10e-6;
         _centerField.add(i, j, k, _surfaceThreshold + eps);

@@ -372,31 +372,9 @@ void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
     _surface.writeMeshToOBJ(filename);
 }
 
-void Polygonizer3d::_getVertexCellNeighbours(GridIndex v, GridIndex cells[8]) {
-    cells[0] = GridIndex(v.i,     v.j,     v.k);
-    cells[1] = GridIndex(v.i - 1, v.j,     v.k);
-    cells[2] = GridIndex(v.i,     v.j,     v.k - 1);
-    cells[3] = GridIndex(v.i - 1, v.j,     v.k - 1);
-    cells[4] = GridIndex(v.i,     v.j - 1, v.k);
-    cells[5] = GridIndex(v.i - 1, v.j - 1, v.k);
-    cells[6] = GridIndex(v.i,     v.j - 1, v.k - 1);
-    cells[7] = GridIndex(v.i - 1, v.j - 1, v.k - 1);
-}
-
-void Polygonizer3d::_getCellVertexIndices(GridIndex g, GridIndex vertices[8]){
-    vertices[0] = GridIndex(g.i, g.j,         g.k);
-    vertices[1] = GridIndex(g.i + 1, g.j,     g.k);
-    vertices[2] = GridIndex(g.i + 1, g.j,     g.k + 1);
-    vertices[3] = GridIndex(g.i,     g.j,     g.k + 1);
-    vertices[4] = GridIndex(g.i,     g.j + 1, g.k);
-    vertices[5] = GridIndex(g.i + 1, g.j + 1, g.k);
-    vertices[6] = GridIndex(g.i + 1, g.j + 1, g.k + 1);
-    vertices[7] = GridIndex(g.i,     g.j + 1, g.k + 1);
-}
-
 void Polygonizer3d::_getCellVertexPositions(GridIndex g, glm::vec3 positions[8]) {
     GridIndex verts[8];
-    _getCellVertexIndices(g, verts);
+    Grid3d::getGridIndexVertices(g, verts);
     for (int i = 0; i < 8; i++) {
         positions[i] = _getVertexPosition(verts[i]);
     }
@@ -439,7 +417,7 @@ bool Polygonizer3d::_isCellOnSurface(GridIndex g) {
 
 int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     GridIndex vertices[8];
-    _getCellVertexIndices(g, vertices);
+    Grid3d::getGridIndexVertices(g, vertices);
 
     bool hasInside = false;
     bool hasOutside = false;
@@ -465,15 +443,6 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     }
 }
 
-void Polygonizer3d::_getNeighbourGridIndices6(GridIndex c, GridIndex n[6]) {
-    n[0] = GridIndex(c.i - 1, c.j, c.k);
-    n[1] = GridIndex(c.i + 1, c.j, c.k);
-    n[2] = GridIndex(c.i, c.j - 1, c.k);
-    n[3] = GridIndex(c.i, c.j + 1, c.k);
-    n[4] = GridIndex(c.i, c.j, c.k - 1);
-    n[5] = GridIndex(c.i, c.j, c.k + 1);
-}
-
 std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed, 
                                                        Array3d<bool> &isCellDone) {
     std::vector<GridIndex> seedSurfaceCells;
@@ -487,10 +456,11 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
         queue.pop_back();
 
         GridIndex neighbours[6];
-        _getNeighbourGridIndices6(c, neighbours);
+        Grid3d::getNeighbourGridIndices6(c, neighbours);
         for (int idx = 0; idx < 6; idx++) {
             GridIndex n = neighbours[idx];
-            if (_isCellIndexInRange(n) && !isCellDone(n) && _isCellOnSurface(n)) {
+            if (Grid3d::isGridIndexInRange(n, _isize, _jsize, _ksize) && 
+                    !isCellDone(n) && _isCellOnSurface(n)) {
                 isCellDone.set(n, true);
                 queue.push_back(n);
             }
@@ -517,7 +487,7 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
             continue;
         }
 
-        while (_isCellIndexInRange(cell)) {
+        while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
 
             if (_isCellOnSurface(cell)) {
                 std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
@@ -536,7 +506,7 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
 
 int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
     GridIndex vs[8];
-    _getCellVertexIndices(g, vs);
+    Grid3d::getGridIndexVertices(g, vs);
 
     int cubeIndex = 0;
     if (_getVertexFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
@@ -578,7 +548,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     double vertexValues[8];
     glm::vec3 vertexPositions[8];
 
-    _getCellVertexIndices(g, vertices);
+    Grid3d::getGridIndexVertices(g, vertices);
     for (int i = 0; i < 8; i++) {
         vertexValues[i] = _getVertexFieldValue(vertices[i]);
         vertexPositions[i] = _getVertexPosition(vertices[i]);

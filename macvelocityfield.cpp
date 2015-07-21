@@ -373,7 +373,7 @@ glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
-    assert(_isCellIndexInRange(i, j, k));
+    assert(Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels, _k_voxels));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
@@ -383,7 +383,7 @@ glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
 }
 
 double MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k) {
-    assert(_isCellIndexInRange(i, j, k));
+    assert(Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels, _k_voxels));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
@@ -393,7 +393,7 @@ double MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int
 }
 
 double MACVelocityField::evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k) {
-    assert(_isCellIndexInRange(i, j, k));
+    assert(Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels, _k_voxels));
 
     double mag = evaluateVelocityMagnitudeSquaredAtCellCenter(i, j, k);
     if (mag > 0.0) {
@@ -539,7 +539,7 @@ double MACVelocityField::_cubicInterpolate(double p[4], double x) {
 }
 
 double MACVelocityField::_interpolateU(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
         return 0.0;
     }
 
@@ -548,8 +548,8 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
 
     int i, j, k;
     double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
 
     double inv_dx = 1 / _dx;
     double ix = (x - gx)*inv_dx;
@@ -578,7 +578,7 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
 }
 
 double MACVelocityField::_interpolateV(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
         return 0.0;
     }
 
@@ -587,8 +587,8 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
 
     int i, j, k;
     double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
 
     double inv_dx = 1 / _dx;
     double ix = (x - gx)*inv_dx;
@@ -617,7 +617,7 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
 }
 
 double MACVelocityField::_interpolateW(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
         return 0.0;
     }
 
@@ -626,8 +626,8 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
 
     int i, j, k;
     double gx, gy, gz;
-    _positionToGridIndex(x, y, z, &i, &j, &k);
-    _gridIndexToPosition(i, j, k, &gx, &gy, &gz);
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
 
     double inv_dx = 1 / _dx;
     double ix = (x - gx)*inv_dx;
@@ -655,27 +655,12 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     return _fasttricubicInterpolate(points, ix, iy, iz);
 }
 
-void MACVelocityField::_positionToGridIndex(double x, double y, double z, int *i, int *j, int *k) {
-    double invdx = 1.0 / _dx;
-    *i = (int)floor(x*invdx);
-    *j = (int)floor(y*invdx);
-    *k = (int)floor(z*invdx);
-}
-
-void MACVelocityField::_gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z) {
-    //assert(_isCellIndexInRange(i, j, k));
-
-    *x = (double)i*_dx;
-    *y = (double)j*_dx;
-    *z = (double)k*_dx;
-}
-
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {
     return evaluateVelocityAtPosition(pos.x, pos.y, pos.z);
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
-    if (!_isPositionInGrid(x, y, z)) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
         return glm::vec3(0.0, 0.0, 0.0);
     }
 

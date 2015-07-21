@@ -9,6 +9,7 @@
 #include "triangle.h"
 #include "surfacefield.h"
 #include "array3d.h"
+#include "grid3d.h"
 #include "aabb.h"
 #include "collision.h"
 #include "glm/glm.hpp"
@@ -82,16 +83,6 @@ private:
     void _smoothTriangleMesh(double value);
     int _numDigitsInInteger(int num);
 
-    void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
-    GridIndex _positionToGridIndex(glm::vec3 p);
-    glm::vec3 _gridIndexToPosition(GridIndex g) {
-        assert(_isCellIndexInRange(g));
-        return glm::vec3((double)g.i*_dx, (double)g.j*_dx, (double)g.k*_dx);
-    }
-    inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < _gridi && g.j < _gridj && g.k < _gridk;
-    }
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }

@@ -7,6 +7,7 @@
 
 #include "implicitpointprimitive.h"
 #include "array3d.h"
+#include "grid3d.h"
 #include "glm/glm.hpp"
 
 
@@ -26,7 +27,7 @@ public:
     double getCellSize() { return dx; }
 
     void setSurfaceThreshold(double val) { surfaceThreshold = val; }
-    void setMaterialGrid(Array3d<unsigned char> matGrid);
+    void setMaterialGrid(Array3d<int> matGrid);
     void setMaterialGrid();
     double getSurfaceThreshold() { return surfaceThreshold; }
 
@@ -43,12 +44,11 @@ public:
     double width, height, depth;
 
 protected:
-    void positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
 
     int i_width, j_height, k_depth;
     double dx = 1.0;
 
-    Array3d<unsigned char> materialGrid;
+    Array3d<int> materialGrid;
     bool isMaterialGridSet = false;
 
     double surfaceThreshold;

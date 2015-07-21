@@ -21,8 +21,8 @@ void LevelSetField::clear() {
 }
 
 double LevelSetField::getFieldValue(glm::vec3 p) {
-    GridIndex g = _positionToGridIndex(p);
-    glm::vec3 gp = _gridIndexToPosition(g);
+    GridIndex g = Grid3d::positionToGridIndex(p, dx);
+    glm::vec3 gp = Grid3d::GridIndexToPosition(g, dx);
 
     double refx = gp.x - 0.5*dx;
     double refy = gp.y - 0.5*dx;
@@ -59,7 +59,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
                 c = GridIndex(pi + g.i, pj + g.j, pk + g.k);
-                if (_isCellIndexInRange(c)) {
+                if (Grid3d::isGridIndexInRange(c, i_width, j_height, k_depth)) {
                     points[pi][pj][pk] = _distanceField(c);
                 } else {
                     points[pi][pj][pk] = 0.0;
@@ -80,21 +80,6 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
 
 void LevelSetField::setSignedDistanceField(Array3d<double> distField) {
     _distanceField = distField;
-}
-
-GridIndex LevelSetField::_positionToGridIndex(glm::vec3 p) {
-    double invdx = 1.0 / dx;
-    return GridIndex((int)floor(p.x*invdx),
-                     (int)floor(p.y*invdx),
-                     (int)floor(p.z*invdx));
-}
-
-glm::vec3 LevelSetField::_gridIndexToPosition(GridIndex g) {
-    return glm::vec3((double)g.i*dx, (double)g.j*dx, (double)g.k*dx);
-}
-
-glm::vec3 LevelSetField::_gridIndexToCellCenter(GridIndex g) {
-    return glm::vec3((double)g.i*dx + 0.5*dx, (double)g.j*dx + 0.5*dx, (double)g.k*dx + 0.5*dx);
 }
 
 /* 

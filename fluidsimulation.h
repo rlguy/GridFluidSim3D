@@ -17,6 +17,7 @@
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
+#include "grid3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
 #include "implicitsurfacescalarfield.h"
@@ -61,7 +62,7 @@ public:
 
     std::vector<glm::vec3> getMarkerParticles();
     std::vector<glm::vec3> getMarkerParticles(int skip);
-    Array3d<unsigned char> getLayerGrid() { return _layerGrid; }
+    Array3d<int> getLayerGrid() { return _layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
     void addBodyForce(glm::vec3 f);
@@ -110,20 +111,6 @@ public:
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
     TriangleMesh* getFluidSurfaceTriangles() { return &_surfaceMesh; }
-
-    void gridIndexToPosition(GridIndex g, double *x, double *y, double *z);
-    glm::vec3 gridIndexToPosition(GridIndex g);
-    void gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
-
-    void gridIndexToCellCenter(GridIndex g, double *x, double *y, double *z);
-    void gridIndexToCellCenter(int i, int j, int k, double *x, double *y, double *z);
-    glm::vec3 gridIndexToCellCenter(GridIndex g);
-    glm::vec3 gridIndexToCellCenter(int i, int j, int k);
-    glm::vec3 gridIndexToCellCenter(int i, int j, int k, double dx);
-
-    void positionToGridIndex(glm::vec3 p, int *i, int *j, int *k);
-    void positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
-    GridIndex positionToGridIndex(glm::vec3 p);
 
     bool isCurrentFrameFinished() { return _isCurrentFrameFinished; }
 
@@ -295,6 +282,9 @@ private:
     // to create a divercence free velocity field
     void _applyPressureToVelocityField(double dt);
 
+    // Update diffuse material (spray, foam, bubbles)
+    void _updateDiffuseMaterial(double dt);
+
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
@@ -325,30 +315,31 @@ private:
     inline bool _isCellAir(GridIndex g) { return _materialGrid(g) == M_AIR; }
     inline bool _isCellFluid(GridIndex g) { return _materialGrid(g) == M_FLUID; }
     inline bool _isCellSolid(GridIndex g) { return _materialGrid(g) == M_SOLID; }
+    
 
-    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
         if (i == grid.width) { return grid(i - 1, j, k) == value; }
         else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
         else { return grid(i, j, k) == value; }
     }
-    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<int> &grid) {
         if (j == grid.height) { return grid(i, j - 1, k) == value; }
         else if (j > 0) { return grid(i, j, k) == value || grid(i, j - 1, k) == value; }
         else { return grid(i, j, k) == value; }
     }
-    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<int> &grid) {
         if (k == grid.depth) { return grid(i, j, k - 1) == value; }
         else if (k > 0) { return grid(i, j, k) == value || grid(i, j, k - 1) == value; }
         else { return grid(i, j, k) == value; }
     }
 
-    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<int> &grid) {
         return _isFaceBorderingGridValueU(g.i, g.j, g.k, value, grid);
     }
-    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<int> &grid) {
         return _isFaceBorderingGridValueV(g.i, g.j, g.k, value, grid);
     }
-    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<unsigned char> &grid) {
+    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
         return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
     }
 
@@ -399,23 +390,6 @@ private:
         else { return _layerGrid(i, j, k) >= 1.0; }
     }
 
-    inline bool _isCellNeighbours(int i1, int j1, int k1, int i2, int j2, int k2) {
-        return abs(i1 - i2) <= 1 && abs(j1 - j2) <= 1 && abs(k1 - k2) <= 1;
-    }
-    inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
-    }
-    inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < _i_voxels && g.j < _j_voxels && g.k < _k_voxels;
-    }
-    inline bool _isCellIndexOnBorder(int i, int j, int k) {
-        return i == 0 || j == 0 || k == 0 ||
-               i == _i_voxels - 1 || j == _j_voxels - 1 || k == _k_voxels - 1;
-    }
-    inline bool _isPositionInGrid(double x, double y, double z) {
-        return x >= 0 && y >= 0 && z >= 0 && x < _dx*_i_voxels && y < _dx*_j_voxels && z < _dx*_k_voxels;
-    }
-
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }
@@ -454,9 +428,9 @@ private:
     glm::vec3 _bodyForce;
 
     MACVelocityField _MACVelocity;
-    Array3d<unsigned char> _materialGrid;
+    Array3d<int> _materialGrid;
     Array3d<double> _pressureGrid;
-    Array3d<unsigned char> _layerGrid;
+    Array3d<int> _layerGrid;
 
     MatrixCoefficients _matrixA;
     VectorCoefficients _preconditioner;

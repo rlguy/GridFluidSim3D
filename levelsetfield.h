@@ -21,15 +21,6 @@ private:
 
     double _fasttricubicInterpolate(double p[4][4][4], double x, double y, double z);
 
-    GridIndex _positionToGridIndex(glm::vec3 p);
-    glm::vec3 _gridIndexToPosition(GridIndex g);
-    glm::vec3 _gridIndexToCellCenter(GridIndex g);
-
-    inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < i_width && g.j < j_height && g.k < k_depth;
-    }
-
     double _surfaceThreshold = 0.0;
     Array3d<double> _distanceField;
 };

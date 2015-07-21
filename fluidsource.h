@@ -6,6 +6,7 @@
 
 #include "glm/glm.hpp"
 #include "array3d.h"
+#include "grid3d.h"
 #include "aabb.h"
 
 class FluidSource
@@ -28,9 +29,9 @@ public:
     void activate();
     void deactivate();
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<unsigned char> &materialGrid,
+    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<unsigned char> &materialGrid,
+    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
                                                  double dx);
 
 protected:
@@ -46,20 +47,6 @@ protected:
 
     bool isActive = true;
     int sourceType = T_INFLOW;
-
-    inline GridIndex positionToGridIndex(glm::vec3 p, double dx) {
-        double invdx = 1.0 / dx;
-        return GridIndex((int)floor(p.x*invdx), 
-                         (int)floor(p.y*invdx), 
-                         (int)floor(p.z*invdx));
-    }
-
-    inline glm::vec3 GridIndexToCellCenter(int i, int j, int k, double dx) {
-        return glm::vec3(i*dx + 0.5*dx, j*dx + 0.5*dx, k*dx + 0.5*dx);
-    }
-
-    void getGridIndexBounds(AABB bbox, int i, int j, int k, double dx, 
-                            GridIndex *gmin, GridIndex *gmax);
 
 };
 

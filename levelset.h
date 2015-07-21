@@ -7,8 +7,9 @@
 #include <queue>
 
 #include "glm/glm.hpp"
-#include "Array3d.h"
-#include "Collision.h"
+#include "array3d.h"
+#include "grid3d.h"
+#include "collision.h"
 #include "trianglemesh.h"
 #include "macvelocityfield.h"
 #include "levelsetfield.h"
@@ -28,6 +29,7 @@ public:
     double getSurfaceCurvature(unsigned int tidx);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
     glm::vec3 getClosestPointOnSurface(glm::vec3 p);
+    double getDistance(glm::vec3 p);
 
 private:
     void _resetSignedDistanceField();
@@ -64,6 +66,10 @@ private:
     int _getRandomTriangle(std::vector<int> &tris, std::vector<double> &distribution);
     glm::vec3 _getRandomPointInTriangle(int tidx);
 
+    double _interpolateSignedDistance(glm::vec3 p);
+    double _trilinearInterpolate(double points[8], 
+                                 double ix, double iy, double iz);
+
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
     }
@@ -76,33 +82,17 @@ private:
         return _signedDistance(i, j, k) > 0.0;
     }
 
-    GridIndex _positionToGridIndex(glm::vec3 p) {
-        double invdx = 1.0 / _dx;
-        return GridIndex((int)floor(p.x*invdx),
-                         (int)floor(p.y*invdx),
-                         (int)floor(p.z*invdx));
-    }
     glm::vec3 _gridIndexToPosition(GridIndex g) {
-        assert(_isCellIndexInRange(g));
-        return glm::vec3((double)g.i*_dx, (double)g.j*_dx, (double)g.k*_dx);
+        assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+        return Grid3d::GridIndexToPosition(g, _dx);
     }
     glm::vec3 _gridIndexToCellCenter(GridIndex g) {
-        assert(_isCellIndexInRange(g));
-        double hd = 0.5*_dx;
-        return glm::vec3((double)g.i*_dx + hd, (double)g.j*_dx + hd, (double)g.k*_dx + hd);
+        assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+        return Grid3d::GridIndexToCellCenter(g, _dx);
     }
     glm::vec3 _gridIndexToCellCenter(int i, int j, int k) {
-        assert(_isCellIndexInRange(i, j, k));
-        double hd = 0.5*_dx;
-        return glm::vec3((double)i*_dx + hd, (double)j*_dx + hd, (double)k*_dx + hd);
-    }
-    inline bool _isCellIndexInRange(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < _isize && g.j < _jsize && g.k < _ksize;
-    }
-    inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && 
-               i < _isize && j < _jsize && k < _ksize;
+        assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+        return Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     }
 
     double _dx = 0.0;
@@ -120,7 +110,7 @@ private:
     LevelSetField _distanceField;
 
     std::vector<double> _vertexCurvatures;
-    double _surfaceCurvatureSampleRadius = 4.0;  // radius in # of cells
+    double _surfaceCurvatureSampleRadius = 3.0;  // radius in # of cells
     int _maxSurfaceCurvatureSamples = 40;
     Array3d<bool> _triangleHash;
     

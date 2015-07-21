@@ -40,7 +40,7 @@ void SphericalFluidSource::expand(double val) {
     }
 }
 
-std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
                                                               double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -69,7 +69,7 @@ std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<unsigned c
     return newFluidCells;
 }
 
-std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materialGrid,
                                                            double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -103,9 +103,8 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
                                                       double dx) {
 
     double r = _radius;
-    AABB bbox = AABB(position - glm::vec3(r, r, r), 2*r, 2*r, 2*r);
     GridIndex gmin, gmax;
-    getGridIndexBounds(bbox, isize, jsize, ksize, dx, &gmin, &gmax);
+    Grid3d::getGridIndexBounds(position, r, dx, isize, jsize, ksize, &gmin, &gmax);
 
     double rsq = r*r;
     double distsq;
@@ -114,7 +113,7 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                p = GridIndexToCellCenter(i, j, k, dx);
+                p = Grid3d::GridIndexToCellCenter(i, j, k, dx);
                 v = p - position;
                 distsq = glm::dot(v, v);
                 if (distsq < rsq) {

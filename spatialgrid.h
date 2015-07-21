@@ -5,6 +5,8 @@
 #include <assert.h>
 
 #include "glm/glm.hpp"
+#include "array3d.h"
+#include "grid3d.h"
 
 template <class T>
 class SpatialGrid
@@ -61,7 +63,7 @@ public:
 
     void insert(T object, glm::vec3 pos) {
         std::vector<SpatialGridObject> *objs;
-        GridIndex g =_positionToGridIndex(pos);
+        GridIndex g = Grid3d::positionToGridIndex(pos, _dx);
         int id = _get_unique_identifier();
 
         objs = _grid.getPointer(g);
@@ -70,7 +72,7 @@ public:
 
     void insert(T object, glm::vec3 pos, double r) {
         GridIndex gmin, gmax;
-        _getGridIndexBounds(pos, r, &gmin, &gmax);
+        Grid3d::getGridIndexBounds(pos, r, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
         int id = _get_unique_identifier();
         SpatialGridObject obj = SpatialGridObject(object, pos, r, id);
@@ -88,7 +90,7 @@ public:
     
     void query(glm::vec3 pos, double r, std::vector<T> &storage) {
         GridIndex gmin, gmax;
-        _getGridIndexBounds(pos, r, &gmin, &gmax);
+        Grid3d::getGridIndexBounds(pos, r, _dx, _isize, _jsize, _ksize &gmin, &gmax);
 
         std::unordered_map<int, bool> isDuplicate;
 
@@ -121,7 +123,7 @@ public:
     }
 
     void query(glm::vec3 pos, std::vector<T> &storage) {
-        GridIndex g = _positionToGridIndex(pos);
+        GridIndex g = Grid3d::positionToGridIndex(pos, _dx);
 
         if (!_grid.isIndexInRange(g)) {
             std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
@@ -167,42 +169,10 @@ private:
                                                                        object(obj) {}
     };
 
-    inline GridIndex _positionToGridIndex(glm::vec3 p) {
-        double invdx = 1.0 / _dx;
-        return GridIndex((int)floor(p.x*invdx), 
-                         (int)floor(p.y*invdx), 
-                         (int)floor(p.z*invdx));
-    }
-
-    inline glm::vec3 _GridIndexToPosition(GridIndex g) {
-        return glm::vec3(g.i*_dx, g.j*_dx, g.k*_dx);
-    }
-
     inline int _get_unique_identifier() {
         int id = _unique_identifier;
         _unique_identifier++;
         return id;
-    }
-
-    void _getGridIndexBounds(glm::vec3 pos, double r, GridIndex *gmin, GridIndex *gmax) {
-        GridIndex c = _positionToGridIndex(pos);
-        glm::vec3 cpos = _GridIndexToPosition(c);
-        glm::vec3 trans = pos - cpos;
-        double inv = 1.0 / _dx;
-
-        int imin = c.i - (int)fmax(0, ceil((r-trans.x)*inv));
-        int jmin = c.j - (int)fmax(0, ceil((r-trans.y)*inv));
-        int kmin = c.k - (int)fmax(0, ceil((r-trans.z)*inv));
-        int imax = c.i + (int)fmax(0, ceil((r-_dx+trans.x)*inv));
-        int jmax = c.j + (int)fmax(0, ceil((r-_dx+trans.y)*inv));
-        int kmax = c.k + (int)fmax(0, ceil((r-_dx+trans.z)*inv));
-
-        *gmin = GridIndex((int)fmax(imin, 0), 
-                          (int)fmax(jmin, 0), 
-                          (int)fmax(kmin, 0));
-        *gmax = GridIndex((int)fmin(imax, _isize-1), 
-                          (int)fmin(jmax, _jsize-1), 
-                          (int)fmin(kmax, _ksize-1));
     }
 
     bool _isSphereCollision(glm::vec3 p1, double r1, glm::vec3 p2, double r2) {

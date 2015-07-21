@@ -79,26 +79,12 @@ void FluidSource::deactivate() {
     isActive = false;
 }
 
-std::vector<GridIndex> FluidSource::getNewFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> FluidSource::getNewFluidCells(Array3d<int> &materialGrid,
                                                      double dx) {
     return std::vector<GridIndex>();
 }
 
-std::vector<GridIndex> FluidSource::getFluidCells(Array3d<unsigned char> &materialGrid,
+std::vector<GridIndex> FluidSource::getFluidCells(Array3d<int> &materialGrid,
                                                   double dx) {
     return std::vector<GridIndex>();
-}
-
-void FluidSource::getGridIndexBounds(AABB bbox, int i, int j, int k, double dx, 
-                                     GridIndex *gmin, GridIndex *gmax) {
-    glm::vec3 trans = glm::vec3(bbox.width, bbox.height, bbox.depth);
-    *gmin = positionToGridIndex(bbox.position, dx);
-    *gmax = positionToGridIndex(bbox.position + trans, dx);
-
-    *gmin = GridIndex((int)fmax((*gmin).i, 0), 
-                      (int)fmax((*gmin).j, 0), 
-                      (int)fmax((*gmin).k, 0));
-    *gmax = GridIndex((int)fmin((*gmax).i, i-1), 
-                      (int)fmin((*gmax).j, j-1), 
-                      (int)fmin((*gmax).k, k-1));
 }

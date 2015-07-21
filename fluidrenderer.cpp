@@ -100,7 +100,7 @@ void FluidRenderer::_drawFluidMaterialType(int mType) {
             for (int i = 0; i < width; i++) {
                 if (_fluidsim->getMaterial(i, j, k) == mType) {
                     double x, y, z;
-                    _fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    Grid3d::GridIndexToCellCenter(i, j, k, size, &x, &y, &z);
                     p = glm::vec3(x, y, z);
                     glVertex3d(p.x, p.y, p.z);
                 }
@@ -290,7 +290,7 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 }
 
 void FluidRenderer::drawLayerGrid() {
-    Array3d<unsigned char> grid = _fluidsim->getLayerGrid();
+    Array3d<int> grid = _fluidsim->getLayerGrid();
     double size = _fluidsim->getCellSize();
     glm::vec3 p;
 
@@ -301,7 +301,7 @@ void FluidRenderer::drawLayerGrid() {
             for (int i = 0; i < grid.width; i++) {
                 if (grid(i, j, k) > 0) {
                     double x, y, z;
-                    _fluidsim->gridIndexToCellCenter(i, j, k, &x, &y, &z);
+                    Grid3d::GridIndexToCellCenter(i, j, k, size, &x, &y, &z);
                     p = glm::vec3(x, y, z);
                     _drawWireframeCube(p, 0.2*size);
                 }
@@ -315,13 +315,17 @@ void FluidRenderer::drawLayerGrid() {
 void FluidRenderer::drawSurfaceTriangles() {
     TriangleMesh *surface = _fluidsim->getFluidSurfaceTriangles();
     LevelSet *levelset = _fluidsim->getLevelSet();
+    MACVelocityField *vfield = _fluidsim->getVelocityField();
 
     _setTransforms();
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    glShadeModel(GL_FLAT);
+    glShadeModel(GL_SMOOTH);
     glBegin(GL_TRIANGLES);
+
+    float min = 0.35;
+    float max = 1.5;
 
     glm::vec3 p1, p2, p3, n1, n2, n3;
     for (int i = 0; i < (int)surface->triangles.size(); i++) {
@@ -333,11 +337,20 @@ void FluidRenderer::drawSurfaceTriangles() {
         n2 = surface->normals[t.tri[1]];
         n3 = surface->normals[t.tri[2]];
 
-        if (levelset->getSurfaceCurvature(i) > 10.0) {
-            glColor3d(1.0, 0.0, 0.0);
-        } else {
-            glColor3d(0.8, 0.8, 0.8);
+        float k = levelset->getSurfaceCurvature(i);
+        glm::vec3 p = (p1 + p2 + p3) / 3.0f;
+        glm::vec3 n = glm::normalize((n1 + n2 + n3) / 3.0f);
+        glm::vec3 v = glm::normalize(vfield->evaluateVelocityAtPosition(p));
+        if (glm::dot(v, n) < 0.6) {
+            k = 0.0f;
         }
+
+        k = fmin(k, max);
+        k = fmax(k, min);
+
+        float f = (k - min) / (max - min);
+        glm::vec3 c = (1.0f - f)*glm::vec3(0.8, 0.8, 0.8) + f*glm::vec3(0.0, 1.0, 0.0);
+        glColor3d(c.x, c.y, c.z);
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3d(p1.x, p1.y, p1.z);

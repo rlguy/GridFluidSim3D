@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #include "array3d.h"
+#include "grid3d.h"
 #include "glm/glm.hpp" 
 
 class MACVelocityField
@@ -60,28 +61,22 @@ public:
     void randomizeValues(double min, double max);
 
     inline bool isIndexInRangeU(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && 
-               i < _i_voxels + 1 && j < _j_voxels && k < _k_voxels;
+        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels + 1, _j_voxels, _k_voxels);
     }
     inline bool isIndexInRangeV(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && 
-               i < _i_voxels && j < _j_voxels + 1 && k < _k_voxels;
+        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels + 1, _k_voxels);
     }
     inline bool isIndexInRangeW(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && 
-               i < _i_voxels && j < _j_voxels && k < _k_voxels + 1;
+        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels, _k_voxels + 1);
     }
     inline bool isIndexInRangeU(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < _i_voxels + 1 && g.j < _j_voxels && g.k < _k_voxels;
+        return Grid3d::isGridIndexInRange(g, _i_voxels + 1, _j_voxels, _k_voxels);
     }
     inline bool isIndexInRangeV(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < _i_voxels && g.j < _j_voxels + 1 && g.k < _k_voxels;
+        return Grid3d::isGridIndexInRange(g, _i_voxels, _j_voxels + 1, _k_voxels);
     }
     inline bool isIndexInRangeW(GridIndex g) {
-        return g.i >= 0 && g.j >= 0 && g.k >= 0 && 
-               g.i < _i_voxels && g.j < _j_voxels && g.k < _k_voxels + 1;
+        return Grid3d::isGridIndexInRange(g, _i_voxels, _j_voxels, _k_voxels + 1);
     }
 
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
@@ -103,14 +98,6 @@ public:
 private:
     void _initializeVelocityGrids();
 
-    inline bool _isCellIndexInRange(int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < _i_voxels && j < _j_voxels && k < _k_voxels;
-    }
-    inline bool _isPositionInGrid(double x, double y, double z) {
-        return x >= 0 && y >= 0 && z >= 0 && 
-               x < _dx*_i_voxels && y < _dx*_j_voxels && z < _dx*_k_voxels;
-    }
-
     double _default_out_of_range_value = 0.0;
 
     inline double _randomFloat(double min, double max) {
@@ -126,9 +113,6 @@ private:
     double _interpolateU(double x, double y, double z);
     double _interpolateV(double x, double y, double z);
     double _interpolateW(double x, double y, double z);
-
-    void _positionToGridIndex(double x, double y, double z, int *i, int *j, int *k);
-    void _gridIndexToPosition(int i, int j, int k, double *x, double *y, double *z);
 
     double _dx = 0.1;
     int _i_voxels = 10;

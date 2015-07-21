@@ -17,9 +17,9 @@ public:
     CuboidFluidSource(AABB bbox, glm::vec3 velocity);
     ~CuboidFluidSource();
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<unsigned char> &materialGrid,
+    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<unsigned char> &materialGrid,
+    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
                                                  double dx);
 
     void setWidth(double w);
