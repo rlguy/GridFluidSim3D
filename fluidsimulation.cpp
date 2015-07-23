@@ -1735,8 +1735,99 @@ void FluidSimulation::_updatePressureGrid(double dt) {
     UPDATE DIFFUSE MATERIAL PARTICLES
 ********************************************************************************/
 
-void FluidSimulation::_updateDiffuseMaterial(double dt) {
+void FluidSimulation::_sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
+                                                   std::vector<glm::vec3> &inside) {
+    glm::vec3 p;
+    double width = _diffuseSurfaceNarrowBandSize * _dx;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i].position;
+        if (_levelset.getDistance(p) < width) {
+            surface.push_back(p);
+        } else if (_levelset.isPointInInsideCell(p)) {
+            inside.push_back(p);
+        }
+    }
+}
+
+double FluidSimulation::_getWavecrestPotential(glm::vec3 p, glm::vec3 *v) {
+
+    *v = _MACVelocity.evaluateVelocityAtPositionLinear(p);
+    glm::vec3 normal;
+    double k = _levelset.getSurfaceCurvature(p, &normal);
+
+    if (glm::dot(glm::normalize(*v), normal) < 0.6) {
+        return 0.0;
+    }
+
+    k = fmax(k, _minWavecrestCurvature);
+    k = fmin(k, _maxWavecrestCurvature);
+
+    return (k - _minWavecrestCurvature) / 
+           (_maxWavecrestCurvature - _minWavecrestCurvature);
+}
+
+double FluidSimulation::_getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield) {
+    double t = tfield.evaluateTurbulenceAtPosition(p);
+
+    t = fmax(t, _minTurbulence);
+    t = fmin(t, _maxTurbulence);
+
+    return (t - _minTurbulence) / 
+           (_maxTurbulence - _minTurbulence);
+}
+
+double FluidSimulation::_getEnergyPotential(glm::vec3 p, glm::vec3 velocity) {
+    double e = 0.5*glm::dot(velocity, velocity);
+    e = fmax(e, _minParticleEnergy);
+    e = fmin(e, _maxParticleEnergy);
+
+    return (e - _minParticleEnergy) / (_maxParticleEnergy - _minParticleEnergy);
+}
+
+void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
+
+    std::vector<glm::vec3> surfaceParticles;
+    std::vector<glm::vec3> insideParticles;
+    _sortMarkerParticlePositions(surfaceParticles, insideParticles);
+
     _levelset.calculateSurfaceCurvature();
+
+    TurbulenceField tfield;
+    tfield.calculateTurbulenceField(&_MACVelocity, _materialGrid);
+
+    glm::vec3 p;
+    for (int i = 0; i < (int)surfaceParticles.size(); i++) {
+        p = surfaceParticles[i];
+
+        glm::vec3 velocity;
+        double Iwc = _getWavecrestPotential(p, &velocity);
+        double It = _getTurbulencePotential(p, tfield);
+
+        if (Iwc > 0.0 || It > 0.0) {
+            double Ie = _getEnergyPotential(p, velocity);
+            if (Ie > 0.0) {
+                emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, Iwc, It));
+            }
+        }
+    }
+
+    for (int i = 0; i < (int)insideParticles.size(); i++) {
+        p = insideParticles[i];
+        double It = _getTurbulencePotential(p, tfield);
+
+        if (It > 0.0) {
+            glm::vec3 velocity = _MACVelocity.evaluateVelocityAtPositionLinear(p);
+            double Ie = _getEnergyPotential(p, velocity);
+            if (Ie > 0.0) {
+                emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, 0.0, It));
+            }
+        }
+    }
+}
+
+void FluidSimulation::_updateDiffuseMaterial(double dt) {
+    std::vector<DiffuseParticleEmitter> emitters;
+    _getDiffuseParticleEmitters(emitters);
 }
 
 /********************************************************************************

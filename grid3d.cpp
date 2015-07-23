@@ -193,6 +193,34 @@ void Grid3d::getNeighbourGridIndices26(GridIndex g, GridIndex n[26]) {
     }
 }
 
+void Grid3d::getNeighbourGridIndices124(int i, int j, int k, GridIndex n[124]) {
+    int idx = 0;
+    for (int nk = k-2; nk <= k+2; nk++) {
+        for (int nj = j-2; nj <= j+2; nj++) {
+            for (int ni = i-2; ni <= i+2; ni++) {
+                if (!(ni == i && nj == j && nk == k)) {
+                    n[idx] = GridIndex(ni, nj, nk);
+                    idx++;
+                }
+            }
+        }
+    }
+}
+
+void Grid3d::getNeighbourGridIndices124(GridIndex g, GridIndex n[124]) {
+    int idx = 0;
+    for (int nk = g.k-2; nk <= g.k+2; nk++) {
+        for (int nj = g.j-2; nj <= g.j+2; nj++) {
+            for (int ni = g.i-2; ni <= g.i+2; ni++) {
+                if (!(ni == g.i && nj == g.j && nk == g.k)) {
+                    n[idx] = GridIndex(ni, nj, nk);
+                    idx++;
+                }
+            }
+        }
+    }
+}
+
 void Grid3d::getGridIndexVertices(int i, int j, int k, GridIndex v[8]) {
     v[0] = GridIndex(i,     j,     k);
     v[1] = GridIndex(i + 1, j,     k);

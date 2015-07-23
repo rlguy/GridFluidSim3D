@@ -26,10 +26,14 @@ public:
     void calculateSignedDistanceField(int numLayers);
     void calculateSurfaceCurvature();
     double getSurfaceCurvature(glm::vec3 p);
+    double getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal);
     double getSurfaceCurvature(unsigned int tidx);
     Array3d<double> getSignedDistanceField() { return _signedDistance; }
     glm::vec3 getClosestPointOnSurface(glm::vec3 p);
+    glm::vec3 getClosestPointOnSurface(glm::vec3 p, int *tidx);
     double getDistance(glm::vec3 p);
+    double getSignedDistance(glm::vec3 p);
+    bool isPointInInsideCell(glm::vec3 p);
 
 private:
     void _resetSignedDistanceField();
@@ -49,6 +53,8 @@ private:
     void _calculateDistanceFieldSigns();
     void _updateCellSign(GridIndex g, std::vector<glm::vec3> &triangleCenters, 
                                       std::vector<glm::vec3> &triangleDirections);
+    void _floodFillMissingSignedDistances();
+    void _floodFillWithDistance(GridIndex g, double val);
 
     glm::vec3 _findClosestPointOnSurface(GridIndex g);
     glm::vec3 _findClosestPointOnSurface(glm::vec3 p);

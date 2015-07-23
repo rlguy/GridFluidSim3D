@@ -226,6 +226,57 @@ void LevelSet::_calculateDistanceFieldSigns() {
     }
 }
 
+void LevelSet::_floodFillWithDistance(GridIndex seed, double val) {
+    std::vector<GridIndex> queue;
+    queue.push_back(seed);
+    _isDistanceSet.set(seed, true);
+
+    GridIndex g;
+    GridIndex ns[6];
+    while (!queue.empty()) {
+        g = queue[queue.size() - 1];
+        queue.pop_back();
+
+        Grid3d::getNeighbourGridIndices6(g, ns);
+        for (int i = 0; i < 6; i++) {
+            if (Grid3d::isGridIndexInRange(ns[i], _isize, _jsize, _ksize) && 
+                    !_isDistanceSet(ns[i])) {
+                queue.push_back(ns[i]);
+                _isDistanceSet.set(ns[i], true);
+            }
+        }
+
+        _setLevelSetCell(g, val, -1);
+    }
+}
+
+void LevelSet::_floodFillMissingSignedDistances() {
+    GridIndex ns[6];
+    GridIndex n;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (_isDistanceSet(i, j, k)) {
+                    Grid3d::getNeighbourGridIndices6(i, j, k, ns);
+                    for (int idx = 0; idx < 6; idx++) {
+                        n = ns[idx];
+                        if (Grid3d::isGridIndexInRange(n, _isize, _jsize, _ksize) && 
+                                !_isDistanceSet(n)) {
+                            double dist;
+                            if (_signedDistance(i, j, k) > 0.0) {
+                                dist = _numLayers*_dx;
+                            } else {
+                                dist = -_numLayers*_dx;
+                            }
+                            _floodFillWithDistance(n, dist);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void LevelSet::calculateSignedDistanceField() {
     calculateSignedDistanceField((int)fmax(fmax(_isize, _jsize), _ksize));
 }
@@ -238,6 +289,7 @@ void LevelSet::calculateSignedDistanceField(int numLayers) {
     _calculateUnsignedDistanceSquared();
     _squareRootDistanceField();
     _calculateDistanceFieldSigns();
+    _floodFillMissingSignedDistances();
 
     _distanceField.setSignedDistanceField(_signedDistance);
 }
@@ -248,6 +300,10 @@ double LevelSet::_minDistToTriangleSquared(GridIndex g, int tidx) {
 }
 
 double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
+    if (tidx < 0 || tidx > _surfaceMesh.triangles.size()) {
+        return std::numeric_limits<double>::infinity();
+    }
+
     glm::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(tidx, tri);
     glm::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
@@ -256,6 +312,10 @@ double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
 }
 
 double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point) {
+    if (tidx < 0 || tidx > _surfaceMesh.triangles.size()) {
+        return std::numeric_limits<double>::infinity();
+    }
+
     glm::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(tidx, tri);
     glm::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
@@ -292,7 +352,13 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
         if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && 
                 _isDistanceSet(n)) {
             glm::vec3 surfacePoint;
-            double distsq = _minDistToTriangleSquared(p, _indexGrid(n), &surfacePoint);
+            int tidx = _indexGrid(n);
+
+            if (tidx < 0) {
+                continue;
+            }
+
+            double distsq = _minDistToTriangleSquared(p, tidx, &surfacePoint);
 
             if (distsq < mindistsq) {
                 mindistsq = distsq;
@@ -360,6 +426,10 @@ glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIn
 
 glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p) {
     return _findClosestPointOnSurface(p);
+}
+
+glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p, int *tidx) {
+    return _findClosestPointOnSurface(p, tidx);
 }
 
 void LevelSet::_getTrianglePatch(int vertidx, double *area, std::vector<int> &tris) {
@@ -511,18 +581,28 @@ void LevelSet::calculateSurfaceCurvature() {
 }
 
 double LevelSet::getSurfaceCurvature(glm::vec3 p) {
+    glm::vec3 n;
+    return getSurfaceCurvature(p, &n);
+}
+
+double LevelSet::getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal) {
     assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
 
     int tidx;
     p = _findClosestPointOnSurface(p, &tidx);
 
-    assert(tidx <= _surfaceMesh.triangles.size());
+    if (tidx < 0 || tidx >= _surfaceMesh.triangles.size()) {
+        *normal = glm::vec3(1.0, 0.0, 0.0);
+        return 0.0;
+    }
 
     Triangle t = _surfaceMesh.triangles[tidx];
     double k0 = _vertexCurvatures[t.tri[0]];
     double k1 = _vertexCurvatures[t.tri[1]];
     double k2 = _vertexCurvatures[t.tri[2]];
     glm::vec3 bary = _surfaceMesh.getBarycentricCoordinates(tidx, p);
+
+    *normal = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
 
     return (float)bary.x*k0 + (float)bary.y*k1 + (float)bary.z*k2;
 }
@@ -608,4 +688,24 @@ double LevelSet::getDistance(glm::vec3 p) {
     }
 
     return fabs(_interpolateSignedDistance(p));
+}
+
+double LevelSet::getSignedDistance(glm::vec3 p) {
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+
+    if (!_isDistanceSet(g)) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    return _interpolateSignedDistance(p);
+}
+
+bool LevelSet::isPointInInsideCell(glm::vec3 p) {
+    assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
+
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    assert(_isDistanceSet(g));
+
+    return _signedDistance(g) > 0.0;
 }

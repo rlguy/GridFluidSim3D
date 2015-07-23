@@ -53,6 +53,8 @@ namespace Grid3d {
     extern void getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
     extern void getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
     extern void getNeighbourGridIndices26(GridIndex g, GridIndex n[26]);
+    extern void getNeighbourGridIndices124(int i, int j, int k, GridIndex n[124]);
+    extern void getNeighbourGridIndices124(GridIndex g, GridIndex n[124]);
 
     extern void getGridIndexVertices(int i, int j, int k, GridIndex v[8]);
     extern void getGridIndexVertices(GridIndex g, GridIndex v[8]);

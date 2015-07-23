@@ -34,6 +34,16 @@ void MACVelocityField::_initializeVelocityGrids() {
     _is_set_w = Array3d<bool>(_i_voxels, _j_voxels, _k_voxels + 1, false);
 }
 
+void MACVelocityField::getGridDimensions(int *i, int *j, int *k) {
+    *i = _i_voxels;
+    *j = _j_voxels;
+    *k = _k_voxels;
+}
+
+double MACVelocityField::getGridCellSize() {
+    return _dx;
+}
+
 void MACVelocityField::clearU() {
     _u.fill(0.0);
 }
@@ -655,6 +665,105 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     return _fasttricubicInterpolate(points, ix, iy, iz);
 }
 
+double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
+        return 0.0;
+    }
+
+    y -= 0.5*_dx;
+    z -= 0.5*_dx;
+
+    int i, j, k;
+    double gx, gy, gz;
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
+
+    double inv_dx = 1 / _dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
+
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+
+    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    if (_u.isIndexInRange(i,   j,   k))   { points[0] = _u(i,   j,   k); }
+    if (_u.isIndexInRange(i+1, j,   k))   { points[1] = _u(i+1, j,   k); }
+    if (_u.isIndexInRange(i,   j+1, k))   { points[2] = _u(i,   j+1, k); }
+    if (_u.isIndexInRange(i,   j,   k+1)) { points[3] = _u(i,   j,   k+1); }
+    if (_u.isIndexInRange(i+1, j,   k+1)) { points[4] = _u(i+1, j,   k+1); }
+    if (_u.isIndexInRange(i,   j+1, k+1)) { points[5] = _u(i,   j+1, k+1); }
+    if (_u.isIndexInRange(i+1, j+1, k))   { points[6] = _u(i+1, j+1, k); }
+    if (_u.isIndexInRange(i+1, j+1, k+1)) { points[7] = _u(i+1, j+1, k+1); }
+
+    return _trilinearInterpolate(points, ix, iy, iz);
+}
+
+double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
+        return 0.0;
+    }
+
+    x -= 0.5*_dx;
+    z -= 0.5*_dx;
+
+    int i, j, k;
+    double gx, gy, gz;
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
+
+    double inv_dx = 1 / _dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
+
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+
+    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    if (_v.isIndexInRange(i,   j,   k))   { points[0] = _v(i,   j,   k); }
+    if (_v.isIndexInRange(i+1, j,   k))   { points[1] = _v(i+1, j,   k); }
+    if (_v.isIndexInRange(i,   j+1, k))   { points[2] = _v(i,   j+1, k); }
+    if (_v.isIndexInRange(i,   j,   k+1)) { points[3] = _v(i,   j,   k+1); }
+    if (_v.isIndexInRange(i+1, j,   k+1)) { points[4] = _v(i+1, j,   k+1); }
+    if (_v.isIndexInRange(i,   j+1, k+1)) { points[5] = _v(i,   j+1, k+1); }
+    if (_v.isIndexInRange(i+1, j+1, k))   { points[6] = _v(i+1, j+1, k); }
+    if (_v.isIndexInRange(i+1, j+1, k+1)) { points[7] = _v(i+1, j+1, k+1); }
+
+    return _trilinearInterpolate(points, ix, iy, iz);
+}
+
+double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
+        return 0.0;
+    }
+
+    x -= 0.5*_dx;
+    y -= 0.5*_dx;
+
+    int i, j, k;
+    double gx, gy, gz;
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
+
+    double inv_dx = 1 / _dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
+
+    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+
+    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    if (_w.isIndexInRange(i,   j,   k))   { points[0] = _w(i,   j,   k); }
+    if (_w.isIndexInRange(i+1, j,   k))   { points[1] = _w(i+1, j,   k); }
+    if (_w.isIndexInRange(i,   j+1, k))   { points[2] = _w(i,   j+1, k); }
+    if (_w.isIndexInRange(i,   j,   k+1)) { points[3] = _w(i,   j,   k+1); }
+    if (_w.isIndexInRange(i+1, j,   k+1)) { points[4] = _w(i+1, j,   k+1); }
+    if (_w.isIndexInRange(i,   j+1, k+1)) { points[5] = _w(i,   j+1, k+1); }
+    if (_w.isIndexInRange(i+1, j+1, k))   { points[6] = _w(i+1, j+1, k); }
+    if (_w.isIndexInRange(i+1, j+1, k+1)) { points[7] = _w(i+1, j+1, k+1); }
+
+    return _trilinearInterpolate(points, ix, iy, iz);
+}
+
 glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {
     return evaluateVelocityAtPosition(pos.x, pos.y, pos.z);
 }
@@ -667,6 +776,22 @@ glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, doubl
     double xvel = _interpolateU(x, y, z);
     double yvel = _interpolateV(x, y, z);
     double zvel = _interpolateW(x, y, z);
+
+    return glm::vec3(xvel, yvel, zvel);
+}
+
+glm::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(glm::vec3 pos) {
+    return evaluateVelocityAtPositionLinear(pos.x, pos.y, pos.z);
+}
+
+glm::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double y, double z) {
+    if (!Grid3d::isPositionInGrid(x, y, z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
+        return glm::vec3(0.0, 0.0, 0.0);
+    }
+
+    double xvel = _interpolateLinearU(x, y, z);
+    double yvel = _interpolateLinearV(x, y, z);
+    double zvel = _interpolateLinearW(x, y, z);
 
     return glm::vec3(xvel, yvel, zvel);
 }

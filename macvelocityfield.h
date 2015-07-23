@@ -17,6 +17,9 @@ public:
     MACVelocityField(int x_voxels, int y_voxels, int z_voxels, double cell_size);
     ~MACVelocityField();
 
+    void getGridDimensions(int *i, int *j, int *k);
+    double getGridCellSize();
+
     double U(int i, int j, int k);
     double V(int i, int j, int k);
     double W(int i, int j, int k);
@@ -90,6 +93,8 @@ public:
 
     glm::vec3 evaluateVelocityAtPosition(double x, double y, double z);
     glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
+    glm::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
+    glm::vec3 evaluateVelocityAtPositionLinear(glm::vec3 pos);
 
     glm::vec3 velocityIndexToPositionU(int i, int j, int k);
     glm::vec3 velocityIndexToPositionV(int i, int j, int k);
@@ -113,6 +118,9 @@ private:
     double _interpolateU(double x, double y, double z);
     double _interpolateV(double x, double y, double z);
     double _interpolateW(double x, double y, double z);
+    double _interpolateLinearU(double x, double y, double z);
+    double _interpolateLinearV(double x, double y, double z);
+    double _interpolateLinearW(double x, double y, double z);
 
     double _dx = 0.1;
     int _i_voxels = 10;

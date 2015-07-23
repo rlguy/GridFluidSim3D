@@ -31,6 +31,7 @@
 #include "fluidsource.h"
 #include "sphericalfluidsource.h"
 #include "cuboidfluidsource.h"
+#include "turbulencefield.h"
 #include "glm/glm.hpp"
 
 class FluidSimulation
@@ -131,6 +132,28 @@ private:
         MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                         position(glm::vec3(x, y, z)),
                         index(GridIndex(ii, jj, kk)) {}
+    };
+
+    struct DiffuseParticleEmitter {
+        glm::vec3 position;
+        glm::vec3 velocity;
+        double energyPotential;
+        double wavecrestPotential;
+        double turbulencePotential;
+
+        DiffuseParticleEmitter() : position(0.0, 0.0, 0.0),
+                                   velocity(0.0, 0.0, 0.0),
+                                   energyPotential(0.0),
+                                   wavecrestPotential(0.0),
+                                   turbulencePotential(0.0) {}
+
+        DiffuseParticleEmitter(glm::vec3 p, glm::vec3 v, 
+                               double e, double wc, double t) : 
+                                   position(p),
+                                   velocity(v),
+                                   energyPotential(e),
+                                   wavecrestPotential(wc),
+                                   turbulencePotential(t) {}
     };
 
     struct CellFace {
@@ -284,6 +307,12 @@ private:
 
     // Update diffuse material (spray, foam, bubbles)
     void _updateDiffuseMaterial(double dt);
+    void _sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
+                                      std::vector<glm::vec3> &inside);
+    void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
+    double _getWavecrestPotential(glm::vec3 p, glm::vec3 *velocity);
+    double _getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield);
+    double _getEnergyPotential(glm::vec3 p, glm::vec3 velocity);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
@@ -458,4 +487,11 @@ private:
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
 
+    double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
+    double _minWavecrestCurvature = 0.5;
+    double _maxWavecrestCurvature = 2.0;
+    double _minParticleEnergy = 0.0;
+    double _maxParticleEnergy = 15.0;
+    double _minTurbulence = 20.0;
+    double _maxTurbulence = 50.0;
 };
