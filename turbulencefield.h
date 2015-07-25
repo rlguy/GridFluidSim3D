@@ -7,8 +7,6 @@
 #include "macvelocityfield.h"
 #include "glm/glm.hpp"
 
-#include "stopwatch.h"
-
 class TurbulenceField
 {
 public:
@@ -16,7 +14,7 @@ public:
     ~TurbulenceField();
 
     void calculateTurbulenceField(MACVelocityField *vfield,
-                                  Array3d<int> &matGrid);
+                                  std::vector<GridIndex> &fluidCells);
     void destroyTurbulenceField();
     double evaluateTurbulenceAtPosition(glm::vec3 p);
 
@@ -36,5 +34,6 @@ private:
     double _dx;
     double _radius;
 
+    GridIndex cellNeighbours[124];
 };
 

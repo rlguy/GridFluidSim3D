@@ -34,6 +34,24 @@
 #include "turbulencefield.h"
 #include "glm/glm.hpp"
 
+struct DiffuseParticle {
+    glm::vec3 position;
+    glm::vec3 velocity;
+    float lifetime;
+    int type;
+
+    DiffuseParticle() : position(0.0, 0.0, 0.0),
+                        velocity(0.0, 0.0, 0.0),
+                        lifetime(0.0),
+                        type(-1) {}
+
+    DiffuseParticle(glm::vec3 p, glm::vec3 v, float time) : 
+                        position(p),
+                        velocity(v),
+                        lifetime(time),
+                        type(-1) {}
+};
+
 class FluidSimulation
 {
 public:
@@ -63,6 +81,7 @@ public:
 
     std::vector<glm::vec3> getMarkerParticles();
     std::vector<glm::vec3> getMarkerParticles(int skip);
+    std::vector<DiffuseParticle> getDiffuseParticles();
     Array3d<int> getLayerGrid() { return _layerGrid; }
 
     void addBodyForce(double fx, double fy, double fz) { addBodyForce(glm::vec3(fx, fy, fz)); }
@@ -118,7 +137,7 @@ public:
     void saveState();
     void saveState(std::string filename);
     int getCurrentFrame();
-    
+
 private:
     struct MarkerParticle {
         glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
@@ -154,7 +173,7 @@ private:
                                    energyPotential(e),
                                    wavecrestPotential(wc),
                                    turbulencePotential(t) {}
-    };
+    };    
 
     struct CellFace {
         glm::vec3 normal;
@@ -202,6 +221,9 @@ private:
     int M_SOLID = 2;
     int T_INFLOW = 0;
     int T_OUTFLOW = 1;
+    int DP_BUBBLE = 0;
+    int DP_FOAM = 1;
+    int DP_SPRAY = 2;
 
     // Initialization before running simulation
     void _initializeSimulation();
@@ -313,6 +335,22 @@ private:
     double _getWavecrestPotential(glm::vec3 p, glm::vec3 *velocity);
     double _getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield);
     double _getEnergyPotential(glm::vec3 p, glm::vec3 velocity);
+    void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters,
+                               double dt);
+    void _emitDiffuseParticles(DiffuseParticleEmitter &emitter,
+                               double dt);
+    int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
+                                       double dt);
+    void _updateDiffuseParticleTypesAndVelocities();
+    int _getDiffuseParticleType(DiffuseParticle &p);
+    void _updateDiffuseParticleLifetimes(double dt);
+    void _advanceDiffuseParticles(double dt);
+    void _getNextBubbleDiffuseParticle(DiffuseParticle &dp,
+                                       DiffuseParticle &nextdp,double dt);
+    void _getNextSprayDiffuseParticle(DiffuseParticle &dp,
+                                      DiffuseParticle &nextdp,double dt);
+    void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
+                                     DiffuseParticle &nextdp,double dt);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
@@ -487,11 +525,21 @@ private:
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
 
+    TurbulenceField _turbulenceField;
+    std::vector<DiffuseParticle> _diffuseParticles;
+
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
     double _minWavecrestCurvature = 0.5;
     double _maxWavecrestCurvature = 2.0;
     double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 15.0;
-    double _minTurbulence = 20.0;
-    double _maxTurbulence = 50.0;
+    double _maxParticleEnergy = 25.0;
+    double _minTurbulence = 250.0;
+    double _maxTurbulence = 350.0;
+    double _wavecrestEmissionRate = 100.0;
+    double _turbulenceEmissionRate = 100.0;
+    double _maxDiffuseParticleLifetime = 2.0;
+    double _maxFoamToSurfaceDistance = 1.0; // in number of grid cells
+    double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
+    double _bubbleBouyancyCoefficient = 0.5;
+    double _bubbleDragCoefficient = 0.5;
 };

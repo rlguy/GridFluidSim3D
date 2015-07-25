@@ -641,7 +641,7 @@ double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
     p -= glm::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    glm::vec3 gpos = _gridIndexToPosition(g);
+    glm::vec3 gpos = Grid3d::GridIndexToPosition(g, _dx);
 
     double inv_dx = 1 / _dx;
     double ix = (p.x - gpos.x)*inv_dx;
