@@ -1434,116 +1434,232 @@ glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0,
         return p0;
     }
 }
+void FluidSimulation::_computeVelocityScalarField(Array3d<double> &field,
+                                                  Array3d<double> &weightfield, 
+                                                  int dir) {
+    int U = 0; int V = 1; int W = 2;
 
-bool FluidSimulation::_integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1) {
-    *p1 = _RK4(p0, v0, dt);
+    ImplicitSurfaceScalarField grid = ImplicitSurfaceScalarField(field.width,
+                                                                 field.height,
+                                                                 field.depth, _dx);
+    //grid.setTrilinearWeighting();
+    grid.enableWeightField();
+    grid.setPointRadius(_dx); 
 
-    int ni, nj, nk;
-    Grid3d::positionToGridIndex(*p1, _dx, &ni, &nj, &nk);
+    glm::vec3 offset;
+    if (dir == U) {
+        offset = glm::vec3(0.0, 0.5*_dx, 0.5*_dx);
+    } else if (dir == V) {
+        offset = glm::vec3(0.5*_dx, 0.0, 0.5*_dx);
+    } else if (dir == W) {
+        offset = glm::vec3(0.5*_dx, 0.5*_dx, 0.0);
+    } else {
+        return;
+    }
 
-    if (_isCellSolid(ni, nj, nk)) {
-        glm::vec3 collisionNormal;
-        *p1 = _calculateSolidCellCollision(p0, *p1, &collisionNormal);
-        
-        // jog p1 back a bit from cell face
-        *p1 = *p1 + (float)(0.01*_dx)*collisionNormal;
+    MarkerParticle p;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        grid.addPointValue(p.position - offset, p.velocity[dir]);
+    }
+    grid.applyWeightField();
 
-        Grid3d::positionToGridIndex(*p1, _dx, &ni, &nj, &nk);
-        if (_isCellSolid(ni, nj, nk)) {
-            *p1 = p0;
+    grid.getScalarField(field);
+    grid.getWeightField(weightfield);
+}
+
+void FluidSimulation::_advectVelocityFieldU() {
+    _MACVelocity.clearU();
+
+    Array3d<double> ugrid = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
+    Array3d<double> weightfield = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
+    _computeVelocityScalarField(ugrid, weightfield, 0);
+
+    std::vector<GridIndex> extrapolationIndices;
+    double eps = 10e-9;
+    for (int k = 0; k < ugrid.depth; k++) {
+        for (int j = 0; j < ugrid.height; j++) {
+            for (int i = 0; i < ugrid.width; i++) {
+                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID)) {
+                    if (weightfield(i, j, k) < eps) {
+                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                    } else {
+                        _MACVelocity.setU(i, j, k, ugrid(i, j, k));
+                    }
+                }
+            }
+        }
+    }
+
+    GridIndex g, n;
+    GridIndex nb[26];
+    double avg, weight;
+    for (int i = 0; i < (int)extrapolationIndices.size(); i++) {
+        g = extrapolationIndices[i];
+        Grid3d::getNeighbourGridIndices26(g, nb);
+
+        avg = 0.0;
+        weight = 0.0;
+        for (int idx = 0; idx < 26; idx++) {
+            n = nb[idx];
+            if (ugrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+                avg += ugrid(n);
+                weight += 1.0;
+            }
         }
 
-        return false;
-    }
-    else {
-        return true;
+        if (weight > 0.0) {
+            _MACVelocity.setU(g, avg / weight);
+        }
     }
 }
 
-void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, 
-                                               glm::vec3 *p1, glm::vec3 *v1) {
-    double timeleft = dt;
-    while (timeleft > 0.0) {
-        double timestep = _maxAdvectionDistanceFactor * _dx / glm::length(v0);
-        timestep = (double)fminf((float)timeleft, (float)timestep);
-        bool isOutsideBoundary = _integrateVelocity(p0, v0, -timestep, p1);
-        *v1 = _getVelocityAtPosition(*p1);
-        if (!isOutsideBoundary) {
-            break;
+void FluidSimulation::_advectVelocityFieldV() {
+    _MACVelocity.clearV();
+
+    Array3d<double> vgrid = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
+    Array3d<double> weightfield = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
+    _computeVelocityScalarField(vgrid, weightfield, 1);
+    
+    std::vector<GridIndex> extrapolationIndices;
+    double eps = 10e-9;
+    for (int k = 0; k < vgrid.depth; k++) {
+        for (int j = 0; j < vgrid.height; j++) {
+            for (int i = 0; i < vgrid.width; i++) {
+                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID)) {
+                    if (weightfield(i, j, k) < eps) {
+                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                    } else {
+                        _MACVelocity.setV(i, j, k, vgrid(i, j, k));
+                    }
+                }
+            }
+        }
+    }
+
+    GridIndex g, n;
+    GridIndex nb[26];
+    double avg, weight;
+    for (int i = 0; i < (int)extrapolationIndices.size(); i++) {
+        g = extrapolationIndices[i];
+        Grid3d::getNeighbourGridIndices26(g, nb);
+
+        avg = 0.0;
+        weight = 0.0;
+        for (int idx = 0; idx < 26; idx++) {
+            n = nb[idx];
+            if (vgrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+                avg += vgrid(n);
+                weight += 1.0;
+            }
         }
 
-        p0 = *p1; v0 = *v1;
-        timeleft -= timestep;
+        if (weight > 0.0) {
+            _MACVelocity.setV(g, avg / weight);
+        }
     }
 }
 
-void FluidSimulation::_advectVelocityFieldU(double dt) {
-    glm::vec3 p0, p1, v0, v1;
+void FluidSimulation::_advectVelocityFieldW() {
+    _MACVelocity.clearW();
+
+    Array3d<double> wgrid = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    Array3d<double> weightfield = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    _computeVelocityScalarField(wgrid, weightfield, 2);
+    
+    std::vector<GridIndex> extrapolationIndices;
+    double eps = 10e-9;
+    for (int k = 0; k < wgrid.depth; k++) {
+        for (int j = 0; j < wgrid.height; j++) {
+            for (int i = 0; i < wgrid.width; i++) {
+                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID)) {
+                    if (weightfield(i, j, k) < eps) {
+                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                    } else {
+                        _MACVelocity.setW(i, j, k, wgrid(i, j, k));
+                    }
+                }
+            }
+        }
+    }
+
+    GridIndex g, n;
+    GridIndex nb[26];
+    double avg, weight;
+    for (int i = 0; i < (int)extrapolationIndices.size(); i++) {
+        g = extrapolationIndices[i];
+        Grid3d::getNeighbourGridIndices26(g, nb);
+
+        avg = 0.0;
+        weight = 0.0;
+        for (int idx = 0; idx < 26; idx++) {
+            n = nb[idx];
+            if (wgrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+                avg += wgrid(n);
+                weight += 1.0;
+            }
+        }
+
+        if (weight > 0.0) {
+            _MACVelocity.setW(g, avg / weight);
+        }
+    }
+}
+
+void FluidSimulation::_advectVelocityField() {
+    _advectVelocityFieldU();
+    _advectVelocityFieldV();
+    _advectVelocityFieldW();
+
+    _MACVelocity.saveVelocityFieldState();
+
+    /*
+    glm::vec3 maxv;
+    GridIndex maxg;
+    double max = 0.0;
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID) && 
-                    !_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
-                    p0 = _MACVelocity.velocityIndexToPositionU(i, j, k);
-                    v0 = _MACVelocity.evaluateVelocityAtFaceCenterU(i, j, k);
-                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
-                    _MACVelocity.setTempU(i, j, k, v1.x);
-                }
-            }
-        }
-    }
-}
-
-void FluidSimulation::_advectVelocityFieldV(double dt) {
-    glm::vec3 p0, p1, v0, v1;
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
             for (int i = 0; i < _isize; i++) {
-                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID) && 
-                    !_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
-                    p0 = _MACVelocity.velocityIndexToPositionV(i, j, k);
-                    v0 = _MACVelocity.evaluateVelocityAtFaceCenterV(i, j, k);
-                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
-                    _MACVelocity.setTempV(i, j, k, v1.y);
+                glm::vec3 v = _MACVelocity.evaluateVelocityAtCellCenter(i, j, k);
+                double len = glm::length(v);
+                if (len > max) {
+                    max = len;
+                    maxv = v;
+                    maxg = GridIndex(i, j, k);
                 }
             }
         }
     }
-}
 
-void FluidSimulation::_advectVelocityFieldW(double dt) {
-    glm::vec3 p0, p1, v0, v1;
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID) && 
-                    !_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
-                    p0 = _MACVelocity.velocityIndexToPositionW(i, j, k);
-                    v0 = _MACVelocity.evaluateVelocityAtFaceCenterW(i, j, k);
-                    _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
-                    _MACVelocity.setTempW(i, j, k, v1.z);
-                }
-            }
+    std::cout << "===================================================================\n\n";
+    std::cout << "MAX MAG: " << max << "\t" << maxv.x << " " << maxv.y << " " << maxv.z << std::endl;
+    std::cout << "INDEX: " << maxg.i << " " << maxg.j << " " << maxg.k << std::endl;
+    std::cout << "\nMARKER PARTICLES: \n" << std::endl;
+
+    MarkerParticle p;
+    GridIndex g;
+    glm::vec3 pos;
+    int count = 0;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        g = p.index;
+        pos = p.position;
+
+        if (g.i == maxg.i && g.j == maxg.j && g.k == maxg.k) {
+            std::cout << g.i << " " << g.j << " " << g.k << "\t" <<
+                         pos.x << " " << pos.y << " " << pos.z << "\t" <<
+                         p.velocity.x << " " << p.velocity.y << " " << p.velocity.z << std::endl;
+            count++;
         }
     }
+    std::cout << "\nNUM MARKER PARTICLES: " << count << std::endl;
+
+    std::cout << "===================================================================\n\n";
+    */
 }
 
 glm::vec3 FluidSimulation::_getVelocityAtPosition(glm::vec3 p) {
     return _MACVelocity.evaluateVelocityAtPosition(p);
-}
-
-void FluidSimulation::_advectVelocityField(double dt) {
-    _MACVelocity.resetTemporaryVelocityField();
-    
-    std::thread t1 = std::thread(&FluidSimulation::_advectVelocityFieldU, this, dt);
-    std::thread t2 = std::thread(&FluidSimulation::_advectVelocityFieldV, this, dt);
-    std::thread t3 = std::thread(&FluidSimulation::_advectVelocityFieldW, this, dt);
-
-    t1.join();
-    t2.join();
-    t3.join();
-
-    _MACVelocity.commitTemporaryVelocityFieldValues();
 }
 
 /********************************************************************************
@@ -2430,6 +2546,29 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
 }
 
 /********************************************************************************
+    UPDATE MARKER PARTICLE VELOCITIES
+********************************************************************************/
+
+void FluidSimulation::_updateMarkerParticleVelocities() {
+    MarkerParticle p;
+    glm::vec3 vPIC, vFLIP;
+    glm::vec3 dv;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i];
+
+        if (_ratioPICFLIP > 0.0) {
+            vPIC = _MACVelocity.evaluateVelocityAtPosition(p.position);
+        }
+        if (_ratioPICFLIP < 1.0) {
+            dv = _MACVelocity.evaluateChangeInVelocityAtPosition(p.position);
+            vFLIP = p.velocity + dv;
+        }
+        
+        _markerParticles[i].velocity = _ratioPICFLIP * vPIC + (1 - _ratioPICFLIP) * vFLIP;
+    }
+}
+
+/********************************************************************************
     ADVANCE MARKER PARTICLES
 ********************************************************************************/
 
@@ -2517,6 +2656,7 @@ void FluidSimulation::_stepFluid(double dt) {
     StopWatch timer9 = StopWatch();
     StopWatch timer10 = StopWatch();
     StopWatch timer11 = StopWatch();
+    StopWatch timer12 = StopWatch();
 
     _logfile.separator();
     _logfile.timestamp();
@@ -2547,10 +2687,10 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update Level set:           \t", timer4.getTime(), 4);
 
     timer5.start();
-    _extrapolateFluidVelocities();
+    _advectVelocityField();
     timer5.stop();
 
-    _logfile.log("Extrapolate Fluid Velocities:\t", timer5.getTime(), 4);
+    _logfile.log("Advect Velocity Field:       \t", timer5.getTime(), 4);
 
     timer6.start();
     _applyBodyForcesToVelocityField(dt);
@@ -2559,10 +2699,10 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Apply Body Forces:           \t", timer6.getTime(), 4);
 
     timer7.start();
-    _advectVelocityField(dt);
+    _extrapolateFluidVelocities();
     timer7.stop();
 
-    _logfile.log("Advect Velocity Field:       \t", timer7.getTime(), 4);
+    _logfile.log("Extrapolate Fluid Velocities:\t", timer7.getTime(), 4);
 
     timer8.start();
     _updatePressureGrid(dt);
@@ -2577,16 +2717,22 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Apply Pressure:              \t", timer9.getTime(), 4);
 
     timer10.start();
-    _updateDiffuseMaterial(dt);
+    //_updateDiffuseMaterial(dt);
     timer10.stop();
 
     _logfile.log("Update Diffuse Material:     \t", timer10.getTime(), 4);
 
     timer11.start();
-    _advanceMarkerParticles(dt);
+    _updateMarkerParticleVelocities();
     timer11.stop();
 
-    _logfile.log("Advance Marker Particles:    \t", timer11.getTime(), 4);
+    _logfile.log("Update PIC/FLIP velocities   \t", timer11.getTime(), 4);
+
+    timer12.start();
+    _advanceMarkerParticles(dt);
+    timer12.stop();
+
+    _logfile.log("Advance Marker Particles:    \t", timer12.getTime(), 4);
 
     timer1.stop();
 
@@ -2606,6 +2752,7 @@ void FluidSimulation::_stepFluid(double dt) {
     double p9 = floor(1000 * timer9.getTime() / totalTime) / 10.0;
     double p10 = floor(1000 * timer10.getTime() / totalTime) / 10.0;
     double p11 = floor(1000 * timer11.getTime() / totalTime) / 10.0;
+    double p12 = floor(1000 * timer12.getTime() / totalTime) / 10.0;
 
     _logfile.log("---Percentage Breakdown---", "");
     _logfile.log("Update Fluid Cells:          \t", p2, 3);
@@ -2617,7 +2764,8 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update Pressure Grid:        \t", p8, 3);
     _logfile.log("Apply Pressure:              \t", p9, 3);
     _logfile.log("Update Diffuse Material:     \t", p10, 3);
-    _logfile.log("Advance Marker Particles:    \t", p11, 3);
+    _logfile.log("Update PIC/FLIP Velocity:    \t", p11, 3);
+    _logfile.log("Advance Marker Particles:    \t", p12, 3);
     _logfile.newline();
 
     _logfile.log("Simulation time: ", _simulationTime, 3);

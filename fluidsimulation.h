@@ -118,18 +118,25 @@ public:
 private:
     struct MarkerParticle {
         glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
+        glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
         GridIndex index = GridIndex(0, 0, 0);
 
         MarkerParticle() : position(0.0, 0.0, 0.0), 
+                           velocity(0.0, 0.0, 0.0),
                            index(0, 0, 0) {}
 
-        MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : 
-                           position(p),
-                           index(ii, jj, kk) {}
+        MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
+                                                              velocity(0.0, 0.0, 0.0),
+                                                              index(ii, jj, kk) {}
+        MarkerParticle(glm::vec3 p, glm::vec3 v, GridIndex g) : 
+                                                              position(p),
+                                                              velocity(v),
+                                                              index(g) {}
 
         MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
-                           position(x, y, z),
-                           index(ii, jj, kk) {}
+                        position(x, y, z),
+                        velocity(0.0, 0.0, 0.0),
+                        index(ii, jj, kk) {}
     };
 
     struct DiffuseParticleEmitter {
@@ -277,13 +284,13 @@ private:
     void _applyBodyForcesToVelocityField(double dt);
 
     // Advect fluid velocities, but not extrapolated velocities
-    void _advectVelocityField(double dt);
-    void _advectVelocityFieldU(double dt);
-    void _advectVelocityFieldV(double dt);
-    void _advectVelocityFieldW(double dt);
-    void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, 
-                                  glm::vec3 *p1, glm::vec3 *v1);
-    bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
+    void _advectVelocityField();
+    void _advectVelocityFieldU();
+    void _advectVelocityFieldV();
+    void _advectVelocityFieldW();
+    void _computeVelocityScalarField(Array3d<double> &field,
+                                     Array3d<double> &weightfield, 
+                                     int dir);
     glm::vec3 _getVelocityAtPosition(glm::vec3 p);
 
     // Calculate pressure values to satisfy incompressibility condition
@@ -346,6 +353,9 @@ private:
                                       DiffuseParticle &nextdp,double dt);
     void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                      DiffuseParticle &nextdp,double dt);
+
+    // Transfer grid velocity to marker particles
+    void _updateMarkerParticleVelocities();
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
@@ -472,7 +482,7 @@ private:
     int _ksize = 0;
 
     double _CFLConditionNumber = 5.0;
-    double _minTimeStep = 1.0 / 1200.0;
+    double _minTimeStep = 1.0 / 300.0;
     double _maxTimeStep = 1.0 / 15.0;
     double _maxAdvectionDistanceFactor = 2.5; // max number of cells an advection
                                               // integration can travel
@@ -500,6 +510,8 @@ private:
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
     double _maxFlatCurvature = 0.05;
+
+    float _ratioPICFLIP = 0.5f;
 
     glm::vec3 _bodyForce;
 

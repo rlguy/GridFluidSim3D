@@ -95,11 +95,13 @@ public:
     glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
     glm::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
     glm::vec3 evaluateVelocityAtPositionLinear(glm::vec3 pos);
+    glm::vec3 evaluateChangeInVelocityAtPosition(glm::vec3 pos);
 
     glm::vec3 velocityIndexToPositionU(int i, int j, int k);
     glm::vec3 velocityIndexToPositionV(int i, int j, int k);
     glm::vec3 velocityIndexToPositionW(int i, int j, int k);
 
+    void saveVelocityFieldState();
 private:
     void _initializeVelocityGrids();
 
@@ -120,6 +122,9 @@ private:
     double _interpolateLinearU(double x, double y, double z);
     double _interpolateLinearV(double x, double y, double z);
     double _interpolateLinearW(double x, double y, double z);
+    double _interpolateDeltaVelocityU(double x, double y, double z);
+    double _interpolateDeltaVelocityV(double x, double y, double z);
+    double _interpolateDeltaVelocityW(double x, double y, double z);
 
     double _dx = 0.1;
     int _isize = 10;
@@ -132,6 +137,9 @@ private:
     Array3d<double> _temp_u;
     Array3d<double> _temp_v;
     Array3d<double> _temp_w;
+    Array3d<double> _save_u;
+    Array3d<double> _save_v;
+    Array3d<double> _save_w;
     Array3d<bool> _is_set_u;
     Array3d<bool> _is_set_v;
     Array3d<bool> _is_set_w;
