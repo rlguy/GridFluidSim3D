@@ -287,17 +287,19 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 
         if (type == 0) {                              // Fluid
             glColor4d(0.0, 0.753, 0.922, 1.0);
+            glPopMatrix();
+            continue;
         } else if (type == 1) {                       // Solid
             glColor4d(0.5, 0.5, 0.5, 1.0);            
         } else if (type == 2) {                       // Bubble
             glColor4d(1.0, 0.0, 0.0, 1.0);
-            size = hw/1.0;
+            size = hw/2.0;
         } else if (type == 3) {                       // Foam
             glColor4d(1.0, 1.0, 1.0, 1.0);
-            size = hw/1.0;
+            size = hw/2.0;
         } else if (type == 4) {                       // Spray
             glColor4d(0.0, 1.0, 0.0, 1.0);
-            size = hw/1.0;
+            size = hw/2.0;
         }
 
         glBegin(GL_QUADS);
@@ -364,6 +366,7 @@ void FluidRenderer::drawSurfaceTriangles() {
         n2 = surface->normals[t.tri[1]];
         n3 = surface->normals[t.tri[2]];
 
+        /*
         float k = levelset->getSurfaceCurvature(i);
         glm::vec3 p = (p1 + p2 + p3) / 3.0f;
         glm::vec3 n = glm::normalize((n1 + n2 + n3) / 3.0f);
@@ -378,6 +381,7 @@ void FluidRenderer::drawSurfaceTriangles() {
         float f = (k - min) / (max - min);
         glm::vec3 c = (1.0f - f)*glm::vec3(0.8, 0.8, 0.8) + f*glm::vec3(0.0, 1.0, 0.0);
         glColor3d(c.x, c.y, c.z);
+        */
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3d(p1.x, p1.y, p1.z);

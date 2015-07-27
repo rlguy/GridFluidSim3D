@@ -40,6 +40,8 @@ struct DiffuseParticle {
     float lifetime;
     int type;
 
+    int debugCount = 0;
+
     DiffuseParticle() : position(0.0, 0.0, 0.0),
                         velocity(0.0, 0.0, 0.0),
                         lifetime(0.0),
@@ -263,6 +265,11 @@ private:
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();
     void _writeSurfaceMeshToFile();
+    TriangleMesh _polygonizeSurface();
+    void _smoothSurfaceMesh();
+    void _getSmoothVertices(std::vector<int> &smoothVertices);
+    bool _isVertexNearSolid(glm::vec3 v, double eps);
+    void _updateSmoothTriangleList(std::vector<int> &smoothVertices);
 
     // Update level set surface
     void _updateLevelSetSignedDistance();
@@ -280,7 +287,6 @@ private:
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
     glm::vec3 _getVelocityAtNearestPointOnFluidSurface(glm::vec3 p);
 
-
     // Add gravity to fluid velocities and extrapolated velocities
     void _applyBodyForcesToVelocityField(double dt);
 
@@ -291,6 +297,7 @@ private:
     void _advectVelocityFieldW(double dt);
     void _backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1, glm::vec3 *v1);
     bool _integrateVelocity(glm::vec3 p0, glm::vec3 v0, double dt, glm::vec3 *p1);
+    glm::vec3 _getVelocityAtPosition(glm::vec3 p);
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(double dt);
@@ -359,8 +366,8 @@ private:
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
     std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
-    bool _isPointOnCellFace(glm::vec3 p, CellFace f);
-    bool _isPointOnSolidFluidBoundary(glm::vec3 p, CellFace *f);
+    bool _isPointOnCellFace(glm::vec3 p, CellFace f, double eps);
+    bool _isPointOnSolidBoundary(glm::vec3 p, CellFace *f, double eps);
     CellFace _getCellFace(int i, int j, int k, glm::vec3 normal);
     void _getCellFaces(int i, int j, int k, CellFace[6]);
     bool _getVectorFaceIntersection(glm::vec3 p0, glm::vec3 normal, CellFace f, glm::vec3 *intersect);
@@ -520,6 +527,7 @@ private:
     int _surfaceReconstructionSmoothingIterations = 3;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
+    std::vector<bool> _isSurfaceTriangleSmooth;
     
     std::vector<FluidSource*> _fluidSources;
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
@@ -529,17 +537,18 @@ private:
     std::vector<DiffuseParticle> _diffuseParticles;
 
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
-    double _minWavecrestCurvature = 0.5;
+    double _minWavecrestCurvature = 0.35;
     double _maxWavecrestCurvature = 2.0;
     double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 25.0;
+    double _maxParticleEnergy = 100.0;
     double _minTurbulence = 250.0;
     double _maxTurbulence = 350.0;
-    double _wavecrestEmissionRate = 100.0;
-    double _turbulenceEmissionRate = 100.0;
+    double _wavecrestEmissionRate = 200.0;
+    double _turbulenceEmissionRate = 200.0;
     double _maxDiffuseParticleLifetime = 2.0;
     double _maxFoamToSurfaceDistance = 1.0; // in number of grid cells
     double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
-    double _bubbleBouyancyCoefficient = 0.5;
-    double _bubbleDragCoefficient = 0.5;
+    double _bubbleBouyancyCoefficient = 4.0;
+    double _bubbleDragCoefficient = 1.0;
+    double _maxFlatCurvature = 0.05;
 };

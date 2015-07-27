@@ -601,13 +601,7 @@ void FluidSimulation::_writeSurfaceMeshToFile() {
     sprayMesh.writeMeshToPLY("bakefiles/spray" + currentFrame + ".ply");
 }
 
-void FluidSimulation::_reconstructFluidSurface() {
-    StopWatch t1 = StopWatch();
-    StopWatch t2 = StopWatch();
-    StopWatch t3 = StopWatch();
-    StopWatch t4 = StopWatch();
-
-    t1.start();
+TriangleMesh FluidSimulation::_polygonizeSurface() {
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_i_voxels + 1, 
                                                                   _j_voxels + 1, 
                                                                   _k_voxels + 1, _dx);
@@ -626,10 +620,104 @@ void FluidSimulation::_reconstructFluidSurface() {
     polygonizer.setInsideCellIndices(_fluidCellIndices);
 
     polygonizer.polygonizeSurface();
-    _surfaceMesh = polygonizer.getTriangleMesh();
+    return polygonizer.getTriangleMesh();
+}
+
+bool FluidSimulation::_isVertexNearSolid(glm::vec3 v, double eps) {
+    GridIndex g = Grid3d::positionToGridIndex(v, _dx);
+    if (_isCellSolid(g)) {
+        return true;
+    }
+
+    // is v near the solid boundary?
+    glm::vec3 e = glm::vec3(eps, eps, eps);
+    if (g.i == 1 || g.i == _i_voxels - 2 || 
+        g.j == 1 || g.j == _j_voxels - 2 || 
+        g.k == 1 || g.k == _k_voxels - 2) {
+
+        glm::vec3 min = Grid3d::GridIndexToPosition(1, 1, 1, _dx);
+        glm::vec3 max = Grid3d::GridIndexToPosition(_i_voxels - 2, 
+                                                    _j_voxels - 2, 
+                                                    _k_voxels - 2, _dx);
+        AABB bbox = AABB(min + e, max + glm::vec3(_dx, _dx, _dx) - e);
+        if (!bbox.isPointInside(v)) {
+            return true;
+        }
+    }
+
+    // is v near a solid cell?
+    glm::vec3 gp = Grid3d::GridIndexToPosition(g, _dx);
+    AABB bbox = AABB(gp + e, gp + glm::vec3(_dx, _dx, _dx) - e);
+    if (bbox.isPointInside(v)) {
+        return false;
+    }
+
+    glm::vec3 points[26] {
+        v-e.x, v+e.x, v-e.y, v+e.y, v-e.z, v+e.z, v-e.x-e.y, v-e.x+e.y,
+        v+e.x-e.y, v+e.x+e.y, v-e.x-e.z, v-e.x+e.z, v+e.x-e.z, v+e.x+e.z, 
+        v-e.y-e.z, v-e.y+e.z, v+e.y-e.z, v+e.y+e.z, v-e.x-e.y-e.z,
+        v-e.x-e.y+e.z, v-e.x+e.y-e.z, v-e.x+e.y+e.z, v+e.x-e.y-e.z,
+        v+e.x-e.y+e.z, v+e.x+e.y-e.z, v+e.x+e.y+e.z};
+    
+    int i, j, k;
+    for (int idx = 0; idx < 26; idx++) {
+        Grid3d::positionToGridIndex(points[idx], _dx, &i, &j, &k);
+        if (_isCellSolid(i, j, k)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FluidSimulation::_getSmoothVertices(std::vector<int> &smoothVertices) {
+    double eps = 0.02*_dx;
+    glm::vec3 v;
+    for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
+        v = _surfaceMesh.vertices[i];
+        if (!_isVertexNearSolid(v, eps)) {
+            smoothVertices.push_back(i);
+        }
+    }
+}
+
+void FluidSimulation::_updateSmoothTriangleList(std::vector<int> &smoothVertices) {
+    int vsize = _surfaceMesh.vertices.size();
+    int tsize = _surfaceMesh.triangles.size();
+
+    std::vector<bool> isSmooth;
+    isSmooth.assign(vsize, false);
+    for (int i = 0; i < (int)smoothVertices.size(); i++) {
+        assert(smoothVertices[i] >= 0 && smoothVertices[i] < vsize);
+        isSmooth[smoothVertices[i]] = true;
+    }
+
+    std::vector<bool> isTriangleSmooth;
+    isSmooth.assign(tsize, false);
+    Triangle t;
+    for (int i = 0; i < tsize; i++) {
+        t = _surfaceMesh.triangles[i];
+        if (isSmooth[t.tri[0]] || isSmooth[t.tri[1]] || isSmooth[t.tri[2]]) {
+            isTriangleSmooth[i] = true;
+        }
+    }
+
+    _isSurfaceTriangleSmooth = isTriangleSmooth;
+}
+
+void FluidSimulation::_smoothSurfaceMesh() {
+    std::vector<int> smoothVertices;
+    _getSmoothVertices(smoothVertices);
 
     _surfaceMesh.smooth(_surfaceReconstructionSmoothingValue, 
-                        _surfaceReconstructionSmoothingIterations);
+                        _surfaceReconstructionSmoothingIterations,
+                        smoothVertices);
+    _updateSmoothTriangleList(smoothVertices);
+}
+
+void FluidSimulation::_reconstructFluidSurface() {
+    _surfaceMesh = _polygonizeSurface();
+    _smoothSurfaceMesh();
 }
 
 /********************************************************************************
@@ -809,7 +897,7 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, in
 
 glm::vec3 FluidSimulation::_getVelocityAtNearestPointOnFluidSurface(glm::vec3 p) {
     p = _levelset.getClosestPointOnSurface(p);
-    return _MACVelocity.evaluateVelocityAtPosition(p);
+    return _getVelocityAtPosition(p);
 }
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx) {
@@ -949,7 +1037,7 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
 
 glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 k1 = v0;
-    glm::vec3 k2 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    glm::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
     glm::vec3 p1 = p0 + (float)dt*k2;
 
     return p1;
@@ -957,8 +1045,8 @@ glm::vec3 FluidSimulation::_RK2(glm::vec3 p0, glm::vec3 v0, double dt) {
 
 glm::vec3 FluidSimulation::_RK3(glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 k1 = v0;
-    glm::vec3 k2 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
-    glm::vec3 k3 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)(0.75*dt)*k2);
+    glm::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    glm::vec3 k3 = _getVelocityAtPosition(p0 + (float)(0.75*dt)*k2);
     glm::vec3 p1 = p0 + (float)(dt/9.0f)*(2.0f*k1 + 3.0f*k2 + 4.0f*k3);
 
     return p1;
@@ -966,16 +1054,15 @@ glm::vec3 FluidSimulation::_RK3(glm::vec3 p0, glm::vec3 v0, double dt) {
 
 glm::vec3 FluidSimulation::_RK4(glm::vec3 p0, glm::vec3 v0, double dt) {
     glm::vec3 k1 = v0;
-    glm::vec3 k2 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
-    glm::vec3 k3 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k2);
-    glm::vec3 k4 = _MACVelocity.evaluateVelocityAtPosition(p0 + (float)dt*k3);
+    glm::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    glm::vec3 k3 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k2);
+    glm::vec3 k4 = _getVelocityAtPosition(p0 + (float)dt*k3);
     glm::vec3 p1 = p0 + (float)(dt/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
 
     return p1;
 }
 
-bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f) {
-    double eps = 10e-6;
+bool FluidSimulation::_isPointOnCellFace(glm::vec3 p, CellFace f, double eps) {
 
     if (fabs(fabs(f.normal.x) - 1.0) < eps) {
         return fabs(p.x - f.minx) < eps &&
@@ -1056,7 +1143,8 @@ bool FluidSimulation::_getVectorFaceIntersection(glm::vec3 p0, glm::vec3 vnorm, 
     bool isIntersecting = Collision::lineIntersectsPlane(
         p0, vnorm, planep, f.normal, intersect);
 
-    if (_isPointOnCellFace(*intersect, f)) {
+    double eps = 10e-9;
+    if (_isPointOnCellFace(*intersect, f, eps)) {
         return true;
     }
 
@@ -1065,7 +1153,7 @@ bool FluidSimulation::_getVectorFaceIntersection(glm::vec3 p0, glm::vec3 vnorm, 
 
 // Check if p lies on a cell face which borders a fluid cell and a solid cell. 
 // if so, *f will store the face with normal pointing away from solid
-bool FluidSimulation::_isPointOnSolidFluidBoundary(glm::vec3 p, CellFace *f) {
+bool FluidSimulation::_isPointOnSolidBoundary(glm::vec3 p, CellFace *f, double eps) {
     int i, j, k;
     Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
 
@@ -1075,7 +1163,7 @@ bool FluidSimulation::_isPointOnSolidFluidBoundary(glm::vec3 p, CellFace *f) {
     CellFace faces[6];
     _getCellFaces(i, j, k, faces);
     for (int idx = 0; idx < 6; idx++) {
-        if (_isPointOnCellFace(p, faces[idx])) {
+        if (_isPointOnCellFace(p, faces[idx], eps)) {
             glm::vec3 n = faces[idx].normal;
 
             int fi, fj, fk;
@@ -1182,15 +1270,6 @@ bool FluidSimulation::_findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *f
 glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0, 
                                                         glm::vec3 p1, 
                                                         glm::vec3 *normal) {
-    // p0 might lie right on a boundary face. In this case, the cell index of 
-    // p0 may be calculated as a solid cell
-    CellFace boundaryFace;
-    bool isOnBoundary = _isPointOnSolidFluidBoundary(p0, &boundaryFace);
-    if (isOnBoundary) {
-        *normal = boundaryFace.normal;
-        return p0;
-    }
-
     int fi, fj, fk, si, sj, sk;
     Grid3d::positionToGridIndex(p0, _dx, &fi, &fj, &fk);
     Grid3d::positionToGridIndex(p1, _dx, &si, &sj, &sk);
@@ -1268,7 +1347,7 @@ void FluidSimulation::_backwardsAdvectVelocity(glm::vec3 p0, glm::vec3 v0, doubl
         double timestep = _maxAdvectionDistanceFactor * _dx / glm::length(v0);
         timestep = (double)fminf((float)timeleft, (float)timestep);
         bool isOutsideBoundary = _integrateVelocity(p0, v0, -timestep, p1);
-        *v1 = _MACVelocity.evaluateVelocityAtPosition(*p1);
+        *v1 = _getVelocityAtPosition(*p1);
         if (!isOutsideBoundary) {
             break;
         }
@@ -1283,7 +1362,8 @@ void FluidSimulation::_advectVelocityFieldU(double dt) {
     for (int k = 0; k < _k_voxels; k++) {
         for (int j = 0; j < _j_voxels; j++) {
             for (int i = 0; i < _i_voxels + 1; i++) {
-                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID)) {
+                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID) && 
+                    !_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
                     p0 = _MACVelocity.velocityIndexToPositionU(i, j, k);
                     v0 = _MACVelocity.evaluateVelocityAtFaceCenterU(i, j, k);
                     _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
@@ -1299,7 +1379,8 @@ void FluidSimulation::_advectVelocityFieldV(double dt) {
     for (int k = 0; k < _k_voxels; k++) {
         for (int j = 0; j < _j_voxels + 1; j++) {
             for (int i = 0; i < _i_voxels; i++) {
-                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID)) {
+                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID) && 
+                    !_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
                     p0 = _MACVelocity.velocityIndexToPositionV(i, j, k);
                     v0 = _MACVelocity.evaluateVelocityAtFaceCenterV(i, j, k);
                     _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
@@ -1315,7 +1396,8 @@ void FluidSimulation::_advectVelocityFieldW(double dt) {
     for (int k = 0; k < _k_voxels + 1; k++) {
         for (int j = 0; j < _j_voxels; j++) {
             for (int i = 0; i < _i_voxels; i++) {
-                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID)) {
+                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID) && 
+                    !_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
                     p0 = _MACVelocity.velocityIndexToPositionW(i, j, k);
                     v0 = _MACVelocity.evaluateVelocityAtFaceCenterW(i, j, k);
                     _backwardsAdvectVelocity(p0, v0, dt, &p0, &v1);
@@ -1324,6 +1406,10 @@ void FluidSimulation::_advectVelocityFieldW(double dt) {
             }
         }
     }
+}
+
+glm::vec3 FluidSimulation::_getVelocityAtPosition(glm::vec3 p) {
+    return _MACVelocity.evaluateVelocityAtPosition(p);
 }
 
 void FluidSimulation::_advectVelocityField(double dt) {
@@ -1756,6 +1842,125 @@ void FluidSimulation::_updatePressureGrid(double dt) {
 }
 
 /********************************************************************************
+    APPLY PRESSURE TO VELOCITY FIELD
+********************************************************************************/
+
+void FluidSimulation::_applyPressureToVelocityField(double dt) {
+    _MACVelocity.resetTemporaryVelocityField();
+
+    double usolid = 0.0;   // solids are stationary
+    double scale = dt / (_density * _dx);
+    double invscale = 1.0 / scale;
+
+    for (int k = 0; k < _k_voxels; k++) {
+        for (int j = 0; j < _j_voxels; j++) {
+            for (int i = 0; i < _i_voxels + 1; i++) {
+                if (_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
+                    _MACVelocity.setTempV(i, j, k, 0.0);
+                }
+
+                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID) &&
+                    !_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
+                    int ci = i - 1; int cj = j; int ck = k;
+
+                    double p0, p1;
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci + 1, cj, ck)) {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci + 1, cj, ck);
+                    } else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = _pressureGrid(ci + 1, cj, ck) - 
+                             invscale*(_MACVelocity.U(i, j, k) - usolid);
+                        p1 = _pressureGrid(ci + 1, cj, ck);
+                    } else {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci, cj, ck) +
+                             invscale*(_MACVelocity.U(i, j, k) - usolid);
+                    }
+
+                    double unext = _MACVelocity.U(i, j, k) - scale*(p1 - p0);
+                    _MACVelocity.setTempU(i, j, k, unext);
+                }
+
+                if (_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
+                    _MACVelocity.setTempU(i, j, k, 0.0);
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < _k_voxels; k++) {
+        for (int j = 0; j < _j_voxels + 1; j++) {
+            for (int i = 0; i < _i_voxels; i++) {
+                if (_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
+                    _MACVelocity.setTempV(i, j, k, 0.0);
+                }
+
+                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID) &&
+                    !_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
+                    int ci = i; int cj = j - 1; int ck = k;
+
+                    double p0, p1;
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj + 1, ck)) {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci, cj + 1, ck);
+                    }
+                    else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = _pressureGrid(ci, cj + 1, ck) -
+                            invscale*(_MACVelocity.V(i, j, k) - usolid);
+                        p1 = _pressureGrid(ci, cj + 1, ck);
+                    }
+                    else {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci, cj, ck) +
+                            invscale*(_MACVelocity.V(i, j, k) - usolid);
+                    }
+
+                    double vnext = _MACVelocity.V(i, j, k) - scale*(p1 - p0);
+                    _MACVelocity.setTempV(i, j, k, vnext);
+                }
+
+            }
+        }
+    }
+
+    for (int k = 0; k < _k_voxels + 1; k++) {
+        for (int j = 0; j < _j_voxels; j++) {
+            for (int i = 0; i < _i_voxels; i++) {
+                if (_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
+                    _MACVelocity.setTempW(i, j, k, 0.0);
+                }
+
+                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID) &&
+                    !_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
+                    int ci = i; int cj = j; int ck = k - 1;
+
+                    double p0, p1;
+                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj, ck + 1)) {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci, cj, ck + 1);
+                    }
+                    else if (_isCellSolid(ci, cj, ck)) {
+                        p0 = _pressureGrid(ci, cj, ck + 1) -
+                             invscale*(_MACVelocity.W(i, j, k) - usolid);
+                        p1 = _pressureGrid(ci, cj, ck + 1);
+                    }
+                    else {
+                        p0 = _pressureGrid(ci, cj, ck);
+                        p1 = _pressureGrid(ci, cj, ck) +
+                             invscale*(_MACVelocity.W(i, j, k) - usolid);
+                    }
+
+                    double wnext = _MACVelocity.W(i, j, k) - scale*(p1 - p0);
+                    _MACVelocity.setTempW(i, j, k, wnext);
+                }
+            }
+        }
+    }
+
+    _MACVelocity.commitTemporaryVelocityFieldValues();
+}
+
+/********************************************************************************
     UPDATE DIFFUSE MATERIAL PARTICLES
 ********************************************************************************/
 
@@ -1775,7 +1980,7 @@ void FluidSimulation::_sortMarkerParticlePositions(std::vector<glm::vec3> &surfa
 
 double FluidSimulation::_getWavecrestPotential(glm::vec3 p, glm::vec3 *v) {
 
-    *v = _MACVelocity.evaluateVelocityAtPositionLinear(p);
+    *v = _getVelocityAtPosition(p);
     glm::vec3 normal;
     double k = _levelset.getSurfaceCurvature(p, &normal);
 
@@ -1824,7 +2029,7 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
 
         glm::vec3 velocity;
         double Iwc = _getWavecrestPotential(p, &velocity);
-        double It = _getTurbulencePotential(p, _turbulenceField);
+        double It = 0.0;
 
         if (Iwc > 0.0 || It > 0.0) {
             double Ie = _getEnergyPotential(p, velocity);
@@ -1839,13 +2044,33 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
         double It = _getTurbulencePotential(p, _turbulenceField);
 
         if (It > 0.0) {
-            glm::vec3 velocity = _MACVelocity.evaluateVelocityAtPositionLinear(p);
+            glm::vec3 velocity = _getVelocityAtPosition(p);
             double Ie = _getEnergyPotential(p, velocity);
             if (Ie > 0.0) {
                 emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, 0.0, It));
             }
         }
     }
+
+    int wcCount = 0;
+    int tCount = 0;
+
+    DiffuseParticleEmitter e;
+    for (int i = 0; i < emitters.size(); i++) {
+        e = emitters[i];
+        //std::cout << glm::length(e.velocity) << " " << e.energyPotential <<
+        //                                        " " << e.wavecrestPotential <<
+        //                                        " " << e.turbulencePotential << std::endl;
+
+        if (e.wavecrestPotential > 0) {
+            wcCount++;
+        }
+        if (e.turbulencePotential > 0) {
+            tCount++;
+        }
+    }
+    std::cout << "NUM EMITTERS: " << emitters.size() << " " << wcCount << " " << tCount << std::endl;
+    std::cout << "NUM DIFFUSE PARTICLE: " << _diffuseParticles.size() << std::endl;
 }
 
 int FluidSimulation::_getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
@@ -1868,6 +2093,7 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
         return;
     }
 
+    double particleRadius = 4.0*_markerParticleRadius;
     glm::vec3 axis = glm::normalize(emitter.velocity);
 
     double eps = 10e-6;
@@ -1878,8 +2104,8 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
         e1 = glm::normalize(glm::cross(axis, glm::vec3(0.0, 1.0, 0.0)));
     }
 
-    e1 = e1*(float)_markerParticleRadius;
-    glm::vec3 e2 = glm::normalize(glm::cross(axis, e1)) * (float)_markerParticleRadius;
+    e1 = e1*(float)particleRadius;
+    glm::vec3 e2 = glm::normalize(glm::cross(axis, e1)) * (float)particleRadius;
 
     float Xr, Xt, Xh, r, theta, h, sinval, cosval, lifetime;
     glm::vec3 p, v;
@@ -1889,7 +2115,7 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
         Xt = (float)(rand()) / (float)RAND_MAX;
         Xh = (float)(rand()) / (float)RAND_MAX;
 
-        r = _markerParticleRadius*sqrt(Xr);
+        r = particleRadius*sqrt(Xr);
         theta = Xt*2.0f*3.141592653;
         h = Xh*glm::length((float)dt*emitter.velocity);
         sinval = sin(theta);
@@ -1902,7 +2128,7 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
             continue;
         }
 
-        v = emitter.velocity + r*cosval*e1 + r*sinval*e2;
+        v = _getVelocityAtPosition(p);
         lifetime = (float)(emitter.energyPotential*_maxDiffuseParticleLifetime);
         _diffuseParticles.push_back(DiffuseParticle(p, v, lifetime));
     }
@@ -1935,6 +2161,13 @@ int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
         }
     }
 
+    if (type == DP_FOAM) {
+        double k = _levelset.getSurfaceCurvature(dp.position);
+        if (k < _maxFlatCurvature) {
+            type = DP_BUBBLE;
+        }
+    }
+
     return type;
 }
 
@@ -1951,7 +2184,7 @@ void FluidSimulation::_updateDiffuseParticleTypesAndVelocities() {
         // but spray and bubble particles do, so reinitialize velocity
         // when transitioning from foam type.
         if (type != DP_FOAM && dp.type == DP_FOAM) {
-            glm::vec3 v = _MACVelocity.evaluateVelocityAtPositionLinear(dp.position);
+            glm::vec3 v = _getVelocityAtPosition(dp.position);
             _diffuseParticles[i].velocity = v;
         }
     }
@@ -1972,32 +2205,36 @@ void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
             livingParticles.push_back(_diffuseParticles[i]);
         }
     }
+
+    int deaths = _diffuseParticles.size() - livingParticles.size();
+    std::cout << "PARTICLE DEATHS: " << deaths << std::endl;
+
     _diffuseParticles = livingParticles;
 }
 
 void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
                                                     DiffuseParticle &nextdp,
                                                     double dt) {
-    glm::vec3 vmac = _MACVelocity.evaluateVelocityAtPositionLinear(dp.position);
+    glm::vec3 vmac = _getVelocityAtPosition(dp.position);
     glm::vec3 vbub = dp.velocity;
     glm::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient*_bodyForce;
     glm::vec3 dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
 
-    nextdp.velocity += (float)dt*(bouyancyVelocity + dragVelocity);
-    nextdp.position += nextdp.velocity*(float)dt;
+    nextdp.velocity = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
+    nextdp.position = dp.position + nextdp.velocity*(float)dt;
 }
 
 void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
                                                    DiffuseParticle &nextdp,
                                                    double dt) {
-    nextdp.velocity += _bodyForce*(float)dt;
-    nextdp.position += nextdp.velocity*(float)dt;
+    nextdp.velocity = dp.velocity +  _bodyForce*(float)dt;
+    nextdp.position = dp.position + nextdp.velocity*(float)dt;
 }
 
 void FluidSimulation::_getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                                   DiffuseParticle &nextdp,
                                                   double dt) {
-    glm::vec3 v0 = _MACVelocity.evaluateVelocityAtPosition(dp.position);
+    glm::vec3 v0 = _getVelocityAtPosition(dp.position);
     nextdp.velocity = dp.velocity;
     nextdp.position = _RK2(dp.position, v0, dt);
 }
@@ -2024,14 +2261,23 @@ void FluidSimulation::_advanceDiffuseParticles(double dt) {
                                                           nextdp.position, &norm);
 
             // jog p back a bit from cell face
-            nextdp.position = coll + (float)(0.1*_dx)*norm;
+            nextdp.position = coll + (float)(0.01*_dx)*norm;
+
+            glm::vec3 v = nextdp.velocity;
+            if (fabs(norm.x) == 1.0) {
+                nextdp.velocity = glm::vec3(0.0, v.y, v.z);
+            } else if (fabs(norm.y) == 1.0) {
+                nextdp.velocity = glm::vec3(v.x, 0.0, v.z);
+            } else if (fabs(norm.z) == 1.0) {
+                nextdp.velocity = glm::vec3(v.x, v.y, 0.0);
+            }
         }
 
         g = Grid3d::positionToGridIndex(nextdp.position, _dx);
         if (!_isCellSolid(g)) {
             _diffuseParticles[i].position = nextdp.position;
             _diffuseParticles[i].velocity = nextdp.velocity;
-        }
+        } 
     }
 }
 
@@ -2039,9 +2285,32 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     std::vector<DiffuseParticleEmitter> emitters;
     _getDiffuseParticleEmitters(emitters);
     _emitDiffuseParticles(emitters, dt);
+
+    if (_diffuseParticles.size() == 0.0) {
+        return;
+    }
+
     _updateDiffuseParticleTypesAndVelocities();
     _updateDiffuseParticleLifetimes(dt);
     _advanceDiffuseParticles(dt);
+
+    int spraycount = 0;
+    int bubblecount = 0;
+    int foamcount = 0;
+    for (int i = 0; i < _diffuseParticles.size(); i++) {
+        int type = _diffuseParticles[i].type;
+        if (type == DP_SPRAY) {
+            spraycount++;
+        } else if (type == DP_BUBBLE) {
+            bubblecount++;
+        } else if (type == DP_FOAM) {
+            foamcount++;
+        }
+    }
+
+    std::cout << "PARTICLE TYPES: SPRAY: " << spraycount << 
+                 " BUBBLE: " << bubblecount << 
+                 " FOAM: " << foamcount << std::endl; 
 }
 
 /********************************************************************************
@@ -2057,7 +2326,7 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
     for (int idx = startIdx; idx <= endIdx; idx++) {
         mp = _markerParticles[idx];
 
-        vi = _MACVelocity.evaluateVelocityAtPosition(mp.position);
+        vi = _getVelocityAtPosition(mp.position);
         p = _RK4(mp.position, vi, dt);
 
         if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _i_voxels, _j_voxels, _k_voxels)) {
@@ -2067,12 +2336,13 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
         int i, j, k;
         Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
 
+        glm::vec3 norm;
         if (_isCellSolid(i, j, k)) {
-            glm::vec3 norm;
+            
             glm::vec3 coll = _calculateSolidCellCollision(mp.position, p, &norm);
 
             // jog p back a bit from cell face
-            p = coll + (float)(0.1*_dx)*norm;
+            p = coll + (float)(0.01*_dx)*norm;
         }
 
         Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
@@ -2081,7 +2351,6 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
             _markerParticles[idx].index = GridIndex(i, j, k);
         }
     }
-    
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
@@ -2112,101 +2381,6 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     for (int i = 0; i < numThreads; i++) {
         threads[i].join();
     }
-}
-
-void FluidSimulation::_applyPressureToVelocityField(double dt) {
-    _MACVelocity.resetTemporaryVelocityField();
-
-    double usolid = 0.0;   // solids are stationary
-    double scale = dt / (_density * _dx);
-    double invscale = 1.0 / scale;
-
-    for (int k = 0; k < _k_voxels; k++) {
-        for (int j = 0; j < _j_voxels; j++) {
-            for (int i = 0; i < _i_voxels + 1; i++) {
-                if (_isFaceBorderingMaterialU(i, j, k, M_FLUID)) {
-                    int ci = i - 1; int cj = j; int ck = k;
-
-                    double p0, p1;
-                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci + 1, cj, ck)) {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci + 1, cj, ck);
-                    } else if (_isCellSolid(ci, cj, ck)) {
-                        p0 = _pressureGrid(ci + 1, cj, ck) - 
-                             invscale*(_MACVelocity.U(i, j, k) - usolid);
-                        p1 = _pressureGrid(ci + 1, cj, ck);
-                    } else {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci, cj, ck) +
-                             invscale*(_MACVelocity.U(i, j, k) - usolid);
-                    }
-
-                    double unext = _MACVelocity.U(i, j, k) - scale*(p1 - p0);
-                    _MACVelocity.setTempU(i, j, k, unext);
-                }
-            }
-        }
-    }
-
-    for (int k = 0; k < _k_voxels; k++) {
-        for (int j = 0; j < _j_voxels + 1; j++) {
-            for (int i = 0; i < _i_voxels; i++) {
-                if (_isFaceBorderingMaterialV(i, j, k, M_FLUID)) {
-                    int ci = i; int cj = j - 1; int ck = k;
-
-                    double p0, p1;
-                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj + 1, ck)) {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci, cj + 1, ck);
-                    }
-                    else if (_isCellSolid(ci, cj, ck)) {
-                        p0 = _pressureGrid(ci, cj + 1, ck) -
-                            invscale*(_MACVelocity.V(i, j, k) - usolid);
-                        p1 = _pressureGrid(ci, cj + 1, ck);
-                    }
-                    else {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci, cj, ck) +
-                            invscale*(_MACVelocity.V(i, j, k) - usolid);
-                    }
-
-                    double vnext = _MACVelocity.V(i, j, k) - scale*(p1 - p0);
-                    _MACVelocity.setTempV(i, j, k, vnext);
-                }
-            }
-        }
-    }
-
-    for (int k = 0; k < _k_voxels + 1; k++) {
-        for (int j = 0; j < _j_voxels; j++) {
-            for (int i = 0; i < _i_voxels; i++) {
-                if (_isFaceBorderingMaterialW(i, j, k, M_FLUID)) {
-                    int ci = i; int cj = j; int ck = k - 1;
-
-                    double p0, p1;
-                    if (!_isCellSolid(ci, cj, ck) && !_isCellSolid(ci, cj, ck + 1)) {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci, cj, ck + 1);
-                    }
-                    else if (_isCellSolid(ci, cj, ck)) {
-                        p0 = _pressureGrid(ci, cj, ck + 1) -
-                             invscale*(_MACVelocity.W(i, j, k) - usolid);
-                        p1 = _pressureGrid(ci, cj, ck + 1);
-                    }
-                    else {
-                        p0 = _pressureGrid(ci, cj, ck);
-                        p1 = _pressureGrid(ci, cj, ck) +
-                             invscale*(_MACVelocity.W(i, j, k) - usolid);
-                    }
-
-                    double wnext = _MACVelocity.W(i, j, k) - scale*(p1 - p0);
-                    _MACVelocity.setTempW(i, j, k, wnext);
-                }
-            }
-        }
-    }
-
-    _MACVelocity.commitTemporaryVelocityFieldValues();
 }
 
 /********************************************************************************

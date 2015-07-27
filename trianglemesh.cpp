@@ -354,11 +354,6 @@ void TriangleMesh::updateVertexNormals() {
         v2 = vertices[t.tri[2]] - vertices[t.tri[0]];
         glm::vec3 norm = glm::normalize(glm::cross(v1, v2));
 
-        if (norm.x != norm.x || norm.y != norm.y || norm.y != norm.y ) {
-            std::cout << "NaN: " << v1.x << " " << v1.y << " " << v1.z << std::endl;
-            std::cout << "NaN: " << v2.x << " " << v2.y << " " << v2.z << std::endl;
-        }
-
         facenormals.push_back(norm);
     }
 
@@ -810,7 +805,7 @@ void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
     _destroyTriangleGrid();
 }
 
-void TriangleMesh::_smoothTriangleMesh(double value) {
+void TriangleMesh::_smoothTriangleMesh(double value, std::vector<bool> &isSmooth) {
     std::vector<glm::vec3> newvertices;
     newvertices.reserve(vertices.size());
 
@@ -819,6 +814,11 @@ void TriangleMesh::_smoothTriangleMesh(double value) {
     glm::vec3 avg;
     Triangle t;
     for (int i = 0; i < (int)vertices.size(); i++) {
+
+        if (!isSmooth[i]) {
+            newvertices.push_back(vertices[i]);
+            continue;
+        }
 
         avg = glm::vec3(0.0, 0.0, 0.0);
         for (int j = 0; j < (int)_vertexTriangles[i].size(); j++) {
@@ -843,18 +843,41 @@ void TriangleMesh::_smoothTriangleMesh(double value) {
     vertices = newvertices;
 }
 
+void TriangleMesh::_getBoolVectorOfSmoothedVertices(std::vector<int> &verts, 
+                                                    std::vector<bool> &isVertexSmooth) {
+    isVertexSmooth.assign(vertices.size(), false);
+    for (int i = 0; i < (int)verts.size(); i++) {
+        assert(verts[i] >= 0 && verts[i] < vertices.size());
+        isVertexSmooth[verts[i]] = true;
+    }
+}
+
 void TriangleMesh::smooth(double value, int iterations) {
+    std::vector<int> verts;
+    verts.reserve(vertices.size());
+    for (int i = 0; i < (int)vertices.size(); i++) {
+        verts.push_back(i);
+    }
+
+    smooth(value, iterations, verts);
+}
+
+void TriangleMesh::smooth(double value, int iterations, 
+                          std::vector<int> &verts) {
     value = value < 0.0 ? 0.0 : value;
     value = value > 1.0 ? 1.0 : value;
 
+    std::vector<bool> isVertexSmooth;
+    _getBoolVectorOfSmoothedVertices(verts, isVertexSmooth);
+
     _vertexTriangles.clear();
     _updateVertexTriangles();
-
     for (int i = 0; i < iterations; i++) {
-        _smoothTriangleMesh(value);
+        _smoothTriangleMesh(value, isVertexSmooth);
     }
-
     _vertexTriangles.clear();
+
+    updateVertexNormals();
 }
 
 void TriangleMesh::updateVertexTriangles() {

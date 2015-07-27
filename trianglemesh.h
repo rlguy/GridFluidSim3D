@@ -45,6 +45,7 @@ public:
     void updateTriangleAreas();
     void clearTriangleAreas();
     void smooth(double value, int iterations);
+    void smooth(double value, int iterations, std::vector<int> &vertices);
     void getFaceNeighbours(unsigned int tidx, std::vector<int> &n);
     void getFaceNeighbours(Triangle t, std::vector<int> &n);
     double getTriangleArea(int tidx);
@@ -80,7 +81,9 @@ private:
     void _destroyTriangleGrid();
     void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
     void _getSurfaceCells(std::vector<GridIndex> &cells);
-    void _smoothTriangleMesh(double value);
+    void _smoothTriangleMesh(double value, std::vector<bool> &isSmooth);
+    void _getBoolVectorOfSmoothedVertices(std::vector<int> &verts, 
+                                          std::vector<bool> &isSmooth);
     int _numDigitsInInteger(int num);
 
     inline double _randomFloat(double min, double max) {
