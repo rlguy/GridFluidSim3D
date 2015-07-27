@@ -64,22 +64,22 @@ public:
     void randomizeValues(double min, double max);
 
     inline bool isIndexInRangeU(int i, int j, int k) {
-        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels + 1, _j_voxels, _k_voxels);
+        return Grid3d::isGridIndexInRange(i, j, k, _isize + 1, _jsize, _ksize);
     }
     inline bool isIndexInRangeV(int i, int j, int k) {
-        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels + 1, _k_voxels);
+        return Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize + 1, _ksize);
     }
     inline bool isIndexInRangeW(int i, int j, int k) {
-        return Grid3d::isGridIndexInRange(i, j, k, _i_voxels, _j_voxels, _k_voxels + 1);
+        return Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize + 1);
     }
     inline bool isIndexInRangeU(GridIndex g) {
-        return Grid3d::isGridIndexInRange(g, _i_voxels + 1, _j_voxels, _k_voxels);
+        return Grid3d::isGridIndexInRange(g, _isize + 1, _jsize, _ksize);
     }
     inline bool isIndexInRangeV(GridIndex g) {
-        return Grid3d::isGridIndexInRange(g, _i_voxels, _j_voxels + 1, _k_voxels);
+        return Grid3d::isGridIndexInRange(g, _isize, _jsize + 1, _ksize);
     }
     inline bool isIndexInRangeW(GridIndex g) {
-        return Grid3d::isGridIndexInRange(g, _i_voxels, _j_voxels, _k_voxels + 1);
+        return Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize + 1);
     }
 
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
@@ -122,9 +122,9 @@ private:
     double _interpolateLinearW(double x, double y, double z);
 
     double _dx = 0.1;
-    int _i_voxels = 10;
-    int _j_voxels = 10;
-    int _k_voxels = 10;
+    int _isize = 10;
+    int _jsize = 10;
+    int _ksize = 10;
 
     Array3d<double> _u;
     Array3d<double> _v;
