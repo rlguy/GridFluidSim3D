@@ -287,8 +287,6 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 
         if (type == 0) {                              // Fluid
             glColor4d(0.0, 0.753, 0.922, 1.0);
-            glPopMatrix();
-            continue;
         } else if (type == 1) {                       // Solid
             glColor4d(0.5, 0.5, 0.5, 1.0);            
         } else if (type == 2) {                       // Bubble

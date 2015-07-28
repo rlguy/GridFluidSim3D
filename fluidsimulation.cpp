@@ -858,29 +858,6 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
     EXTRAPOLATE FLUID VELOCITIES
 ********************************************************************************/
 
-void FluidSimulation::_getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]) {
-    n[0] = GridIndex(i-1, j, k);
-    n[1] = GridIndex(i+1, j, k);
-    n[2] = GridIndex(i, j-1, k);
-    n[3] = GridIndex(i, j+1, k);
-    n[4] = GridIndex(i, j, k-1);
-    n[5] = GridIndex(i, j, k+1);
-}
-
-void FluidSimulation::_getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]) {
-    int idx = 0;
-    for (int nk = k-1; nk <= k+1; nk++) {
-        for (int nj = j-1; nj <= j+1; nj++) {
-            for (int ni = i-1; ni <= i+1; ni++) {
-                if (!(ni == i && nj == j && nk == k)) {
-                    n[idx] = GridIndex(ni, nj, nk);
-                    idx++;
-                }
-            }
-        }
-    }
-}
-
 void FluidSimulation::_updateExtrapolationLayer(int layerIndex) {
     GridIndex neighbours[6];
     GridIndex n;
@@ -889,7 +866,7 @@ void FluidSimulation::_updateExtrapolationLayer(int layerIndex) {
         for (int j = 0; j < _layerGrid.height; j++) {
             for (int i = 0; i < _layerGrid.width; i++) {
                 if (_layerGrid(i, j, k) == layerIndex - 1 && !_isCellSolid(i, j, k)) {
-                    _getNeighbourGridIndices6(i, j, k, neighbours);
+                    Grid3d::getNeighbourGridIndices6(i, j, k, neighbours);
                     for (int idx = 0; idx < 6; idx++) {
                         n = neighbours[idx];
 
@@ -934,7 +911,7 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
     }
 
     GridIndex n[6];
-    _getNeighbourGridIndices6(i, j, k, n);
+    Grid3d::getNeighbourGridIndices6(i, j, k, n);
 
     GridIndex c;
     double sum = 0.0;
@@ -964,7 +941,7 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, in
     }
 
     GridIndex n[6];
-    _getNeighbourGridIndices6(i, j, k, n);
+    Grid3d::getNeighbourGridIndices6(i, j, k, n);
 
     GridIndex c;
     double sum = 0.0;
@@ -994,7 +971,7 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, in
     }
 
     GridIndex n[6];
-    _getNeighbourGridIndices6(i, j, k, n);
+    Grid3d::getNeighbourGridIndices6(i, j, k, n);
 
     GridIndex c;
     double sum = 0.0;
@@ -1242,7 +1219,7 @@ std::vector<FluidSimulation::CellFace> FluidSimulation::
                              glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 1.0, 0.0), 
                              glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 1.0) };
     GridIndex nc[26];
-    _getNeighbourGridIndices26(i, j, k, nc);
+    Grid3d::getNeighbourGridIndices26(i, j, k, nc);
     for (int idx = 0; idx < 26; idx++) {
         GridIndex c = nc[idx];
         if (Grid3d::isGridIndexInRange(c, _isize, _jsize, _ksize) && 
@@ -2608,6 +2585,53 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
     }
 }
 
+void FluidSimulation::_updateStuckMarkerParticles() {
+
+    double eps = 10e-4;
+    eps = eps*eps;
+    glm::vec3 trans;
+
+    MarkerParticle mp;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        mp = _markerParticles[i];
+        trans = mp.position - mp.stuckPosition;
+        double distsq = glm::dot(trans, trans);
+        if (distsq < eps) {
+            _markerParticles[i].framesStuck++;
+        } else {
+            _markerParticles[i].framesStuck = 0;
+            _markerParticles[i].stuckPosition = mp.position;
+        }
+    }
+}
+
+void FluidSimulation::_removeMarkerParticles() {
+    double maxspeed = (_CFLConditionNumber*_dx) / _minTimeStep;
+    double maxspeedsq = maxspeed*maxspeed;
+    double maxFramesStuck = _maxMarkerParticleStuckFrames;
+
+    std::vector<MarkerParticle> aliveParticles;
+    aliveParticles.reserve(_markerParticles.size());
+
+    MarkerParticle mp;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        mp = _markerParticles[i];
+        
+        if (mp.framesStuck >= maxFramesStuck) {
+            continue;
+        }
+
+        double speedsq = glm::dot(mp.velocity, mp.velocity);
+        if (speedsq > maxspeedsq) {
+            continue;
+        }
+
+        aliveParticles.push_back(mp);
+    }
+
+    _markerParticles = aliveParticles;
+}
+
 void FluidSimulation::_advanceMarkerParticles(double dt) {
     int size = (int)_markerParticles.size();
 
@@ -2636,6 +2660,8 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     for (int i = 0; i < numThreads; i++) {
         threads[i].join();
     }
+
+    _removeMarkerParticles();
 }
 
 /********************************************************************************
@@ -2774,8 +2800,21 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.write();
 }
 
+double FluidSimulation::_getMaximumMarkerParticleSpeed() {
+    double maxsq = 0.0;
+    MarkerParticle mp;
+    for (int i = 0; i < _markerParticles.size(); i++) {
+        double distsq = glm::dot(mp.velocity, mp.velocity);
+        if (distsq > maxsq) {
+            maxsq = distsq;
+        }
+    }
+
+    return sqrt(maxsq);
+}
+
 double FluidSimulation::_calculateNextTimeStep() {
-    double maxu = _MACVelocity.evaluateMaximumVelocityMagnitude();
+    double maxu = _getMaximumMarkerParticleSpeed();
     double timeStep = _CFLConditionNumber*_dx / maxu;
 
     timeStep = (double)fmaxf((float)_minTimeStep, (float)timeStep);
@@ -2804,7 +2843,7 @@ void FluidSimulation::update(double dt) {
 
         _currentTimeStep++;
     }
-
+    _updateStuckMarkerParticles();
     _writeSurfaceMeshToFile();
     _currentFrame++;
 

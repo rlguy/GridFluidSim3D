@@ -121,6 +121,9 @@ private:
         glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
         GridIndex index = GridIndex(0, 0, 0);
 
+        int framesStuck = 0;
+        glm::vec3 stuckPosition = glm::vec3(0.0, 0.0, 0.0);
+
         MarkerParticle() : position(0.0, 0.0, 0.0), 
                            velocity(0.0, 0.0, 0.0),
                            index(0, 0, 0) {}
@@ -230,6 +233,7 @@ private:
 
     // Simulation step
     double _calculateNextTimeStep();
+    double _getMaximumMarkerParticleSpeed();
     void _stepFluid(double dt);
 
     // Find fluid cells. Fluid cells must contain at
@@ -360,6 +364,8 @@ private:
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
+    void _updateStuckMarkerParticles();
+    void _removeMarkerParticles();
 
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
@@ -372,9 +378,7 @@ private:
     glm::vec3 _calculateSolidCellCollision(glm::vec3 p0, glm::vec3 p1, glm::vec3 *normal);
     std::vector<CellFace> _getSolidCellFaceCollisionCandidates(int i, int j, int k, glm::vec3 dir);
     bool _findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *face, glm::vec3 *intersection);
-    void _getNeighbourGridIndices6(int i, int j, int k, GridIndex n[6]);
-    void _getNeighbourGridIndices26(int i, int j, int k, GridIndex n[26]);
-
+    
     // Runge-Kutta integrators used in advection and advancing marker particles
     glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
     glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
@@ -512,6 +516,7 @@ private:
     double _maxFlatCurvature = 0.05;
 
     float _ratioPICFLIP = 0.5f;
+    int _maxMarkerParticleStuckFrames = 8;
 
     glm::vec3 _bodyForce;
 
