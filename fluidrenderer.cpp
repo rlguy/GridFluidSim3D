@@ -268,9 +268,20 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 
     std::sort(sortedPoints.begin(), sortedPoints.end(), compareByDistance);
 
+    double e = 0.125;
+    glm::vec3 eps = glm::vec3(e, e, e);
+    glm::vec3 min = glm::vec3(0.125, 0.125, 0.125) + eps;
+    glm::vec3 max = glm::vec3(0.125*63, 0.125*63, 0.125*63); - eps;
+    AABB bbox = AABB(min, max);
+
     for (int i = 0; i < (int)sortedPoints.size(); i++) {
         double size = hw;
         glm::vec4 p4 = sortedPoints[i].first;
+        
+        if (!bbox.isPointInside(glm::vec3(p4))) {
+            continue;
+        }
+
         int type = sortedPoints[i].second;
         glm::vec3 p = glm::vec3(p4.x, p4.y, p4.z);
 

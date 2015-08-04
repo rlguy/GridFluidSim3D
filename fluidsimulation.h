@@ -17,6 +17,7 @@
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
+#include "sparsearray3d.h"
 #include "grid3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
@@ -33,6 +34,32 @@
 #include "cuboidfluidsource.h"
 #include "turbulencefield.h"
 #include "glm/glm.hpp"
+
+struct MarkerParticle {
+    glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
+    GridIndex index = GridIndex(0, 0, 0);
+
+    int framesStuck = 0;
+    glm::vec3 stuckPosition = glm::vec3(0.0, 0.0, 0.0);
+
+    MarkerParticle() : position(0.0, 0.0, 0.0), 
+                        velocity(0.0, 0.0, 0.0),
+                        index(0, 0, 0) {}
+
+    MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
+                                                            velocity(0.0, 0.0, 0.0),
+                                                            index(ii, jj, kk) {}
+    MarkerParticle(glm::vec3 p, glm::vec3 v, GridIndex g) : 
+                                                            position(p),
+                                                            velocity(v),
+                                                            index(g) {}
+
+    MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
+                    position(x, y, z),
+                    velocity(0.0, 0.0, 0.0),
+                    index(ii, jj, kk) {}
+};
 
 struct DiffuseParticle {
     glm::vec3 position;
@@ -116,31 +143,6 @@ public:
     TriangleMesh* getFluidSurfaceTriangles();
 
 private:
-    struct MarkerParticle {
-        glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
-        glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
-        GridIndex index = GridIndex(0, 0, 0);
-
-        int framesStuck = 0;
-        glm::vec3 stuckPosition = glm::vec3(0.0, 0.0, 0.0);
-
-        MarkerParticle() : position(0.0, 0.0, 0.0), 
-                           velocity(0.0, 0.0, 0.0),
-                           index(0, 0, 0) {}
-
-        MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
-                                                              velocity(0.0, 0.0, 0.0),
-                                                              index(ii, jj, kk) {}
-        MarkerParticle(glm::vec3 p, glm::vec3 v, GridIndex g) : 
-                                                              position(p),
-                                                              velocity(v),
-                                                              index(g) {}
-
-        MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
-                        position(x, y, z),
-                        velocity(0.0, 0.0, 0.0),
-                        index(ii, jj, kk) {}
-    };
 
     struct DiffuseParticleEmitter {
         glm::vec3 position;
@@ -271,6 +273,18 @@ private:
     // Update level set surface
     void _updateLevelSetSignedDistance();
 
+    // Advect fluid velocities
+    void _advectVelocityField();
+    void _advectVelocityFieldU();
+    void _advectVelocityFieldV();
+    void _advectVelocityFieldW();
+    void _computeVelocityScalarField(Array3d<double> &field,
+                                     Array3d<double> &weightfield, 
+                                     int dir);
+
+    // Add gravity to fluid velocities
+    void _applyBodyForcesToVelocityField(double dt);
+
     // Extrapolate fluid velocities into surrounding air and solids so
     // that velocities can be computed when marker particles move to cells
     // outside of current fluid region
@@ -283,18 +297,6 @@ private:
     double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
     glm::vec3 _getVelocityAtNearestPointOnFluidSurface(glm::vec3 p);
-
-    // Add gravity to fluid velocities and extrapolated velocities
-    void _applyBodyForcesToVelocityField(double dt);
-
-    // Advect fluid velocities, but not extrapolated velocities
-    void _advectVelocityField();
-    void _advectVelocityFieldU();
-    void _advectVelocityFieldV();
-    void _advectVelocityFieldW();
-    void _computeVelocityScalarField(Array3d<double> &field,
-                                     Array3d<double> &weightfield, 
-                                     int dir);
     glm::vec3 _getVelocityAtPosition(glm::vec3 p);
 
     // Calculate pressure values to satisfy incompressibility condition
@@ -366,6 +368,8 @@ private:
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
     void _updateStuckMarkerParticles();
     void _removeMarkerParticles();
+    void _shuffleMarkerParticleOrder();
+    void _sortMarkerParticlesByGridIndex();
 
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
@@ -517,6 +521,7 @@ private:
 
     float _ratioPICFLIP = 0.5f;
     int _maxMarkerParticleStuckFrames = 8;
+    int _maxMarkerParticlesPerCell = 25;
 
     glm::vec3 _bodyForce;
 

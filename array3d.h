@@ -8,6 +8,20 @@ struct GridIndex {
 
     GridIndex() : i(0), j(0), k(0) {}
     GridIndex(int ii, int jj, int kk) : i(ii), j(jj), k(kk) {}
+
+    bool operator==(const GridIndex &other) const { 
+        return i == other.i &&
+               j == other.j &&
+               k == other.k;
+    }
+};
+
+struct GridIndexHasher {
+    std::size_t operator()(const GridIndex& g) const {
+        return ((std::hash<int>()(g.i) ^
+                (std::hash<int>()(g.j) << 1)) >> 1) ^
+                (std::hash<int>()(g.k) << 1);
+    }
 };
 
 template <class T>
