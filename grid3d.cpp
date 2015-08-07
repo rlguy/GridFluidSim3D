@@ -221,6 +221,32 @@ void Grid3d::getNeighbourGridIndices124(GridIndex g, GridIndex n[124]) {
     }
 }
 
+void Grid3d::getSubdividedGridIndices(int i, int j, int k, int subdivisions, GridIndex *n) {
+    GridIndex start = GridIndex(i*subdivisions, j*subdivisions, k*subdivisions);
+    int idx = 0;
+    for (int kidx = 0; kidx < subdivisions; kidx++) {
+        for (int jidx = 0; jidx < subdivisions; jidx++) {
+            for (int iidx = 0; iidx < subdivisions; iidx++) {
+                n[idx] = GridIndex(start.i + iidx, start.j + jidx, start.k + kidx);
+                idx++;
+            }
+        }
+    }
+}
+
+void Grid3d::getSubdividedGridIndices(GridIndex g, int subdivisions, GridIndex *n) {
+    GridIndex start = GridIndex(g.i*subdivisions, g.j*subdivisions, g.k*subdivisions);
+    int idx = 0;
+    for (int kidx = 0; kidx < subdivisions; kidx++) {
+        for (int jidx = 0; jidx < subdivisions; jidx++) {
+            for (int iidx = 0; iidx < subdivisions; iidx++) {
+                n[idx] = GridIndex(start.i + iidx, start.j + jidx, start.k + kidx);
+                idx++;
+            }
+        }
+    }
+}
+
 void Grid3d::getGridIndexVertices(int i, int j, int k, GridIndex v[8]) {
     v[0] = GridIndex(i,     j,     k);
     v[1] = GridIndex(i + 1, j,     k);

@@ -17,12 +17,14 @@
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
-//#include "sparsearray3d.h"
+#include "sparsearray3d.h"
 #include "grid3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
 #include "implicitsurfacescalarfield.h"
+#include "sparseimplicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
+#include "sparsepolygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
 #include "collision.h"
@@ -259,19 +261,26 @@ private:
 
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();
-    void _writeSurfaceMeshToFile();
-    void _writeDiffuseMaterialToFile(std::string bubblefile,
-                                     std::string foamfile,
-                                     std::string sprayfile);
-    void _writeSmoothTriangleListToFile(std::string filename);
     TriangleMesh _polygonizeSurface();
-    void _smoothSurfaceMesh();
-    void _getSmoothVertices(std::vector<int> &smoothVertices);
-    bool _isVertexNearSolid(glm::vec3 v, double eps);
-    void _updateSmoothTriangleList(std::vector<int> &smoothVertices);
 
     // Update level set surface
     void _updateLevelSetSignedDistance();
+
+    // Reconstruct output fluid surface
+    void _reconstructOutputFluidSurface();
+    void _writeSurfaceMeshToFile(TriangleMesh &mesh);
+    void _writeDiffuseMaterialToFile(std::string bubblefile,
+                                     std::string foamfile,
+                                     std::string sprayfile);
+    void _writeSmoothTriangleListToFile(TriangleMesh &mesh, std::string filename);
+    void _smoothSurfaceMesh(TriangleMesh &mesh);
+    void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
+    bool _isVertexNearSolid(glm::vec3 v, double eps);
+    void _updateSmoothTriangleList(TriangleMesh &mesh, std::vector<int> &smoothVertices);
+    TriangleMesh _polygonizeOutputSurface();
+    void _getSubdividedSurfaceCells(std::vector<GridIndex> &cells);
+    void _getSubdividedSolidCells(std::vector<GridIndex> &cells);
+    void _getOutputSurfaceParticles(std::vector<glm::vec3> &particles);
 
     // Advect fluid velocities
     void _advectVelocityField();
@@ -480,6 +489,7 @@ private:
     int _currentFrame = 0;
     int _currentTimeStep = 0;
     bool _isCurrentFrameFinished = true;
+    bool _isLastTimeStepForFrame = false;
     double _simulationTime = 0;
     double _realTime = 0;
 
@@ -502,6 +512,10 @@ private:
     int _surfaceReconstructionSmoothingIterations = 3;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
+
+    int _outputFluidSurfaceSubdivisionLevel = 2;
+    double _outputFluidSurfaceCellNarrowBandSize = 1.0;
+    double _outputFluidSurfaceParticleNarrowBandSize = 3.0;
 
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
     double _minWavecrestCurvature = 0.35;

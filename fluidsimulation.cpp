@@ -658,6 +658,50 @@ void FluidSimulation::_updateFluidCells() {
     FLUID SURFACE RECONSTRUCTION
 ********************************************************************************/
 
+TriangleMesh FluidSimulation::_polygonizeSurface() {
+    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
+                                                                  _jsize + 1, 
+                                                                  _ksize + 1, _dx);
+    field.setMaterialGrid(_materialGrid);
+
+    double r = _markerParticleRadius*_markerParticleScale;
+    field.setPointRadius(r);
+
+    glm::vec3 p;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i].position;
+        field.addPoint(p);
+    }
+
+    Polygonizer3d polygonizer = Polygonizer3d(field);
+    polygonizer.setInsideCellIndices(_fluidCellIndices);
+
+    polygonizer.polygonizeSurface();
+    return polygonizer.getTriangleMesh();
+}
+
+void FluidSimulation::_reconstructFluidSurface() {
+    _surfaceMesh = _polygonizeSurface();
+}
+
+/********************************************************************************
+    UPDATE LEVEL SET
+********************************************************************************/
+
+void FluidSimulation::_updateLevelSetSignedDistance() {
+    _levelset.setSurfaceMesh(_surfaceMesh);
+
+    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
+    // In order find velocities at the fluid surface for all extrapolated
+    // velocity layers, the level set will need to calculate signed distance 
+    // for (_CFLConditionNumber + 3) layers
+    _levelset.calculateSignedDistanceField((int)ceil(_CFLConditionNumber) + 3);
+}
+
+/********************************************************************************
+    RECONSTRUCT OUTPUT FLUID SURFACE
+********************************************************************************/
+
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
                                                   std::string foamfile,
                                                   std::string sprayfile) {
@@ -680,8 +724,9 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
     sprayMesh.writeMeshToPLY(sprayfile);
 }
 
-void FluidSimulation::_writeSmoothTriangleListToFile(std::string filename) {
-    int binsize = _surfaceMesh.triangles.size();
+void FluidSimulation::_writeSmoothTriangleListToFile(TriangleMesh &mesh, 
+                                                     std::string filename) {
+    int binsize = mesh.triangles.size();
     char *storage = new char[binsize];
 
     if (_isSurfaceTriangleSmooth.size() != binsize) {
@@ -710,37 +755,15 @@ void FluidSimulation::_writeSmoothTriangleListToFile(std::string filename) {
     delete[] storage;
 }
 
-void FluidSimulation::_writeSurfaceMeshToFile() {
+void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
     std::string currentFrame = std::to_string(_currentFrame);
     currentFrame.insert(currentFrame.begin(), 6 - currentFrame.size(), '0');
 
-    _surfaceMesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
-    _writeSmoothTriangleListToFile("bakefiles/smoothfacelist" + currentFrame + ".data");
+    mesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
+    _writeSmoothTriangleListToFile(mesh, "bakefiles/smoothfacelist" + currentFrame + ".data");
     _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
                                 "bakefiles/foam" + currentFrame + ".ply",
                                 "bakefiles/spray" + currentFrame + ".ply");
-}
-
-TriangleMesh FluidSimulation::_polygonizeSurface() {
-    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
-                                                                  _jsize + 1, 
-                                                                  _ksize + 1, _dx);
-    field.setMaterialGrid(_materialGrid);
-
-    double r = _markerParticleRadius*_markerParticleScale;
-    field.setPointRadius(r);
-
-    glm::vec3 p;
-    for (int i = 0; i < (int)_markerParticles.size(); i++) {
-        p = _markerParticles[i].position;
-        field.addPoint(p);
-    }
-
-    Polygonizer3d polygonizer = Polygonizer3d(field);
-    polygonizer.setInsideCellIndices(_fluidCellIndices);
-
-    polygonizer.polygonizeSurface();
-    return polygonizer.getTriangleMesh();
 }
 
 bool FluidSimulation::_isVertexNearSolid(glm::vec3 v, double eps) {
@@ -790,20 +813,22 @@ bool FluidSimulation::_isVertexNearSolid(glm::vec3 v, double eps) {
     return false;
 }
 
-void FluidSimulation::_getSmoothVertices(std::vector<int> &smoothVertices) {
+void FluidSimulation::_getSmoothVertices(TriangleMesh &mesh,
+                                         std::vector<int> &smoothVertices) {
     double eps = 0.02*_dx;
     glm::vec3 v;
-    for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
-        v = _surfaceMesh.vertices[i];
+    for (int i = 0; i < (int)mesh.vertices.size(); i++) {
+        v = mesh.vertices[i];
         if (!_isVertexNearSolid(v, eps)) {
             smoothVertices.push_back(i);
         }
     }
 }
 
-void FluidSimulation::_updateSmoothTriangleList(std::vector<int> &smoothVertices) {
-    int vsize = _surfaceMesh.vertices.size();
-    int tsize = _surfaceMesh.triangles.size();
+void FluidSimulation::_updateSmoothTriangleList(TriangleMesh &mesh, 
+                                                std::vector<int> &smoothVertices) {
+    int vsize = mesh.vertices.size();
+    int tsize = mesh.triangles.size();
 
     std::vector<bool> isSmooth;
     isSmooth.assign(vsize, false);
@@ -816,7 +841,7 @@ void FluidSimulation::_updateSmoothTriangleList(std::vector<int> &smoothVertices
     isTriangleSmooth.assign(tsize, false);
     Triangle t;
     for (int i = 0; i < tsize; i++) {
-        t = _surfaceMesh.triangles[i];
+        t = mesh.triangles[i];
         if (isSmooth[t.tri[0]] || isSmooth[t.tri[1]] || isSmooth[t.tri[2]]) {
             isTriangleSmooth[i] = true;
         }
@@ -825,33 +850,121 @@ void FluidSimulation::_updateSmoothTriangleList(std::vector<int> &smoothVertices
     _isSurfaceTriangleSmooth = isTriangleSmooth;
 }
 
-void FluidSimulation::_smoothSurfaceMesh() {
+void FluidSimulation::_smoothSurfaceMesh(TriangleMesh &mesh) {
     std::vector<int> smoothVertices;
-    _getSmoothVertices(smoothVertices);
+    _getSmoothVertices(mesh, smoothVertices);
 
-    _surfaceMesh.smooth(_surfaceReconstructionSmoothingValue, 
-                        _surfaceReconstructionSmoothingIterations,
-                        smoothVertices);
-    _updateSmoothTriangleList(smoothVertices);
+    mesh.smooth(_surfaceReconstructionSmoothingValue, 
+                _surfaceReconstructionSmoothingIterations,
+                smoothVertices);
+    _updateSmoothTriangleList(mesh, smoothVertices);
 }
 
-void FluidSimulation::_reconstructFluidSurface() {
-    _surfaceMesh = _polygonizeSurface();
-    _smoothSurfaceMesh();
+void FluidSimulation::_getSubdividedSurfaceCells(std::vector<GridIndex> &cells) {
+    int subd = _outputFluidSurfaceSubdivisionLevel;
+    int numSubdivisions = subd*subd*subd;
+    GridIndex *subdivisions = new GridIndex[numSubdivisions];
+
+    double width = _outputFluidSurfaceCellNarrowBandSize*_dx;
+    GridIndex g;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                g = GridIndex(i, j, k);
+                if (_levelset.getDistance(g) <= width) {
+                    Grid3d::getSubdividedGridIndices(g, subd, subdivisions);
+                    for (int idx = 0; idx < numSubdivisions; idx++) {
+                        cells.push_back(subdivisions[idx]);
+                    }
+                }
+            }
+        }
+    }
+
+    delete[] subdivisions;
 }
 
-/********************************************************************************
-    UPDATE LEVEL SET
-********************************************************************************/
+void FluidSimulation::_getSubdividedSolidCells(std::vector<GridIndex> &cells) {
+    int subd = _outputFluidSurfaceSubdivisionLevel;
+    int numSubdivisions = subd*subd*subd;
+    GridIndex *subdivisions = new GridIndex[numSubdivisions];
 
-void FluidSimulation::_updateLevelSetSignedDistance() {
-    _levelset.setSurfaceMesh(_surfaceMesh);
+    GridIndex g;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                g = GridIndex(i, j, k);
+                if (_isCellSolid(g)) {
+                    Grid3d::getSubdividedGridIndices(g, subd, subdivisions);
+                    for (int idx = 0; idx < numSubdivisions; idx++) {
+                        cells.push_back(subdivisions[idx]);
+                    }
+                }
+            }
+        }
+    }
 
-    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
-    // In order find velocities at the fluid surface for all extrapolated
-    // velocity layers, the level set will need to calculate signed distance 
-    // for (_CFLConditionNumber + 3) layers
-    _levelset.calculateSignedDistanceField((int)ceil(_CFLConditionNumber) + 3);
+    delete[] subdivisions;
+}
+
+void FluidSimulation::_getOutputSurfaceParticles(std::vector<glm::vec3> &particles) {
+    double width = _outputFluidSurfaceParticleNarrowBandSize*_dx;
+    glm::vec3 p;
+    for (int i = 0; i < (int)_markerParticles.size(); i++) {
+        p = _markerParticles[i].position;
+        if (_levelset.getDistance(p) <= width) {
+            particles.push_back(p);
+        }
+    }
+}
+
+TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
+
+    std::vector<GridIndex> surfaceCells;
+    std::vector<GridIndex> solidCells;
+    _getSubdividedSurfaceCells(surfaceCells);
+    _getSubdividedSolidCells(solidCells);
+
+    std::vector<glm::vec3> particles;
+    _getOutputSurfaceParticles(particles);
+
+    int subd = _outputFluidSurfaceSubdivisionLevel;
+    int width = _isize*subd;
+    int height = _jsize*subd;
+    int depth = _ksize*subd;
+    double dx = _dx / subd;
+
+    SparseImplicitSurfaceScalarField field = SparseImplicitSurfaceScalarField(width + 1, 
+                                                                              height + 1, 
+                                                                              depth + 1, dx);
+    field.setSolidCells(solidCells);
+
+    double r = _markerParticleRadius*_markerParticleScale;
+    field.setPointRadius(r);
+
+    glm::vec3 p;
+    for (int i = 0; i < (int)particles.size(); i++) {
+        field.addPoint(particles[i]);
+    }
+
+    SparsePolygonizer3d polygonizer = SparsePolygonizer3d(field);
+    polygonizer.setSurfaceCellIndices(surfaceCells);
+    polygonizer.polygonizeSurface();
+
+    return polygonizer.getTriangleMesh();
+}
+
+void FluidSimulation::_reconstructOutputFluidSurface() {
+    
+    TriangleMesh mesh;
+    if (_outputFluidSurfaceSubdivisionLevel == 1) {
+        mesh = _surfaceMesh;
+    } else {
+        mesh = _polygonizeOutputSurface();
+    }
+
+    _smoothSurfaceMesh(mesh);
+    _writeSurfaceMeshToFile(mesh);
 }
 
 /********************************************************************************
@@ -2677,6 +2790,7 @@ void FluidSimulation::_stepFluid(double dt) {
     StopWatch timer10 = StopWatch();
     StopWatch timer11 = StopWatch();
     StopWatch timer12 = StopWatch();
+    StopWatch timer13 = StopWatch();
 
     _logfile.separator();
     _logfile.timestamp();
@@ -2707,52 +2821,60 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update Level set:           \t", timer4.getTime(), 4);
 
     timer5.start();
-    _advectVelocityField();
+    if (_isLastTimeStepForFrame) {
+        _reconstructOutputFluidSurface();
+    }
     timer5.stop();
 
-    _logfile.log("Advect Velocity Field:       \t", timer5.getTime(), 4);
+    _logfile.log("Reconstruct Output Surface: \t", timer5.getTime(), 4);
 
     timer6.start();
-    _applyBodyForcesToVelocityField(dt);
+    _advectVelocityField();
     timer6.stop();
 
-    _logfile.log("Apply Body Forces:           \t", timer6.getTime(), 4);
+    _logfile.log("Advect Velocity Field:       \t", timer6.getTime(), 4);
 
     timer7.start();
-    _updatePressureGrid(dt);
+    _applyBodyForcesToVelocityField(dt);
     timer7.stop();
 
-    _logfile.log("Update Pressure Grid:        \t", timer7.getTime(), 4);
+    _logfile.log("Apply Body Forces:           \t", timer7.getTime(), 4);
 
     timer8.start();
-    _applyPressureToVelocityField(dt);
+    _updatePressureGrid(dt);
     timer8.stop();
 
-    _logfile.log("Apply Pressure:              \t", timer8.getTime(), 4);
+    _logfile.log("Update Pressure Grid:        \t", timer8.getTime(), 4);
 
     timer9.start();
-    _extrapolateFluidVelocities();
+    _applyPressureToVelocityField(dt);
     timer9.stop();
 
-    _logfile.log("Extrapolate Fluid Velocities:\t", timer9.getTime(), 4);
+    _logfile.log("Apply Pressure:              \t", timer9.getTime(), 4);
 
     timer10.start();
-    //_updateDiffuseMaterial(dt);
+    _extrapolateFluidVelocities();
     timer10.stop();
 
-    _logfile.log("Update Diffuse Material:     \t", timer10.getTime(), 4);
+    _logfile.log("Extrapolate Fluid Velocities:\t", timer10.getTime(), 4);
 
     timer11.start();
-    _updateMarkerParticleVelocities();
+    //_updateDiffuseMaterial(dt);
     timer11.stop();
 
-    _logfile.log("Update PIC/FLIP velocities   \t", timer11.getTime(), 4);
+    _logfile.log("Update Diffuse Material:     \t", timer11.getTime(), 4);
 
     timer12.start();
-    _advanceMarkerParticles(dt);
+    _updateMarkerParticleVelocities();
     timer12.stop();
 
-    _logfile.log("Advance Marker Particles:    \t", timer12.getTime(), 4);
+    _logfile.log("Update PIC/FLIP velocities   \t", timer12.getTime(), 4);
+
+    timer13.start();
+    _advanceMarkerParticles(dt);
+    timer13.stop();
+
+    _logfile.log("Advance Marker Particles:    \t", timer13.getTime(), 4);
 
     timer1.stop();
 
@@ -2773,19 +2895,21 @@ void FluidSimulation::_stepFluid(double dt) {
     double p10 = floor(1000 * timer10.getTime() / totalTime) / 10.0;
     double p11 = floor(1000 * timer11.getTime() / totalTime) / 10.0;
     double p12 = floor(1000 * timer12.getTime() / totalTime) / 10.0;
+    double p13 = floor(1000 * timer13.getTime() / totalTime) / 10.0;
 
     _logfile.log("---Percentage Breakdown---", "");
     _logfile.log("Update Fluid Cells:          \t", p2, 3);
     _logfile.log("Reconstruct Fluid Surface    \t", p3, 3);
     _logfile.log("Update Level Set:            \t", p4, 3);
-    _logfile.log("Advect Velocity Field:       \t", p5, 3);
-    _logfile.log("Apply Body Forces:           \t", p6, 3);
-    _logfile.log("Update Pressure Grid:        \t", p7, 3);
-    _logfile.log("Apply Pressure:              \t", p8, 3);
-    _logfile.log("Extrapolate Fluid Velocities:\t", p9, 3);
-    _logfile.log("Update Diffuse Material:     \t", p10, 3);
-    _logfile.log("Update PIC/FLIP Velocity:    \t", p11, 3);
-    _logfile.log("Advance Marker Particles:    \t", p12, 3);
+    _logfile.log("Reconstruct Output Surface   \t", p5, 3);
+    _logfile.log("Advect Velocity Field:       \t", p6, 3);
+    _logfile.log("Apply Body Forces:           \t", p7, 3);
+    _logfile.log("Update Pressure Grid:        \t", p8, 3);
+    _logfile.log("Apply Pressure:              \t", p9, 3);
+    _logfile.log("Extrapolate Fluid Velocities:\t", p10, 3);
+    _logfile.log("Update Diffuse Material:     \t", p11, 3);
+    _logfile.log("Update PIC/FLIP Velocity:    \t", p12, 3);
+    _logfile.log("Advance Marker Particles:    \t", p13, 3);
     _logfile.newline();
 
     _logfile.log("Simulation time: ", _simulationTime, 3);
@@ -2833,12 +2957,15 @@ void FluidSimulation::update(double dt) {
             timestep = timeleft;
         }
         timeleft -= timestep;
+
+        double eps = 10e-9;
+        _isLastTimeStepForFrame = fabs(timeleft) < eps;
+
         _stepFluid(timestep);
 
         _currentTimeStep++;
     }
     _updateStuckMarkerParticles();
-    _writeSurfaceMeshToFile();
     _currentFrame++;
 
     _isCurrentFrameFinished = true;

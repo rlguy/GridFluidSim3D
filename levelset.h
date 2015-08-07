@@ -33,6 +33,8 @@ public:
     glm::vec3 getClosestPointOnSurface(glm::vec3 p, int *tidx);
     double getDistance(glm::vec3 p);
     double getSignedDistance(glm::vec3 p);
+    double getDistance(GridIndex g);
+    double getSignedDistance(GridIndex g);
     bool isPointInInsideCell(glm::vec3 p);
 
 private:

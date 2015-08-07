@@ -363,11 +363,6 @@ glm::vec3 SparsePolygonizer3d::_getVertexPosition(GridIndex g) {
     return (float)_dx*glm::vec3((float)g.i, (float)g.j, (float)g.k);
 }
 
-double SparsePolygonizer3d::_getVertexFieldValue(GridIndex g) {
-    assert(_vertexValues.isIndexInRange(g));
-    return _vertexValues(g);;
-}
-
 void SparsePolygonizer3d::_resetVertexValues() {
     _vertexValues.clear();
 }
@@ -390,8 +385,12 @@ int SparsePolygonizer3d::_getCellSurfaceStatus(GridIndex g) {
 
     bool hasInside = false;
     bool hasOutside = false;
+    GridIndex v;
     for (int idx = 0; idx < 8; idx ++) {
-        double val = _getVertexFieldValue(vertices[idx]);
+        v = vertices[idx];
+        double val = _vertexValues(v);
+
+        std::cout << val << std::endl;
 
         if (val > _surfaceThreshold) {
             hasInside = true;
@@ -417,7 +416,7 @@ bool SparsePolygonizer3d::_isCellDataAvailable(GridIndex g) {
     Grid3d::getGridIndexVertices(g, vertices);
 
     for (int idx = 0; idx < 8; idx ++) {
-        double val = _getVertexFieldValue(vertices[idx]);
+        double val = _vertexValues(vertices[idx]);
         if (val == MISSING_DATA_VALUE) {
             return false;
         }
@@ -469,11 +468,11 @@ std::vector<GridIndex> SparsePolygonizer3d::_findSurfaceCells() {
             continue;
         }
 
-        if (!_isCellDataAvailable(cell)) {
-            continue;
-        }
-
         while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
+
+            if (!_isCellDataAvailable(cell)) {
+                break;
+            }
 
             if (_isCellOnSurface(cell)) {
                 std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
@@ -495,14 +494,14 @@ int SparsePolygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
     Grid3d::getGridIndexVertices(g, vs);
 
     int cubeIndex = 0;
-    if (_getVertexFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
-    if (_getVertexFieldValue(vs[1]) > isolevel) { cubeIndex |= 2; }
-    if (_getVertexFieldValue(vs[2]) > isolevel) { cubeIndex |= 4; }
-    if (_getVertexFieldValue(vs[3]) > isolevel) { cubeIndex |= 8; }
-    if (_getVertexFieldValue(vs[4]) > isolevel) { cubeIndex |= 16; }
-    if (_getVertexFieldValue(vs[5]) > isolevel) { cubeIndex |= 32; }
-    if (_getVertexFieldValue(vs[6]) > isolevel) { cubeIndex |= 64; }
-    if (_getVertexFieldValue(vs[7]) > isolevel) { cubeIndex |= 128; }
+    if (_vertexValues(vs[0]) > isolevel) { cubeIndex |= 1; }
+    if (_vertexValues(vs[1]) > isolevel) { cubeIndex |= 2; }
+    if (_vertexValues(vs[2]) > isolevel) { cubeIndex |= 4; }
+    if (_vertexValues(vs[3]) > isolevel) { cubeIndex |= 8; }
+    if (_vertexValues(vs[4]) > isolevel) { cubeIndex |= 16; }
+    if (_vertexValues(vs[5]) > isolevel) { cubeIndex |= 32; }
+    if (_vertexValues(vs[6]) > isolevel) { cubeIndex |= 64; }
+    if (_vertexValues(vs[7]) > isolevel) { cubeIndex |= 128; }
 
     return cubeIndex;
 }
@@ -536,7 +535,7 @@ void SparsePolygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int
 
     Grid3d::getGridIndexVertices(g, vertices);
     for (int i = 0; i < 8; i++) {
-        vertexValues[i] = _getVertexFieldValue(vertices[i]);
+        vertexValues[i] = _vertexValues(vertices[i]);
         vertexPositions[i] = _getVertexPosition(vertices[i]);
     }
 

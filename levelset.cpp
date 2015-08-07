@@ -701,6 +701,26 @@ double LevelSet::getSignedDistance(glm::vec3 p) {
     return _interpolateSignedDistance(p);
 }
 
+double LevelSet::getDistance(GridIndex g) {
+    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+
+    if (!_isDistanceSet(g)) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    return fabs(_signedDistance(g));
+}
+
+double LevelSet::getSignedDistance(GridIndex g) {
+    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+
+    if (!_isDistanceSet(g)) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    return _signedDistance(g);
+}
+
 bool LevelSet::isPointInInsideCell(glm::vec3 p) {
     assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 

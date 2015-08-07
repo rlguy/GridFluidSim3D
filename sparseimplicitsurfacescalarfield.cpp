@@ -149,11 +149,16 @@ void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<double> &fie
            field.height == _field.height && 
            field.depth == _field.depth);
 
+    double eps = 10e-9;
     double val;
     for (int k = 0; k < field.depth; k++) {
         for (int j = 0; j < field.height; j++) {
             for (int i = 0; i < field.width; i++) {
                 val = _field(i, j, k);
+                if (val < eps) {
+                    continue;
+                }
+
                 if (val > _surfaceThreshold && _isVertexSolid(i, j, k)) {
                     val = _surfaceThreshold;
                 } 
