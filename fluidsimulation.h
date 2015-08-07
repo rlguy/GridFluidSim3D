@@ -17,7 +17,7 @@
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
-#include "sparsearray3d.h"
+//#include "sparsearray3d.h"
 #include "grid3d.h"
 #include "surfacefield.h"
 #include "levelsetfield.h"
