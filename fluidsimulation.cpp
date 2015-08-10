@@ -116,6 +116,12 @@ void FluidSimulation::setMarkerParticleScale(double s) {
     _markerParticleScale = s; 
 }
 
+
+void FluidSimulation::setSurfaceSubdivisionLevel(unsigned int n) {
+    assert(n >= 1);
+    _outputFluidSurfaceSubdivisionLevel = n;
+}
+
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
     addBodyForce(glm::vec3(fx, fy, fz)); 
 }

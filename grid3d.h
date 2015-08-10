@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdio.h>
+#include <iostream>
+
 #include "glm/glm.hpp"
 #include "array3d.h"
 #include "aabb.h"

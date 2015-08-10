@@ -55,6 +55,7 @@ private:
     };
 
     void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
+    void _getCellVertexValues(GridIndex g, double values[8]);
     glm::vec3 _getVertexPosition(GridIndex v);
     bool _isCellOutsideSurface(GridIndex g);
     bool _isCellInsideSurface(GridIndex g);

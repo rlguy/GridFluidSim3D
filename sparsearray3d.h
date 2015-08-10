@@ -23,7 +23,7 @@ public:
         depth = obj.depth;
 
         _defaultValue = obj.getDefaultValue();
-        _grid = obj.getUnorderedMap();
+        _grid = GridHash(obj.getUnorderedMap());
 
         if (obj.isOutOfRangeValueSet()) {
             _outOfRangeValue = obj.getOutOfRangeValue();
@@ -38,7 +38,7 @@ public:
         depth = rhs.depth;
 
         _defaultValue = rhs.getDefaultValue();
-        _grid = rhs.getUnorderedMap();
+        _grid = GridHash(rhs.getUnorderedMap());
 
         if (rhs.isOutOfRangeValueSet()) {
             _outOfRangeValue = rhs.getOutOfRangeValue();
@@ -54,9 +54,10 @@ public:
     
     void clear() {
         _grid.clear();
+        _sparseIndices.clear();
     }
     
-    T& operator()(int i, int j, int k)
+    T operator()(int i, int j, int k)
     {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
@@ -73,7 +74,7 @@ public:
         return _defaultValue;
     }
 
-    T& operator()(GridIndex g)
+    T operator()(GridIndex g)
     {
         bool isInRange = _isIndexInRange(g);
         if (!isInRange && _isOutOfRangeValueSet) {
@@ -93,25 +94,31 @@ public:
         assert(_isIndexInRange(i, j, k));
 
         GridIndex g = GridIndex(i, j, k);
-        if (_isKeyInGrid(g)) {
-            _grid[g] = value;
+        GridHash::iterator it = _grid.find(g);
+        if (it != _grid.end()) {
+            it->second = value;
             return;
         }
 
         std::pair<GridIndex,T> kv(g, value);
         _grid.insert(kv);
+
+        _sparseIndices.push_back(g);
     }
 
     void set(GridIndex g, T value) {
         assert(_isIndexInRange(g.i, g.j, g.k));
 
-        if (_isKeyInGrid(g)) {
-            _grid[g] = value;
+        GridHash::iterator it = _grid.find(g);
+        if (it != _grid.end()) {
+            it->second = value;
             return;
         }
 
         std::pair<GridIndex,T> kv(g, value);
         _grid.insert(kv);
+
+        _sparseIndices.push_back(g);
     }
     
     void set(std::vector<GridIndex> cells, T value) {
@@ -124,25 +131,31 @@ public:
         assert(_isIndexInRange(i, j, k));
 
         GridIndex g = GridIndex(i, j, k);
-        if (_isKeyInGrid(g)) {
-            _grid[g] += value;
+        GridHash::iterator it = _grid.find(g);
+        if (it != _grid.end()) {
+            it->second += value;
             return;
         }
 
         std::pair<GridIndex,T> kv(g, _defaultValue + value);
         _grid.insert(kv);
+
+        _sparseIndices.push_back(g);
     }
 
     void add(GridIndex g, T value) {
         assert(_isIndexInRange(g.i, g.j, g.k));
 
-        if (_isKeyInGrid(g)) {
-            _grid[g] += value;
+        GridHash::iterator it = _grid.find(g);
+        if (it != _grid.end()) {
+            it->second += value;
             return;
         }
 
         std::pair<GridIndex,T> kv(g, _defaultValue + value);
         _grid.insert(kv);
+
+        _sparseIndices.push_back(g);
     }
 
     T *getPointer(int i, int j, int k) {
@@ -159,6 +172,8 @@ public:
 
         std::pair<GridIndex,T> kv(g, _defaultValue);
         _grid.insert(kv);
+
+        _sparseIndices.push_back(g);
 
         return &_grid[g];
     }
@@ -177,12 +192,18 @@ public:
         std::pair<GridIndex,T> kv(g, _defaultValue);
         _grid.insert(kv);
 
+        _sparseIndices.push_back(g);
+
         return &_grid[g];
     }
     
 
     void reserve(int n) {
         _grid.reserve(n);
+    }
+
+    std::vector<GridIndex> getSparseIndices() {
+        return _sparseIndices;
     }
 
     int getNumElements() {
@@ -253,6 +274,7 @@ private:
     typedef std::unordered_map<GridIndex, T, GridIndexHasher> GridHash;
 
     GridHash _grid;
+    std::vector<GridIndex> _sparseIndices;
 
     bool _isOutOfRangeValueSet = false;
     T _outOfRangeValue;

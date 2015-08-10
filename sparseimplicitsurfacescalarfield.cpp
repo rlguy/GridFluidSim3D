@@ -149,24 +149,26 @@ void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<double> &fie
            field.height == _field.height && 
            field.depth == _field.depth);
 
+    std::vector<GridIndex> indices = _field.getSparseIndices();
+
     double eps = 10e-9;
     double val;
-    for (int k = 0; k < field.depth; k++) {
-        for (int j = 0; j < field.height; j++) {
-            for (int i = 0; i < field.width; i++) {
-                val = _field(i, j, k);
-                if (val < eps) {
-                    continue;
-                }
 
-                if (val > _surfaceThreshold && _isVertexSolid(i, j, k)) {
-                    val = _surfaceThreshold;
-                } 
-
-                field.set(i, j, k, val);
-            }
+    GridIndex g;
+    for (int i = 0; i < indices.size(); i++) {
+        g = indices[i];
+        val = _field(g);
+        if (val < eps) {
+            continue;
         }
+
+        if (val > _surfaceThreshold && _isVertexSolid(g)) {
+            val = _surfaceThreshold;
+        } 
+
+        field.set(g, val);
     }
+
 }
 
 void SparseImplicitSurfaceScalarField::setTricubicWeighting() {

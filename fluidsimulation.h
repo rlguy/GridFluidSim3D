@@ -107,6 +107,7 @@ public:
     void setDensity(double p);
     int getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
+    void setSurfaceSubdivisionLevel(unsigned int n);
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(glm::vec3 f);
@@ -513,9 +514,9 @@ private:
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
 
-    int _outputFluidSurfaceSubdivisionLevel = 2;
-    double _outputFluidSurfaceCellNarrowBandSize = 1.0;
-    double _outputFluidSurfaceParticleNarrowBandSize = 3.0;
+    int _outputFluidSurfaceSubdivisionLevel = 1;
+    double _outputFluidSurfaceCellNarrowBandSize = 0.5;
+    double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
 
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
     double _minWavecrestCurvature = 0.35;

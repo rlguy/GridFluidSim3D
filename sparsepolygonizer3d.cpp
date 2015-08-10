@@ -18,8 +18,13 @@ SparsePolygonizer3d::SparsePolygonizer3d(SparseImplicitSurfaceScalarField &scala
     _dx = scalarField.getCellSize();
     _surfaceThreshold = scalarField.getSurfaceThreshold();
 
+    StopWatch timer1;
+    timer1.start();
     _vertexValues = SparseArray3d<double>(_isize+1, _jsize+1, _ksize+1, MISSING_DATA_VALUE);
     scalarField.getScalarField(_vertexValues);
+    timer1.stop();
+
+    std::cout << "\tGET VERTEX VALUES: " << timer1.getTime() << std::endl;
 
     _isCellDone = SparseArray3d<bool>(_isize, _jsize, _ksize, false);
 
@@ -358,6 +363,19 @@ void SparsePolygonizer3d::_getCellVertexPositions(GridIndex g, glm::vec3 positio
     }
 }
 
+void SparsePolygonizer3d::_getCellVertexValues(GridIndex g, double values[8]) {
+    GridIndex verts[8];
+    Grid3d::getGridIndexVertices(g, verts);
+    values[0] = _vertexValues(verts[0]);
+    values[1] = _vertexValues(verts[1]);
+    values[2] = _vertexValues(verts[2]);
+    values[3] = _vertexValues(verts[3]);
+    values[4] = _vertexValues(verts[4]);
+    values[5] = _vertexValues(verts[5]);
+    values[6] = _vertexValues(verts[6]);
+    values[7] = _vertexValues(verts[7]);
+}
+
 glm::vec3 SparsePolygonizer3d::_getVertexPosition(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
     return (float)_dx*glm::vec3((float)g.i, (float)g.j, (float)g.k);
@@ -380,17 +398,13 @@ bool SparsePolygonizer3d::_isCellOnSurface(GridIndex g) {
 }
 
 int SparsePolygonizer3d::_getCellSurfaceStatus(GridIndex g) {
-    GridIndex vertices[8];
-    Grid3d::getGridIndexVertices(g, vertices);
+    double values[8];
+    _getCellVertexValues(g, values);
 
     bool hasInside = false;
     bool hasOutside = false;
-    GridIndex v;
-    for (int idx = 0; idx < 8; idx ++) {
-        v = vertices[idx];
-        double val = _vertexValues(v);
-
-        std::cout << val << std::endl;
+    for (int idx = 0; idx < 8; idx++) {
+        double val = values[idx];
 
         if (val > _surfaceThreshold) {
             hasInside = true;
@@ -417,12 +431,12 @@ bool SparsePolygonizer3d::_isCellDataAvailable(GridIndex g) {
 
     for (int idx = 0; idx < 8; idx ++) {
         double val = _vertexValues(vertices[idx]);
-        if (val == MISSING_DATA_VALUE) {
-            return false;
+        if (val != MISSING_DATA_VALUE) {
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
 std::vector<GridIndex> SparsePolygonizer3d::_processSeedCell(GridIndex seed, 
@@ -692,8 +706,11 @@ void SparsePolygonizer3d::_calculateSurfaceTriangles() {
 }
 
 void SparsePolygonizer3d::polygonizeSurface() {
+
     _surfaceCells = _findSurfaceCells();
+
     _calculateSurfaceTriangles();
+
     _surface.removeDuplicateTriangles(); // Polygonization method produces
                                          // some identical triangles for some
                                          // currently unknown reason.

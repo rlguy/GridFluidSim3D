@@ -103,7 +103,7 @@ public:
         }
     }
 
-    T& operator()(int i, int j, int k)
+    T operator()(int i, int j, int k)
     {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
@@ -114,7 +114,7 @@ public:
         return _grid[_getFlatIndex(i, j, k)];
     }
 
-    T& operator()(GridIndex g)
+    T operator()(GridIndex g)
     {
         bool isInRange = _isIndexInRange(g.i, g.j, g.k);
         if (!isInRange && _isOutOfRangeValueSet) {
