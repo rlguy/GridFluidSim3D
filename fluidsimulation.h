@@ -40,27 +40,19 @@
 struct MarkerParticle {
     glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
     glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
-    GridIndex index = GridIndex(0, 0, 0);
-
-    int framesStuck = 0;
-    glm::vec3 stuckPosition = glm::vec3(0.0, 0.0, 0.0);
 
     MarkerParticle() : position(0.0, 0.0, 0.0), 
-                        velocity(0.0, 0.0, 0.0),
-                        index(0, 0, 0) {}
+                        velocity(0.0, 0.0, 0.0) {}
 
     MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
-                                                            velocity(0.0, 0.0, 0.0),
-                                                            index(ii, jj, kk) {}
+                                                          velocity(0.0, 0.0, 0.0) {}
     MarkerParticle(glm::vec3 p, glm::vec3 v, GridIndex g) : 
                                                             position(p),
-                                                            velocity(v),
-                                                            index(g) {}
+                                                            velocity(v) {}
 
     MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                     position(x, y, z),
-                    velocity(0.0, 0.0, 0.0),
-                    index(ii, jj, kk) {}
+                    velocity(0.0, 0.0, 0.0) {}
 };
 
 struct DiffuseParticle {
@@ -376,7 +368,6 @@ private:
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
-    void _updateStuckMarkerParticles();
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
@@ -535,7 +526,6 @@ private:
     double _maxFlatCurvature = 0.05;
 
     float _ratioPICFLIP = 0.2f;
-    int _maxMarkerParticleStuckFrames = 8;
     int _maxMarkerParticlesPerCell = 25;
 
     glm::vec3 _bodyForce;

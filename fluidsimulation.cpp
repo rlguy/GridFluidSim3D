@@ -476,10 +476,12 @@ void FluidSimulation::_initializeSimulation() {
 
 void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
     MarkerParticle p;
+    GridIndex g;
     for (int i = 0; i < (int)_markerParticles.size(); i++) {
         p = _markerParticles[i];
-        assert(!_isCellSolid(p.index));
-        _materialGrid.set(p.index, M_FLUID);
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+        assert(!_isCellSolid(g));
+        _materialGrid.set(g, M_FLUID);
     }
 
     _fluidCellIndices.clear();
@@ -563,9 +565,11 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
     newv.reserve(_markerParticles.size());
 
     MarkerParticle p;
+    GridIndex g;
     for (int i = 0; i < (int)_markerParticles.size(); i++) {
         p = _markerParticles[i];
-        if (!_isIndexInList(p.index, cells)) {
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+        if (!_isIndexInList(g, cells)) {
             newv.push_back(p);
         }
     }
@@ -643,10 +647,12 @@ void FluidSimulation::_updateFluidCells() {
     _fluidCellIndices.clear();
     
     MarkerParticle p;
+    GridIndex g;
     for (int i = 0; i < (int)_markerParticles.size(); i++) {
         p = _markerParticles[i];
-        assert(!_isCellSolid(p.index));
-        _materialGrid.set(p.index, M_FLUID);
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+        assert(!_isCellSolid(g));
+        _materialGrid.set(g, M_FLUID);
     }
 
     for (int k = 0; k < _materialGrid.depth; k++) {
@@ -2660,27 +2666,6 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, d
         Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
         if (!_isCellSolid(i, j, k)) {
             _markerParticles[idx].position = p;
-            _markerParticles[idx].index = GridIndex(i, j, k);
-        }
-    }
-}
-
-void FluidSimulation::_updateStuckMarkerParticles() {
-
-    double eps = 10e-4;
-    eps = eps*eps;
-    glm::vec3 trans;
-
-    MarkerParticle mp;
-    for (int i = 0; i < _markerParticles.size(); i++) {
-        mp = _markerParticles[i];
-        trans = mp.position - mp.stuckPosition;
-        double distsq = glm::dot(trans, trans);
-        if (distsq < eps) {
-            _markerParticles[i].framesStuck++;
-        } else {
-            _markerParticles[i].framesStuck = 0;
-            _markerParticles[i].stuckPosition = mp.position;
         }
     }
 }
@@ -2695,21 +2680,20 @@ void FluidSimulation::_shuffleMarkerParticleOrder() {
     }
 }
 
-bool compareByGridIndex(const MarkerParticle p1, MarkerParticle p2) {
-    if (p1.index.i != p2.index.i) { return p1.index.i < p2.index.i; }
-    if (p1.index.j != p2.index.j) { return p1.index.j < p2.index.j; }
-    if (p1.index.k != p2.index.k) { return p1.index.k < p2.index.k; }
+bool compareByMarkerParticlePosition(const MarkerParticle p1, MarkerParticle p2) {
+    if (p1.position.x != p2.position.x) { return p1.position.x < p2.position.x; }
+    if (p1.position.y != p2.position.y) { return p1.position.y < p2.position.y; }
+    if (p1.position.z != p2.position.z) { return p1.position.z < p2.position.z; }
     return false;
 }
 
 void FluidSimulation::_sortMarkerParticlesByGridIndex() {
-    std::sort(_markerParticles.begin(), _markerParticles.end(), compareByGridIndex);
+    std::sort(_markerParticles.begin(), _markerParticles.end(), compareByMarkerParticlePosition);
 }
 
 void FluidSimulation::_removeMarkerParticles() {
     double maxspeed = (_CFLConditionNumber*_dx) / _minTimeStep;
     double maxspeedsq = maxspeed*maxspeed;
-    double maxFramesStuck = _maxMarkerParticleStuckFrames;
 
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
     _shuffleMarkerParticleOrder();
@@ -2718,22 +2702,20 @@ void FluidSimulation::_removeMarkerParticles() {
     aliveParticles.reserve(_markerParticles.size());
 
     MarkerParticle mp;
+    GridIndex g;
     for (int i = 0; i < _markerParticles.size(); i++) {
         mp = _markerParticles[i];
-        
-        if (mp.framesStuck >= maxFramesStuck) {
-            continue;
-        }
 
         double speedsq = glm::dot(mp.velocity, mp.velocity);
         if (speedsq > maxspeedsq) {
             continue;
         }
 
-        if (countGrid(mp.index) >= _maxMarkerParticlesPerCell) {
+        g = Grid3d::positionToGridIndex(mp.position, _dx);
+        if (countGrid(g) >= _maxMarkerParticlesPerCell) {
             continue;
         }
-        countGrid.add(mp.index, 1);
+        countGrid.add(g, 1);
 
         aliveParticles.push_back(mp);
     }
@@ -2971,7 +2953,6 @@ void FluidSimulation::update(double dt) {
 
         _currentTimeStep++;
     }
-    _updateStuckMarkerParticles();
     _currentFrame++;
 
     _isCurrentFrameFinished = true;
