@@ -85,7 +85,7 @@ private:
     double _dx;
 
     SurfaceField *_field;
-    Array3d<double> _vertexValues;
+    Array3d<float> _vertexValues;
     Array3d<bool> _isVertexSet;
     Array3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;

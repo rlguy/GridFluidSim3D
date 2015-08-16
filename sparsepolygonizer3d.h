@@ -80,7 +80,7 @@ private:
     double _dx;
 
     SurfaceField *_field;
-    SparseArray3d<double> _vertexValues;
+    SparseArray3d<float> _vertexValues;
     SparseArray3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;
 
@@ -89,6 +89,6 @@ private:
     std::vector<GridIndex> _surfaceCells;
     TriangleMesh _surface;
 
-    double MISSING_DATA_VALUE = -1.0;
+    double MISSING_DATA_VALUE = -1.0f;
 };
 

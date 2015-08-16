@@ -29,7 +29,7 @@ public:
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setSolidCells(std::vector<GridIndex> &solidCells);
-    void getScalarField(SparseArray3d<double> &field);
+    void getScalarField(SparseArray3d<float> &field);
     void setTricubicWeighting();
     void setTrilinearWeighting();
 
@@ -66,7 +66,7 @@ private:
 
     double _surfaceThreshold = 0.5;
 
-    SparseArray3d<double> _field;
+    SparseArray3d<float> _field;
     SparseArray3d<bool> _isVertexSolid;
 };
 

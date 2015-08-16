@@ -188,28 +188,28 @@ private:
     };
 
     struct MatrixCoefficients {
-        Array3d<double> diag;
-        Array3d<double> plusi;
-        Array3d<double> plusj;
-        Array3d<double> plusk;
+        Array3d<float> diag;
+        Array3d<float> plusi;
+        Array3d<float> plusj;
+        Array3d<float> plusk;
         int width, height, depth;
 
         MatrixCoefficients() : width(0), height(0), depth(0) {} 
         MatrixCoefficients(int i, int j, int k) : 
-                                diag(Array3d<double>(i, j, k, 0.0)),
-                                plusi(Array3d<double>(i, j, k, 0.0)),
-                                plusj(Array3d<double>(i, j, k, 0.0)),
-                                plusk(Array3d<double>(i, j, k, 0.0)),
+                                diag(Array3d<float>(i, j, k, 0.0f)),
+                                plusi(Array3d<float>(i, j, k, 0.0f)),
+                                plusj(Array3d<float>(i, j, k, 0.0f)),
+                                plusk(Array3d<float>(i, j, k, 0.0f)),
                                 width(i), height(j), depth(k) {};
     };
 
     struct VectorCoefficients {
-        Array3d<double> vector;
+        Array3d<float> vector;
         int width, height, depth;
 
         VectorCoefficients() : width(0), height(0), depth(0) {}
         VectorCoefficients(int i, int j, int k) : 
-                                vector(Array3d<double>(i, j, k, 0.0)),
+                                vector(Array3d<float>(i, j, k, 0.0f)),
                                 width(i), height(j), depth(k) {}
     };
 
@@ -288,8 +288,8 @@ private:
     void _advectVelocityFieldU();
     void _advectVelocityFieldV();
     void _advectVelocityFieldW();
-    void _computeVelocityScalarField(Array3d<double> &field,
-                                     Array3d<double> &weightfield, 
+    void _computeVelocityScalarField(Array3d<float> &field,
+                                     Array3d<float> &weightfield, 
                                      int dir);
 
     // Add gravity to fluid velocities
@@ -528,13 +528,13 @@ private:
     double _wavecrestEmissionRate = 200.0;
     double _turbulenceEmissionRate = 200.0;
     double _maxDiffuseParticleLifetime = 2.0;
-    double _maxFoamToSurfaceDistance = 1.0; // in number of grid cells
+    double _maxFoamToSurfaceDistance = 1.0;   // in number of grid cells
     double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
     double _maxFlatCurvature = 0.05;
 
-    float _ratioPICFLIP = 0.5f;
+    float _ratioPICFLIP = 0.2f;
     int _maxMarkerParticleStuckFrames = 8;
     int _maxMarkerParticlesPerCell = 25;
 
@@ -549,7 +549,7 @@ private:
 
     MACVelocityField _MACVelocity;
     Array3d<int> _materialGrid;
-    Array3d<double> _pressureGrid;
+    Array3d<float> _pressureGrid;
     Array3d<int> _layerGrid;
     MatrixCoefficients _matrixA;
     VectorCoefficients _preconditioner;

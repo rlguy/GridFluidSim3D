@@ -22,15 +22,15 @@ public:
     double getCellSize();
     int getCurrentFrame();
     std::vector<glm::vec3> getMarkerParticles();
-    void getVelocityField(Array3d<double> &U, 
-                          Array3d<double> &V, 
-                          Array3d<double> &W);
+    void getVelocityField(Array3d<float> &U, 
+                          Array3d<float> &V, 
+                          Array3d<float> &W);
     std::vector<GridIndex> getSolidCellIndices();
     bool isLoadStateInitialized();
 
 private:
     struct MACVelocity {
-        Array3d<double> U, V, W;
+        Array3d<float> U, V, W;
         int width, height, depth;
 
         MACVelocity() {};

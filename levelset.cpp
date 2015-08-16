@@ -6,7 +6,7 @@ LevelSet::LevelSet()
 
 LevelSet::LevelSet(int i, int j, int k, double dx) : 
                                  _isize(i), _jsize(j), _ksize(k), _dx(dx),
-                                 _signedDistance(Array3d<double>(i, j, k, 0.0)),
+                                 _signedDistance(Array3d<float>(i, j, k, 0.0f)),
                                  _indexGrid(Array3d<int>(i, j, k, -1)),
                                  _isDistanceSet(Array3d<bool>(i, j, k, false)),
                                  _distanceField(LevelSetField(i, j, k, dx)) {

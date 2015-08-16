@@ -9,7 +9,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _bodyForce(0.0, 0.0, 0.0),
                                 _MACVelocity(_isize, _jsize, _ksize, cell_size),
                                 _materialGrid(Array3d<int>(_isize, _jsize, _ksize, M_AIR)),
-                                _pressureGrid(Array3d<double>(_isize, _jsize, _ksize, 0.0)),
+                                _pressureGrid(Array3d<float>(_isize, _jsize, _ksize, 0.0f)),
                                 _layerGrid(Array3d<int>(_isize, _jsize, _ksize, -1)),
                                 _matrixA(_isize, _jsize, _ksize),
                                 _preconditioner(_isize, _jsize, _ksize),
@@ -517,7 +517,7 @@ void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveStat
 }
 
 void FluidSimulation::_initializeMACGridFromSaveState(FluidSimulationSaveState &state) {
-    Array3d<double> U, V, W;
+    Array3d<float> U, V, W;
     state.getVelocityField(U, V, W);
 
     assert(U.width == _isize + 1 && U.height == _jsize && U.depth == _ksize);
@@ -537,7 +537,7 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 
     _bodyForce = glm::vec3(0.0, 0.0, 0.0);
     _materialGrid = Array3d<int>(_isize, _jsize, _ksize, M_AIR);
-    _pressureGrid = Array3d<double>(_isize, _jsize, _ksize, 0.0);
+    _pressureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
     _layerGrid = Array3d<int>(_isize, _jsize, _ksize, -1);
     _matrixA = MatrixCoefficients(_isize, _jsize, _ksize);
     _preconditioner = VectorCoefficients(_isize, _jsize, _ksize);
@@ -977,8 +977,8 @@ void FluidSimulation::_reconstructOutputFluidSurface() {
     ADVECT FLUID VELOCITIES
 ********************************************************************************/
 
-void FluidSimulation::_computeVelocityScalarField(Array3d<double> &field,
-                                                  Array3d<double> &weightfield, 
+void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
+                                                  Array3d<float> &weightfield, 
                                                   int dir) {
     int U = 0; int V = 1; int W = 2;
 
@@ -1014,8 +1014,8 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<double> &field,
 void FluidSimulation::_advectVelocityFieldU() {
     _MACVelocity.clearU();
 
-    Array3d<double> ugrid = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
-    Array3d<double> weightfield = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
+    Array3d<float> ugrid = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
+    Array3d<float> weightfield = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
     _computeVelocityScalarField(ugrid, weightfield, 0);
 
     std::vector<GridIndex> extrapolationIndices;
@@ -1060,8 +1060,8 @@ void FluidSimulation::_advectVelocityFieldU() {
 void FluidSimulation::_advectVelocityFieldV() {
     _MACVelocity.clearV();
 
-    Array3d<double> vgrid = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
-    Array3d<double> weightfield = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
+    Array3d<float> vgrid = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
+    Array3d<float> weightfield = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
     _computeVelocityScalarField(vgrid, weightfield, 1);
     
     std::vector<GridIndex> extrapolationIndices;
@@ -1106,8 +1106,8 @@ void FluidSimulation::_advectVelocityFieldV() {
 void FluidSimulation::_advectVelocityFieldW() {
     _MACVelocity.clearW();
 
-    Array3d<double> wgrid = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
-    Array3d<double> weightfield = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    Array3d<float> wgrid = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
+    Array3d<float> weightfield = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
     _computeVelocityScalarField(wgrid, weightfield, 2);
     
     std::vector<GridIndex> extrapolationIndices;
@@ -1346,7 +1346,7 @@ Eigen::VectorXd FluidSimulation::_VectorCoefficientsToEigenVectorXd(VectorCoeffi
         int j = indices[idx].j;
         int k = indices[idx].k;
 
-        ev(idx) = v.vector(i, j, k);
+        ev(idx) = (double)v.vector(i, j, k);
     }
 
     return ev;
@@ -1460,34 +1460,34 @@ Eigen::SparseMatrix<double> FluidSimulation::_MatrixCoefficientsToEigenSparseMat
 
         if (_isCellFluid(i-1, j, k)) {
             col = _GridIndexToVectorIndex(i-1, j, k);
-            double coef = A.plusi(i-1, j, k);
+            double coef = (double)A.plusi(i-1, j, k);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i+1, j, k)) {
             col = _GridIndexToVectorIndex(i+1, j, k);
-            double coef = A.plusi(i, j, k);
+            double coef = (double)A.plusi(i, j, k);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
 
         if (_isCellFluid(i, j-1, k)) {
             col = _GridIndexToVectorIndex(i, j-1, k);
-            double coef = A.plusj(i, j-1, k);
+            double coef = (double)A.plusj(i, j-1, k);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i, j+1, k)) {
             col = _GridIndexToVectorIndex(i, j+1, k);
-            double coef = A.plusj(i, j, k);
+            double coef = (double)A.plusj(i, j, k);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
 
         if (_isCellFluid(i, j, k-1)) {
             col = _GridIndexToVectorIndex(i, j, k-1);
-            double coef = A.plusk(i, j, k-1);
+            double coef = (double)A.plusk(i, j, k-1);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
         if (_isCellFluid(i, j, k+1)) {
             col = _GridIndexToVectorIndex(i, j, k+1);
-            double coef = A.plusk(i, j, k);
+            double coef = (double)A.plusk(i, j, k);
             matrixValues.push_back(Eigen::Triplet<double>(col, row, coef));
         }
     }

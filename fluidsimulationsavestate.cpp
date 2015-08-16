@@ -119,9 +119,9 @@ std::vector<glm::vec3> FluidSimulationSaveState::getMarkerParticles() {
     return _stateData.markerParticles;
 }
 
-void FluidSimulationSaveState::getVelocityField(Array3d<double> &U, 
-                                                Array3d<double> &V, 
-                                                Array3d<double> &W) {
+void FluidSimulationSaveState::getVelocityField(Array3d<float> &U, 
+                                                Array3d<float> &V, 
+                                                Array3d<float> &W) {
     assert(_isLoadStateInitialized);
     U = _stateData.vgrid.U;
     V = _stateData.vgrid.V;
@@ -177,9 +177,9 @@ void FluidSimulationSaveState::_writeDouble(double *value, std::ofstream *state)
 
 void FluidSimulationSaveState::_writeBinaryVelocitiesU(MACVelocityField *vgrid, 
                                                      std::ofstream *state) {
-    int binsize = (_width + 1)*_height*_depth*sizeof(double);
+    int binsize = (_width + 1)*_height*_depth*sizeof(float);
     char *storage = new char[binsize];
-    double *u = vgrid->getRawArrayU();
+    float *u = vgrid->getRawArrayU();
     memcpy(storage, u, binsize);
     state->write(storage, binsize);
     delete[] storage;
@@ -187,9 +187,9 @@ void FluidSimulationSaveState::_writeBinaryVelocitiesU(MACVelocityField *vgrid,
 
 void FluidSimulationSaveState::_writeBinaryVelocitiesV(MACVelocityField *vgrid, 
                                                        std::ofstream *state) {
-    int binsize = _width*(_height + 1)*_depth*sizeof(double);
+    int binsize = _width*(_height + 1)*_depth*sizeof(float);
     char *storage = new char[binsize];
-    double *v = vgrid->getRawArrayV();
+    float *v = vgrid->getRawArrayV();
     memcpy(storage, v, binsize);
     state->write(storage, binsize);
     delete[] storage;
@@ -197,9 +197,9 @@ void FluidSimulationSaveState::_writeBinaryVelocitiesV(MACVelocityField *vgrid,
 
 void FluidSimulationSaveState::_writeBinaryVelocitiesW(MACVelocityField *vgrid, 
                                                        std::ofstream *state) {
-    int binsize = _width*_height*(_depth + 1)*sizeof(double);
+    int binsize = _width*_height*(_depth + 1)*sizeof(float);
     char *storage = new char[binsize];
-    double *w = vgrid->getRawArrayW();
+    float *w = vgrid->getRawArrayW();
     memcpy(storage, w, binsize);
     state->write(storage, binsize);
     delete[] storage;

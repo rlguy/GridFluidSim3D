@@ -14,7 +14,7 @@ Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
     _dx = _field->getCellSize();
     _surfaceThreshold = _field->getSurfaceThreshold();
 
-    _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
+    _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
     _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
@@ -32,7 +32,7 @@ Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
     _dx = scalarField.getCellSize();
     _surfaceThreshold = scalarField.getSurfaceThreshold();
 
-    _vertexValues = Array3d<double>(_isize+1, _jsize+1, _ksize+1, 0.0);
+    _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
     scalarField.getScalarField(_vertexValues);
 
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, true);

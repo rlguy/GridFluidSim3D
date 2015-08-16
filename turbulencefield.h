@@ -28,7 +28,7 @@ private:
 
     int M_FLUID = 1;
 
-    Array3d<double> _field;
+    Array3d<float> _field;
 
     int _isize, _jsize, _ksize;
     double _dx;

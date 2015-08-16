@@ -68,7 +68,7 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
                                           // to its 124 neighbours
 
     if (_field.width != _isize || _field.height != _jsize || _field.depth != _ksize) {
-        _field = Array3d<double>(_isize, _jsize, _ksize);
+        _field = Array3d<float>(_isize, _jsize, _ksize);
     }
 
     Array3d<glm::vec3> vgrid = Array3d<glm::vec3>(_isize, _jsize, _ksize);
@@ -98,7 +98,7 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
 }
 
 void TurbulenceField::destroyTurbulenceField() {
-    _field = Array3d<double>(0.0, 0.0, 0.0);
+    _field = Array3d<float>(0, 0, 0);
 }
 
 // vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 

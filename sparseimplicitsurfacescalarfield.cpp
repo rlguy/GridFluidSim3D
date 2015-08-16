@@ -144,7 +144,7 @@ void SparseImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &sol
     }
 }
 
-void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<double> &field) {
+void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<float> &field) {
     assert(field.width == _field.width && 
            field.height == _field.height && 
            field.depth == _field.depth);

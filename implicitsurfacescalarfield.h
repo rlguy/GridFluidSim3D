@@ -31,7 +31,7 @@ public:
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);
-    void getScalarField(Array3d<double> &field);
+    void getScalarField(Array3d<float> &field);
     bool isCellInsideSurface(int i, int j, int k);
     void setTricubicWeighting();
     void setTrilinearWeighting();
@@ -39,7 +39,7 @@ public:
     double getWeight(GridIndex g);
     int getWeightCount(int i, int j, int k);
     int getWeightCount(GridIndex g);
-    void getWeightField(Array3d<double> &field);
+    void getWeightField(Array3d<float> &field);
 
 private:
 
@@ -77,10 +77,10 @@ private:
 
     double _surfaceThreshold = 0.5;
 
-    Array3d<double> _field;
-    Array3d<double> _centerField;
+    Array3d<float> _field;
+    Array3d<float> _centerField;
     Array3d<bool> _isVertexSolid;
-    Array3d<double> _weightField;
+    Array3d<float> _weightField;
     Array3d<int> _weightCountField;
 
     bool _isCenterFieldEnabled = false;

@@ -28,7 +28,7 @@ public:
     double getSurfaceCurvature(glm::vec3 p);
     double getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal);
     double getSurfaceCurvature(unsigned int tidx);
-    Array3d<double> getSignedDistanceField() { return _signedDistance; }
+    Array3d<float> getSignedDistanceField() { return _signedDistance; }
     glm::vec3 getClosestPointOnSurface(glm::vec3 p);
     glm::vec3 getClosestPointOnSurface(glm::vec3 p, int *tidx);
     double getDistance(glm::vec3 p);
@@ -111,7 +111,7 @@ private:
 
     TriangleMesh _surfaceMesh;
 
-    Array3d<double> _signedDistance;
+    Array3d<float> _signedDistance;
     Array3d<int> _indexGrid;
     Array3d<bool> _isDistanceSet;
 

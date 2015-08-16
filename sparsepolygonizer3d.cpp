@@ -20,7 +20,7 @@ SparsePolygonizer3d::SparsePolygonizer3d(SparseImplicitSurfaceScalarField &scala
 
     StopWatch timer1;
     timer1.start();
-    _vertexValues = SparseArray3d<double>(_isize+1, _jsize+1, _ksize+1, MISSING_DATA_VALUE);
+    _vertexValues = SparseArray3d<float>(_isize+1, _jsize+1, _ksize+1, MISSING_DATA_VALUE);
     scalarField.getScalarField(_vertexValues);
     timer1.stop();
 

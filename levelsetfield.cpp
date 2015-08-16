@@ -3,7 +3,7 @@
 
 LevelSetField::LevelSetField(int i, int j, int k, double dx) :
                              SurfaceField(i, j, k, dx),
-                             _distanceField(Array3d<double>(i, j, k, 1.0))
+                             _distanceField(Array3d<float>(i, j, k, 1.0f))
 {
     setSurfaceThreshold(_surfaceThreshold);
 }
@@ -78,7 +78,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     return val;
 }
 
-void LevelSetField::setSignedDistanceField(Array3d<double> distField) {
+void LevelSetField::setSignedDistanceField(Array3d<float> distField) {
     _distanceField = distField;
 }
 

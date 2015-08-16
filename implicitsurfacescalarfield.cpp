@@ -35,7 +35,7 @@ void ImplicitSurfaceScalarField::enableCellCenterValues() {
         return;
     }
 
-    _centerField = Array3d<double>(_isize-1, _jsize-1, _ksize-1, 0.0);
+    _centerField = Array3d<float>(_isize-1, _jsize-1, _ksize-1, 0.0f);
 
     _isCenterFieldEnabled = true;
 }
@@ -45,7 +45,7 @@ void ImplicitSurfaceScalarField::enableWeightField() {
         return;
     }
 
-    _weightField = Array3d<double>(_isize, _jsize, _ksize, 0.0);
+    _weightField = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
     _weightCountField = Array3d<int>(_isize, _jsize, _ksize, 0);
 
     _isWeightFieldEnabled = true;
@@ -227,7 +227,7 @@ void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
     }
 }
 
-void ImplicitSurfaceScalarField::getWeightField(Array3d<double> &field) {
+void ImplicitSurfaceScalarField::getWeightField(Array3d<float> &field) {
     if (!_isWeightFieldEnabled) {
         return;
     }
@@ -245,7 +245,7 @@ void ImplicitSurfaceScalarField::getWeightField(Array3d<double> &field) {
     }
 }
 
-void ImplicitSurfaceScalarField::getScalarField(Array3d<double> &field) {
+void ImplicitSurfaceScalarField::getScalarField(Array3d<float> &field) {
     assert(field.width == _field.width && 
            field.height == _field.height && 
            field.depth == _field.depth);

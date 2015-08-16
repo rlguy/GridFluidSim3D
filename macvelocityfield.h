@@ -36,9 +36,9 @@ public:
     void setU(GridIndex g, double val);
     void setV(GridIndex g, double val);
     void setW(GridIndex g, double val);
-    void setU(Array3d<double> &ugrid);
-    void setV(Array3d<double> &vgrid);
-    void setW(Array3d<double> &wgrid);
+    void setU(Array3d<float> &ugrid);
+    void setV(Array3d<float> &vgrid);
+    void setW(Array3d<float> &wgrid);
     void addU(int i, int j, int k, double val);
     void addV(int i, int j, int k, double val);
     void addW(int i, int j, int k, double val);
@@ -51,9 +51,9 @@ public:
     void resetTemporaryVelocityField();
     void commitTemporaryVelocityFieldValues();
 
-    double* getRawArrayU();
-    double* getRawArrayV();
-    double* getRawArrayW();
+    float* getRawArrayU();
+    float* getRawArrayV();
+    float* getRawArrayW();
 
     void clear();
     void clearU();
@@ -131,15 +131,15 @@ private:
     int _jsize = 10;
     int _ksize = 10;
 
-    Array3d<double> _u;
-    Array3d<double> _v;
-    Array3d<double> _w;
-    Array3d<double> _temp_u;
-    Array3d<double> _temp_v;
-    Array3d<double> _temp_w;
-    Array3d<double> _save_u;
-    Array3d<double> _save_v;
-    Array3d<double> _save_w;
+    Array3d<float> _u;
+    Array3d<float> _v;
+    Array3d<float> _w;
+    Array3d<float> _temp_u;
+    Array3d<float> _temp_v;
+    Array3d<float> _temp_w;
+    Array3d<float> _save_u;
+    Array3d<float> _save_v;
+    Array3d<float> _save_w;
     Array3d<bool> _is_set_u;
     Array3d<bool> _is_set_v;
     Array3d<bool> _is_set_w;

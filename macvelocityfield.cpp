@@ -21,17 +21,17 @@ MACVelocityField::~MACVelocityField()
 
 void MACVelocityField::_initializeVelocityGrids() {
 
-    _u = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
-    _v = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
-    _w = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    _u = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
+    _v = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
+    _w = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
 
-    _save_u = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
-    _save_v = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
-    _save_w = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    _save_u = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
+    _save_v = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
+    _save_w = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
 
-    _temp_u = Array3d<double>(_isize + 1, _jsize, _ksize, 0.0);
-    _temp_v = Array3d<double>(_isize, _jsize + 1, _ksize, 0.0);
-    _temp_w = Array3d<double>(_isize, _jsize, _ksize + 1, 0.0);
+    _temp_u = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
+    _temp_v = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
+    _temp_w = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
 
     _is_set_u = Array3d<bool>(_isize + 1, _jsize, _ksize, false);
     _is_set_v = Array3d<bool>(_isize, _jsize + 1, _ksize, false);
@@ -143,15 +143,15 @@ void MACVelocityField::randomizeValues(double min, double max) {
     }
 }
 
-double* MACVelocityField::getRawArrayU() {
+float* MACVelocityField::getRawArrayU() {
     return _u.getRawArray();
 }
 
-double* MACVelocityField::getRawArrayV() {
+float* MACVelocityField::getRawArrayV() {
     return _v.getRawArray();
 }
 
-double* MACVelocityField::getRawArrayW() {
+float* MACVelocityField::getRawArrayW() {
     return _w.getRawArray();
 }
 
@@ -263,21 +263,21 @@ void MACVelocityField::setW(GridIndex g, double val) {
     setW(g.i, g.j, g.k, val);
 }
 
-void MACVelocityField::setU(Array3d<double> &ugrid) {
+void MACVelocityField::setU(Array3d<float> &ugrid) {
     assert(ugrid.width == _u.width && 
            ugrid.height == _u.height && 
            ugrid.depth == _u.depth);
     _u = ugrid;
 }
 
-void MACVelocityField::setV(Array3d<double> &vgrid) {
+void MACVelocityField::setV(Array3d<float> &vgrid) {
     assert(vgrid.width == _v.width && 
            vgrid.height == _v.height && 
            vgrid.depth == _v.depth);
     _v = vgrid;
 }
 
-void MACVelocityField::setW(Array3d<double> &wgrid) {
+void MACVelocityField::setW(Array3d<float> &wgrid) {
     assert(wgrid.width == _w.width && 
            wgrid.height == _w.height && 
            wgrid.depth == _w.depth);
