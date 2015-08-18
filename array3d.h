@@ -136,7 +136,7 @@ public:
     }
 
     void set(std::vector<GridIndex> cells, T value) {
-        for (int i = 0; i < (int)cells.size(); i++) {
+        for (unsigned int i = 0; i < cells.size(); i++) {
             set(cells[i], value);
         }
     }

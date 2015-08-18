@@ -135,7 +135,7 @@ public:
         SpatialGridObject o;
         objs = _grid.getPointer(g);
                     
-        for (int idx = 0; idx < (int)objs->size(); idx++) {
+        for (unsigned int idx = 0; idx < objs->size(); idx++) {
             o = objs->at(idx);
             glm::vec3 v = o.position - pos;
             double distsq = glm::dot(v, v);

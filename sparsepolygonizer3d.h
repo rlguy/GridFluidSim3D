@@ -46,9 +46,9 @@ private:
         EdgeGrid() {}
 
         EdgeGrid(int i, int j, int k) : 
-                     U(i, j + 1, k + 1, 0.0),
-                     V(i + 1, j, k + 1, 0.0),
-                     W(i + 1, j + 1, k, 0.0),
+                     U(i, j + 1, k + 1, 0),
+                     V(i + 1, j, k + 1, 0),
+                     W(i + 1, j + 1, k, 0),
                      isSetU(i, j + 1, k + 1, false),
                      isSetV(i + 1, j, k + 1, false),
                      isSetW(i + 1, j + 1, k, false) {}
@@ -89,6 +89,6 @@ private:
     std::vector<GridIndex> _surfaceCells;
     TriangleMesh _surface;
 
-    double MISSING_DATA_VALUE = -1.0f;
+    float MISSING_DATA_VALUE = -1.0f;
 };
 

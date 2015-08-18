@@ -20,15 +20,15 @@ public:
     void getGridDimensions(int *i, int *j, int *k);
     double getGridCellSize();
 
-    double U(int i, int j, int k);
-    double V(int i, int j, int k);
-    double W(int i, int j, int k);
-    double U(GridIndex g);
-    double V(GridIndex g);
-    double W(GridIndex g);
-    double tempU(int i, int j, int k);
-    double tempV(int i, int j, int k);
-    double tempW(int i, int j, int k);
+    float U(int i, int j, int k);
+    float V(int i, int j, int k);
+    float W(int i, int j, int k);
+    float U(GridIndex g);
+    float V(GridIndex g);
+    float W(GridIndex g);
+    float tempU(int i, int j, int k);
+    float tempV(int i, int j, int k);
+    float tempW(int i, int j, int k);
 
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
@@ -60,9 +60,6 @@ public:
     void clearV();
     void clearW();
 
-    void randomizeValues();
-    void randomizeValues(double min, double max);
-
     inline bool isIndexInRangeU(int i, int j, int k) {
         return Grid3d::isGridIndexInRange(i, j, k, _isize + 1, _jsize, _ksize);
     }
@@ -83,9 +80,9 @@ public:
     }
 
     glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
-    double evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k);
-    double evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k);
-    double evaluateMaximumVelocityMagnitude();
+    float evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k);
+    float evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k);
+    float evaluateMaximumVelocityMagnitude();
 
     glm::vec3 evaluateVelocityAtFaceCenterU(int i, int j, int k);
     glm::vec3 evaluateVelocityAtFaceCenterV(int i, int j, int k);
@@ -105,7 +102,7 @@ public:
 private:
     void _initializeVelocityGrids();
 
-    double _default_out_of_range_value = 0.0;
+    float _default_out_of_range_value = 0.0f;
 
     inline double _randomFloat(double min, double max) {
          return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min))); 

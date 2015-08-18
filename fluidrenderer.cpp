@@ -209,7 +209,7 @@ void FluidRenderer::drawMarkerParticles() {
     _setTransforms();
 
     glBegin(GL_POINTS);
-    for (int i = 0; i < (int)points.size(); i++) {
+    for (unsigned int i = 0; i < points.size(); i++) {
         (points[i].x, points[i].y, points[i].z);
     }
     glEnd();
@@ -236,19 +236,19 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     std::vector<std::pair<glm::vec4, int> > sortedPoints;
 
     glm::vec3 r;
-    for (int i = 0; i < (int)points.size(); i++) {
+    for (unsigned int i = 0; i < points.size(); i++) {
         glm::vec3 p = points[i];
         r = cp - p;
         double d = glm::dot(r, r);
         sortedPoints.push_back(std::pair<glm::vec4, int>(glm::vec4(p, d), 0));
     }
-    for (int i = 0; i < (int)solidpoints.size(); i++) {
+    for (unsigned int i = 0; i < solidpoints.size(); i++) {
         glm::vec3 p = solidpoints[i];
         r = cp - p;
         double d = glm::dot(r, r);
         sortedPoints.push_back(std::pair<glm::vec4, int>(glm::vec4(p, d), 1));
     }
-    for (int i = 0; i < (int)diffusePoints.size(); i++) {
+    for (unsigned int i = 0; i < diffusePoints.size(); i++) {
         glm::vec3 p = diffusePoints[i].position;
         double type = diffusePoints[i].type;
         double t;
@@ -274,7 +274,7 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     glm::vec3 max = glm::vec3(0.125*63, 0.125*63, 0.125*63); - eps;
     AABB bbox = AABB(min, max);
 
-    for (int i = 0; i < (int)sortedPoints.size(); i++) {
+    for (unsigned int i = 0; i < sortedPoints.size(); i++) {
         double size = hw;
         glm::vec4 p4 = sortedPoints[i].first;
         
@@ -362,11 +362,11 @@ void FluidRenderer::drawSurfaceTriangles() {
     glShadeModel(GL_SMOOTH);
     glBegin(GL_TRIANGLES);
 
-    float min = 0.35;
-    float max = 1.5;
+    float min = 0.35f;
+    float max = 1.5f;
 
     glm::vec3 p1, p2, p3, n1, n2, n3;
-    for (int i = 0; i < (int)surface->triangles.size(); i++) {
+    for (unsigned int i = 0; i < surface->triangles.size(); i++) {
         Triangle t = surface->triangles[i];
         p1 = surface->vertices[t.tri[0]];
         p2 = surface->vertices[t.tri[1]];

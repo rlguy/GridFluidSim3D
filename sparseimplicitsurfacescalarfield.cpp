@@ -70,7 +70,7 @@ void SparseImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
                         weight = _evaluateTrilinearFieldFunction(v);
                     }
 
-                    _field.add(i, j, k, weight);
+                    _field.add(i, j, k, (float)weight);
                 }
             }
         }
@@ -105,7 +105,7 @@ void SparseImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) 
                         weight = _evaluateTrilinearFieldFunction(v);
                     }
 
-                    _field.add(i, j, k, weight*scale);
+                    _field.add(i, j, k, (float)(weight*scale));
                 }
             }
         }
@@ -126,7 +126,7 @@ void SparseImplicitSurfaceScalarField::addCuboid(glm::vec3 pos,
             for (int i = gmin.i; i <= gmax.i; i++) {
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 if (bbox.isPointInside(gpos)) {
-                    _field.add(i, j, k, _surfaceThreshold + eps);
+                    _field.add(i, j, k, (float)(_surfaceThreshold + eps));
                 }
 
             }
@@ -136,7 +136,7 @@ void SparseImplicitSurfaceScalarField::addCuboid(glm::vec3 pos,
 
 void SparseImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
     GridIndex vertices[8];
-    for (int i = 0; i < solidCells.size(); i++) {
+    for (unsigned int i = 0; i < solidCells.size(); i++) {
         Grid3d::getGridIndexVertices(solidCells[i], vertices);
         for (int idx = 0; idx < 8; idx++) {
             _isVertexSolid.set(vertices[idx], true);
@@ -155,7 +155,7 @@ void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<float> &fiel
     double val;
 
     GridIndex g;
-    for (int i = 0; i < indices.size(); i++) {
+    for (unsigned int i = 0; i < indices.size(); i++) {
         g = indices[i];
         val = _field(g);
         if (val < eps) {
@@ -166,7 +166,7 @@ void SparseImplicitSurfaceScalarField::getScalarField(SparseArray3d<float> &fiel
             val = _surfaceThreshold;
         } 
 
-        field.set(g, val);
+        field.set(g, (float)val);
     }
 
 }

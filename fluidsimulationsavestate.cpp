@@ -147,7 +147,7 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(std::vector<g
     char position[3*sizeof(float)];
 
     glm::vec3 mp;
-    for (int i = 0; i < (int)mps.size(); i++) {
+    for (unsigned int i = 0; i < mps.size(); i++) {
         mp = mps[i];
 
         memcpy(position, &mp.x, fsize);
@@ -235,7 +235,7 @@ void FluidSimulationSaveState::_writeSolidCellIndices(FluidSimulation *sim,
 
     int *data = new int[3*indices.size()];
     GridIndex g;
-    for (int i = 0; i < (int)indices.size(); i++) {
+    for (unsigned int i = 0; i < indices.size(); i++) {
         g = indices[i];
         data[3*i] = g.i;
         data[3*i + 1] = g.j;

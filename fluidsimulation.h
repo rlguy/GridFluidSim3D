@@ -243,7 +243,7 @@ private:
     void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
     inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
         GridIndex c;
-        for (int idx = 0; idx < (int)list.size(); idx++) {
+        for (unsigned int idx = 0; idx < list.size(); idx++) {
             c = list[idx];
             if (g.i == c.i && g.j == c.j && g.k == c.k) {
                 return true;
@@ -472,7 +472,7 @@ private:
     }
 
     inline double _randomFloat(double min, double max) {
-        return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+        return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / (max - min)));
     }
 
     bool _isSimulationInitialized = false;
@@ -505,7 +505,7 @@ private:
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
 
-    int _outputFluidSurfaceSubdivisionLevel = 1;
+    int _outputFluidSurfaceSubdivisionLevel = 2;
     double _outputFluidSurfaceCellNarrowBandSize = 0.5;
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
 
@@ -525,7 +525,7 @@ private:
     double _bubbleDragCoefficient = 1.0;
     double _maxFlatCurvature = 0.05;
 
-    float _ratioPICFLIP = 0.2f;
+    double _ratioPICFLIP = 0.2f;
     int _maxMarkerParticlesPerCell = 25;
 
     glm::vec3 _bodyForce;

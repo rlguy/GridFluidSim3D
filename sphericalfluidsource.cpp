@@ -59,7 +59,7 @@ std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &mate
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
     GridIndex g;
-    for (int i = 0; i < (int)overlappingIndices.size(); i++) {
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
         if (materialGrid(g) == M_AIR) {
             newFluidCells.push_back(g);
@@ -88,7 +88,7 @@ std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materia
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
     GridIndex g;
-    for (int i = 0; i < (int)overlappingIndices.size(); i++) {
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
         if (materialGrid(g) == M_FLUID) {
             fluidCells.push_back(g);

@@ -79,10 +79,10 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
     double min = std::numeric_limits<double>::infinity();
 
     GridIndex g;
-    for (int i = 0; i < (int)fluidCells.size(); i++) {
+    for (unsigned int i = 0; i < fluidCells.size(); i++) {
         g = fluidCells[i];
         double t = _calculateTurbulenceAtGridCell(g.i, g.j, g.k, vgrid);
-        _field.set(g.i, g.j, g.k, t);
+        _field.set(g.i, g.j, g.k, (float)t);
 
         avg += t;
         if (t > max) {
@@ -118,9 +118,7 @@ double TurbulenceField::_trilinearInterpolate(double p[8], double x, double y, d
 double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
     assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
-    p.x -= 0.5*_dx;
-    p.y -= 0.5*_dx;
-    p.z -= 0.5*_dx;
+    p -= glm::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     int i, j, k;
     double gx, gy, gz;

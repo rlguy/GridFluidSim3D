@@ -32,7 +32,7 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &c
     tbbox.getOverlappingGridCells(_dx, testcells);
 
     AABB cbbox = AABB(glm::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
-    for (int i = 0; i < (int)testcells.size(); i++) {
+    for (unsigned int i = 0; i < testcells.size(); i++) {
         cbbox.position = _gridIndexToPosition(testcells[i]);
         if (cbbox.isOverlappingTriangle(t, _surfaceMesh.vertices)) {
             cells.push_back(testcells[i]);
@@ -48,7 +48,7 @@ void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
 
     GridIndex g;
     double distsq;
-    for (int i = 0; i < (int)cells.size(); i++) {
+    for (unsigned int i = 0; i < cells.size(); i++) {
         g = cells[i];
         distsq = _minDistToTriangleSquared(g, index);
 
@@ -59,7 +59,7 @@ void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
 }
 
 void LevelSet::_calculateUnsignedSurfaceDistanceSquared() {
-    for (int i = 0; i < (int)_surfaceMesh.triangles.size(); i++) {
+    for (unsigned int i = 0; i < _surfaceMesh.triangles.size(); i++) {
         _calculateDistancesSquaredForTriangle(i);
     }
 }
@@ -78,7 +78,7 @@ void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer,
                                        Array3d<int> &layerGrid) {
     GridIndex ns[6];
     GridIndex g, n;
-    for (int i = 0; i < (int)layer.size(); i++) {
+    for (unsigned int i = 0; i < layer.size(); i++) {
         g = layer[i];
         _getNeighbourGridIndices6(g, ns);
         for (int j = 0; j < 6; j++) {
@@ -119,7 +119,7 @@ void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
 }
 
 void LevelSet::_setLevelSetCell(GridIndex g, double dist, int tidx) {
-    _signedDistance.set(g, dist);
+    _signedDistance.set(g, (float)dist);
     _indexGrid.set(g, tidx);
     _isDistanceSet.set(g, true);
 }
@@ -169,7 +169,7 @@ void LevelSet::_calculateUnsignedDistanceSquared() {
     std::vector<std::vector<GridIndex>> cellLayers;
     _getCellLayers(cellLayers);
 
-    for (int i = 0; i < (int)cellLayers.size(); i++) {
+    for (unsigned int i = 0; i < cellLayers.size(); i++) {
         _calculateUnsignedDistanceSquaredForLayer(cellLayers[i]);
     }
 }
@@ -199,7 +199,7 @@ void LevelSet::_updateCellSign(GridIndex g, std::vector<glm::vec3> &triangleCent
     glm::vec3 v = ct - p;
 
     if (glm::dot(v, n) < 0) {
-        _signedDistance.set(g, -1.0*_signedDistance(g));
+        _signedDistance.set(g, (float)-1.0f*_signedDistance(g));
     }
 }
 
@@ -209,7 +209,7 @@ void LevelSet::_calculateDistanceFieldSigns() {
     triangleFaceDirections.reserve(_surfaceMesh.triangles.size());
     triangleFaceCenters.reserve(_surfaceMesh.triangles.size());
 
-    for (int i = 0; i < (int)_surfaceMesh.triangles.size(); i++) {
+    for (unsigned int i = 0; i < _surfaceMesh.triangles.size(); i++) {
         triangleFaceDirections.push_back(_surfaceMesh.getTriangleFaceDirection(i));
         triangleFaceCenters.push_back(_surfaceMesh.getTriangleCenter(i));
     }
@@ -300,7 +300,7 @@ double LevelSet::_minDistToTriangleSquared(GridIndex g, int tidx) {
 }
 
 double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
-    if (tidx < 0 || tidx > _surfaceMesh.triangles.size()) {
+    if (tidx < 0 || (unsigned int)tidx > _surfaceMesh.triangles.size()) {
         return std::numeric_limits<double>::infinity();
     }
 
@@ -312,7 +312,7 @@ double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
 }
 
 double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point) {
-    if (tidx < 0 || tidx > _surfaceMesh.triangles.size()) {
+    if (tidx < 0 || (unsigned int)tidx > _surfaceMesh.triangles.size()) {
         return std::numeric_limits<double>::infinity();
     }
 
@@ -438,7 +438,7 @@ void LevelSet::_getTrianglePatch(int vertidx, double *area, std::vector<int> &tr
     _surfaceMesh.getVertexNeighbours(vertidx, nbs);
 
     std::queue<int> queue;
-    for (int i = 0; i < nbs.size(); i++) {
+    for (unsigned int i = 0; i < nbs.size(); i++) {
         queue.push(nbs[i]);
         _triangleHash.set(nbs[i], 0, 0, true);
         processedTriangles.push_back(nbs[i]);
@@ -451,7 +451,7 @@ void LevelSet::_getTrianglePatch(int vertidx, double *area, std::vector<int> &tr
         queue.pop();
 
         _surfaceMesh.getFaceNeighbours(t, nbs);
-        for (int i = 0; i < (int)nbs.size(); i++) {
+        for (unsigned int i = 0; i < nbs.size(); i++) {
             if (!_triangleHash(nbs[i], 0, 0)) {
                 queue.push(nbs[i]);
                 _triangleHash.set(nbs[i], 0, 0, true);
@@ -464,7 +464,7 @@ void LevelSet::_getTrianglePatch(int vertidx, double *area, std::vector<int> &tr
         tris.push_back(t);
     }
 
-    for (int i = 0; i < (int)processedTriangles.size(); i++) {
+    for (unsigned int i = 0; i < processedTriangles.size(); i++) {
         _triangleHash.set(processedTriangles[i], 0, 0, false);
     }
 
@@ -478,7 +478,7 @@ int LevelSet::_getRandomTriangle(std::vector<int> &tris,
     }
 
     float r = (float)rand() / (float)(RAND_MAX);
-    for (int i = 0; i < tris.size()-1; i++) {
+    for (unsigned int i = 0; i < tris.size()-1; i++) {
         if (r >= distribution[i] && r < distribution[i + 1]) {
             return tris[i];
         }
@@ -516,12 +516,12 @@ void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &point
     areaDistribution.reserve(patch.size());
 
     double currentArea = 0.0;
-    for (int i = 0; i < (int)patch.size(); i++) {
+    for (unsigned int i = 0; i < patch.size(); i++) {
         areaDistribution.push_back(currentArea);
         currentArea += _surfaceMesh.getTriangleArea(patch[i]) / area;
     }
 
-    int maxSamples = fmin(_maxSurfaceCurvatureSamples, patch.size());
+    int maxSamples = (int)fmin(_maxSurfaceCurvatureSamples, patch.size());
     glm::vec3 p;
     for (int i = 0; i < maxSamples; i++) {
         int tidx = _getRandomTriangle(patch, areaDistribution);
@@ -544,7 +544,7 @@ double LevelSet::_calculateCurvatureAtVertex(int idx) {
     glm::vec3 v = _surfaceMesh.vertices[idx];
     int tidx;
     double curvature = 0.0;
-    for (int i = 0; i < samples.size(); i++) {
+    for (unsigned int i = 0; i < samples.size(); i++) {
         p = samples[i];
         tidx = sampletris[i];
 
@@ -570,7 +570,7 @@ void LevelSet::calculateSurfaceCurvature() {
     _triangleHash = Array3d<bool>(_surfaceMesh.triangles.size(), 1, 1, false);
 
     _vertexCurvatures.clear();
-    for (int i = 0; i < (int)_surfaceMesh.vertices.size(); i++) {
+    for (unsigned int i = 0; i < _surfaceMesh.vertices.size(); i++) {
         double k = _calculateCurvatureAtVertex(i);
         _vertexCurvatures.push_back(k);
     }
@@ -591,7 +591,7 @@ double LevelSet::getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal) {
     int tidx;
     p = _findClosestPointOnSurface(p, &tidx);
 
-    if (tidx < 0 || tidx >= _surfaceMesh.triangles.size()) {
+    if (tidx < 0 || (unsigned int)tidx >= _surfaceMesh.triangles.size()) {
         *normal = glm::vec3(1.0, 0.0, 0.0);
         return 0.0;
     }

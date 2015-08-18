@@ -113,35 +113,6 @@ void MACVelocityField::commitTemporaryVelocityFieldValues() {
     }
 }
 
-void MACVelocityField::randomizeValues() {
-    randomizeValues(-1.0, 1.0);
-}
-
-void MACVelocityField::randomizeValues(double min, double max) {
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                _u.set(i, j, k, _randomFloat(min, max));
-            }
-        }
-    }
-
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize; i++) {
-                _v.set(i, j, k, _randomFloat(min, max));
-            }
-        }
-    }
-
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                _w.set(i, j, k, _randomFloat(min, max));
-            }
-        }
-    }
-}
 
 float* MACVelocityField::getRawArrayU() {
     return _u.getRawArray();
@@ -155,7 +126,7 @@ float* MACVelocityField::getRawArrayW() {
     return _w.getRawArray();
 }
 
-double MACVelocityField::U(int i, int j, int k) {
+float MACVelocityField::U(int i, int j, int k) {
     if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -163,7 +134,7 @@ double MACVelocityField::U(int i, int j, int k) {
     return _u(i, j, k);
 }
 
-double MACVelocityField::V(int i, int j, int k) {
+float MACVelocityField::V(int i, int j, int k) {
     if (!isIndexInRangeV(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -171,7 +142,7 @@ double MACVelocityField::V(int i, int j, int k) {
     return _v(i, j, k);
 }
 
-double MACVelocityField::W(int i, int j, int k) {
+float MACVelocityField::W(int i, int j, int k) {
     if (!isIndexInRangeW(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -179,7 +150,7 @@ double MACVelocityField::W(int i, int j, int k) {
     return _w(i, j, k);
 }
 
-double MACVelocityField::U(GridIndex g) {
+float MACVelocityField::U(GridIndex g) {
     if (!isIndexInRangeU(g)) {
         return _default_out_of_range_value;
     }
@@ -187,7 +158,7 @@ double MACVelocityField::U(GridIndex g) {
     return _u(g);
 }
 
-double MACVelocityField::V(GridIndex g) {
+float MACVelocityField::V(GridIndex g) {
     if (!isIndexInRangeV(g)) {
         return _default_out_of_range_value;
     }
@@ -195,7 +166,7 @@ double MACVelocityField::V(GridIndex g) {
     return _v(g);
 }
 
-double MACVelocityField::W(GridIndex g) {
+float MACVelocityField::W(GridIndex g) {
     if (!isIndexInRangeW(g)) {
         return _default_out_of_range_value;
     }
@@ -203,7 +174,7 @@ double MACVelocityField::W(GridIndex g) {
     return _w(g);
 }
 
-double MACVelocityField::tempU(int i, int j, int k) {
+float MACVelocityField::tempU(int i, int j, int k) {
     if (!isIndexInRangeU(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -211,7 +182,7 @@ double MACVelocityField::tempU(int i, int j, int k) {
     return _temp_u(i, j, k);
 }
 
-double MACVelocityField::tempV(int i, int j, int k) {
+float MACVelocityField::tempV(int i, int j, int k) {
     if (!isIndexInRangeV(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -219,7 +190,7 @@ double MACVelocityField::tempV(int i, int j, int k) {
     return _temp_v(i, j, k);
 }
 
-double MACVelocityField::tempW(int i, int j, int k) {
+float MACVelocityField::tempW(int i, int j, int k) {
     if (!isIndexInRangeW(i, j, k)) {
         return _default_out_of_range_value;
     }
@@ -232,7 +203,7 @@ void MACVelocityField::setU(int i, int j, int k, double val) {
         return;
     }
 
-    _u.set(i, j, k, val);
+    _u.set(i, j, k, (float)val);
 }
 
 void MACVelocityField::setV(int i, int j, int k, double val) {
@@ -240,7 +211,7 @@ void MACVelocityField::setV(int i, int j, int k, double val) {
         return;
     }
 
-    _v.set(i, j, k, val);
+    _v.set(i, j, k, (float)val);
 }
 
 void MACVelocityField::setW(int i, int j, int k, double val) {
@@ -248,7 +219,7 @@ void MACVelocityField::setW(int i, int j, int k, double val) {
         return;
     }
 
-    _w.set(i, j, k, val);
+    _w.set(i, j, k, (float)val);
 }
 
 void MACVelocityField::setU(GridIndex g, double val) {
@@ -289,7 +260,7 @@ void MACVelocityField::addU(int i, int j, int k, double val) {
         return;
     }
 
-    _u.add(i, j, k, val);
+    _u.add(i, j, k, (float)val);
 }
 
 void MACVelocityField::addV(int i, int j, int k, double val) {
@@ -297,7 +268,7 @@ void MACVelocityField::addV(int i, int j, int k, double val) {
         return;
     }
 
-    _v.add(i, j, k, val);
+    _v.add(i, j, k, (float)val);
 }
 
 void MACVelocityField::addW(int i, int j, int k, double val) {
@@ -305,7 +276,7 @@ void MACVelocityField::addW(int i, int j, int k, double val) {
         return;
     }
 
-    _w.add(i, j, k, val);
+    _w.add(i, j, k, (float)val);
 }
 
 void MACVelocityField::setTempU(int i, int j, int k, double val) {
@@ -313,7 +284,7 @@ void MACVelocityField::setTempU(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_u.set(i, j, k, val);
+    _temp_u.set(i, j, k, (float)val);
     _is_set_u.set(i, j, k, true);
 }
 
@@ -322,7 +293,7 @@ void MACVelocityField::setTempV(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_v.set(i, j, k, val);
+    _temp_v.set(i, j, k, (float)val);
     _is_set_v.set(i, j, k, true);
 }
 
@@ -331,7 +302,7 @@ void MACVelocityField::setTempW(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_w.set(i, j, k, val);
+    _temp_w.set(i, j, k, (float)val);
     _is_set_w.set(i, j, k, true);
 }
 
@@ -340,7 +311,7 @@ void MACVelocityField::addTempU(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_u.add(i, j, k, val);
+    _temp_u.add(i, j, k, (float)val);
     _is_set_u.set(i, j, k, true);
 }
 
@@ -349,7 +320,7 @@ void MACVelocityField::addTempV(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_v.add(i, j, k, val);
+    _temp_v.add(i, j, k, (float)val);
     _is_set_v.set(i, j, k, true);
 }
 
@@ -358,7 +329,7 @@ void MACVelocityField::addTempW(int i, int j, int k, double val) {
         return;
     }
 
-    _temp_w.add(i, j, k, val);
+    _temp_w.add(i, j, k, (float)val);
     _is_set_w.set(i, j, k, true);
 }
 
@@ -385,11 +356,11 @@ glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
 glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
     assert(isIndexInRangeW(i, j, k));
 
-    double gx = (double)i*_dx;
-    double gy = (double)j*_dx;
-    double gz = (double)(k-1)*_dx;
+    double gx = (float)i*_dx;
+    double gy = (float)j*_dx;
+    double gz = (float)(k-1)*_dx;
 
-    return glm::vec3(gx + 0.5*_dx, gy + 0.5*_dx, gz + _dx);
+    return glm::vec3(gx + 0.5f*_dx, gy + 0.5f*_dx, gz + _dx);
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
@@ -402,29 +373,29 @@ glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
     return glm::vec3(xavg, yavg, zavg);
 }
 
-double MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k) {
+float MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
     double zavg = 0.5 * (W(i, j, k + 1) + W(i, j, k));
 
-    return xavg*xavg + yavg*yavg + zavg*zavg;
+    return (float)(xavg*xavg + yavg*yavg + zavg*zavg);
 }
 
-double MACVelocityField::evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k) {
+float MACVelocityField::evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double mag = evaluateVelocityMagnitudeSquaredAtCellCenter(i, j, k);
     if (mag > 0.0) {
-        return sqrt(mag);
+        return (float)sqrt(mag);
     }
     else {
         return 0.0;
     }
 }
 
-double MACVelocityField::evaluateMaximumVelocityMagnitude() {
+float MACVelocityField::evaluateMaximumVelocityMagnitude() {
     double maxsq = 0.0;
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -441,7 +412,7 @@ double MACVelocityField::evaluateMaximumVelocityMagnitude() {
         max = sqrt(maxsq);
     }
 
-    return max;
+    return (float)max;
 }
 
 glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
@@ -758,18 +729,6 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
-    /*
-    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    if (_u.isIndexInRange(i,   j,   k))   { points[0] = _u(i,   j,   k)   - _save_u(i,   j,   k); }
-    if (_u.isIndexInRange(i+1, j,   k))   { points[1] = _u(i+1, j,   k)   - _save_u(i+1, j,   k); }
-    if (_u.isIndexInRange(i,   j+1, k))   { points[2] = _u(i,   j+1, k)   - _save_u(i,   j+1, k); }
-    if (_u.isIndexInRange(i,   j,   k+1)) { points[3] = _u(i,   j,   k+1) - _save_u(i,   j,   k+1); }
-    if (_u.isIndexInRange(i+1, j,   k+1)) { points[4] = _u(i+1, j,   k+1) - _save_u(i+1, j,   k+1); }
-    if (_u.isIndexInRange(i,   j+1, k+1)) { points[5] = _u(i,   j+1, k+1) - _save_u(i,   j+1, k+1); }
-    if (_u.isIndexInRange(i+1, j+1, k))   { points[6] = _u(i+1, j+1, k)   - _save_u(i+1, j+1, k); }
-    if (_u.isIndexInRange(i+1, j+1, k+1)) { points[7] = _u(i+1, j+1, k+1) - _save_u(i+1, j+1, k+1); }
-    */
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -861,18 +820,6 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
     double iz = (z - gz)*inv_dx;
 
     assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
-    /*
-    double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    if (_w.isIndexInRange(i,   j,   k))   { points[0] = _w(i,   j,   k)   - _save_w(i,   j,   k); }
-    if (_w.isIndexInRange(i+1, j,   k))   { points[1] = _w(i+1, j,   k)   - _save_w(i+1, j,   k); }
-    if (_w.isIndexInRange(i,   j+1, k))   { points[2] = _w(i,   j+1, k)   - _save_w(i,   j+1, k); }
-    if (_w.isIndexInRange(i,   j,   k+1)) { points[3] = _w(i,   j,   k+1) - _save_w(i,   j,   k+1); }
-    if (_w.isIndexInRange(i+1, j,   k+1)) { points[4] = _w(i+1, j,   k+1) - _save_w(i+1, j,   k+1); }
-    if (_w.isIndexInRange(i,   j+1, k+1)) { points[5] = _w(i,   j+1, k+1) - _save_w(i,   j+1, k+1); }
-    if (_w.isIndexInRange(i+1, j+1, k))   { points[6] = _w(i+1, j+1, k)   - _save_w(i+1, j+1, k); }
-    if (_w.isIndexInRange(i+1, j+1, k+1)) { points[7] = _w(i+1, j+1, k+1) - _save_w(i+1, j+1, k+1); }
-    */
 
     int refi = i - 1;
     int refj = j - 1;

@@ -59,9 +59,9 @@ void ImplicitSurfaceScalarField::applyWeightField() {
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
-                double weight = _weightField(i, j, k);
+                float weight = _weightField(i, j, k);
                 if (weight > 0.0) {
-                    double v = _field(i, j, k) / weight;
+                    float v = _field(i, j, k) / weight;
                     _field.set(i, j, k, v);
                 }
             }
@@ -122,10 +122,10 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
                         weight = _evaluateTrilinearFieldFunction(v);
                     }
 
-                    _field.add(i, j, k, weight);
+                    _field.add(i, j, k, (float)weight);
 
                     if (_isWeightFieldEnabled) {
-                        _weightField.add(i, j, k, weight);
+                        _weightField.add(i, j, k, (float)weight);
                         _weightCountField.add(i, j, k, 1);
                     }
                 }
@@ -166,10 +166,10 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
                         weight = _evaluateTrilinearFieldFunction(v);
                     }
 
-                    _field.add(i, j, k, weight*scale);
+                    _field.add(i, j, k, (float)(weight*scale));
 
                     if (_isWeightFieldEnabled) {
-                        _weightField.add(i, j, k, weight);
+                        _weightField.add(i, j, k, (float)weight);
                         _weightCountField.add(i, j, k, 1);
                     }
                 }
@@ -191,10 +191,10 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
             for (int i = gmin.i; i <= gmax.i; i++) {
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 if (bbox.isPointInside(gpos)) {
-                    _field.add(i, j, k, _surfaceThreshold + eps);
+                    _field.add(i, j, k, (float)(_surfaceThreshold + eps));
 
                     if (_isWeightFieldEnabled) {
-                        _weightField.add(i, j, k, _surfaceThreshold + eps);
+                        _weightField.add(i, j, k, (float)(_surfaceThreshold + eps));
                         _weightCountField.add(i, j, k, 1);
                     }
                 }
@@ -259,7 +259,7 @@ void ImplicitSurfaceScalarField::getScalarField(Array3d<float> &field) {
                     val = _surfaceThreshold;
                 } 
 
-                field.set(i, j, k, val);
+                field.set(i, j, k, (float)val);
             }
         }
     }
@@ -299,7 +299,7 @@ void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(glm::vec3 p, 
     double distsq = glm::dot(v, v);
     if (distsq < _radius*_radius) {
         double val = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-        _centerField.add(i, j, k, val);
+        _centerField.add(i, j, k, (float)val);
     }
 }
 
@@ -311,6 +311,6 @@ void ImplicitSurfaceScalarField::_calculateCenterCellValueForCuboid(AABB &bbox, 
     glm::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     if (bbox.isPointInside(gpos)) {
         double eps = 10e-6;
-        _centerField.add(i, j, k, _surfaceThreshold + eps);
+        _centerField.add(i, j, k, (float)(_surfaceThreshold + eps));
     }
 }

@@ -331,7 +331,7 @@ SparsePolygonizer3d::~SparsePolygonizer3d()
 void SparsePolygonizer3d::setSurfaceCellIndices(std::vector<GridIndex> indices) {
     _surfaceIndices.clear();
     _surfaceIndices.reserve(indices.size());
-    for (int i = 0; i < (int)indices.size(); i++) {
+    for (unsigned int i = 0; i < indices.size(); i++) {
         _surfaceIndices.push_back(indices[i]);
     }
 }
@@ -475,7 +475,7 @@ std::vector<GridIndex> SparsePolygonizer3d::_findSurfaceCells() {
     std::vector<GridIndex> surfaceCells;
     _isCellDone.clear();
 
-    for (int i = 0; i < (int)_surfaceIndices.size(); i++) {
+    for (unsigned int i = 0; i < _surfaceIndices.size(); i++) {
         GridIndex cell = _surfaceIndices[i];
 
         if (_isCellDone(cell)) {
@@ -700,7 +700,7 @@ void SparsePolygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid
 void SparsePolygonizer3d::_calculateSurfaceTriangles() {
     _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
-    for (int i = 0; i < (int)_surfaceCells.size(); i++) {
+    for (unsigned int i = 0; i < _surfaceCells.size(); i++) {
         _polygonizeCell(_surfaceCells[i], _surfaceThreshold, edges);
     }
 }

@@ -45,7 +45,7 @@ double ImplicitSurfaceField::getFieldValue(glm::vec3 p) {
     _pointGrid.query(p, points);
 
     ImplicitPointPrimitive pi;
-    for (int i = 0; i < (int)points.size(); i++) {
+    for (unsigned int i = 0; i < points.size(); i++) {
         pi = points[i];
         if (isBlending) {
             sum += powl(pi.getFieldValue(p), _ricciBlend);
@@ -55,7 +55,7 @@ double ImplicitSurfaceField::getFieldValue(glm::vec3 p) {
     }
 
     Cuboid ci;
-    for (int i = 0; i < (int)_cuboids.size(); i++) {
+    for (unsigned int i = 0; i < _cuboids.size(); i++) {
         ci = _cuboids[i];
         if (_isPointInsideCuboid(p, ci)) {
             if (isBlending) {
@@ -86,7 +86,7 @@ double ImplicitSurfaceField::getFieldValue(glm::vec3 p) {
 
 std::vector<ImplicitPointData> ImplicitSurfaceField::getImplicitPointData() {
     std::vector<ImplicitPointData> data;
-    for (int i = 0; i < (int)_points.size(); i++) {
+    for (unsigned int i = 0; i < _points.size(); i++) {
         ImplicitPointData d;
         d.position = _points[i].getPosition();
         d.radius = _points[i].getRadius();

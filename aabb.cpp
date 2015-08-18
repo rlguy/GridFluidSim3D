@@ -40,7 +40,7 @@ AABB::AABB(std::vector<glm::vec3> &points) {
     double maxz = points[0].z;
 
     glm::vec3 p;
-    for (int i = 0; i < (int)points.size(); i++) {
+    for (unsigned int i = 0; i < points.size(); i++) {
         p = points[i];
         minx = fmin(p.x, minx);
         miny = fmin(p.y, miny);
