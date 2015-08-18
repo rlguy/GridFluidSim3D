@@ -44,11 +44,11 @@ struct MarkerParticle {
     MarkerParticle() : position(0.0, 0.0, 0.0), 
                         velocity(0.0, 0.0, 0.0) {}
 
-    MarkerParticle(glm::vec3 p, int ii, int jj, int kk) : position(p),
-                                                          velocity(0.0, 0.0, 0.0) {}
-    MarkerParticle(glm::vec3 p, glm::vec3 v, GridIndex g) : 
-                                                            position(p),
-                                                            velocity(v) {}
+    MarkerParticle(glm::vec3 p) : position(p),
+                                  velocity(0.0, 0.0, 0.0) {}
+    MarkerParticle(glm::vec3 p, glm::vec3 v) : 
+                                  position(p),
+                                  velocity(v) {}
 
     MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
                     position(x, y, z),
@@ -129,8 +129,9 @@ public:
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
 
-    std::vector<glm::vec3> getMarkerParticles();
-    std::vector<glm::vec3> getMarkerParticles(int skip);
+    unsigned int getNumMarkerParticles();
+    std::vector<glm::vec3> getMarkerParticlePositions();
+    std::vector<glm::vec3> getMarkerParticleVelocities();
     std::vector<DiffuseParticle> getDiffuseParticles();
     Array3d<int> getLayerGrid();
     MACVelocityField* getVelocityField();
@@ -226,7 +227,6 @@ private:
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
-    void _initializeMACGridFromSaveState(FluidSimulationSaveState &state);
 
     // Simulation step
     double _calculateNextTimeStep();
@@ -505,7 +505,7 @@ private:
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
 
-    int _outputFluidSurfaceSubdivisionLevel = 2;
+    int _outputFluidSurfaceSubdivisionLevel = 1;
     double _outputFluidSurfaceCellNarrowBandSize = 0.5;
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
 

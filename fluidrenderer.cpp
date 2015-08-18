@@ -204,7 +204,7 @@ void FluidRenderer::drawGrid() {
 }
 
 void FluidRenderer::drawMarkerParticles() {
-    std::vector<glm::vec3> points = _fluidsim->getMarkerParticles(3);
+    std::vector<glm::vec3> points = _fluidsim->getMarkerParticlePositions();
 
     _setTransforms();
 
@@ -230,7 +230,7 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
     glDisable(GL_LIGHTING);
     glBindTexture(GL_TEXTURE_2D, tex);
 
-    std::vector<glm::vec3> points = _fluidsim->getMarkerParticles();
+    std::vector<glm::vec3> points = _fluidsim->getMarkerParticlePositions();
     std::vector<glm::vec3> solidpoints = _fluidsim->getSolidCellPositions();
     std::vector<DiffuseParticle> diffusePoints = _fluidsim->getDiffuseParticles();
     std::vector<std::pair<glm::vec4, int> > sortedPoints;

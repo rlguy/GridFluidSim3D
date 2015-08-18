@@ -31,8 +31,7 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     _writeDouble(&dx, &state);
 
     // number of marker particles
-    std::vector<glm::vec3> markerParticles = _fluidsim->getMarkerParticles();
-    int n = markerParticles.size();
+    int n = _fluidsim->getNumMarkerParticles();
     _writeInt(&n, &state);
 
     // next frame to be processed
@@ -44,13 +43,10 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     _writeInt(&numIndices, &state);
 
     // floats: marker particle positions in form [x1, y1, z1, x2, y2, z2, ...]
-    _writeBinaryMarkerParticlePositions(markerParticles, &state);
+    _writeBinaryMarkerParticlePositions(_fluidsim, &state);
 
-    // doubles: MACVelocityGrid U, V, W values ordered each as a flattened 3d array
-    MACVelocityField *vfield = _fluidsim->getVelocityField();
-    _writeBinaryVelocitiesU(vfield, &state);
-    _writeBinaryVelocitiesV(vfield, &state);
-    _writeBinaryVelocitiesW(vfield, &state);
+    // floats: marker particle velocities in form [x1, y1, z1, x2, y2, z2, ...]
+    _writeBinaryMarkerParticleVelocities(_fluidsim, &state);
 
     // ints: solid cell indicies in form [i1, j1, k1, i2, j2, k2, ...]
     _writeSolidCellIndices(_fluidsim, &state);
@@ -77,13 +73,14 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
         return false;
     }
 
-    success = _readMarkerParticles(_stateData.markerParticles, numMarkerParticles, &state);
+    success = _readMarkerParticlePositions(_stateData.markerParticlePositions, 
+                                           numMarkerParticles, &state);
     if (!success) {
         return false;
     }
 
-    _stateData.vgrid = MACVelocity(_stateData.i, _stateData.j, _stateData.k);
-    success = _readMACVelocityGrid(_stateData.vgrid, &state);
+    success = _readMarkerParticleVelocities(_stateData.markerParticleVelocities, 
+                                            numMarkerParticles, &state);
     if (!success) {
         return false;
     }
@@ -114,18 +111,14 @@ int FluidSimulationSaveState::getCurrentFrame() {
     return _stateData.currentFrame;
 }
 
-std::vector<glm::vec3> FluidSimulationSaveState::getMarkerParticles() {
+std::vector<glm::vec3> FluidSimulationSaveState::getMarkerParticlePositions() {
     assert(_isLoadStateInitialized);
-    return _stateData.markerParticles;
+    return _stateData.markerParticlePositions;
 }
 
-void FluidSimulationSaveState::getVelocityField(Array3d<float> &U, 
-                                                Array3d<float> &V, 
-                                                Array3d<float> &W) {
+std::vector<glm::vec3> FluidSimulationSaveState::getMarkerParticleVelocities() {
     assert(_isLoadStateInitialized);
-    U = _stateData.vgrid.U;
-    V = _stateData.vgrid.V;
-    W = _stateData.vgrid.W;
+    return _stateData.markerParticleVelocities;
 }
 
 std::vector<GridIndex> FluidSimulationSaveState::getSolidCellIndices() {
@@ -137,8 +130,9 @@ bool FluidSimulationSaveState::isLoadStateInitialized() {
     return _isLoadStateInitialized;
 }
 
-void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(std::vector<glm::vec3> &mps,
+void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(FluidSimulation *_fluidsim,
                                                                    std::ofstream *state) {
+    std::vector<glm::vec3> mps = _fluidsim->getMarkerParticlePositions();
     int binsize = 3 * mps.size() * sizeof(float);
     char *storage = new char[binsize];
 
@@ -162,6 +156,32 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(std::vector<g
     delete[] storage;
 }
 
+void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
+                                                                    std::ofstream *state) {
+    std::vector<glm::vec3> mvs = _fluidsim->getMarkerParticleVelocities();
+    int binsize = 3 * mvs.size() * sizeof(float);
+    char *storage = new char[binsize];
+
+    int fsize = (int)sizeof(float);
+    int offset = 0;
+    char velocity[3*sizeof(float)];
+
+    glm::vec3 mv;
+    for (unsigned int i = 0; i < mvs.size(); i++) {
+        mv = mvs[i];
+
+        memcpy(velocity, &mv.x, fsize);
+        memcpy(velocity + fsize, &mv.y, fsize);
+        memcpy(velocity + 2*fsize, &mv.z, fsize);
+        memcpy(storage + offset, velocity, 3*fsize);
+
+        offset += 3*fsize;
+    }
+
+    state->write(storage, binsize);
+    delete[] storage;
+}
+
 void FluidSimulationSaveState::_writeInt(int *value, std::ofstream *state) {
     char bin[sizeof(int)];
     memcpy(bin, value, sizeof(int));
@@ -172,37 +192,6 @@ void FluidSimulationSaveState::_writeDouble(double *value, std::ofstream *state)
     char bin[sizeof(double)];
     memcpy(bin, value, sizeof(double));
     state->write(bin, sizeof(double));
-}
-
-
-void FluidSimulationSaveState::_writeBinaryVelocitiesU(MACVelocityField *vgrid, 
-                                                     std::ofstream *state) {
-    int binsize = (_width + 1)*_height*_depth*sizeof(float);
-    char *storage = new char[binsize];
-    float *u = vgrid->getRawArrayU();
-    memcpy(storage, u, binsize);
-    state->write(storage, binsize);
-    delete[] storage;
-}
-
-void FluidSimulationSaveState::_writeBinaryVelocitiesV(MACVelocityField *vgrid, 
-                                                       std::ofstream *state) {
-    int binsize = _width*(_height + 1)*_depth*sizeof(float);
-    char *storage = new char[binsize];
-    float *v = vgrid->getRawArrayV();
-    memcpy(storage, v, binsize);
-    state->write(storage, binsize);
-    delete[] storage;
-}
-
-void FluidSimulationSaveState::_writeBinaryVelocitiesW(MACVelocityField *vgrid, 
-                                                       std::ofstream *state) {
-    int binsize = _width*_height*(_depth + 1)*sizeof(float);
-    char *storage = new char[binsize];
-    float *w = vgrid->getRawArrayW();
-    memcpy(storage, w, binsize);
-    state->write(storage, binsize);
-    delete[] storage;
 }
 
 int FluidSimulationSaveState::_getNumSolidCells(FluidSimulation *sim) {
@@ -277,9 +266,9 @@ bool FluidSimulationSaveState::_readDouble(double *value, std::ifstream *state) 
     return true;
 }
 
-bool FluidSimulationSaveState::_readMarkerParticles(std::vector<glm::vec3> &particles, 
-                                                    int numParticles,
-                                                    std::ifstream *state) {
+bool FluidSimulationSaveState::_readMarkerParticlePositions(std::vector<glm::vec3> &particles, 
+                                                            int numParticles,
+                                                            std::ifstream *state) {
     int binsize = 3*numParticles*sizeof(float);
     char *bin = new char[binsize];
 
@@ -305,16 +294,12 @@ bool FluidSimulationSaveState::_readMarkerParticles(std::vector<glm::vec3> &part
     return true;
 }
 
-bool FluidSimulationSaveState::_readMACVelocityGrid(MACVelocity &vgrid, 
-                                                    std::ifstream *state) {
-    int isize = vgrid.width;
-    int jsize = vgrid.height;
-    int ksize = vgrid.depth;
-    int binsize = ((isize+1)*jsize*ksize + 
-                    isize*(jsize+1)*ksize + 
-                    isize*jsize*(ksize+1)) * sizeof(double);
-
+bool FluidSimulationSaveState::_readMarkerParticleVelocities(std::vector<glm::vec3> &mpvs, 
+                                                             int numParticles,
+                                                             std::ifstream *state) {
+    int binsize = 3*numParticles*sizeof(float);
     char *bin = new char[binsize];
+
     state->read(bin, binsize);
 
     if (!state->good()) {
@@ -322,49 +307,17 @@ bool FluidSimulationSaveState::_readMACVelocityGrid(MACVelocity &vgrid,
         return false;
     }
 
-    int dsize = sizeof(double);
-    int offset = 0;
-    int usize = (isize+1)*jsize*ksize*dsize;
-    double *uarray = new double[usize];
-    memcpy(uarray, bin, usize);
-    for (int k = 0; k < ksize; k++) {
-        for (int j = 0; j < jsize; j++) {
-            for (int i = 0; i < isize + 1; i++) {
-                vgrid.U.set(i, j, k, uarray[offset]);
-                offset++;
-            }
-        }
-    }
-    delete[] uarray;
-
-    offset = 0;
-    int vsize = isize*(jsize+1)*ksize*dsize;
-    double *varray = new double[vsize];
-    memcpy(varray, bin + usize, vsize);
-    for (int k = 0; k < ksize; k++) {
-        for (int j = 0; j < jsize + 1; j++) {
-            for (int i = 0; i < isize; i++) {
-                vgrid.V.set(i, j, k, varray[offset]);
-                offset++;
-            }
-        }
-    }
-    delete[] varray;
-
-    offset = 0;
-    int wsize = isize*jsize*(ksize+1)*dsize;
-    double *warray = new double[wsize];
-    memcpy(warray, bin + usize + vsize, wsize);
+    float *velocities = new float[3*numParticles];
+    memcpy(velocities, bin, binsize);
     delete[] bin;
-    for (int k = 0; k < ksize + 1; k++) {
-        for (int j = 0; j < jsize; j++) {
-            for (int i = 0; i < isize; i++) {
-                vgrid.W.set(i, j, k, warray[offset]);
-                offset++;
-            }
-        }
+    for (int i = 0; i < 3*numParticles; i += 3) {
+        float x = velocities[i];
+        float y = velocities[i + 1];
+        float z = velocities[i + 2];
+
+        mpvs.push_back(glm::vec3(x, y, z));
     }
-    delete[] warray;
+    delete[] velocities;
 
     return true;
 }

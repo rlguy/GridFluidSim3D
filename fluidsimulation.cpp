@@ -295,19 +295,30 @@ std::vector<glm::vec3> FluidSimulation::getSolidCellPositions() {
     return indices;
 }
 
-std::vector<glm::vec3> FluidSimulation::getMarkerParticles(int skip) {
+unsigned int FluidSimulation::getNumMarkerParticles() {
+    return _markerParticles.size();
+}
+
+std::vector<glm::vec3> FluidSimulation::getMarkerParticlePositions() {
     std::vector<glm::vec3> particles;
     particles.reserve(_markerParticles.size());
 
-    for (unsigned int i = 0; i < _markerParticles.size(); i += skip) {
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         particles.push_back(_markerParticles[i].position);
     }
 
     return particles;
 }
 
-std::vector<glm::vec3> FluidSimulation::getMarkerParticles() {
-    return getMarkerParticles(1);
+std::vector<glm::vec3> FluidSimulation::getMarkerParticleVelocities() {
+    std::vector<glm::vec3> velocities;
+    velocities.reserve(_markerParticles.size());
+
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        velocities.push_back(_markerParticles[i].velocity);
+    }
+
+    return velocities;
 }
 
 std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
@@ -381,7 +392,7 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
                                   _randomFloat(-jitter, jitter));
 
         glm::vec3 p = points[idx] + jit;
-        _markerParticles.push_back(MarkerParticle(p, g.i, g.j, g.k));
+        _markerParticles.push_back(MarkerParticle(p));
     }
 }
 
@@ -498,14 +509,22 @@ void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
 
 void FluidSimulation::_initializeMarkerParticlesFromSaveState(
                                         FluidSimulationSaveState &state) {
-    std::vector<glm::vec3> positions = state.getMarkerParticles();
+    std::vector<glm::vec3> positions = state.getMarkerParticlePositions();
 
     glm::vec3 p;
     GridIndex g;
     for (unsigned int i = 0; i < positions.size(); i++) {
         p = positions[i];
-        g = Grid3d::positionToGridIndex(p, _dx);
-        _markerParticles.push_back(MarkerParticle(p, g.i, g.j, g.k));
+        _markerParticles.push_back(MarkerParticle(p));
+    }
+    positions.clear();
+    positions.shrink_to_fit();
+
+    std::vector<glm::vec3> velocities = state.getMarkerParticleVelocities();
+    glm::vec3 v;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        v = velocities[i];
+        _markerParticles[i].velocity = v;
     }
 }
 
@@ -518,26 +537,13 @@ void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveStat
     }
 }
 
-void FluidSimulation::_initializeMACGridFromSaveState(FluidSimulationSaveState &state) {
-    Array3d<float> U, V, W;
-    state.getVelocityField(U, V, W);
-
-    assert(U.width == _isize + 1 && U.height == _jsize && U.depth == _ksize);
-    assert(V.width == _isize && V.height == _jsize + 1 && V.depth == _ksize);
-    assert(W.width == _isize && W.height == _jsize && W.depth == _ksize + 1);
-
-    _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
-    _MACVelocity.setU(U);
-    _MACVelocity.setV(V);
-    _MACVelocity.setW(W);
-}
-
 void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveState &state) {
     state.getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = state.getCellSize();
     _currentFrame = state.getCurrentFrame();
 
     _bodyForce = glm::vec3(0.0, 0.0, 0.0);
+    _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
     _materialGrid = Array3d<int>(_isize, _jsize, _ksize, M_AIR);
     _pressureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
     _layerGrid = Array3d<int>(_isize, _jsize, _ksize, -1);
@@ -550,7 +556,6 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _initializeSolidCellsFromSaveState(state);
     _initializeMarkerParticlesFromSaveState(state);
     _initializeFluidMaterialParticlesFromSaveState();
-    _initializeMACGridFromSaveState(state);
 
     _isFluidInSimulation = _fluidCellIndices.size() > 0;
     _isSimulationInitialized = true;

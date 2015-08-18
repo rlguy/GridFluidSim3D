@@ -21,24 +21,12 @@ public:
     void getGridDimensions(int *i, int *j, int *);
     double getCellSize();
     int getCurrentFrame();
-    std::vector<glm::vec3> getMarkerParticles();
-    void getVelocityField(Array3d<float> &U, 
-                          Array3d<float> &V, 
-                          Array3d<float> &W);
+    std::vector<glm::vec3> getMarkerParticlePositions();
+    std::vector<glm::vec3> getMarkerParticleVelocities();
     std::vector<GridIndex> getSolidCellIndices();
     bool isLoadStateInitialized();
 
 private:
-    struct MACVelocity {
-        Array3d<float> U, V, W;
-        int width, height, depth;
-
-        MACVelocity() {};
-        MACVelocity(int i, int j, int k) : U(i + 1, j, k),
-                                           V(i, j + 1, k),
-                                           W(i, j, k + 1),
-                                           width(i), height(j), depth(k) {};
-    };
 
     struct LoadStateData {
         int i;
@@ -47,8 +35,8 @@ private:
         double dx;
         int currentFrame;
 
-        std::vector<glm::vec3> markerParticles;
-        MACVelocity vgrid;
+        std::vector<glm::vec3> markerParticlePositions;
+        std::vector<glm::vec3> markerParticleVelocities;
         std::vector<GridIndex> solidCellIndices;
 
         LoadStateData() {}
@@ -56,20 +44,21 @@ private:
 
     void _writeInt(int *value, std::ofstream *state);
     void _writeDouble(double *value, std::ofstream *state);
-    void _writeBinaryMarkerParticlePositions(std::vector<glm::vec3> &mps,
+    void _writeBinaryMarkerParticlePositions(FluidSimulation *_fluidsim,
                                              std::ofstream *state);
-    void _writeBinaryVelocitiesU(MACVelocityField *vgrid, std::ofstream *state);
-    void _writeBinaryVelocitiesV(MACVelocityField *vgrid, std::ofstream *state);
-    void _writeBinaryVelocitiesW(MACVelocityField *vgrid, std::ofstream *state);
+    void _writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
+                                              std::ofstream *state);
     void _writeSolidCellIndices(FluidSimulation *sim, std::ofstream *state);
     int _getNumSolidCells(FluidSimulation *sim);
 
     bool _readInt(int *value, std::ifstream *state);
     bool _readDouble(double *value, std::ifstream *state);
-    bool _readMarkerParticles(std::vector<glm::vec3> &particles, 
-                              int numParticles,
-                              std::ifstream *state);
-    bool _readMACVelocityGrid(MACVelocity &vgrid, std::ifstream *state);
+    bool _readMarkerParticlePositions(std::vector<glm::vec3> &particles, 
+                                      int numParticles,
+                                      std::ifstream *state);
+    bool _readMarkerParticleVelocities(std::vector<glm::vec3> &velocities, 
+                                       int numParticles,
+                                       std::ifstream *state);
     bool _readSolidCellIndices(std::vector<GridIndex> &indices, 
                                int numIndices,
                                std::ifstream *state);
