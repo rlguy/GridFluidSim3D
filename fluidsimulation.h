@@ -50,9 +50,9 @@ struct MarkerParticle {
                                   position(p),
                                   velocity(v) {}
 
-    MarkerParticle(double x, double y, double z, int ii, int jj, int kk) : 
-                    position(x, y, z),
-                    velocity(0.0, 0.0, 0.0) {}
+    MarkerParticle(double x, double y, double z) : 
+                                  position(x, y, z),
+                                  velocity(0.0, 0.0, 0.0) {}
 };
 
 struct DiffuseParticle {
@@ -100,6 +100,14 @@ public:
     int getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
     void setSurfaceSubdivisionLevel(unsigned int n);
+
+    void enableSurfaceMeshOutput();
+    void disableSurfaceMeshOutput();
+    void enableDiffuseMaterialOutput();
+    void disableDiffuseMaterialOutput();
+    void enableBrickOutput();
+    void enableBrickOutput(double width, double height, double depth);
+    void disableBrickOutput();
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(glm::vec3 f);
@@ -241,6 +249,7 @@ private:
     void _getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells);
     void _getInitialFluidCellsFromTriangleMesh(std::vector<GridIndex> &fluidCells);
     void _addMarkerParticlesToCell(GridIndex g);
+    void _addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity);
     void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
@@ -257,7 +266,6 @@ private:
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
     void _addNewFluidCells(std::vector<GridIndex> &cells, glm::vec3 velocity);
-    void _setVelocitiesForNewFluidCell(GridIndex g, glm::vec3 v);
     void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
     inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
         GridIndex c;
@@ -284,6 +292,7 @@ private:
                                      std::string foamfile,
                                      std::string sprayfile);
     void _writeSmoothTriangleListToFile(TriangleMesh &mesh, std::string filename);
+    void _writeBrickMaterialToFile(std::string brickfile);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
     bool _isVertexNearSolid(glm::vec3 v, double eps);
@@ -525,7 +534,7 @@ private:
     double _maxAdvectionDistanceFactor = 2.5; // max number of cells an advection
                                               // integration can travel
     double _pressureSolveTolerance = 10e-6;
-    int _maxPressureSolveIterations = 300;
+    int _maxPressureSolveIterations = 150;
     int _numAdvanceMarkerParticleThreads = 8;
 
     double _surfaceReconstructionSmoothingValue = 0.85;
@@ -553,8 +562,15 @@ private:
     double _bubbleDragCoefficient = 1.0;
     double _maxFlatCurvature = 0.05;
 
-    double _ratioPICFLIP = 0.2f;
+    double _ratioPICFLIP = 0.35f;
     int _maxMarkerParticlesPerCell = 25;
+
+    bool _isSurfaceMeshOutputEnabled = true;
+    bool _isDiffuseMaterialOutputEnabled = false;
+    bool _isBrickOutputEnabled = false;
+    double _brickWidth = 1.0;
+    double _brickHeight = 1.0;
+    double _brickDepth = 1.0;
 
     glm::vec3 _bodyForce;
 

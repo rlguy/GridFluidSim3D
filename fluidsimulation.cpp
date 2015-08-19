@@ -114,6 +114,38 @@ void FluidSimulation::setSurfaceSubdivisionLevel(unsigned int n) {
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
+void FluidSimulation::enableSurfaceMeshOutput() {
+    _isSurfaceMeshOutputEnabled = true;
+}
+
+void FluidSimulation::disableSurfaceMeshOutput() {
+    _isSurfaceMeshOutputEnabled = false;
+}
+
+void FluidSimulation::enableDiffuseMaterialOutput() {
+    _isDiffuseMaterialOutputEnabled = true;
+}
+
+void FluidSimulation::disableDiffuseMaterialOutput() {
+    _isDiffuseMaterialOutputEnabled = false;
+}
+
+void FluidSimulation::enableBrickOutput() {
+    _isBrickOutputEnabled = true;
+}
+
+void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
+    assert(width > 0.0 && height > 0.0 && depth > 0.0);
+    _brickWidth = width;
+    _brickHeight = height;
+    _brickDepth = depth;
+    _isBrickOutputEnabled = true;
+}
+
+void FluidSimulation::disableBrickOutput() {
+    _isBrickOutputEnabled = false;
+}
+
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
     addBodyForce(glm::vec3(fx, fy, fz)); 
 }
@@ -357,6 +389,10 @@ void FluidSimulation::_initializeSolidCells() {
 }
 
 void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
+    _addMarkerParticlesToCell(g, glm::vec3(0.0, 0.0, 0.0));
+}
+
+void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity) {
     double q = 0.25*_dx;
     glm::vec3 c = Grid3d::GridIndexToCellCenter(g, _dx);
 
@@ -380,7 +416,7 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
                                   _randomFloat(-jitter, jitter));
 
         glm::vec3 p = points[idx] + jit;
-        _markerParticles.push_back(MarkerParticle(p));
+        _markerParticles.push_back(MarkerParticle(p, velocity));
     }
 }
 
@@ -580,44 +616,12 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
     _markerParticles = newv;
 }
 
-void FluidSimulation::_setVelocitiesForNewFluidCell(GridIndex g, glm::vec3 v) {
-    int i = g.i; int j = g.j; int k = g.k;
-
-    if (!_isFaceBorderingMaterialU(i, j, k, M_FLUID) &&
-        !_isFaceBorderingMaterialU(i, j, k, M_SOLID)) {
-        _MACVelocity.setU(i, j, k, v.x);
-    }
-    if (!_isFaceBorderingMaterialU(i + 1, j, k, M_FLUID) &&
-        !_isFaceBorderingMaterialU(i + 1, j, k, M_SOLID)) {
-        _MACVelocity.setU(i + 1, j, k, v.x);
-    }
-
-    if (!_isFaceBorderingMaterialV(i, j, k, M_FLUID) &&
-        !_isFaceBorderingMaterialV(i, j, k, M_SOLID)) {
-        _MACVelocity.setV(i, j, k, v.y);
-    }
-    if (!_isFaceBorderingMaterialV(i, j + 1, k, M_FLUID) &&
-        !_isFaceBorderingMaterialV(i, j + 1, k, M_SOLID)) {
-        _MACVelocity.setV(i, j + 1, k, v.y);
-    }
-
-    if (!_isFaceBorderingMaterialW(i, j, k, M_FLUID) &&
-        !_isFaceBorderingMaterialW(i, j, k, M_SOLID)) {
-        _MACVelocity.setW(i, j, k, v.z);
-    }
-    if (!_isFaceBorderingMaterialW(i, j + 1, k, M_FLUID) &&
-        !_isFaceBorderingMaterialW(i, j + 1, k, M_SOLID)) {
-        _MACVelocity.setW(i, j + 1, k, v.z);
-    }
-}
-
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
                                         glm::vec3 velocity) {
     _markerParticles.reserve(_markerParticles.size() + 8*cells.size());
     GridIndex g;
     for (unsigned int i = 0; i < cells.size(); i++) {
-        _setVelocitiesForNewFluidCell(cells[i], velocity);
-        _addMarkerParticlesToCell(cells[i]);
+        _addMarkerParticlesToCell(cells[i], velocity);
     }
 }
 
@@ -771,15 +775,50 @@ void FluidSimulation::_writeSmoothTriangleListToFile(TriangleMesh &mesh,
     delete[] storage;
 }
 
+void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile) {
+    double swidth, sheight, sdepth;
+    getSimulationDimensions(&swidth, &sheight, &sdepth);
+
+    double bw = _brickWidth;
+    double bh = _brickHeight;
+    double bd = _brickDepth;
+    glm::vec3 coffset = glm::vec3(0.5*bw, 0.5*bh, 0.5*bd);
+
+    TriangleMesh brickLocations;
+    GridIndex g;
+    glm::vec3 v;
+    for (double z = coffset.z; z < sdepth; z += bd) {
+        for (double y = coffset.y; y < sheight; y += bh) {
+            for (double x = coffset.x; x < swidth; x += bw) {
+                g = Grid3d::positionToGridIndex(x, y, z, _dx);
+                if (_isCellFluid(g)) {
+                    brickLocations.vertices.push_back(glm::vec3(x, y, z));
+                }
+            }
+        }
+    }
+
+    brickLocations.writeMeshToPLY(brickfile);
+}
+
 void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
     std::string currentFrame = std::to_string(_currentFrame);
     currentFrame.insert(currentFrame.begin(), 6 - currentFrame.size(), '0');
 
-    mesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
-    _writeSmoothTriangleListToFile(mesh, "bakefiles/smoothfacelist" + currentFrame + ".data");
-    _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
-                                "bakefiles/foam" + currentFrame + ".ply",
-                                "bakefiles/spray" + currentFrame + ".ply");
+    if (_isSurfaceMeshOutputEnabled) {
+        mesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
+        _writeSmoothTriangleListToFile(mesh, "bakefiles/smoothfacelist" + currentFrame + ".data");
+    }
+
+    if (_isDiffuseMaterialOutputEnabled) {
+        _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
+                                    "bakefiles/foam" + currentFrame + ".ply",
+                                    "bakefiles/spray" + currentFrame + ".ply");
+    }
+
+    if (_isBrickOutputEnabled) {
+        _writeBrickMaterialToFile("bakefiles/brick" + currentFrame + ".ply");
+    }
 }
 
 bool FluidSimulation::_isVertexNearSolid(glm::vec3 v, double eps) {
@@ -973,13 +1012,15 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
 void FluidSimulation::_reconstructOutputFluidSurface() {
     
     TriangleMesh mesh;
-    if (_outputFluidSurfaceSubdivisionLevel == 1) {
-        mesh = _surfaceMesh;
-    } else {
-        mesh = _polygonizeOutputSurface();
+    if (_isSurfaceMeshOutputEnabled) {
+        if (_outputFluidSurfaceSubdivisionLevel == 1) {
+            mesh = _surfaceMesh;
+        } else {
+            mesh = _polygonizeOutputSurface();
+        }
+        _smoothSurfaceMesh(mesh);
     }
 
-    _smoothSurfaceMesh(mesh);
     _writeSurfaceMeshToFile(mesh);
 }
 
@@ -2915,7 +2956,9 @@ void FluidSimulation::_stepFluid(double dt) {
         _logfile.log("Extrapolate Fluid Velocities:\t", timer10.getTime(), 4);
 
         timer11.start();
-        //_updateDiffuseMaterial(dt);
+        if (_isDiffuseMaterialOutputEnabled) {
+            _updateDiffuseMaterial(dt);
+        }
         timer11.stop();
 
         _logfile.log("Update Diffuse Material:     \t", timer11.getTime(), 4);

@@ -103,7 +103,9 @@ public:
         std::pair<GridIndex,T> kv(g, value);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
     }
 
     void set(GridIndex g, T value) {
@@ -118,7 +120,9 @@ public:
         std::pair<GridIndex,T> kv(g, value);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
     }
     
     void set(std::vector<GridIndex> cells, T value) {
@@ -140,7 +144,9 @@ public:
         std::pair<GridIndex,T> kv(g, _defaultValue + value);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
     }
 
     void add(GridIndex g, T value) {
@@ -155,7 +161,9 @@ public:
         std::pair<GridIndex,T> kv(g, _defaultValue + value);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
     }
 
     T *getPointer(int i, int j, int k) {
@@ -173,7 +181,9 @@ public:
         std::pair<GridIndex,T> kv(g, _defaultValue);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
 
         return &_grid[g];
     }
@@ -192,7 +202,9 @@ public:
         std::pair<GridIndex,T> kv(g, _defaultValue);
         _grid.insert(kv);
 
-        _sparseIndices.push_back(g);
+        if (_isTrackingSparseIndices) {
+            _sparseIndices.push_back(g);
+        }
 
         return &_grid[g];
     }
@@ -238,6 +250,14 @@ public:
         return _outOfRangeValue;
     }
 
+    void enableSparseIndexTracking() {
+        _isTrackingSparseIndices = true;
+    }
+
+    void disableSparseIndexTracking() {
+        _isTrackingSparseIndices = false;
+    }
+
     inline bool isIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth;
     }
@@ -277,6 +297,7 @@ private:
     std::vector<GridIndex> _sparseIndices;
 
     bool _isOutOfRangeValueSet = false;
+    bool _isTrackingSparseIndices = false;
     T _outOfRangeValue;
     T _defaultValue;
 };
