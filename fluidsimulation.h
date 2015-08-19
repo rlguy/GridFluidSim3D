@@ -180,6 +180,24 @@ private:
                      minz(minp.z), maxz(maxp.z) {}
     };
 
+    struct FluidPoint {
+        glm::vec3 position;
+        double radius;
+
+        FluidPoint() : position(0.0, 0.0, 0.0),
+                       radius(0.0) {}
+        FluidPoint(glm::vec3 p, double r) : position(p),
+                                            radius(r) {}
+    };
+
+    struct FluidCuboid {
+        AABB bbox;
+
+        FluidCuboid() : bbox(glm::vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0) {}
+        FluidCuboid(glm::vec3 p, double w, double h, double d) : 
+                        bbox(p, w, h, d) {}
+    };
+
     struct MatrixCoefficients {
         Array3d<float> diag;
         Array3d<float> plusi;
@@ -292,17 +310,23 @@ private:
     // outside of current fluid region
     void _extrapolateFluidVelocities();
     void _resetExtrapolatedFluidVelocities();
-    int _updateExtrapolationLayers();
-    void _updateExtrapolationLayer(int layerIndex);
-    void _extrapolateVelocitiesForLayerIndex(int layerIndex);
-    double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex);
-    double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex);
-    double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex);
+    int _updateExtrapolationLayers(Array3d<int> &layerGrid);
+    void _updateExtrapolationLayer(int layerIndex, Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndex(int layerIndex, Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexU(int layerIndex, Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexV(int layerIndex, Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexW(int layerIndex, Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex,
+                                            Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex,
+                                            Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex,
+                                            Array3d<int> &layerGrid);
     glm::vec3 _getVelocityAtNearestPointOnFluidSurface(glm::vec3 p);
     glm::vec3 _getVelocityAtPosition(glm::vec3 p);
 
     // Calculate pressure values to satisfy incompressibility condition
-    void _updatePressureGrid(double dt);
+    void _updatePressureGrid(Array3d<float> &pressureGrid, double dt);
     double _calculateNegativeDivergenceVector(VectorCoefficients &b);
     void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
     void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
@@ -312,28 +336,32 @@ private:
     Eigen::VectorXd _solvePressureSystem(MatrixCoefficients &A, 
                                          VectorCoefficients &b, 
                                          VectorCoefficients &precon,
+                                         Array3d<int> &vectorIndexHashTable,
                                          double dt);
 
     // Methods for setting up system of equations for the pressure update
-    void _resetMatrixCoefficients();
-    void _resetPreconditioner();
     void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
     Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
                                                        std::vector<GridIndex> indices);
     Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A,
+                                                                       Array3d<int> &vectorIndexHashTable,
                                                                        double dt);
-    void _updateFluidGridIndexToEigenVectorXdIndexHashTable();
-    int _GridIndexToVectorIndex(int i, int j, int k);
-    int _GridIndexToVectorIndex(GridIndex index);
+    void _updateFluidGridIndexToEigenVectorXdIndexHashTable(Array3d<int> &hashTable);
+    int _GridIndexToVectorIndex(int i, int j, int k, Array3d<int> &hashTable);
+    int _GridIndexToVectorIndex(GridIndex index, Array3d<int> &hashTable);
     GridIndex _VectorIndexToGridIndex(int index);
     int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
 
     // Alter fluid velocities according to calculated pressures
     // to create a divercence free velocity field
-    void _applyPressureToVelocityField(double dt);
-    void _applyPressureToFaceU(int i, int j, int k, double dt);
-    void _applyPressureToFaceV(int i, int j, int k, double dt);
-    void _applyPressureToFaceW(int i, int j, int k, double dt);
+    void _applyPressureToVelocityField(Array3d<float> &pressureGrid, double dt);
+    void _applyPressureToFaceU(int i, int j, int k, Array3d<float> &pressureGrid,
+                                                    MACVelocityField &tempMACVelocity, double dt);
+    void _applyPressureToFaceV(int i, int j, int k, Array3d<float> &pressureGrid,
+                                                    MACVelocityField &tempMACVelocity, double dt);
+    void _applyPressureToFaceW(int i, int j, int k, Array3d<float> &pressureGrid,
+                                                    MACVelocityField &tempMACVelocity, double dt);
+    void _commitTemporaryVelocityFieldValues(MACVelocityField &tempMACVelocity);
 
     // Update diffuse material (spray, foam, bubbles)
     void _updateDiffuseMaterial(double dt);
@@ -363,7 +391,7 @@ private:
                                      DiffuseParticle &nextdp,double dt);
 
     // Transfer grid velocity to marker particles
-    void _updateMarkerParticleVelocities();
+    void _updateMarkerParticleVelocities(MACVelocityField &savedField);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
@@ -434,41 +462,41 @@ private:
         return _isFaceBorderingGridValueW(i, j, k, mat, _materialGrid);
     }
 
-    inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer) {
-        return _isFaceBorderingGridValueU(i, j, k, layer, _layerGrid);
+    inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueU(i, j, k, layer, layerGrid);
     }
-    inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer) {
-        return _isFaceBorderingGridValueV(i, j, k, layer, _layerGrid);
+    inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueV(i, j, k, layer, layerGrid);
     }
-    inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer) {
-        return _isFaceBorderingGridValueW(i, j, k, layer, _layerGrid);
+    inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueW(i, j, k, layer, layerGrid);
     }
-    inline bool _isFaceBorderingLayerIndexU(GridIndex g, int layer) {
-        return _isFaceBorderingGridValueU(g, layer, _layerGrid);
+    inline bool _isFaceBorderingLayerIndexU(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueU(g, layer, layerGrid);
     }
-    inline bool _isFaceBorderingLayerIndexV(GridIndex g, int layer) {
-        return _isFaceBorderingGridValueV(g, layer, _layerGrid);
+    inline bool _isFaceBorderingLayerIndexV(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueV(g, layer, layerGrid);
     }
-    inline bool _isFaceBorderingLayerIndexW(GridIndex g, int layer) {
-        return _isFaceBorderingGridValueW(g, layer, _layerGrid);
-    }
-
-    inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k) {
-        if (i == _isize) {  return _layerGrid(i - 1, j, k) >= 1.0; }
-        else if (i > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i - 1, j, k) >= 1.0; }
-        else { return _layerGrid(i, j, k) >= 1.0; }
+    inline bool _isFaceBorderingLayerIndexW(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueW(g, layer, layerGrid);
     }
 
-    inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k) {
-        if (j == _jsize) { return _layerGrid(i, j - 1, k) >= 1.0; }
-        else if (j > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i, j - 1, k) >= 1.0; }
-        else { return _layerGrid(i, j, k) >= 1.0; }
+    inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (i == _isize) {  return layerGrid(i - 1, j, k) >= 1.0; }
+        else if (i > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i - 1, j, k) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
     }
 
-    inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k) {
-        if (k == _ksize) { return _layerGrid(i, j, k - 1) >= 1.0; }
-        else if (k > 0) { return _layerGrid(i, j, k) >= 1.0 || _layerGrid(i, j, k - 1) >= 1.0; }
-        else { return _layerGrid(i, j, k) >= 1.0; }
+    inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (j == _jsize) { return layerGrid(i, j - 1, k) >= 1.0; }
+        else if (j > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j - 1, k) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
+    }
+
+    inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (k == _ksize) { return layerGrid(i, j, k - 1) >= 1.0; }
+        else if (k > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
     }
 
     inline double _randomFloat(double min, double max) {
@@ -539,19 +567,15 @@ private:
 
     MACVelocityField _MACVelocity;
     Array3d<int> _materialGrid;
-    Array3d<float> _pressureGrid;
-    Array3d<int> _layerGrid;
-    MatrixCoefficients _matrixA;
-    VectorCoefficients _preconditioner;
-    Array3d<int> _GridIndexToEigenVectorXdIndex;
-    ImplicitSurfaceScalarField _implicitFluidScalarField;
-    LevelSetField _levelsetField;
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
     LogFile _logfile;
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
     std::vector<bool> _isSurfaceTriangleSmooth;
+    
+    std::vector<FluidPoint> _fluidPoints;
+    std::vector<FluidCuboid> _fluidCuboids;
     std::vector<FluidSource*> _fluidSources;
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;

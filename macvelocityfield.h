@@ -26,9 +26,6 @@ public:
     float U(GridIndex g);
     float V(GridIndex g);
     float W(GridIndex g);
-    float tempU(int i, int j, int k);
-    float tempV(int i, int j, int k);
-    float tempW(int i, int j, int k);
 
     void setU(int i, int j, int k, double val);
     void setV(int i, int j, int k, double val);
@@ -42,14 +39,6 @@ public:
     void addU(int i, int j, int k, double val);
     void addV(int i, int j, int k, double val);
     void addW(int i, int j, int k, double val);
-    void setTempU(int i, int j, int k, double val);
-    void setTempV(int i, int j, int k, double val);
-    void setTempW(int i, int j, int k, double val);
-    void addTempU(int i, int j, int k, double val);
-    void addTempV(int i, int j, int k, double val);
-    void addTempW(int i, int j, int k, double val);
-    void resetTemporaryVelocityField();
-    void commitTemporaryVelocityFieldValues();
 
     float* getRawArrayU();
     float* getRawArrayV();
@@ -92,13 +81,12 @@ public:
     glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
     glm::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
     glm::vec3 evaluateVelocityAtPositionLinear(glm::vec3 pos);
-    glm::vec3 evaluateChangeInVelocityAtPosition(glm::vec3 pos);
+    glm::vec3 evaluateChangeInVelocityAtPosition(glm::vec3 pos, MACVelocityField &savedField);
 
     glm::vec3 velocityIndexToPositionU(int i, int j, int k);
     glm::vec3 velocityIndexToPositionV(int i, int j, int k);
     glm::vec3 velocityIndexToPositionW(int i, int j, int k);
 
-    void saveVelocityFieldState();
 private:
     void _initializeVelocityGrids();
 
@@ -119,9 +107,9 @@ private:
     double _interpolateLinearU(double x, double y, double z);
     double _interpolateLinearV(double x, double y, double z);
     double _interpolateLinearW(double x, double y, double z);
-    double _interpolateDeltaVelocityU(double x, double y, double z);
-    double _interpolateDeltaVelocityV(double x, double y, double z);
-    double _interpolateDeltaVelocityW(double x, double y, double z);
+    double _interpolateDeltaVelocityU(double x, double y, double z, MACVelocityField &savedField);
+    double _interpolateDeltaVelocityV(double x, double y, double z, MACVelocityField &savedField);
+    double _interpolateDeltaVelocityW(double x, double y, double z, MACVelocityField &savedField);
 
     double _dx = 0.1;
     int _isize = 10;
@@ -131,14 +119,5 @@ private:
     Array3d<float> _u;
     Array3d<float> _v;
     Array3d<float> _w;
-    Array3d<float> _temp_u;
-    Array3d<float> _temp_v;
-    Array3d<float> _temp_w;
-    Array3d<float> _save_u;
-    Array3d<float> _save_v;
-    Array3d<float> _save_w;
-    Array3d<bool> _is_set_u;
-    Array3d<bool> _is_set_v;
-    Array3d<bool> _is_set_w;
 };
 

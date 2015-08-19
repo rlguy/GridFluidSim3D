@@ -40,7 +40,6 @@ public:
     void drawFluidCells();
     void drawAirCells();
     void drawMarkerParticles();
-    void drawLayerGrid();
     void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
     void drawSurfaceTriangles();
 private:
