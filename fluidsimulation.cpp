@@ -231,6 +231,8 @@ bool FluidSimulation::addFluidMesh(std::string OBJFilename, glm::vec3 offset, do
 
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, double r) {
     SphericalFluidSource *source = new SphericalFluidSource(pos, r);
+    source->setID(_getUniqueFluidSourceID());
+
     _fluidSources.push_back(source);
     _sphericalFluidSources.push_back(source);
     return source;
@@ -239,6 +241,8 @@ SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, do
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, double r, 
                                              glm::vec3 velocity) {
     SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
+    source->setID(_getUniqueFluidSourceID());
+
     _fluidSources.push_back(source);
     _sphericalFluidSources.push_back(source);
     return source;
@@ -246,6 +250,8 @@ SphericalFluidSource* FluidSimulation::addSphericalFluidSource(glm::vec3 pos, do
 
 CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
     CuboidFluidSource *source = new CuboidFluidSource(bbox);
+    source->setID(_getUniqueFluidSourceID());
+
     _fluidSources.push_back(source);
     _cuboidFluidSources.push_back(source);
     return source;
@@ -253,9 +259,53 @@ CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
 
 CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, glm::vec3 velocity) {
     CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
+    source->setID(_getUniqueFluidSourceID());
+
     _fluidSources.push_back(source);
     _cuboidFluidSources.push_back(source);
     return source;
+}
+
+void FluidSimulation::removeFluidSource(FluidSource *source) {
+    bool isFound = false;
+    for (unsigned int i = 0; i < _fluidSources.size(); i++) {
+        if (source->getID() == _fluidSources[i]->getID()) {
+            delete (_fluidSources[i]);
+            _fluidSources.erase(_fluidSources.begin() + i);
+            isFound = true;
+            break;
+        }
+    }
+
+    assert(isFound);
+
+    isFound = false;
+    for (unsigned int i = 0; i < _sphericalFluidSources.size(); i++) {
+        if (source->getID() == _sphericalFluidSources[i]->getID()) {
+            _sphericalFluidSources.erase(_sphericalFluidSources.begin() + i);
+            isFound = true;
+            break;
+        }
+    }
+
+    for (unsigned int i = 0; i < _cuboidFluidSources.size(); i++) {
+        if (source->getID() == _cuboidFluidSources[i]->getID()) {
+            _cuboidFluidSources.erase(_cuboidFluidSources.begin() + i);
+            isFound = true;
+            break;
+        }
+    }
+
+    assert(isFound);
+}
+
+void FluidSimulation::removeFluidSources() {
+    for (unsigned int i = 0; i < _fluidSources.size(); i++) {
+        delete[] _fluidSources[i];
+    }
+    _fluidSources.clear();
+    _sphericalFluidSources.clear();
+    _cuboidFluidSources.clear();
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
@@ -599,6 +649,12 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     UPDATE FLUID CELLS
 ********************************************************************************/
 
+int FluidSimulation::_getUniqueFluidSourceID() {
+    int id = _uniqueFluidSourceID;
+    _uniqueFluidSourceID++;
+    return id;
+}
+
 void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &cells) {
     std::vector<MarkerParticle> newv;
     newv.reserve(_markerParticles.size());
@@ -786,12 +842,13 @@ void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile) {
 
     TriangleMesh brickLocations;
     GridIndex g;
-    glm::vec3 v;
+    glm::vec3 p, v;
     for (double z = coffset.z; z < sdepth; z += bd) {
         for (double y = coffset.y; y < sheight; y += bh) {
             for (double x = coffset.x; x < swidth; x += bw) {
+                p = glm::vec3(x, y, z);
                 g = Grid3d::positionToGridIndex(x, y, z, _dx);
-                if (_isCellFluid(g)) {
+                if (_isCellFluid(g) && _levelset.isPointInInsideCell(p)) {
                     brickLocations.vertices.push_back(glm::vec3(x, y, z));
                 }
             }

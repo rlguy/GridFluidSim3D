@@ -28,6 +28,8 @@ public:
     int getSourceType();
     void activate();
     void deactivate();
+    int getID();
+    void setID(int identifier);
 
     virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
                                                     double dx);
@@ -47,6 +49,7 @@ protected:
 
     bool isActive = true;
     int sourceType = T_INFLOW;
+    int id = 0;
 
 };
 

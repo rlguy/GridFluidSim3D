@@ -88,3 +88,11 @@ std::vector<GridIndex> FluidSource::getFluidCells(Array3d<int> &materialGrid,
                                                   double dx) {
     return std::vector<GridIndex>();
 }
+
+int FluidSource::getID() {
+    return id;
+}
+
+void FluidSource::setID(int identifier) {
+    id = identifier;
+}

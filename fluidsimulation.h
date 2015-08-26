@@ -129,6 +129,8 @@ public:
                                                   glm::vec3 velocity);
     CuboidFluidSource *addCuboidFluidSource(AABB bbox);
     CuboidFluidSource *addCuboidFluidSource(AABB bbox, glm::vec3 velocity);
+    void removeFluidSource(FluidSource *source);
+    void removeFluidSources();
 
     void addSolidCell(int i, int j, int k);
     void addSolidCells(std::vector<glm::vec3> indices);
@@ -262,6 +264,7 @@ private:
 
     // Find fluid cells. Fluid cells must contain at
     // least 1 marker particle
+    int _getUniqueFluidSourceID();
     void _updateFluidCells();
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
@@ -595,6 +598,7 @@ private:
     std::vector<FluidSource*> _fluidSources;
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
+    int _uniqueFluidSourceID = 0;
     TurbulenceField _turbulenceField;
     std::vector<DiffuseParticle> _diffuseParticles;
 };
