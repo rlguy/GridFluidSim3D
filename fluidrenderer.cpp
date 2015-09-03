@@ -352,8 +352,8 @@ void FluidRenderer::drawSurfaceTriangles() {
         n2 = surface->normals[t.tri[1]];
         n3 = surface->normals[t.tri[2]];
 
-        /*
-        float k = levelset->getSurfaceCurvature(i);
+        
+        float k = (float)levelset->getSurfaceCurvature(i);
         glm::vec3 p = (p1 + p2 + p3) / 3.0f;
         glm::vec3 n = glm::normalize((n1 + n2 + n3) / 3.0f);
         glm::vec3 v = glm::normalize(vfield->evaluateVelocityAtPosition(p));
@@ -367,7 +367,7 @@ void FluidRenderer::drawSurfaceTriangles() {
         float f = (k - min) / (max - min);
         glm::vec3 c = (1.0f - f)*glm::vec3(0.8, 0.8, 0.8) + f*glm::vec3(0.0, 1.0, 0.0);
         glColor3d(c.x, c.y, c.z);
-        */
+        
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3d(p1.x, p1.y, p1.z);
@@ -382,6 +382,37 @@ void FluidRenderer::drawSurfaceTriangles() {
     glEnd();
 
     glDisable(GL_NORMALIZE);
+    _unsetTransforms();
+}
+
+void FluidRenderer::drawDensityGrid() {
+    int depth, height, width;
+    _fluidsim->getGridDimensions(&width, &height, &depth);
+
+    Array3d<float> dgrid = _fluidsim->getDensityGrid();
+
+    _setTransforms();
+
+    glBegin(GL_POINTS);
+    glm::vec3 p;
+    double size = _fluidsim->getCellSize();
+    for (int k = 1; k < depth-1; k++) {
+        for (int j = 1; j < height-1; j++) {
+            for (int i = 1; i < width-1; i++) {
+                double v = dgrid(i, j, k);
+                if (v > 0.01) {
+                    double x, y, z;
+                    Grid3d::GridIndexToCellCenter(i, j, k, size, &x, &y, &z);
+                    p = glm::vec3(x, y, z);
+
+                    glColor3d(1.0-v, 1.0-v, 1.0-v);
+                    glVertex3d(p.x, p.y, p.z);
+                }
+            }
+        }
+    }
+    glEnd();
+
     _unsetTransforms();
 }
 

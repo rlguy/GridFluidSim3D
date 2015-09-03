@@ -118,7 +118,7 @@ private:
     LevelSetField _distanceField;
 
     std::vector<double> _vertexCurvatures;
-    double _surfaceCurvatureSampleRadius = 4.0;  // radius in # of cells
+    double _surfaceCurvatureSampleRadius = 6.0;  // radius in # of cells
     int _maxSurfaceCurvatureSamples = 40;
     Array3d<bool> _triangleHash;
     

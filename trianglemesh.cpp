@@ -226,11 +226,21 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
                               'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'y', '\n',
                               'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'z', '\n',
                               'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'f', 'a', 'c', 'e', ' '};
+
+    char header2color[125] = {'\n', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'x', '\n',
+                                    'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'y', '\n',
+                                    'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'f', 'l', 'o', 'a', 't', ' ', 'z', '\n',
+                                    'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'u', 'c', 'h', 'a', 'r', ' ', 'r', 'e', 'd', '\n',
+                                    'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'u', 'c', 'h', 'a', 'r', ' ', 'g', 'r', 'e', 'e', 'n', '\n',
+                                    'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'u', 'c', 'h', 'a', 'r', ' ', 'b', 'l', 'u', 'e', '\n',
+                                    'e', 'l', 'e', 'm', 'e', 'n', 't', ' ', 'f', 'a', 'c', 'e', ' '};
                           
     char header3[49] = {'\n', 'p', 'r', 'o', 'p', 'e', 'r', 't', 'y', ' ', 'l', 'i', 's', 't', ' ', 
                               'u', 'c', 'h', 'a', 'r', ' ', 'i', 'n', 't', ' ', 
                               'v', 'e', 'r', 't', 'e', 'x', '_', 'i', 'n', 'd', 'e', 'x', '\n',
                               'e', 'n', 'd', '_', 'h', 'e', 'a', 'd', 'e', 'r', '\n'};
+
+    bool isColorEnabled = vertices.size() == vertexcolors.size();
 
     char vertstring[10];
     char facestring[10];
@@ -240,33 +250,89 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
     _itoa(triangles.size(), facestring, 10);
 
     int offset = 0;
-    int headersize = 51 + vertdigits + 65 + facedigits + 49;
-    int binsize = headersize + 3*sizeof(float)*vertices.size()
+    int headersize;
+    if (isColorEnabled) {
+        headersize = 51 + vertdigits + 125 + facedigits + 49;
+    } else {
+        headersize = 51 + vertdigits + 65 + facedigits + 49;
+    }
+
+    int binsize;
+    if (isColorEnabled) {
+        binsize = headersize + 3*(sizeof(float)*vertices.size() + sizeof(unsigned char)*vertices.size())
                              + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
+    } else {
+        binsize = headersize + 3*sizeof(float)*vertices.size()
+                             + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
+    }
     char *bin = new char[binsize];
 
     memcpy(bin + offset, header1, 51);
     offset += 51;
     memcpy(bin + offset, vertstring, vertdigits*sizeof(char));
     offset += vertdigits*sizeof(char);
-    memcpy(bin + offset, header2, 65);
-    offset += 65;
+
+    if (isColorEnabled) { 
+        memcpy(bin + offset, header2color, 125);
+        offset += 125;
+    } else {
+        memcpy(bin + offset, header2, 65);
+        offset += 65;
+    }
+
     memcpy(bin + offset, facestring, facedigits*sizeof(char));
     offset += facedigits*sizeof(char);
     memcpy(bin + offset, header3, 49);
     offset += 49;
 
-    float *vertdata = new float[3*vertices.size()];
-    glm::vec3 v;
-    for (unsigned int i = 0; i < vertices.size(); i++) {
-        v = vertices[i];
-        vertdata[3*i] = v.x;
-        vertdata[3*i + 1] = v.y;
-        vertdata[3*i + 2] = v.z;
+    if (isColorEnabled) {
+        float *vertdata = new float[3*vertices.size()];
+        glm::vec3 v;
+        for (unsigned int i = 0; i < vertices.size(); i++) {
+            v = vertices[i];
+            vertdata[3*i] = v.x;
+            vertdata[3*i + 1] = v.y;
+            vertdata[3*i + 2] = v.z;
+        }
+
+        unsigned char *colordata = new unsigned char[3*vertexcolors.size()];
+        glm::vec3 c;
+        for (unsigned int i = 0; i < vertexcolors.size(); i++) {
+            c = vertexcolors[i];
+            colordata[3*i] = (unsigned char)((c.x/1.0)*255.0);
+            colordata[3*i + 1] = (unsigned char)((c.y/1.0)*255.0);
+            colordata[3*i + 2] = (unsigned char)((c.z/1.0)*255.0);
+        }
+
+        int vertoffset = 0;
+        int coloroffset = 0;
+        int vertsize = 3*sizeof(float);
+        int colorsize = 3*sizeof(unsigned char);
+        for (unsigned int i = 0; i < vertices.size(); i++) {
+            memcpy(bin + offset, vertdata + vertoffset, vertsize);
+            offset += vertsize;
+            vertoffset += 3;
+
+            memcpy(bin + offset, colordata + coloroffset, colorsize);
+            offset += colorsize;
+            coloroffset += 3;
+        }
+
+        delete[] colordata;
+        delete[] vertdata;
+    } else {
+        float *vertdata = new float[3*vertices.size()];
+        glm::vec3 v;
+        for (unsigned int i = 0; i < vertices.size(); i++) {
+            v = vertices[i];
+            vertdata[3*i] = v.x;
+            vertdata[3*i + 1] = v.y;
+            vertdata[3*i + 2] = v.z;
+        }
+        memcpy(bin + offset, vertdata, 3*sizeof(float)*vertices.size());
+        offset += 3*sizeof(float)*vertices.size();
+        delete[] vertdata;
     }
-    memcpy(bin + offset, vertdata, 3*sizeof(float)*vertices.size());
-    offset += 3*sizeof(float)*vertices.size();
-    delete[] vertdata;
 
     Triangle t;
     int verts[3];

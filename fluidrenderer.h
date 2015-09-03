@@ -42,6 +42,7 @@ public:
     void drawMarkerParticles();
     void drawBillboardTextures(GLuint tex, double width, Camera3d *cam);
     void drawSurfaceTriangles();
+    void drawDensityGrid();
 private:
     int M_AIR = 0;
     int M_FLUID = 1;

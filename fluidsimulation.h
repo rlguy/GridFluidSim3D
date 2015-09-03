@@ -35,6 +35,7 @@
 #include "sphericalfluidsource.h"
 #include "cuboidfluidsource.h"
 #include "turbulencefield.h"
+#include "fluidbrickgrid.h"
 #include "glm/glm.hpp"
 
 struct MarkerParticle {
@@ -143,7 +144,7 @@ public:
     std::vector<glm::vec3> getMarkerParticlePositions();
     std::vector<glm::vec3> getMarkerParticleVelocities();
     std::vector<DiffuseParticle> getDiffuseParticles();
-    Array3d<int> getLayerGrid();
+    Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
     LevelSet* getLevelSet();
     TriangleMesh* getFluidSurfaceTriangles();
@@ -289,13 +290,14 @@ private:
     void _updateLevelSetSignedDistance();
 
     // Reconstruct output fluid surface
-    void _reconstructOutputFluidSurface();
+    void _reconstructOutputFluidSurface(double dt);
     void _writeSurfaceMeshToFile(TriangleMesh &mesh);
     void _writeDiffuseMaterialToFile(std::string bubblefile,
                                      std::string foamfile,
                                      std::string sprayfile);
     void _writeSmoothTriangleListToFile(TriangleMesh &mesh, std::string filename);
-    void _writeBrickMaterialToFile(std::string brickfile);
+    void _writeBrickColorListToFile(TriangleMesh &mesh, std::string filename);
+    void _writeBrickMaterialToFile(std::string brickfile, std::string colorfile);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
     bool _isVertexNearSolid(glm::vec3 v, double eps);
@@ -304,6 +306,7 @@ private:
     void _getSubdividedSurfaceCells(std::vector<GridIndex> &cells);
     void _getSubdividedSolidCells(std::vector<GridIndex> &cells);
     void _getOutputSurfaceParticles(std::vector<glm::vec3> &particles);
+    void _updateBrickGrid(double dt);
 
     // Advect fluid velocities
     void _advectVelocityField();
@@ -386,7 +389,7 @@ private:
                                            std::vector<DiffuseParticleEmitter> &emitters);
     double _getWavecrestPotential(glm::vec3 p, glm::vec3 *velocity);
     double _getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield);
-    double _getEnergyPotential(glm::vec3 p, glm::vec3 velocity);
+    double _getEnergyPotential(glm::vec3 velocity);
     void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
     void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt);
     int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
@@ -520,6 +523,7 @@ private:
     bool _isFluidInSimulation = false;
     int _currentFrame = 0;
     int _currentTimeStep = 0;
+    double _frameTimeStep = 0.0;
     bool _isCurrentFrameFinished = true;
     bool _isLastTimeStepForFrame = false;
     double _simulationTime = 0;
@@ -550,12 +554,12 @@ private:
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
 
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
-    double _minWavecrestCurvature = 0.35;
-    double _maxWavecrestCurvature = 2.0;
+    double _minWavecrestCurvature = 0.20;
+    double _maxWavecrestCurvature = 1.0;
     double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 100.0;
-    double _minTurbulence = 250.0;
-    double _maxTurbulence = 350.0;
+    double _maxParticleEnergy = 20.0;
+    double _minTurbulence = 100.0;
+    double _maxTurbulence = 200.0;
     double _wavecrestEmissionRate = 200.0;
     double _turbulenceEmissionRate = 200.0;
     double _maxDiffuseParticleLifetime = 2.0;
@@ -565,8 +569,15 @@ private:
     double _bubbleDragCoefficient = 1.0;
     double _maxFlatCurvature = 0.05;
 
+    double _minBrickNeighbourRatio = 0.10;
+    double _maxBrickNeighbourRatio = 0.50;
+    double _brickNeighbourIntensityInfluenceRatio = 0.5;
+    double _maxBrickIntensityVelocity = 10.0;
+    double _maxBrickIntensityAcceleration = 10.0;
+    int _maxInactiveBrickFrames = 0;
+
     double _ratioPICFLIP = 0.35f;
-    int _maxMarkerParticlesPerCell = 25;
+    int _maxMarkerParticlesPerCell = 50;
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isDiffuseMaterialOutputEnabled = false;
@@ -574,6 +585,7 @@ private:
     double _brickWidth = 1.0;
     double _brickHeight = 1.0;
     double _brickDepth = 1.0;
+    int _currentBrickMeshFrame = 0;
 
     glm::vec3 _bodyForce;
 
@@ -601,4 +613,8 @@ private:
     int _uniqueFluidSourceID = 0;
     TurbulenceField _turbulenceField;
     std::vector<DiffuseParticle> _diffuseParticles;
+
+    Array3d<Brick> _brickGrid;
+
+    FluidBrickGrid _fluidBrickGrid;
 };

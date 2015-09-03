@@ -64,6 +64,7 @@ public:
     }
 
     std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> vertexcolors;  // r, g, b values in range [0.0, 1.0]
     std::vector<glm::vec3> normals;
     std::vector<Triangle> triangles;
 

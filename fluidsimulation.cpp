@@ -131,6 +131,8 @@ void FluidSimulation::disableDiffuseMaterialOutput() {
 }
 
 void FluidSimulation::enableBrickOutput() {
+    AABB brick = AABB(glm::vec3(), _brickWidth, _brickHeight, _brickDepth);
+    _fluidBrickGrid = FluidBrickGrid(_isize, _jsize, _ksize, _dx, brick);
     _isBrickOutputEnabled = true;
 }
 
@@ -139,6 +141,16 @@ void FluidSimulation::enableBrickOutput(double width, double height, double dept
     _brickWidth = width;
     _brickHeight = height;
     _brickDepth = depth;
+
+    AABB brick = AABB(glm::vec3(), _brickWidth, _brickHeight, _brickDepth);
+
+    int i, j, k;
+    _fluidBrickGrid.getGridDimensions(&i, &j, &k);
+    if (i != _isize || j != _jsize || k != _ksize) {
+        _fluidBrickGrid = FluidBrickGrid(_isize, _jsize, _ksize, _dx, brick);
+    }
+    _fluidBrickGrid.setBrickDimensions(brick);
+
     _isBrickOutputEnabled = true;
 }
 
@@ -301,7 +313,7 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
 
 void FluidSimulation::removeFluidSources() {
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        delete[] _fluidSources[i];
+        delete (_fluidSources[i]);
     }
     _fluidSources.clear();
     _sphericalFluidSources.clear();
@@ -397,6 +409,10 @@ std::vector<glm::vec3> FluidSimulation::getMarkerParticleVelocities() {
 
 std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
     return _diffuseParticles;
+}
+
+Array3d<float> FluidSimulation::getDensityGrid() {
+    return _fluidBrickGrid.getDensityGrid();
 }
 
 MACVelocityField* FluidSimulation::getVelocityField() { 
@@ -630,6 +646,7 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     state.getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = state.getCellSize();
     _currentFrame = state.getCurrentFrame();
+    _currentBrickMeshFrame = _currentFrame;
 
     _bodyForce = glm::vec3(0.0, 0.0, 0.0);
     _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
@@ -831,31 +848,40 @@ void FluidSimulation::_writeSmoothTriangleListToFile(TriangleMesh &mesh,
     delete[] storage;
 }
 
-void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile) {
-    double swidth, sheight, sdepth;
-    getSimulationDimensions(&swidth, &sheight, &sdepth);
+void FluidSimulation::_writeBrickColorListToFile(TriangleMesh &mesh, 
+                                                     std::string filename) {
+    int binsize = 3*sizeof(int)*mesh.vertexcolors.size();
+    char *storage = new char[binsize];
 
-    double bw = _brickWidth;
-    double bh = _brickHeight;
-    double bd = _brickDepth;
-    glm::vec3 coffset = glm::vec3(0.5*bw, 0.5*bh, 0.5*bd);
-
-    TriangleMesh brickLocations;
-    GridIndex g;
-    glm::vec3 p, v;
-    for (double z = coffset.z; z < sdepth; z += bd) {
-        for (double y = coffset.y; y < sheight; y += bh) {
-            for (double x = coffset.x; x < swidth; x += bw) {
-                p = glm::vec3(x, y, z);
-                g = Grid3d::positionToGridIndex(x, y, z, _dx);
-                if (_isCellFluid(g) && _levelset.isPointInInsideCell(p)) {
-                    brickLocations.vertices.push_back(glm::vec3(x, y, z));
-                }
-            }
-        }
+    int *colordata = new int[3*mesh.vertexcolors.size()];
+    glm::vec3 c;
+    for (unsigned int i = 0; i < mesh.vertexcolors.size(); i++) {
+        c = mesh.vertexcolors[i];
+        colordata[3*i] = (int)(c.x*255.0);
+        colordata[3*i + 1] = (int)(c.y*255.0);
+        colordata[3*i + 2] = (int)(c.z*255.0);
     }
+    memcpy(storage, colordata, 3*sizeof(int)*mesh.vertexcolors.size());
+    delete[] colordata;
+    
+    std::ofstream erasefile;
+    erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
+    erasefile.close();
 
-    brickLocations.writeMeshToPLY(brickfile);
+    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+    file.write(storage, binsize);
+    file.close();
+
+    delete[] storage;
+}
+
+void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile,
+                                                std::string colorfile) {
+    TriangleMesh brickmesh;
+    _fluidBrickGrid.getBrickMesh(_levelset, brickmesh);
+
+    brickmesh.writeMeshToPLY(brickfile);
+    _writeBrickColorListToFile(brickmesh, colorfile);
 }
 
 void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
@@ -873,8 +899,13 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
                                     "bakefiles/spray" + currentFrame + ".ply");
     }
 
-    if (_isBrickOutputEnabled) {
-        _writeBrickMaterialToFile("bakefiles/brick" + currentFrame + ".ply");
+    if (_isBrickOutputEnabled && _fluidBrickGrid.isBrickMeshReady()) {
+        std::string currentBrickMeshFrame = std::to_string(_currentBrickMeshFrame);
+        currentBrickMeshFrame.insert(currentBrickMeshFrame.begin(), 6 - currentBrickMeshFrame.size(), '0');
+
+        _writeBrickMaterialToFile("bakefiles/brick" + currentBrickMeshFrame + ".ply", 
+                                  "bakefiles/brickcolor" + currentBrickMeshFrame + ".data");
+        _currentBrickMeshFrame++;
     }
 }
 
@@ -1066,7 +1097,17 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
     return polygonizer.getTriangleMesh();
 }
 
-void FluidSimulation::_reconstructOutputFluidSurface() {
+void FluidSimulation::_updateBrickGrid(double dt) {
+    std::vector<glm::vec3> points;
+    points.reserve(_markerParticles.size());
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        points.push_back(_markerParticles[i].position);
+    }
+
+    _fluidBrickGrid.update(_levelset, points, dt);
+}
+
+void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
     
     TriangleMesh mesh;
     if (_isSurfaceMeshOutputEnabled) {
@@ -1076,6 +1117,10 @@ void FluidSimulation::_reconstructOutputFluidSurface() {
             mesh = _polygonizeOutputSurface();
         }
         _smoothSurfaceMesh(mesh);
+    }
+
+    if (_isBrickOutputEnabled) {
+        _updateBrickGrid(dt);
     }
 
     _writeSurfaceMeshToFile(mesh);
@@ -2173,7 +2218,7 @@ double FluidSimulation::_getTurbulencePotential(glm::vec3 p, TurbulenceField &tf
            (_maxTurbulence - _minTurbulence);
 }
 
-double FluidSimulation::_getEnergyPotential(glm::vec3 p, glm::vec3 velocity) {
+double FluidSimulation::_getEnergyPotential(glm::vec3 velocity) {
     double e = 0.5*glm::dot(velocity, velocity);
     e = fmax(e, _minParticleEnergy);
     e = fmin(e, _maxParticleEnergy);
@@ -2193,7 +2238,7 @@ void FluidSimulation::_getSurfaceDiffuseParticleEmitters(
         double It = 0.0;
 
         if (Iwc > 0.0 || It > 0.0) {
-            double Ie = _getEnergyPotential(p, velocity);
+            double Ie = _getEnergyPotential(velocity);
             if (Ie > 0.0) {
                 emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, Iwc, It));
             }
@@ -2211,7 +2256,7 @@ void FluidSimulation::_getInsideDiffuseParticleEmitters(
 
         if (It > 0.0) {
             glm::vec3 velocity = _getVelocityAtPosition(p);
-            double Ie = _getEnergyPotential(p, velocity);
+            double Ie = _getEnergyPotential(velocity);
             if (Ie > 0.0) {
                 emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, 0.0, It));
             }
@@ -2971,7 +3016,7 @@ void FluidSimulation::_stepFluid(double dt) {
 
     timer5.start();
     if (_isLastTimeStepForFrame) {
-        _reconstructOutputFluidSurface();
+        _reconstructOutputFluidSurface(_frameTimeStep);
     }
     timer5.stop();
 
@@ -3103,6 +3148,8 @@ void FluidSimulation::update(double dt) {
         return;
     }
     _isCurrentFrameFinished = false;
+
+    _frameTimeStep = dt;
 
     saveState();
 
