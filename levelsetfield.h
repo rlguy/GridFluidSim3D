@@ -19,7 +19,10 @@ public:
 
 private:
 
-    double _fasttricubicInterpolate(double p[4][4][4], double x, double y, double z);
+    double _cubicInterpolate(double p[4], double x);
+    double _bicubicInterpolate(double p[4][4], double x, double y);
+    double _tricubicInterpolate(double p[4][4][4], double x, double y, double z);
+    double _trilinearInterpolate(double p[8], double x, double y, double z);
 
     double _surfaceThreshold = 0.0;
     Array3d<float> _distanceField;

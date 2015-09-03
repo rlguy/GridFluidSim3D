@@ -68,7 +68,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
         }
     }
 
-    double val = _fasttricubicInterpolate(points, ix, iy, iz);
+    double val = _tricubicInterpolate(points, ix, iy, iz);
 
     double eps = 10e-6;
     if (isMaterialGridSet && val > surfaceThreshold && _isPointNearSolid(p)) {
@@ -82,38 +82,40 @@ void LevelSetField::setSignedDistanceField(Array3d<float> distField) {
     _distanceField = distField;
 }
 
-/* 
-    Intopolation methods from http://www.paulinternet.nl/?page=bicubic
+// vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
+//                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
+// x, y, z, in range [0,1]
+double LevelSetField::_trilinearInterpolate(double p[8], double x, double y, double z) {
+    return p[0] * (1 - x) * (1 - y) * (1 - z) +
+           p[1] * x * (1 - y) * (1 - z) + 
+           p[2] * (1 - x) * y * (1 - z) + 
+           p[3] * (1 - x) * (1 - y) * z +
+           p[4] * x * (1 - y) * z + 
+           p[5] * (1 - x) * y * z + 
+           p[6] * x * y * (1 - z) + 
+           p[7] * x * y * z;
+}
 
-    - p is indexed in order by p[i][j][k]
-    - x, y, z are in [0,1]
-    - this function will interpolate the volume between point Index 1 and 2
-*/
-double LevelSetField::_fasttricubicInterpolate(double p[4][4][4], double x, double y, double z) {
-    double c00 = p[0][0][1] + 0.5 * x*(p[0][0][2] - p[0][0][0] + x*(2.0*p[0][0][0] - 5.0*p[0][0][1] + 4.0*p[0][0][2] - p[0][0][3] + x*(3.0*(p[0][0][1] - p[0][0][2]) + p[0][0][3] - p[0][0][0])));
-    double c01 = p[0][1][1] + 0.5 * x*(p[0][1][2] - p[0][1][0] + x*(2.0*p[0][1][0] - 5.0*p[0][1][1] + 4.0*p[0][1][2] - p[0][1][3] + x*(3.0*(p[0][1][1] - p[0][1][2]) + p[0][1][3] - p[0][1][0])));
-    double c02 = p[0][2][1] + 0.5 * x*(p[0][2][2] - p[0][2][0] + x*(2.0*p[0][2][0] - 5.0*p[0][2][1] + 4.0*p[0][2][2] - p[0][2][3] + x*(3.0*(p[0][2][1] - p[0][2][2]) + p[0][2][3] - p[0][2][0])));
-    double c03 = p[0][3][1] + 0.5 * x*(p[0][3][2] - p[0][3][0] + x*(2.0*p[0][3][0] - 5.0*p[0][3][1] + 4.0*p[0][3][2] - p[0][3][3] + x*(3.0*(p[0][3][1] - p[0][3][2]) + p[0][3][3] - p[0][3][0])));
+double LevelSetField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
+    assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
 
-    double c10 = p[1][0][1] + 0.5 * x*(p[1][0][2] - p[1][0][0] + x*(2.0*p[1][0][0] - 5.0*p[1][0][1] + 4.0*p[1][0][2] - p[1][0][3] + x*(3.0*(p[1][0][1] - p[1][0][2]) + p[1][0][3] - p[1][0][0])));
-    double c11 = p[1][1][1] + 0.5 * x*(p[1][1][2] - p[1][1][0] + x*(2.0*p[1][1][0] - 5.0*p[1][1][1] + 4.0*p[1][1][2] - p[1][1][3] + x*(3.0*(p[1][1][1] - p[1][1][2]) + p[1][1][3] - p[1][1][0])));
-    double c12 = p[1][2][1] + 0.5 * x*(p[1][2][2] - p[1][2][0] + x*(2.0*p[1][2][0] - 5.0*p[1][2][1] + 4.0*p[1][2][2] - p[1][2][3] + x*(3.0*(p[1][2][1] - p[1][2][2]) + p[1][2][3] - p[1][2][0])));
-    double c13 = p[1][3][1] + 0.5 * x*(p[1][3][2] - p[1][3][0] + x*(2.0*p[1][3][0] - 5.0*p[1][3][1] + 4.0*p[1][3][2] - p[1][3][3] + x*(3.0*(p[1][3][1] - p[1][3][2]) + p[1][3][3] - p[1][3][0])));
+    double arr[4];
+    arr[0] = _bicubicInterpolate(p[0], y, z);
+    arr[1] = _bicubicInterpolate(p[1], y, z);
+    arr[2] = _bicubicInterpolate(p[2], y, z);
+    arr[3] = _bicubicInterpolate(p[3], y, z);
+    return _cubicInterpolate(arr, x);
+}
 
-    double c20 = p[2][0][1] + 0.5 * x*(p[2][0][2] - p[2][0][0] + x*(2.0*p[2][0][0] - 5.0*p[2][0][1] + 4.0*p[2][0][2] - p[2][0][3] + x*(3.0*(p[2][0][1] - p[2][0][2]) + p[2][0][3] - p[2][0][0])));
-    double c21 = p[2][1][1] + 0.5 * x*(p[2][1][2] - p[2][1][0] + x*(2.0*p[2][1][0] - 5.0*p[2][1][1] + 4.0*p[2][1][2] - p[2][1][3] + x*(3.0*(p[2][1][1] - p[2][1][2]) + p[2][1][3] - p[2][1][0])));
-    double c22 = p[2][2][1] + 0.5 * x*(p[2][2][2] - p[2][2][0] + x*(2.0*p[2][2][0] - 5.0*p[2][2][1] + 4.0*p[2][2][2] - p[2][2][3] + x*(3.0*(p[2][2][1] - p[2][2][2]) + p[2][2][3] - p[2][2][0])));
-    double c23 = p[2][3][1] + 0.5 * x*(p[2][3][2] - p[2][3][0] + x*(2.0*p[2][3][0] - 5.0*p[2][3][1] + 4.0*p[2][3][2] - p[2][3][3] + x*(3.0*(p[2][3][1] - p[2][3][2]) + p[2][3][3] - p[2][3][0])));
+double LevelSetField::_bicubicInterpolate(double p[4][4], double x, double y) {
+    double arr[4];
+    arr[0] = _cubicInterpolate(p[0], y);
+    arr[1] = _cubicInterpolate(p[1], y);
+    arr[2] = _cubicInterpolate(p[2], y);
+    arr[3] = _cubicInterpolate(p[3], y);
+    return _cubicInterpolate(arr, x);
+}
 
-    double c30 = p[3][0][1] + 0.5 * x*(p[3][0][2] - p[3][0][0] + x*(2.0*p[3][0][0] - 5.0*p[3][0][1] + 4.0*p[3][0][2] - p[3][0][3] + x*(3.0*(p[3][0][1] - p[3][0][2]) + p[3][0][3] - p[3][0][0])));
-    double c31 = p[3][1][1] + 0.5 * x*(p[3][1][2] - p[3][1][0] + x*(2.0*p[3][1][0] - 5.0*p[3][1][1] + 4.0*p[3][1][2] - p[3][1][3] + x*(3.0*(p[3][1][1] - p[3][1][2]) + p[3][1][3] - p[3][1][0])));
-    double c32 = p[3][2][1] + 0.5 * x*(p[3][2][2] - p[3][2][0] + x*(2.0*p[3][2][0] - 5.0*p[3][2][1] + 4.0*p[3][2][2] - p[3][2][3] + x*(3.0*(p[3][2][1] - p[3][2][2]) + p[3][2][3] - p[3][2][0])));
-    double c33 = p[3][3][1] + 0.5 * x*(p[3][3][2] - p[3][3][0] + x*(2.0*p[3][3][0] - 5.0*p[3][3][1] + 4.0*p[3][3][2] - p[3][3][3] + x*(3.0*(p[3][3][1] - p[3][3][2]) + p[3][3][3] - p[3][3][0])));
-
-    double b0 = c01 + 0.5 * x*(c02 - c00 + x*(2.0*c00 - 5.0*c01 + 4.0*c02 - c03 + x*(3.0*(c01 - c02) + c03 - c00)));
-    double b1 = c11 + 0.5 * x*(c12 - c10 + x*(2.0*c10 - 5.0*c11 + 4.0*c12 - c13 + x*(3.0*(c11 - c12) + c13 - c10)));
-    double b2 = c21 + 0.5 * x*(c22 - c20 + x*(2.0*c20 - 5.0*c21 + 4.0*c22 - c23 + x*(3.0*(c21 - c22) + c23 - c20)));
-    double b3 = c31 + 0.5 * x*(c32 - c30 + x*(2.0*c30 - 5.0*c31 + 4.0*c32 - c33 + x*(3.0*(c31 - c32) + c33 - c30)));
-
-    return b1 + 0.5 * x*(b2 - b0 + x*(2.0*b0 - 5.0*b1 + 4.0*b2 - b3 + x*(3.0*(b1 - b2) + b3 - b0)));
+double LevelSetField::_cubicInterpolate(double p[4], double x) {
+    return p[1] + 0.5 * x*(p[2] - p[0] + x*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + x*(3.0*(p[1] - p[2]) + p[3] - p[0])));
 }
