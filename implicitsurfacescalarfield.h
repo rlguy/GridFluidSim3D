@@ -59,6 +59,10 @@ public:
     int getWeightCount(int i, int j, int k);
     int getWeightCount(GridIndex g);
     void getWeightField(Array3d<float> &field);
+    void setFieldValue(int i, int j, int k, double value);
+    void setFieldValue(GridIndex g, double value);
+    void setCellFieldValues(int i, int j, int k, double value);
+    void setCellFieldValues(GridIndex g, double value);
 
 private:
 

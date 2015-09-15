@@ -299,6 +299,28 @@ void ImplicitSurfaceScalarField::setTrilinearWeighting() {
     _weightType = WEIGHT_TRILINEAR;
 }
 
+void ImplicitSurfaceScalarField::setFieldValue(int i, int j, int k, double value) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    _field.set(i, j, k, value);
+}
+
+void ImplicitSurfaceScalarField::setFieldValue(GridIndex g, double value) {
+    setFieldValue(g.i, g.j, g.k, value);
+}
+
+void ImplicitSurfaceScalarField::setCellFieldValues(int i, int j, int k, double value) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width-1, _field.height-1, _field.depth-1));
+    GridIndex vertices[8];
+    Grid3d::getGridIndexVertices(i, j, k, vertices);
+    for (int i = 0; i < 8; i++) {
+        _field.set(vertices[i], value);
+    }
+}
+
+void ImplicitSurfaceScalarField::setCellFieldValues(GridIndex g, double value) {
+    setCellFieldValues(g.i, g.j, g.k, value);
+}
+
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {
     return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
 }
