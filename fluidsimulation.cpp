@@ -32,7 +32,7 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0))
 {
     _materialGrid.setOutOfRangeValue(M_SOLID);
-    _logfile = LogFile();
+    _logfile = LogFile();  
 }
 
 FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
@@ -400,6 +400,20 @@ std::vector<glm::vec3> FluidSimulation::getSolidCellPositions() {
     return indices;
 }
 
+void FluidSimulation::addFluidCell(int i, int j, int k) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+
+    if (_isCellAir(i, j, k)) {
+        _addedFluidCellQueue.push_back(GridIndex(i, j, k));
+    }
+}
+
+void FluidSimulation::addFluidCells(std::vector<GridIndex> indices) {
+    for (unsigned int i = 0; i < indices.size(); i++) {
+        addFluidCell((int)indices[i].i, (int)indices[i].j, (int)indices[i].k);
+    }
+}
+
 unsigned int FluidSimulation::getNumMarkerParticles() {
     return _markerParticles.size();
 }
@@ -713,7 +727,10 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     _markerParticles.reserve(_markerParticles.size() + 8*cells.size());
     GridIndex g;
     for (unsigned int i = 0; i < cells.size(); i++) {
-        _addMarkerParticlesToCell(cells[i], velocity);
+        if (_isCellAir(cells[i])) {
+            _addMarkerParticlesToCell(cells[i], velocity);
+            _materialGrid.set(cells[i], M_FLUID);
+        }
     }
 }
 
@@ -740,7 +757,15 @@ void FluidSimulation::_updateFluidSources() {
     }
 }
 
+void FluidSimulation::_updateAddedFluidCellQueue() {
+    glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
+    _addNewFluidCells(_addedFluidCellQueue, velocity);
+    _addedFluidCellQueue.clear();
+    _addedFluidCellQueue.shrink_to_fit();
+}
+
 void FluidSimulation::_updateFluidCells() {
+    _updateAddedFluidCellQueue();
     _updateFluidSources();
 
     _materialGrid.set(_fluidCellIndices, M_AIR);

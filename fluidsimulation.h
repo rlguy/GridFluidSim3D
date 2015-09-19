@@ -158,6 +158,8 @@ public:
     void removeSolidCells(std::vector<glm::vec3> indices);
     std::vector<glm::vec3> getSolidCells();
     std::vector<glm::vec3> getSolidCellPositions();
+    void addFluidCell(int i, int j, int k);
+    void addFluidCells(std::vector<GridIndex> indices);
 
     unsigned int getNumMarkerParticles();
     std::vector<glm::vec3> getMarkerParticlePositions();
@@ -286,6 +288,7 @@ private:
     // least 1 marker particle
     int _getUniqueFluidSourceID();
     void _updateFluidCells();
+    void _updateAddedFluidCellQueue();
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
     void _addNewFluidCells(std::vector<GridIndex> &cells, glm::vec3 velocity);
@@ -619,6 +622,7 @@ private:
     Array3d<int> _materialGrid;
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
+    std::vector<GridIndex> _addedFluidCellQueue;
     LogFile _logfile;
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
