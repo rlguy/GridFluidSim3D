@@ -433,6 +433,7 @@ private:
 
     // Transfer grid velocity to marker particles
     void _updateMarkerParticleVelocities(MACVelocityField &savedField);
+    void _updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx, MACVelocityField &savedField);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
@@ -569,6 +570,7 @@ private:
     double _pressureSolveTolerance = 10e-6;
     int _maxPressureSolveIterations = 150;
     int _numAdvanceMarkerParticleThreads = 8;
+    int _numUpdateMarkerParticleVelocityThreads = 8;
 
     double _surfaceReconstructionSmoothingValue = 0.85;
     int _surfaceReconstructionSmoothingIterations = 3;

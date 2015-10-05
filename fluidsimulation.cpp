@@ -519,11 +519,11 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity)
     }
 }
 
-void _addMarkerParticle(glm::vec3 p) {
+void FluidSimulation::_addMarkerParticle(glm::vec3 p) {
     _addMarkerParticle(p, glm::vec3(0.0, 0.0, 0.0));
 }
 
-void _addMarkerParticle(glm::vec3 p, glm::vec3 velocity) {
+void FluidSimulation::_addMarkerParticle(glm::vec3 p, glm::vec3 velocity) {
 }
 
 void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells) {
@@ -1372,9 +1372,14 @@ void FluidSimulation::_advectVelocityFieldW() {
 }
 
 void FluidSimulation::_advectVelocityField() {
-    _advectVelocityFieldU();
-    _advectVelocityFieldV();
-    _advectVelocityFieldW();
+    std::vector<std::thread> threads;
+    threads.push_back(std::thread(&FluidSimulation::_advectVelocityFieldU, this));
+    threads.push_back(std::thread(&FluidSimulation::_advectVelocityFieldV, this));
+    threads.push_back(std::thread(&FluidSimulation::_advectVelocityFieldW, this));
+
+    for (unsigned int i = 0; i < threads.size(); i++) {
+        threads[i].join();
+    }
 }
 
 /********************************************************************************
@@ -2613,11 +2618,11 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     UPDATE MARKER PARTICLE VELOCITIES
 ********************************************************************************/
 
-void FluidSimulation::_updateMarkerParticleVelocities(MACVelocityField &savedField) {
+void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx, MACVelocityField &savedField) {
     MarkerParticle p;
     glm::vec3 vPIC, vFLIP;
     glm::vec3 dv;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+    for (int i = startIdx; i <= endIdx; i++) {
         p = _markerParticles[i];
 
         if (_ratioPICFLIP > 0.0) {
@@ -2629,6 +2634,36 @@ void FluidSimulation::_updateMarkerParticleVelocities(MACVelocityField &savedFie
         }
         
         _markerParticles[i].velocity = (float)_ratioPICFLIP * vPIC + (float)(1 - _ratioPICFLIP) * vFLIP;
+    }
+}
+
+void FluidSimulation::_updateMarkerParticleVelocities(MACVelocityField &savedField) {
+    int size = (int)_markerParticles.size();
+
+    std::vector<int> startIndices;
+    std::vector<int> endIndices;
+
+    int numThreads = _numUpdateMarkerParticleVelocityThreads;
+    int chunksize = (int)floor(size / numThreads);
+    for (int i = 0; i < numThreads; i++) {
+        int startIdx = (i == 0) ? 0 : endIndices[i - 1] + 1;
+        int endIdx = (i == numThreads - 1) ? size - 1 : startIdx + chunksize - 1;
+
+        startIndices.push_back(startIdx);
+        endIndices.push_back(endIdx);
+    }
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numThreads; i++) {
+        threads.push_back(std::thread(&FluidSimulation::_updateRangeOfMarkerParticleVelocities,
+                                      this,
+                                      startIndices[i],
+                                      endIndices[i],
+                                      savedField));
+    }
+
+    for (int i = 0; i < numThreads; i++) {
+        threads[i].join();
     }
 }
 
