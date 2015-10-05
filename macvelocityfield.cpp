@@ -351,7 +351,7 @@ double MACVelocityField::_trilinearInterpolate(double p[8], double x, double y, 
 }
 
 double MACVelocityField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
-    assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
+    //assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
 
     double arr[4];
     arr[0] = _bicubicInterpolate(p[0], y, z);
@@ -392,7 +392,7 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;
@@ -431,7 +431,7 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;
@@ -470,7 +470,7 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;
@@ -509,7 +509,7 @@ double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_u.isIndexInRange(i,   j,   k))   { points[0] = _u(i,   j,   k); }
@@ -542,7 +542,7 @@ double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_v.isIndexInRange(i,   j,   k))   { points[0] = _v(i,   j,   k); }
@@ -575,7 +575,7 @@ double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_w.isIndexInRange(i,   j,   k))   { points[0] = _w(i,   j,   k); }
@@ -609,7 +609,7 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;
@@ -650,7 +650,7 @@ double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;
@@ -691,7 +691,7 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     int refi = i - 1;
     int refj = j - 1;

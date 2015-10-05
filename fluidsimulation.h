@@ -274,6 +274,8 @@ private:
     void _getInitialFluidCellsFromTriangleMesh(std::vector<GridIndex> &fluidCells);
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity);
+    void _addMarkerParticle(glm::vec3 p);
+    void _addMarkerParticle(glm::vec3 p, glm::vec3 velocity);
     void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
@@ -292,6 +294,8 @@ private:
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
     void _addNewFluidCells(std::vector<GridIndex> &cells, glm::vec3 velocity);
+    void _addNewFluidParticles(std::vector<glm::vec3> &particles, glm::vec3 velocity);
+    void _getNewFluidParticles(FluidSource *source, std::vector<glm::vec3> &particles);
     void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
     inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
         GridIndex c;
@@ -584,7 +588,7 @@ private:
     double _maxTurbulence = 200.0;
     double _wavecrestEmissionRate = 200.0;
     double _turbulenceEmissionRate = 200.0;
-    double _maxDiffuseParticleLifetime = 2.0;
+    double _maxDiffuseParticleLifetime = 5.0;
     double _maxFoamToSurfaceDistance = 1.0;   // in number of grid cells
     double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
@@ -599,7 +603,7 @@ private:
     int _maxInactiveBrickFrames = 0;
 
     double _ratioPICFLIP = 0.35f;
-    int _maxMarkerParticlesPerCell = 50;
+    int _maxMarkerParticlesPerCell = 500;
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isDiffuseMaterialOutputEnabled = false;

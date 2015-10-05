@@ -519,6 +519,13 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity)
     }
 }
 
+void _addMarkerParticle(glm::vec3 p) {
+    _addMarkerParticle(p, glm::vec3(0.0, 0.0, 0.0));
+}
+
+void _addMarkerParticle(glm::vec3 p, glm::vec3 velocity) {
+}
+
 void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells) {
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
     field.enableCellCenterValues();
@@ -581,6 +588,7 @@ void FluidSimulation::_getInitialFluidCellsFromTriangleMesh(std::vector<GridInde
     _surfaceMesh = levelsetPolygonizer.getTriangleMesh();
     _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
     _surfaceMesh.getCellsInsideMesh(fluidCells);
+
 }
 
 void FluidSimulation::_initializeFluidMaterial() {
@@ -597,7 +605,6 @@ void FluidSimulation::_initializeFluidMaterial() {
     } else if (_fluidInitializationType == MESH) {
         _getInitialFluidCellsFromTriangleMesh(fluidCells);
     }
-
 
     _markerParticles.reserve(8*fluidCells.size());
     GridIndex g;
@@ -725,7 +732,6 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
                                         glm::vec3 velocity) {
     _markerParticles.reserve(_markerParticles.size() + 8*cells.size());
-    GridIndex g;
     for (unsigned int i = 0; i < cells.size(); i++) {
         if (_isCellAir(cells[i])) {
             _addMarkerParticlesToCell(cells[i], velocity);
@@ -734,13 +740,32 @@ void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells,
     }
 }
 
+void FluidSimulation::_addNewFluidParticles(std::vector<glm::vec3> &particles, glm::vec3 velocity) {
+    _markerParticles.reserve(_markerParticles.size() + particles.size());
+    GridIndex g;
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        g = Grid3d::positionToGridIndex(particles[i], _dx);
+        _addMarkerParticle(particles[i], velocity);
+        _materialGrid.set(g, M_FLUID);
+    }
+}
+
+void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<glm::vec3> &particles) {
+}
+
 void FluidSimulation::_updateFluidSource(FluidSource *source) {
     if (source->getSourceType() == T_INFLOW) {
         std::vector<GridIndex> newCells = source->getNewFluidCells(_materialGrid, _dx);
-        glm::vec3 velocity = source->getVelocity();
+        std::vector<glm::vec3> newParticles;
+        _getNewFluidParticles(source, newParticles);
 
+        glm::vec3 velocity = source->getVelocity();
         if (newCells.size() > 0) {
             _addNewFluidCells(newCells, velocity);
+        }
+
+        if (newParticles.size() > 0) {
+            _addNewFluidParticles(newParticles, velocity);
         }
     } else if (source->getSourceType() == T_OUTFLOW) {
         std::vector<GridIndex> cells = source->getFluidCells(_materialGrid, _dx);
@@ -2395,6 +2420,8 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
             continue;
         }
 
+        // todo: - randomize lifetime
+
         v = _getVelocityAtPosition(p);
         lifetime = (float)(emitter.energyPotential*_maxDiffuseParticleLifetime);
         _diffuseParticles.push_back(DiffuseParticle(p, v, lifetime));
@@ -2412,6 +2439,9 @@ int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
     double bubbleDist = _minBubbleToSurfaceDistance*_dx;
     double foamDist = _maxFoamToSurfaceDistance*_dx;
     double dist = _levelset.getSignedDistance(dp.position);
+
+    // todo - check that foam is next to air cell.
+    //      - particles outside of surface are spray.
 
     int type;
     if (dist > 0.0) {       // inside surface
