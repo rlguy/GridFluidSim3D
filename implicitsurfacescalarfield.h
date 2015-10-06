@@ -50,6 +50,8 @@ public:
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);
+    void setMaterialGrid(std::vector<GridIndex> &solidCells);
+    void setSolidCells(std::vector<GridIndex> &solidCells);
     void getScalarField(Array3d<float> &field);
     bool isCellInsideSurface(int i, int j, int k);
     void setTricubicWeighting();

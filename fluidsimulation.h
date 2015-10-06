@@ -580,6 +580,8 @@ private:
     int _outputFluidSurfaceSubdivisionLevel = 1;
     double _outputFluidSurfaceCellNarrowBandSize = 0.5;
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
+    int _outputFluidSurfacePolygonizerChunkSize = 128*128*64;
+    double _outputFluidSurfacePolygonizerChunkPad = 3.0; // in # of cells
 
     double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
     double _minWavecrestCurvature = 0.20;

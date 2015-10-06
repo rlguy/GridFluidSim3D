@@ -226,6 +226,29 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     }
 }
 
+void ImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
+    setMaterialGrid(solidCells);
+}
+
+void ImplicitSurfaceScalarField::setMaterialGrid(std::vector<GridIndex> &solidCells) {
+    GridIndex vertices[8];
+    GridIndex g;
+    for (unsigned int i = 0; i < solidCells.size(); i++) {
+        g = solidCells[i];
+
+        if (!Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1)) {
+            std::cout << g.i << " " << g.j << " " << g.k << std::endl;
+        }
+
+        assert(Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1));
+
+        Grid3d::getGridIndexVertices(g, vertices);
+        for (int idx = 0; idx < 8; idx++) {
+            _isVertexSolid.set(vertices[idx], true);
+        }
+    }
+}
+
 void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
     assert(matGrid.width == _isize-1 && 
            matGrid.height == _jsize-1 && 
