@@ -291,8 +291,8 @@ void FluidBrickGrid::_initializeBrickGrid() {
     assert(_brick.depth > 0.0);
 
     double width = _isize*_dx;
-    double height = _isize*_dx;
-    double depth = _isize*_dx;
+    double height = _jsize*_dx;
+    double depth = _ksize*_dx;
     int bi = (int)ceil(width / _brick.width);
     int bj = (int)ceil(height / _brick.height);
     int bk = (int)ceil(depth / _brick.depth);
@@ -432,6 +432,7 @@ void FluidBrickGrid::_updateBrickGrid(LevelSet &levelset) {
         for (int j = 0;  j < _brickGrid.height; j++) {
             for (int i = 0;  i < _brickGrid.width; i++) {
                 p = coffset + glm::vec3(i*bw, j*bh, k*bd);
+
                 if (Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize) && 
                         levelset.isPointInInsideCell(p)) {
                     float intensity = _getBrickIntensity(i, j, k);
