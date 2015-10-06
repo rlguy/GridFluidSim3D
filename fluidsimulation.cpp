@@ -1116,7 +1116,6 @@ void FluidSimulation::_getOutputSurfaceParticles(std::vector<glm::vec3> &particl
 
 TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
 
-    /*
     std::vector<GridIndex> surfaceCells;
     std::vector<GridIndex> solidCells;
     _getSubdividedSurfaceCells(surfaceCells);
@@ -1149,84 +1148,6 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
     polygonizer.polygonizeSurface();
 
     return polygonizer.getTriangleMesh();
-    */
-
-    int chunkSize = _outputFluidSurfacePolygonizerChunkSize;
-    int layerSize = _jsize*_ksize;
-    int numLayers = _isize;
-    int layersPerChunk = (int)ceil((double)chunkSize / (double)layerSize);
-    chunkSize = layersPerChunk*layerSize;
-    int numChunks = (int)ceil((double)numLayers / (double)layersPerChunk);
-
-    for (int chunkIdx = 0; chunkIdx < numChunks-1; chunkIdx++) {
-        int ichunkwidth = layersPerChunk + 2;
-        int jchunkheight = _jsize;
-        int kchunkdepth = _ksize;
-        int igridwidth = layersPerChunk;
-        int jgridheight = _jsize;
-        int kgriddepth = _ksize;
-
-        double chunkwidth = ichunkwidth*_dx;
-        double chunkheight = jchunkheight*_dx;
-        double chunkdepth = kchunkdepth*_dx;
-        double bboxwidth = layersPerChunk*_dx;
-        double bboxheight = _jsize*_dx;
-        double bboxdepth = _ksize*_dx;
-
-        GridIndex gridOffset = GridIndex(chunkIdx*layersPerChunk, 0, 0);
-        glm::vec3 particleOffset = glm::vec3((double)(chunkIdx*layersPerChunk)*_dx - _dx, 0.0, 0.0);
-        glm::vec3 bboxoffset((double)(chunkIdx*layersPerChunk)*_dx, 0.0, 0.0);
-
-        AABB chunkbbox = AABB(bboxoffset, bboxwidth, bboxheight, bboxdepth);
-        chunkbbox.expand(2*_outputFluidSurfacePolygonizerChunkPad);
-
-        int maxgridi = gridOffset.i + layersPerChunk;
-        if (maxgridi > _isize) {
-            maxgridi = _isize;
-        }
-
-        std::vector<GridIndex> solidCells;
-        for (int k = 0; k < kgriddepth; k++) {
-            for (int j = 0; j < jgridheight; j++) {
-                for (int i = gridOffset.i; i < maxgridi; i++) {
-                    if (_isCellSolid(i, j, k)) {
-                        solidCells.push_back(GridIndex(i - gridOffset.i + 1, j, k));
-                    }
-                }
-            }
-        }
-
-        for (int k = 0; k < kgriddepth; k++) {
-            for (int j = 0; j < jgridheight; j++) {
-                solidCells.push_back(GridIndex(0, j, k));
-                solidCells.push_back(GridIndex(maxgridi + 1 - gridOffset.i, j, k));
-            }
-        }
-
-        ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(ichunkwidth + 1, 
-                                                                      jchunkheight + 1, 
-                                                                      kchunkdepth + 1, _dx);
-        field.setSolidCells(solidCells);
-
-        double r = _markerParticleRadius*_markerParticleScale;
-        field.setPointRadius(r);
-
-        glm::vec3 p;
-        for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-            p = _markerParticles[i].position;
-            if (chunkbbox.isPointInside(p)) {
-                field.addPoint(p - particleOffset);
-            }
-        }
-
-        Polygonizer3d polygonizer = Polygonizer3d(field);
-        polygonizer.polygonizeSurface();
-        TriangleMesh m = polygonizer.getTriangleMesh();
-        m.writeMeshToPLY("bakefiles/test01.ply");
-
-    }
-
-    return TriangleMesh();
 }
 
 void FluidSimulation::_updateBrickGrid(double dt) {
