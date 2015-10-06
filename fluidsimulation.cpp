@@ -1159,17 +1159,17 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
     int numChunks = (int)ceil((double)numLayers / (double)layersPerChunk);
 
     for (int chunkIdx = 0; chunkIdx < numChunks-1; chunkIdx++) {
-        int ichunkwidth = numLayers + 2;
+        int ichunkwidth = layersPerChunk + 2;
         int jchunkheight = _jsize;
         int kchunkdepth = _ksize;
-        int igridwidth = numLayers;
+        int igridwidth = layersPerChunk;
         int jgridheight = _jsize;
         int kgriddepth = _ksize;
 
         double chunkwidth = ichunkwidth*_dx;
         double chunkheight = jchunkheight*_dx;
         double chunkdepth = kchunkdepth*_dx;
-        double bboxwidth = numLayers*_dx;
+        double bboxwidth = layersPerChunk*_dx;
         double bboxheight = _jsize*_dx;
         double bboxdepth = _ksize*_dx;
 
@@ -1180,7 +1180,7 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
         AABB chunkbbox = AABB(bboxoffset, bboxwidth, bboxheight, bboxdepth);
         chunkbbox.expand(2*_outputFluidSurfacePolygonizerChunkPad);
 
-        int maxgridi = numLayers + gridOffset.i;
+        int maxgridi = gridOffset.i + layersPerChunk;
         if (maxgridi > _isize) {
             maxgridi = _isize;
         }
