@@ -491,11 +491,7 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
     return seedSurfaceCells;
 }
 
-std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
-    if (!_isScalarFieldSet) {
-        _resetVertexValues();
-    }
-
+std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
     std::vector<GridIndex> surfaceCells;
     _isCellDone.fill(false);
 
@@ -521,6 +517,50 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
     }
 
     return surfaceCells;
+}
+
+std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingScalarField() {
+    std::vector<GridIndex> surfaceCells;
+    _isCellDone.fill(false);
+
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                GridIndex cell = GridIndex(i, j, k);
+        
+                if (_isCellDone(cell)) {
+                    continue;
+                }
+
+                while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
+
+                    if (_isCellOnSurface(cell)) {
+                        std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
+                        surfaceCells.insert(surfaceCells.end(), seedSurfaceCells.begin(), seedSurfaceCells.end());
+                        break;
+                    }
+
+                    // march +z until cell surface is found or index is out of range
+                    _isCellDone.set(cell, true);
+                    cell = GridIndex(cell.i, cell.j, cell.k + 1);
+                }
+            }
+        }
+    }
+
+    return surfaceCells;
+}
+
+std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
+    if (!_isScalarFieldSet) {
+        _resetVertexValues();
+    }
+
+    if (_insideIndices.size() == 0 && _isScalarFieldSet) {
+        return _findSurfaceCellsUsingScalarField();
+    } else {
+        return _findSurfaceCellsUsingInsideIndices();
+    }
 }
 
 int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {

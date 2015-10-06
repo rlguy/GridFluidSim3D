@@ -528,7 +528,6 @@ void FluidSimulation::_addMarkerParticle(glm::vec3 p, glm::vec3 velocity) {
 
 void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells) {
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
-    field.enableCellCenterValues();
 
     FluidPoint fp;
     for (unsigned int i = 0; i < _fluidPoints.size(); i++) {
@@ -542,30 +541,15 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridI
         field.addCuboid(fc.bbox.position, fc.bbox.width, fc.bbox.height, fc.bbox.depth);
     }
 
-    // Polygonizer needs an estimate of cells that are inside the surface
-    for (int k = 0; k < _materialGrid.depth; k++) {
-        for (int j = 0; j < _materialGrid.height; j++) {
-            for (int i = 0; i < _materialGrid.width; i++) {
-                GridIndex g(i, j, k);
-
-                if (field.isCellInsideSurface(i, j, k) && _isCellAir(g)) {
-                    fluidCells.push_back(g);
-                }
-            }
-        }
-    }
-
-    assert(fluidCells.size() > 0);
-
     Polygonizer3d polygonizer(field);
 
     field.setMaterialGrid(_materialGrid);
-    polygonizer.setInsideCellIndices(fluidCells);
-    fluidCells.clear();
 
     polygonizer.polygonizeSurface();
     _surfaceMesh = polygonizer.getTriangleMesh();
     _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
+
+    fluidCells.clear();
     _surfaceMesh.getCellsInsideMesh(fluidCells);
 }
 

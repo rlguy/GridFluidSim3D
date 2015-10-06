@@ -93,6 +93,8 @@ private:
     void _calculateSurfaceTriangles();
 
     std::vector<GridIndex> _findSurfaceCells();
+    std::vector<GridIndex> _findSurfaceCellsUsingInsideIndices();
+    std::vector<GridIndex> _findSurfaceCellsUsingScalarField();
     void _resetVertexValues();
     std::vector<GridIndex> _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
 
