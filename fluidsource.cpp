@@ -108,6 +108,15 @@ std::vector<GridIndex> FluidSource::getFluidCells(Array3d<int> &materialGrid,
     return std::vector<GridIndex>();
 }
 
+std::vector<GridIndex> FluidSource::getCells(Array3d<int> &materialGrid,
+                                             double dx) {
+    return std::vector<GridIndex>();
+}
+
+AABB FluidSource::getAABB() {
+    return AABB();
+}
+
 int FluidSource::getID() {
     return id;
 }

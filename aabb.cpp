@@ -458,4 +458,10 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
     return true;
 }
 
+glm::vec3 AABB::getMinPoint() {
+    return position;
+}
 
+glm::vec3 AABB::getMaxPoint() {
+    return position + glm::vec3(width, height, depth);
+}

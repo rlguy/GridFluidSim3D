@@ -97,5 +97,8 @@ namespace Grid3d {
                                    GridIndex *g1, GridIndex *g2);
     extern void getGridIndexBounds(AABB bbox, double dx, GridIndex gmax,
                                    GridIndex *g1, GridIndex *g2);
+
+    extern AABB fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax);
+    extern AABB fitAABBtoGrid(AABB bbox, double dx, GridIndex gmax);
 }
 

@@ -524,6 +524,11 @@ void FluidSimulation::_addMarkerParticle(glm::vec3 p) {
 }
 
 void FluidSimulation::_addMarkerParticle(glm::vec3 p, glm::vec3 velocity) {
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) &&
+        !_isCellSolid(g)) {
+        _markerParticles.push_back(MarkerParticle(p, velocity));
+    }
 }
 
 void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells) {
@@ -735,19 +740,83 @@ void FluidSimulation::_addNewFluidParticles(std::vector<glm::vec3> &particles, g
 }
 
 void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<glm::vec3> &particles) {
+    AABB bbox = source->getAABB();
+    bbox = Grid3d::fitAABBtoGrid(bbox, _dx, _isize, _jsize, _ksize);
+
+    GridIndex gmin, gmax;
+    Grid3d::getGridIndexBounds(bbox, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
+    int iwidth = gmax.i - gmin.i + 1;
+    int jheight = gmax.j - gmin.j + 1;
+    int kdepth = gmax.k - gmin.k + 1;
+    
+    Array3d<bool> isInvalidCell = Array3d<bool>(iwidth, jheight, kdepth, true);
+    std::vector<GridIndex> sourceCells = source->getCells(_materialGrid, _dx);
+    GridIndex g;
+    for (unsigned int i = 0; i < sourceCells.size(); i++) {
+        g = sourceCells[i];
+        g = GridIndex(g.i - gmin.i, g.j - gmin.j, g.k - gmin.k);
+        isInvalidCell.set(g, false);
+    }
+
+    GridIndex subgridOffsets[8] = {
+        GridIndex(0, 0, 0), GridIndex(0, 0, 1), GridIndex(0, 1, 0), GridIndex(0, 1, 1),
+        GridIndex(1, 0, 0), GridIndex(1, 0, 1), GridIndex(1, 1, 0), GridIndex(1, 1, 1)
+    };
+
+    Array3d<bool> newParticleGrid = Array3d<bool>(2*iwidth, 2*jheight, 2*kdepth, true);
+    GridIndex subg;
+    for (int k = 0; k < isInvalidCell.depth; k++) {
+        for (int j = 0; j < isInvalidCell.height; j++) {
+            for (int i = 0; i < isInvalidCell.width; i++) {
+                if (isInvalidCell(i, j, k)) {
+                    for (int idx = 0; idx < 8; idx++) {
+                        subg = subgridOffsets[idx];
+                        newParticleGrid.set(2*i + subg.i, 2*j + subg.j, 2*k + subg.k, false);
+                    }
+                }
+            }
+        }
+    }
+
+    glm::vec3 offset = Grid3d::GridIndexToPosition(gmin, _dx);
+    glm::vec3 p;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        if (bbox.isPointInside(_markerParticles[i].position)) {
+            p = _markerParticles[i].position - offset;
+            subg = Grid3d::positionToGridIndex(p, 0.5*_dx);
+            newParticleGrid.set(subg, false);
+        }
+    }
+
+    double eps = 10e-6;
+    double jitter = 0.25*_dx - eps;
+    glm::vec3 jit;
+    for (int k = 0; k < newParticleGrid.depth; k++) {
+        for (int j = 0; j < newParticleGrid.height; j++) {
+            for (int i = 0; i < newParticleGrid.depth; i++) {
+                if (newParticleGrid(i, j, k)) {
+                    jit = glm::vec3(_randomFloat(-jitter, jitter),
+                                    _randomFloat(-jitter, jitter),
+                                    _randomFloat(-jitter, jitter));
+
+                    p = Grid3d::GridIndexToCellCenter(i, j, k, 0.5*_dx);
+                    particles.push_back(p + offset + jit);
+                }
+            }
+        }
+    }
 }
 
 void FluidSimulation::_updateFluidSource(FluidSource *source) {
     if (source->getSourceType() == T_INFLOW) {
         std::vector<GridIndex> newCells = source->getNewFluidCells(_materialGrid, _dx);
-        std::vector<glm::vec3> newParticles;
-        _getNewFluidParticles(source, newParticles);
-
         glm::vec3 velocity = source->getVelocity();
         if (newCells.size() > 0) {
             _addNewFluidCells(newCells, velocity);
         }
 
+        std::vector<glm::vec3> newParticles;
+        _getNewFluidParticles(source, newParticles);
         if (newParticles.size() > 0) {
             _addNewFluidParticles(newParticles, velocity);
         }

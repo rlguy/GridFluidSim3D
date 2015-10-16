@@ -383,3 +383,25 @@ void Grid3d::getGridIndexBounds(AABB bbox, double dx, GridIndex gmax,
                      (int)fmin((*g2).j, gmax.j-1), 
                      (int)fmin((*g2).k, gmax.k-1));
 }
+
+AABB Grid3d::fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax) {
+    glm::vec3 pmin = bbox.getMinPoint();
+    glm::vec3 pmax = bbox.getMaxPoint();
+    GridIndex gmin = positionToGridIndex(pmin, dx);
+    GridIndex gmax = positionToGridIndex(pmax, dx);
+
+    if (!isGridIndexInRange(gmin, imax, jmax, kmax)) {
+        pmin = glm::vec3(0.0, 0.0, 0.0);
+    }
+
+    glm::vec3 eps = glm::vec3(10e-12, 10e-12, 10e-12);
+    if (!isGridIndexInRange(gmax, imax, jmax, kmax)) {
+        pmax = GridIndexToPosition(gmax, dx) + glm::vec3(dx, dx, dx) - eps;
+    }
+
+    return AABB(pmin, pmax);
+}
+
+AABB Grid3d::fitAABBtoGrid(AABB bbox, double dx, GridIndex gmax) {
+    fitAABBtoGrid(bbox, dx, gmax.i, gmax.j, gmax.k);
+}

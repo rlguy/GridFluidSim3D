@@ -44,6 +44,9 @@ public:
     bool isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices);
     bool isLineIntersecting(glm::vec3 p1, glm::vec3 p2);
 
+    glm::vec3 getMinPoint();
+    glm::vec3 getMaxPoint();
+
     glm::vec3 position;
     double width, height, depth;
 

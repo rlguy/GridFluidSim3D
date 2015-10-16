@@ -54,6 +54,9 @@ public:
                                                     double dx);
     virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
                                                  double dx);
+    virtual std::vector<GridIndex> getCells(Array3d<int> &materialGrid,
+                                            double dx);
+    virtual AABB getAABB();
 
 protected:
     int T_INFLOW = 0;

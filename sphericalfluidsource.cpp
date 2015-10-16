@@ -94,10 +94,6 @@ std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materia
         return std::vector<GridIndex>();
     }
 
-    if (sourceType == T_INFLOW) {
-        return std::vector<GridIndex>();
-    }
-
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
@@ -115,6 +111,35 @@ std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materia
     }
 
     return fluidCells;
+}
+
+std::vector<GridIndex> SphericalFluidSource::getCells(Array3d<int> &materialGrid,
+                                                   double dx) {
+    if (!isActive) {
+        return std::vector<GridIndex>();
+    }
+
+    if (sourceType == T_OUTFLOW) {
+        return std::vector<GridIndex>();
+    }
+
+    int w = materialGrid.width;
+    int h = materialGrid.height;
+    int d = materialGrid.depth;
+    std::vector<GridIndex> overlappingIndices;
+    std::vector<GridIndex> cells;
+
+    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
+
+    GridIndex g;
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
+        g = overlappingIndices[i];
+        if (materialGrid(g) != M_SOLID) {
+            cells.push_back(g);
+        }
+    }
+
+    return cells;
 }
 
 void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &indices,
@@ -142,4 +167,10 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
         }
     }
 
+}
+
+AABB SphericalFluidSource::getAABB() {
+    double d = 2.0*_radius;
+    glm::vec3 p = position - glm::vec3(_radius, _radius, _radius);
+    return AABB(p, d, d, d);
 }

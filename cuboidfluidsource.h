@@ -40,6 +40,9 @@ public:
                                                     double dx);
     virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
                                                  double dx);
+    virtual std::vector<GridIndex> getCells(Array3d<int> &materialGrid,
+                                            double dx);
+    virtual AABB getAABB();
 
     void setWidth(double w);
     void setHeight(double h);
