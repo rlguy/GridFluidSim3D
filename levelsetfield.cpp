@@ -69,7 +69,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     double iy = (p.y - refy)*invdx;
     double iz = (p.z - refz)*invdx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     g = GridIndex(refi - 1, refj - 1, refk - 1);
     double points[4][4][4];

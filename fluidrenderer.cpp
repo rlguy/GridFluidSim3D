@@ -287,19 +287,10 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 
     std::sort(sortedPoints.begin(), sortedPoints.end(), compareByDistance);
 
-    double e = 0.125;
-    glm::vec3 eps = glm::vec3(e, e, e);
-    glm::vec3 min = glm::vec3(0.125, 0.125, 0.125) + eps;
-    glm::vec3 max = glm::vec3(0.125*63, 0.125*63, 0.125*63); - eps;
-    AABB bbox = AABB(min, max);
-
     for (unsigned int i = 0; i < sortedPoints.size(); i++) {
         double size = hw;
         glm::vec4 p4 = sortedPoints[i].first;
         
-        if (!bbox.isPointInside(glm::vec3(p4))) {
-            continue;
-        }
 
         int type = sortedPoints[i].second;
         glm::vec3 p = glm::vec3(p4.x, p4.y, p4.z);
@@ -317,6 +308,7 @@ void FluidRenderer::drawBillboardTextures(GLuint tex, double width, Camera3d *ca
 
         if (type == 0) {                              // Fluid
             glColor4d(0.0, 0.753, 0.922, 1.0);
+            continue;
         } else if (type == 1) {                       // Solid
             glColor4d(0.5, 0.5, 0.5, 1.0);            
         } else if (type == 2) {                       // Bubble
@@ -385,7 +377,7 @@ void FluidRenderer::drawSurfaceTriangles() {
 
         float f = (k - min) / (max - min);
         glm::vec3 c = (1.0f - f)*glm::vec3(0.8, 0.8, 0.8) + f*glm::vec3(0.0, 1.0, 0.0);
-        glColor3d(c.x, c.y, c.z);
+        //glColor3d(c.x, c.y, c.z);
         
 
         glNormal3f(n1.x, n1.y, n1.z);

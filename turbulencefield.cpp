@@ -149,7 +149,7 @@ double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
     double iy = (p.y - gy)*inv_dx;
     double iz = (p.z - gz)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_field.isIndexInRange(i,   j,   k))   { points[0] = _field(i,   j,   k); }

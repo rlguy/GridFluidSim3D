@@ -145,6 +145,16 @@ void FluidSimulation::enableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = true;
 }
 
+void FluidSimulation::outputDiffuseMaterialAsSeparateFiles() {
+    _isDiffuseMaterialOutputEnabled = true;
+    _isDiffuseMaterialFilesSeparated = true;
+}
+
+void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
+    _isDiffuseMaterialOutputEnabled = true;
+    _isDiffuseMaterialFilesSeparated = false;
+}
+
 void FluidSimulation::disableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = false;
 }
@@ -510,9 +520,9 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity)
     double jitter = 0.25*_dx - eps;
 
     for (int idx = 0; idx < 8; idx++) {
-        glm::vec3 jit = glm::vec3(_randomFloat(-jitter, jitter),
-                                  _randomFloat(-jitter, jitter),
-                                  _randomFloat(-jitter, jitter));
+        glm::vec3 jit = glm::vec3(_randomDouble(-jitter, jitter),
+                                  _randomDouble(-jitter, jitter),
+                                  _randomDouble(-jitter, jitter));
 
         glm::vec3 p = points[idx] + jit;
         _markerParticles.push_back(MarkerParticle(p, velocity));
@@ -718,6 +728,23 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
     _markerParticles = newv;
 }
 
+void FluidSimulation::_removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells) {
+    std::vector<DiffuseParticle> newv;
+    newv.reserve(_diffuseParticles.size());
+
+    DiffuseParticle p;
+    GridIndex g;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        p = _diffuseParticles[i];
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+        if (!_isIndexInList(g, cells)) {
+            newv.push_back(p);
+        }
+    }
+
+    _diffuseParticles = newv;
+}
+
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
                                         glm::vec3 velocity) {
     _markerParticles.reserve(_markerParticles.size() + 8*cells.size());
@@ -795,9 +822,9 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<glm
         for (int j = 0; j < newParticleGrid.height; j++) {
             for (int i = 0; i < newParticleGrid.depth; i++) {
                 if (newParticleGrid(i, j, k)) {
-                    jit = glm::vec3(_randomFloat(-jitter, jitter),
-                                    _randomFloat(-jitter, jitter),
-                                    _randomFloat(-jitter, jitter));
+                    jit = glm::vec3(_randomDouble(-jitter, jitter),
+                                    _randomDouble(-jitter, jitter),
+                                    _randomDouble(-jitter, jitter));
 
                     p = Grid3d::GridIndexToCellCenter(i, j, k, 0.5*_dx);
                     particles.push_back(p + offset + jit);
@@ -825,6 +852,7 @@ void FluidSimulation::_updateFluidSource(FluidSource *source) {
 
         if (cells.size() > 0) {
             _removeMarkerParticlesFromCells(cells);
+            _removeDiffuseParticlesFromCells(cells);
         }
     }
 }
@@ -928,15 +956,23 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
         dp = _diffuseParticles[i];
         if (dp.type == DP_BUBBLE) {
             bubbleMesh.vertices.push_back(dp.position);
-        } else if (dp.type = DP_FOAM) {
+        } else if (dp.type == DP_FOAM) {
             foamMesh.vertices.push_back(dp.position);
-        } else if (dp.type = DP_SPRAY) {
+        } else if (dp.type == DP_SPRAY) {
             sprayMesh.vertices.push_back(dp.position);
         }
     }
     bubbleMesh.writeMeshToPLY(bubblefile);
     foamMesh.writeMeshToPLY(foamfile);
     sprayMesh.writeMeshToPLY(sprayfile);
+}
+
+void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
+    TriangleMesh diffuseMesh;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        diffuseMesh.vertices.push_back(_diffuseParticles[i].position);
+    }
+    diffuseMesh.writeMeshToPLY(diffusefile);
 }
 
 void FluidSimulation::_writeSmoothTriangleListToFile(TriangleMesh &mesh, 
@@ -1016,9 +1052,13 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
     }
 
     if (_isDiffuseMaterialOutputEnabled) {
-        _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
-                                    "bakefiles/foam" + currentFrame + ".ply",
-                                    "bakefiles/spray" + currentFrame + ".ply");
+        if (_isDiffuseMaterialFilesSeparated) {
+            _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
+                                        "bakefiles/foam" + currentFrame + ".ply",
+                                        "bakefiles/spray" + currentFrame + ".ply");
+        } else {
+            _writeDiffuseMaterialToFile("bakefiles/diffuse" + currentFrame + ".ply");
+        }
     }
 
     if (_isBrickOutputEnabled && _fluidBrickGrid.isBrickMeshReady()) {
@@ -2320,6 +2360,11 @@ void FluidSimulation::_sortMarkerParticlePositions(std::vector<glm::vec3> &surfa
 
 double FluidSimulation::_getWavecrestPotential(glm::vec3 p, glm::vec3 *v) {
 
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    if (!_isCellAir(g) && !_isCellNeighbouringMaterial(g, M_AIR)) {
+        return 0.0;
+    }
+
     *v = _getVelocityAtPosition(p);
     glm::vec3 normal;
     double k = _levelset.getSurfaceCurvature(p, &normal);
@@ -2336,6 +2381,12 @@ double FluidSimulation::_getWavecrestPotential(glm::vec3 p, glm::vec3 *v) {
 }
 
 double FluidSimulation::_getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield) {
+
+    GridIndex g = Grid3d::positionToGridIndex(p, _dx);
+    if (!_isCellFluid(g) && !_isCellNeighbouringMaterial(g, M_FLUID)) {
+        return 0.0;
+    }
+
     double t = tfield.evaluateTurbulenceAtPosition(p);
 
     t = fmax(t, _minTurbulence);
@@ -2391,6 +2442,16 @@ void FluidSimulation::_getInsideDiffuseParticleEmitters(
     }
 }
 
+void FluidSimulation::_shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
+    DiffuseParticleEmitter em;
+    for (int i = emitters.size() - 2; i >= 0; i--) {
+        int j = (rand() % (int)(i - 0 + 1));
+        em = emitters[i];
+        emitters[i] = emitters[j];
+        emitters[j] = em;
+    }
+}
+
 void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
 
     _levelset.calculateSurfaceCurvature();
@@ -2401,6 +2462,8 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
     _sortMarkerParticlePositions(surfaceParticles, insideParticles);
     _getSurfaceDiffuseParticleEmitters(surfaceParticles, emitters);
     _getInsideDiffuseParticleEmitters(insideParticles, emitters);
+
+    _shuffleDiffuseParticleEmitters(emitters);
 
     int wcCount = 0;
     int tCount = 0;
@@ -2420,7 +2483,7 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
         }
     }
     std::cout << "NUM EMITTERS: " << emitters.size() << " " << wcCount << " " << tCount << std::endl;
-    std::cout << "NUM DIFFUSE PARTICLE: " << _diffuseParticles.size() << std::endl;
+    _logfile.log("Num Diffuse Particles: ", (int)_diffuseParticles.size(), 1);
 }
 
 int FluidSimulation::_getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
@@ -2439,7 +2502,11 @@ int FluidSimulation::_getNumberOfEmissionParticles(DiffuseParticleEmitter &emitt
 void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt) {
     int n = _getNumberOfEmissionParticles(emitter, dt);
 
-    if (n == 0) {
+    if (_diffuseParticles.size() + n >= _maxNumDiffuseParticles) {
+        n = _maxNumDiffuseParticles - _diffuseParticles.size();
+    }
+
+    if (n <= 0) {
         return;
     }
 
@@ -2478,10 +2545,9 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
             continue;
         }
 
-        // todo: - randomize lifetime
-
         v = _getVelocityAtPosition(p);
         lifetime = (float)(emitter.energyPotential*_maxDiffuseParticleLifetime);
+        lifetime = _randomDouble(0.5*lifetime, lifetime);
         _diffuseParticles.push_back(DiffuseParticle(p, v, lifetime));
     }
 }
@@ -2489,6 +2555,10 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
 void FluidSimulation::_emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters,
                                             double dt) {
     for (unsigned int i = 0; i < emitters.size(); i++) {
+        if (_diffuseParticles.size() >= _maxNumDiffuseParticles) {
+            return;
+        }
+
         _emitDiffuseParticles(emitters[i], dt);
     }
 }
@@ -2498,9 +2568,6 @@ int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
     double foamDist = _maxFoamToSurfaceDistance*_dx;
     double dist = _levelset.getSignedDistance(dp.position);
 
-    // todo - check that foam is next to air cell.
-    //      - particles outside of surface are spray.
-
     int type;
     if (dist > 0.0) {       // inside surface
         if (dist < bubbleDist) {
@@ -2509,16 +2576,13 @@ int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
             type = DP_BUBBLE;
         }
     } else {                // outside surface
-        if (fabs(dist) < foamDist) {
-            type = DP_FOAM;
-        } else {
-            type = DP_SPRAY;
-        }
+        type = DP_SPRAY;
     }
 
-    if (type == DP_FOAM) {
-        double k = _levelset.getSurfaceCurvature(dp.position);
-        if (k < _maxFlatCurvature) {
+    if (type == DP_FOAM || type == DP_SPRAY) {
+        GridIndex g = Grid3d::positionToGridIndex(dp.position, _dx);
+        
+        if (!_isCellAir(g) && !_isCellNeighbouringMaterial(g, M_AIR)) {
             type = DP_BUBBLE;
         }
     }
@@ -2545,25 +2609,21 @@ void FluidSimulation::_updateDiffuseParticleTypesAndVelocities() {
 }
 
 void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
-    std::vector<DiffuseParticle> livingParticles;
-    livingParticles.reserve(_diffuseParticles.size());
-
     DiffuseParticle dp;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
-        if (dp.type == DP_FOAM) {
-            _diffuseParticles[i].lifetime = dp.lifetime - (float)dt;
+
+        double modifier = 0.0;
+        if (dp.type == DP_SPRAY) {
+            modifier = _sprayParticleLifetimeModifier;
+        } else if (dp.type == DP_BUBBLE) {
+            modifier = _bubbleParticleLifetimeModifier;
+        } else if (dp.type == DP_FOAM) {
+            modifier = _foamParticleLifetimeModifier;
         }
 
-        if (_diffuseParticles[i].lifetime > 0.0f) {
-            livingParticles.push_back(_diffuseParticles[i]);
-        }
+        _diffuseParticles[i].lifetime = dp.lifetime - (float)(modifier*dt);
     }
-
-    int deaths = _diffuseParticles.size() - livingParticles.size();
-    std::cout << "PARTICLE DEATHS: " << deaths << std::endl;
-
-    _diffuseParticles = livingParticles;
 }
 
 void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
@@ -2581,7 +2641,14 @@ void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
 void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
                                                    DiffuseParticle &nextdp,
                                                    double dt) {
-    nextdp.velocity = dp.velocity +  _bodyForce*(float)dt;
+    float drag = -(float)_sprayDragCoefficient*glm::dot(dp.velocity, dp.velocity);
+
+    glm::vec3 accforce = _bodyForce;
+    if (drag > 0.0) {
+        accforce += drag*glm::normalize(dp.velocity);
+    }
+
+    nextdp.velocity = dp.velocity +  accforce*(float)dt;
     nextdp.position = dp.position + nextdp.velocity*(float)dt;
 }
 
@@ -2635,6 +2702,41 @@ void FluidSimulation::_advanceDiffuseParticles(double dt) {
     }
 }
 
+void FluidSimulation::_removeDiffuseParticles() {
+    Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
+
+    std::vector<DiffuseParticle> aliveParticles;
+    aliveParticles.reserve(_diffuseParticles.size());
+
+    DiffuseParticle dp;
+    GridIndex g;
+    double eps = 1e-9;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        dp = _diffuseParticles[i];
+
+        if (dp.lifetime <= 0.0) {
+            continue;
+        }
+
+        g = Grid3d::positionToGridIndex(dp.position, _dx);
+        if (countGrid(g) >= _maxDiffuseParticlesPerCell) {
+            continue;
+        }
+        countGrid.add(g, 1);
+
+        if (dp.type = DP_SPRAY && glm::length(dp.velocity) < eps) {
+            continue;
+        }
+
+        aliveParticles.push_back(dp);
+    }
+
+    int dead = _diffuseParticles.size() - aliveParticles.size();
+    _logfile.log("Num Dead Diffuse Particles: ", dead, 1);
+
+    _diffuseParticles = aliveParticles;
+}
+
 void FluidSimulation::_updateDiffuseMaterial(double dt) {
     std::vector<DiffuseParticleEmitter> emitters;
     _getDiffuseParticleEmitters(emitters);
@@ -2647,6 +2749,7 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     _updateDiffuseParticleTypesAndVelocities();
     _updateDiffuseParticleLifetimes(dt);
     _advanceDiffuseParticles(dt);
+    _removeDiffuseParticles();
 
     int spraycount = 0;
     int bubblecount = 0;
@@ -2997,8 +3100,7 @@ glm::vec3 FluidSimulation::_calculateSolidCellCollision(glm::vec3 p0,
     if (isCollisionFound) {
         *normal = collisionFace.normal;
         return collisionPoint;
-    }
-    else {
+    } else {
         *normal = glm::vec3(0.0, 0.0, 0.0);
         return p0;
     }

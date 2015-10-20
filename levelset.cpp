@@ -667,7 +667,7 @@ double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
     double iy = (p.y - gpos.y)*inv_dx;
     double iz = (p.z - gpos.z)*inv_dx;
 
-    assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (Grid3d::isGridIndexInRange(g.i,   g.j,   g.k, _isize, _jsize, _ksize))   { 

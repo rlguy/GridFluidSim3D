@@ -124,6 +124,8 @@ public:
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
     void enableDiffuseMaterialOutput();
+    void outputDiffuseMaterialAsSeparateFiles();
+    void outputDiffuseMaterialAsSingleFile();
     void disableDiffuseMaterialOutput();
     void enableBrickOutput();
     void enableBrickOutput(double width, double height, double depth);
@@ -297,6 +299,7 @@ private:
     void _addNewFluidParticles(std::vector<glm::vec3> &particles, glm::vec3 velocity);
     void _getNewFluidParticles(FluidSource *source, std::vector<glm::vec3> &particles);
     void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
+    void _removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells);
     inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
         GridIndex c;
         for (unsigned int idx = 0; idx < list.size(); idx++) {
@@ -321,6 +324,7 @@ private:
     void _writeDiffuseMaterialToFile(std::string bubblefile,
                                      std::string foamfile,
                                      std::string sprayfile);
+    void _writeDiffuseMaterialToFile(std::string diffusefile);
     void _writeSmoothTriangleListToFile(TriangleMesh &mesh, std::string filename);
     void _writeBrickColorListToFile(TriangleMesh &mesh, std::string filename);
     void _writeBrickMaterialToFile(std::string brickfile, std::string colorfile);
@@ -409,6 +413,7 @@ private:
     void _sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
                                       std::vector<glm::vec3> &inside);
     void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
+    void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _getSurfaceDiffuseParticleEmitters(std::vector<glm::vec3> &surface, 
                                             std::vector<DiffuseParticleEmitter> &emitters);
     void _getInsideDiffuseParticleEmitters(std::vector<glm::vec3> &inside, 
@@ -430,6 +435,7 @@ private:
                                       DiffuseParticle &nextdp,double dt);
     void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                      DiffuseParticle &nextdp,double dt);
+    void _removeDiffuseParticles();
 
     // Transfer grid velocity to marker particles
     void _updateMarkerParticleVelocities(MACVelocityField &savedField);
@@ -541,7 +547,19 @@ private:
         else { return layerGrid(i, j, k) >= 1.0; }
     }
 
-    inline double _randomFloat(double min, double max) {
+    inline bool _isCellNeighbouringMaterial(GridIndex g, int material) {
+        GridIndex nbs[26];
+        Grid3d::getNeighbourGridIndices26(g, nbs);
+        for (int i = 0; i < 26; i++) {
+            if (_materialGrid(nbs[i]) == material) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    inline double _randomDouble(double min, double max) {
         return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / (max - min)));
     }
 
@@ -587,17 +605,22 @@ private:
     double _minWavecrestCurvature = 0.20;
     double _maxWavecrestCurvature = 1.0;
     double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 20.0;
+    double _maxParticleEnergy = 40.0;
     double _minTurbulence = 100.0;
     double _maxTurbulence = 200.0;
-    double _wavecrestEmissionRate = 200.0;
-    double _turbulenceEmissionRate = 200.0;
-    double _maxDiffuseParticleLifetime = 5.0;
+    double _wavecrestEmissionRate = 160.0;
+    double _turbulenceEmissionRate = 160.0;
+    unsigned int _maxNumDiffuseParticles = 1e6;
+    double _maxDiffuseParticleLifetime = 2.5;
+    double _sprayParticleLifetimeModifier = 0.666;
+    double _bubbleParticleLifetimeModifier = 0.333;
+    double _foamParticleLifetimeModifier = 1.0;
     double _maxFoamToSurfaceDistance = 1.0;   // in number of grid cells
     double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
-    double _maxFlatCurvature = 0.05;
+    double _sprayDragCoefficient = 0.1;
+    int _maxDiffuseParticlesPerCell = 250;
 
     double _minBrickNeighbourRatio = 0.10;
     double _maxBrickNeighbourRatio = 0.50;
@@ -611,6 +634,7 @@ private:
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isDiffuseMaterialOutputEnabled = false;
+    bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
     double _brickWidth = 1.0;
     double _brickHeight = 1.0;
