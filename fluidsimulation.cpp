@@ -910,8 +910,17 @@ TriangleMesh FluidSimulation::_polygonizeSurface() {
     double r = _markerParticleRadius*_markerParticleScale;
     field.setPointRadius(r);
 
-    glm::vec3 p;
+    double maxvsq = _getVelocityUpperBoundByPercentile(
+                        _markerParticleVelocityUpperBoundPercentile);
+    maxvsq *= maxvsq;
+
+    glm::vec3 p, v;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        v = _markerParticles[i].velocity;
+        if (glm::dot(v, v) > maxvsq) {
+            continue;
+        }
+
         p = _markerParticles[i].position;
         field.addPoint(p);
     }
@@ -933,12 +942,8 @@ void FluidSimulation::_reconstructFluidSurface() {
 
 void FluidSimulation::_updateLevelSetSignedDistance() {
     _levelset.setSurfaceMesh(_surfaceMesh);
-
-    // Velocities are extrapolated to (_CFLConditionNumber + 2) layers.
-    // In order find velocities at the fluid surface for all extrapolated
-    // velocity layers, the level set will need to calculate signed distance 
-    // for (_CFLConditionNumber + 3) layers
-    _levelset.calculateSignedDistanceField((int)ceil(_CFLConditionNumber) + 3);
+    int numLayers = 12;
+    _levelset.calculateSignedDistanceField(numLayers);
 }
 
 /********************************************************************************
@@ -1214,11 +1219,19 @@ void FluidSimulation::_getSubdividedSolidCells(std::vector<GridIndex> &cells) {
 
 void FluidSimulation::_getOutputSurfaceParticles(std::vector<glm::vec3> &particles) {
     double width = _outputFluidSurfaceParticleNarrowBandSize*_dx;
-    glm::vec3 p;
+
+    double maxvsq = _getVelocityUpperBoundByPercentile(
+                        _markerParticleVelocityUpperBoundPercentile);
+    maxvsq *= maxvsq;
+
+    glm::vec3 p, v;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i].position;
         if (_levelset.getDistance(p) <= width) {
-            particles.push_back(p);
+            v = _markerParticles[i].velocity;
+            if (glm::dot(v, v) < maxvsq) {
+                particles.push_back(p);
+            }
         }
     }
 }
@@ -2344,11 +2357,97 @@ void FluidSimulation::_extrapolateFluidVelocities() {
     UPDATE DIFFUSE MATERIAL PARTICLES
 ********************************************************************************/
 
+void FluidSimulation::_getMinMaxMarkerParticleSpeeds(double *min, double *max) {
+    glm::vec3 v;
+    double sq;
+    double minsq = std::numeric_limits<double>::infinity();
+    double maxsq = 0.0;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        v = _markerParticles[i].velocity;
+        sq = glm::dot(v, v);
+
+        if (sq < minsq) {
+            minsq = sq;
+        } else if (sq > maxsq) {
+            maxsq = sq;
+        }
+    }
+
+    *min = sqrt(minsq);
+    *max = sqrt(maxsq);
+}
+
+double FluidSimulation::_getVelocityUpperBoundByPercentile(double pct) {
+    if (pct > 1.0) {
+        pct /= 100;
+    }
+
+    assert(pct >= 0.0 && pct <= 1.0);
+
+    
+    int nbins = 1000000;
+    std::vector<int> particleCounts = std::vector<int>(nbins, 0);
+
+    double minspeed, maxspeed;
+    _getMinMaxMarkerParticleSpeeds(&minspeed, &maxspeed);
+
+    if (minspeed == maxspeed) {
+        return maxspeed;
+    }
+
+    double binsize = (maxspeed - minspeed) / (double)nbins;
+    glm::vec3 v;
+    double s;
+    int binidx;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        v = _markerParticles[i].velocity;
+        s = glm::length(v);
+
+        binidx = (int)floor(((s - minspeed) / (maxspeed - minspeed)) * (double)nbins);
+        if (binidx >= nbins) {
+            binidx = nbins - 1;
+        } else if (binidx < 0) {
+            binidx = 0;
+        }
+
+        particleCounts[binidx]++;
+    }
+
+    int maxcount = (int)floor(pct*_markerParticles.size());
+    int count = 0;
+    double percentilespeed;
+    for (int i = 0; i < nbins; i++) {
+        percentilespeed = minspeed + (double)i*binsize;
+        count += particleCounts[i];
+        if (count >= maxcount) {
+            break;
+        }
+    }
+
+    return percentilespeed;
+}
+
 void FluidSimulation::_sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
                                                    std::vector<glm::vec3> &inside) {
+
+    // Speeds above max percentile of marker particle speeds are considered too fast to
+    // generate diffuse particles. Generating diffuse particles with high speeds could cause
+    // diffuse simulation to explode.
+    double maxspeedsq = _getVelocityUpperBoundByPercentile(
+                            _markerParticleVelocityUpperBoundPercentile);
+
+    maxspeedsq *= maxspeedsq;
+
     glm::vec3 p;
+    double speedsq;
     double width = _diffuseSurfaceNarrowBandSize * _dx;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+
+        speedsq = glm::dot(_markerParticles[i].velocity, _markerParticles[i].velocity);
+        if (speedsq > maxspeedsq) {
+            continue;
+        }
+
         p = _markerParticles[i].position;
         if (_levelset.getDistance(p) < width) {
             surface.push_back(p);
@@ -2356,6 +2455,7 @@ void FluidSimulation::_sortMarkerParticlePositions(std::vector<glm::vec3> &surfa
             inside.push_back(p);
         }
     }
+
 }
 
 double FluidSimulation::_getWavecrestPotential(glm::vec3 p, glm::vec3 *v) {
@@ -2462,27 +2562,8 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
     _sortMarkerParticlePositions(surfaceParticles, insideParticles);
     _getSurfaceDiffuseParticleEmitters(surfaceParticles, emitters);
     _getInsideDiffuseParticleEmitters(insideParticles, emitters);
-
     _shuffleDiffuseParticleEmitters(emitters);
 
-    int wcCount = 0;
-    int tCount = 0;
-
-    DiffuseParticleEmitter e;
-    for (unsigned int i = 0; i < emitters.size(); i++) {
-        e = emitters[i];
-        //std::cout << glm::length(e.velocity) << " " << e.energyPotential <<
-        //                                        " " << e.wavecrestPotential <<
-        //                                        " " << e.turbulencePotential << std::endl;
-
-        if (e.wavecrestPotential > 0) {
-            wcCount++;
-        }
-        if (e.turbulencePotential > 0) {
-            tCount++;
-        }
-    }
-    std::cout << "NUM EMITTERS: " << emitters.size() << " " << wcCount << " " << tCount << std::endl;
     _logfile.log("Num Diffuse Particles: ", (int)_diffuseParticles.size(), 1);
 }
 
@@ -2564,19 +2645,18 @@ void FluidSimulation::_emitDiffuseParticles(std::vector<DiffuseParticleEmitter> 
 }
 
 int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
-    double bubbleDist = _minBubbleToSurfaceDistance*_dx;
     double foamDist = _maxFoamToSurfaceDistance*_dx;
     double dist = _levelset.getSignedDistance(dp.position);
 
     int type;
     if (dist > 0.0) {       // inside surface
-        if (dist < bubbleDist) {
+        type = DP_BUBBLE;
+    } else {                // outside surface
+        if (fabs(dist) < foamDist) {
             type = DP_FOAM;
         } else {
-            type = DP_BUBBLE;
+            type = DP_SPRAY;
         }
-    } else {                // outside surface
-        type = DP_SPRAY;
     }
 
     if (type == DP_FOAM || type == DP_SPRAY) {
@@ -2609,6 +2689,8 @@ void FluidSimulation::_updateDiffuseParticleTypesAndVelocities() {
 }
 
 void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
+    double maxDist = _maxSprayToSurfaceDistance*_dx;
+
     DiffuseParticle dp;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
@@ -2616,6 +2698,9 @@ void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
         double modifier = 0.0;
         if (dp.type == DP_SPRAY) {
             modifier = _sprayParticleLifetimeModifier;
+            if (_levelset.getDistance(dp.position) > maxDist) {
+                modifier = _sprayParticleMaxDistanceLifetimeModifier;
+            }
         } else if (dp.type == DP_BUBBLE) {
             modifier = _bubbleParticleLifetimeModifier;
         } else if (dp.type == DP_FOAM) {
@@ -2648,7 +2733,7 @@ void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
         accforce += drag*glm::normalize(dp.velocity);
     }
 
-    nextdp.velocity = dp.velocity +  accforce*(float)dt;
+    nextdp.velocity = dp.velocity + accforce*(float)dt;
     nextdp.position = dp.position + nextdp.velocity*(float)dt;
 }
 
@@ -2724,7 +2809,7 @@ void FluidSimulation::_removeDiffuseParticles() {
         }
         countGrid.add(g, 1);
 
-        if (dp.type = DP_SPRAY && glm::length(dp.velocity) < eps) {
+        if (dp.type == DP_SPRAY && glm::length(dp.velocity) < eps) {
             continue;
         }
 
@@ -2765,9 +2850,9 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
         }
     }
 
-    std::cout << "PARTICLE TYPES: SPRAY: " << spraycount << 
-                 " BUBBLE: " << bubblecount << 
-                 " FOAM: " << foamcount << std::endl; 
+    _logfile.log("NUM SPRAY:  ", spraycount, 2);
+    _logfile.log("NUM BUBBLE: ", bubblecount, 2);
+    _logfile.log("NUM FOAM:   ", foamcount, 2);
 }
 
 /********************************************************************************

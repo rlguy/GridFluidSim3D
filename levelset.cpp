@@ -283,9 +283,9 @@ void LevelSet::_floodFillMissingSignedDistances() {
                                 !_isDistanceSet(n)) {
                             double dist;
                             if (_signedDistance(i, j, k) > 0.0) {
-                                dist = _numLayers*_dx;
+                                dist = std::numeric_limits<double>::infinity();
                             } else {
-                                dist = -_numLayers*_dx;
+                                dist = -std::numeric_limits<double>::infinity();
                             }
                             _floodFillWithDistance(n, dist);
                         }

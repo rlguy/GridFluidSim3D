@@ -412,6 +412,8 @@ private:
     void _updateDiffuseMaterial(double dt);
     void _sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
                                       std::vector<glm::vec3> &inside);
+    double _getVelocityUpperBoundByPercentile(double pct);
+    void _getMinMaxMarkerParticleSpeeds(double *min, double *max);
     void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _getSurfaceDiffuseParticleEmitters(std::vector<glm::vec3> &surface, 
@@ -608,19 +610,21 @@ private:
     double _maxParticleEnergy = 40.0;
     double _minTurbulence = 100.0;
     double _maxTurbulence = 200.0;
-    double _wavecrestEmissionRate = 160.0;
-    double _turbulenceEmissionRate = 160.0;
-    unsigned int _maxNumDiffuseParticles = 1e6;
-    double _maxDiffuseParticleLifetime = 2.5;
-    double _sprayParticleLifetimeModifier = 0.666;
+    double _wavecrestEmissionRate = 200;
+    double _turbulenceEmissionRate = 200.0;
+    unsigned int _maxNumDiffuseParticles = 6e6;
+    double _maxDiffuseParticleLifetime = 2.8;
+    double _sprayParticleLifetimeModifier = 2.0;
+    double _sprayParticleMaxDistanceLifetimeModifier = 15.0;
     double _bubbleParticleLifetimeModifier = 0.333;
     double _foamParticleLifetimeModifier = 1.0;
-    double _maxFoamToSurfaceDistance = 1.0;   // in number of grid cells
-    double _minBubbleToSurfaceDistance = 1.0; // in number of grid cells
+    double _maxFoamToSurfaceDistance = 1.5;   // in number of grid cells
+    double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
-    double _sprayDragCoefficient = 0.1;
+    double _sprayDragCoefficient = 0.33;
     int _maxDiffuseParticlesPerCell = 250;
+    double _markerParticleVelocityUpperBoundPercentile = 0.999;
 
     double _minBrickNeighbourRatio = 0.10;
     double _maxBrickNeighbourRatio = 0.50;
