@@ -124,6 +124,12 @@ public:
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
     void enableDiffuseMaterialOutput();
+    void enableBubbleDiffuseMaterial();
+    void enableSprayDiffuseMaterial();
+    void enableFoamDiffuseMaterial();
+    void disableBubbleDiffuseMaterial();
+    void disableSprayDiffuseMaterial();
+    void disableFoamDiffuseMaterial();
     void outputDiffuseMaterialAsSeparateFiles();
     void outputDiffuseMaterialAsSingleFile();
     void disableDiffuseMaterialOutput();
@@ -166,7 +172,11 @@ public:
     unsigned int getNumMarkerParticles();
     std::vector<glm::vec3> getMarkerParticlePositions();
     std::vector<glm::vec3> getMarkerParticleVelocities();
+    unsigned int getNumDiffuseParticles();
     std::vector<DiffuseParticle> getDiffuseParticles();
+    std::vector<glm::vec3> getDiffuseParticlePositions();
+    std::vector<glm::vec3> getDiffuseParticleVelocities();
+    std::vector<float> getDiffuseParticleLifetimes();
     Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
     LevelSet* getLevelSet();
@@ -267,6 +277,7 @@ private:
     int DP_BUBBLE = 0;
     int DP_FOAM = 1;
     int DP_SPRAY = 2;
+    int DP_NOTSET = -1;
 
     // Initialization before running simulation
     void _initializeSimulation();
@@ -280,8 +291,10 @@ private:
     void _addMarkerParticle(glm::vec3 p, glm::vec3 velocity);
     void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
+    void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
+    void _initializeDiffuseParticleTypes();
 
     // Simulation step
     double _calculateNextTimeStep();
@@ -427,7 +440,7 @@ private:
     void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt);
     int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
                                        double dt);
-    void _updateDiffuseParticleTypesAndVelocities();
+    void _updateDiffuseParticleTypes();
     int _getDiffuseParticleType(DiffuseParticle &p);
     void _updateDiffuseParticleLifetimes(double dt);
     void _advanceDiffuseParticles(double dt);
@@ -575,6 +588,7 @@ private:
     bool _isLastTimeStepForFrame = false;
     double _simulationTime = 0;
     double _realTime = 0;
+    bool _isDiffuseParticleTypesInitialized = true;
 
     double _dx = 0.0;
     double _density = 20.0;
@@ -618,7 +632,7 @@ private:
     double _sprayParticleMaxDistanceLifetimeModifier = 15.0;
     double _bubbleParticleLifetimeModifier = 0.333;
     double _foamParticleLifetimeModifier = 1.0;
-    double _maxFoamToSurfaceDistance = 1.5;   // in number of grid cells
+    double _maxFoamToSurfaceDistance = 2.0;   // in number of grid cells
     double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
@@ -638,6 +652,9 @@ private:
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isDiffuseMaterialOutputEnabled = false;
+    bool _isBubbleDiffuseMaterialEnabled = false;
+    bool _isSprayDiffuseMaterialEnabled = false;
+    bool _isFoamDiffuseMaterialEnabled = false;
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
     double _brickWidth = 1.0;

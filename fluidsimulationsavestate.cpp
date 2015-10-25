@@ -53,6 +53,10 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     int n = _fluidsim->getNumMarkerParticles();
     _writeInt(&n, &state);
 
+    // number of diffuse particles
+    n = _fluidsim->getNumDiffuseParticles();
+    _writeInt(&n, &state);
+
     // next frame to be processed
     int currentFrame = _fluidsim->getCurrentFrame();
     _writeInt(&currentFrame, &state);
@@ -67,6 +71,15 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     // floats: marker particle velocities in form [x1, y1, z1, x2, y2, z2, ...]
     _writeBinaryMarkerParticleVelocities(_fluidsim, &state);
 
+    // floats: diffuse particle positions in form [x1, y1, z1, x2, y2, z2, ...]
+    _writeBinaryDiffuseParticlePositions(_fluidsim, &state);
+
+    // floats: diffuse particle velocities in form [x1, y1, z1, x2, y2, z2, ...]
+    _writeBinaryDiffuseParticleVelocities(_fluidsim, &state);
+
+    // floats: diffuse particle lifetimes
+    _writeBinaryDiffuseParticleLifetimes(_fluidsim, &state);
+
     // ints: solid cell indicies in form [i1, j1, k1, i2, j2, k2, ...]
     _writeSolidCellIndices(_fluidsim, &state);
 
@@ -78,13 +91,14 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
 
     std::ifstream state(filename.c_str(), std::ios::in | std::ios::binary);
 
-    int numMarkerParticles, numSolidCellIndices;
+    int numMarkerParticles, numDiffuseParticles, numSolidCellIndices;
 
     bool success = _readInt(&_stateData.i, &state) &&
                    _readInt(&_stateData.j, &state) &&
                    _readInt(&_stateData.k, &state) &&
                    _readDouble(&_stateData.dx, &state) &&
                    _readInt(&numMarkerParticles, &state) &&
+                   _readInt(&numDiffuseParticles, &state) &&
                    _readInt(&_stateData.currentFrame, &state) &&
                    _readInt(&numSolidCellIndices, &state);
 
@@ -92,14 +106,32 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
         return false;
     }
 
-    success = _readMarkerParticlePositions(_stateData.markerParticlePositions, 
-                                           numMarkerParticles, &state);
+    success = _readParticlePositions(_stateData.markerParticlePositions, 
+                                     numMarkerParticles, &state);
     if (!success) {
         return false;
     }
 
-    success = _readMarkerParticleVelocities(_stateData.markerParticleVelocities, 
-                                            numMarkerParticles, &state);
+    success = _readParticleVelocities(_stateData.markerParticleVelocities, 
+                                      numMarkerParticles, &state);
+    if (!success) {
+        return false;
+    }
+
+    success = _readParticlePositions(_stateData.diffuseParticlePositions, 
+                                     numDiffuseParticles, &state);
+    if (!success) {
+        return false;
+    }
+
+    success = _readParticleVelocities(_stateData.diffuseParticleVelocities, 
+                                      numDiffuseParticles, &state);
+    if (!success) {
+        return false;
+    }
+
+    success = _readParticleLifetimes(_stateData.diffuseParticleLifetimes, 
+                                     numDiffuseParticles, &state);
     if (!success) {
         return false;
     }
@@ -140,6 +172,21 @@ std::vector<glm::vec3> FluidSimulationSaveState::getMarkerParticleVelocities() {
     return _stateData.markerParticleVelocities;
 }
 
+std::vector<glm::vec3> FluidSimulationSaveState::getDiffuseParticlePositions() {
+    assert(_isLoadStateInitialized);
+    return _stateData.diffuseParticlePositions;
+}
+
+std::vector<glm::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities() {
+    assert(_isLoadStateInitialized);
+    return _stateData.diffuseParticleVelocities;
+}
+
+std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes() {
+    assert(_isLoadStateInitialized);
+    return _stateData.diffuseParticleLifetimes;
+}
+
 std::vector<GridIndex> FluidSimulationSaveState::getSolidCellIndices() {
     assert(_isLoadStateInitialized);
     return _stateData.solidCellIndices;
@@ -152,20 +199,48 @@ bool FluidSimulationSaveState::isLoadStateInitialized() {
 void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(FluidSimulation *_fluidsim,
                                                                    std::ofstream *state) {
     std::vector<glm::vec3> mps = _fluidsim->getMarkerParticlePositions();
-    int binsize = 3 * mps.size() * sizeof(float);
+    _writeBinaryVector3f(mps, state);
+}
+
+void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
+                                                                    std::ofstream *state) {
+    std::vector<glm::vec3> mvs = _fluidsim->getMarkerParticleVelocities();
+    _writeBinaryVector3f(mvs, state);
+}
+
+void FluidSimulationSaveState::_writeBinaryDiffuseParticlePositions(FluidSimulation *_fluidsim,
+                                                                    std::ofstream *state) {
+    std::vector<glm::vec3> dps = _fluidsim->getDiffuseParticlePositions();
+    _writeBinaryVector3f(dps, state);
+}
+
+void FluidSimulationSaveState::_writeBinaryDiffuseParticleVelocities(FluidSimulation *_fluidsim,
+                                                                     std::ofstream *state) {
+    std::vector<glm::vec3> dvs = _fluidsim->getDiffuseParticleVelocities();
+    _writeBinaryVector3f(dvs, state);
+}
+
+void FluidSimulationSaveState::_writeBinaryDiffuseParticleLifetimes(FluidSimulation *_fluidsim,
+                                                                    std::ofstream *state) {
+    std::vector<float> dfs = _fluidsim->getDiffuseParticleLifetimes();
+    _writeBinaryVectorf(dfs, state);
+}
+
+void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<glm::vec3> &vectors, std::ofstream *state) {
+    int binsize = 3 * vectors.size() * sizeof(float);
     char *storage = new char[binsize];
 
     int fsize = (int)sizeof(float);
     int offset = 0;
     char position[3*sizeof(float)];
 
-    glm::vec3 mp;
-    for (unsigned int i = 0; i < mps.size(); i++) {
-        mp = mps[i];
+    glm::vec3 v;
+    for (unsigned int i = 0; i < vectors.size(); i++) {
+        v = vectors[i];
 
-        memcpy(position, &mp.x, fsize);
-        memcpy(position + fsize, &mp.y, fsize);
-        memcpy(position + 2*fsize, &mp.z, fsize);
+        memcpy(position, &v.x, fsize);
+        memcpy(position + fsize, &v.y, fsize);
+        memcpy(position + 2*fsize, &v.z, fsize);
         memcpy(storage + offset, position, 3*fsize);
 
         offset += 3*fsize;
@@ -175,26 +250,18 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(FluidSimulati
     delete[] storage;
 }
 
-void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
-                                                                    std::ofstream *state) {
-    std::vector<glm::vec3> mvs = _fluidsim->getMarkerParticleVelocities();
-    int binsize = 3 * mvs.size() * sizeof(float);
+void FluidSimulationSaveState::_writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state) {
+    int binsize = floats.size() * sizeof(float);
     char *storage = new char[binsize];
 
     int fsize = (int)sizeof(float);
     int offset = 0;
-    char velocity[3*sizeof(float)];
 
-    glm::vec3 mv;
-    for (unsigned int i = 0; i < mvs.size(); i++) {
-        mv = mvs[i];
-
-        memcpy(velocity, &mv.x, fsize);
-        memcpy(velocity + fsize, &mv.y, fsize);
-        memcpy(velocity + 2*fsize, &mv.z, fsize);
-        memcpy(storage + offset, velocity, 3*fsize);
-
-        offset += 3*fsize;
+    float f;
+    for (unsigned int i = 0; i < floats.size(); i++) {
+        f = floats[i];
+        memcpy(storage + offset, &f, fsize);
+        offset += fsize;
     }
 
     state->write(storage, binsize);
@@ -285,7 +352,7 @@ bool FluidSimulationSaveState::_readDouble(double *value, std::ifstream *state) 
     return true;
 }
 
-bool FluidSimulationSaveState::_readMarkerParticlePositions(std::vector<glm::vec3> &particles, 
+bool FluidSimulationSaveState::_readParticlePositions(std::vector<glm::vec3> &particles, 
                                                             int numParticles,
                                                             std::ifstream *state) {
     int binsize = 3*numParticles*sizeof(float);
@@ -313,7 +380,7 @@ bool FluidSimulationSaveState::_readMarkerParticlePositions(std::vector<glm::vec
     return true;
 }
 
-bool FluidSimulationSaveState::_readMarkerParticleVelocities(std::vector<glm::vec3> &mpvs, 
+bool FluidSimulationSaveState::_readParticleVelocities(std::vector<glm::vec3> &pvs, 
                                                              int numParticles,
                                                              std::ifstream *state) {
     int binsize = 3*numParticles*sizeof(float);
@@ -334,9 +401,33 @@ bool FluidSimulationSaveState::_readMarkerParticleVelocities(std::vector<glm::ve
         float y = velocities[i + 1];
         float z = velocities[i + 2];
 
-        mpvs.push_back(glm::vec3(x, y, z));
+        pvs.push_back(glm::vec3(x, y, z));
     }
     delete[] velocities;
+
+    return true;
+}
+
+bool FluidSimulationSaveState::_readParticleLifetimes(std::vector<float> &pls, 
+                                                      int numParticles,
+                                                      std::ifstream *state) {
+    int binsize = numParticles*sizeof(float);
+    char *bin = new char[binsize];
+
+    state->read(bin, binsize);
+
+    if (!state->good()) {
+        delete[] bin;
+        return false;
+    }
+
+    float *lifetimes = new float[numParticles];
+    memcpy(lifetimes, bin, binsize);
+    delete[] bin;
+    for (int i = 0; i < numParticles; i++) {
+        pls.push_back(lifetimes[i]);
+    }
+    delete[] lifetimes;
 
     return true;
 }

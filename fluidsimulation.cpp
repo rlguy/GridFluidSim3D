@@ -143,6 +143,43 @@ void FluidSimulation::disableSurfaceMeshOutput() {
 
 void FluidSimulation::enableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = true;
+    _isBubbleDiffuseMaterialEnabled = true;
+    _isSprayDiffuseMaterialEnabled = true;
+    _isFoamDiffuseMaterialEnabled = true;
+}
+
+void FluidSimulation::disableDiffuseMaterialOutput() {
+    _isDiffuseMaterialOutputEnabled = false;
+    _isBubbleDiffuseMaterialEnabled = false;
+    _isSprayDiffuseMaterialEnabled = false;
+    _isFoamDiffuseMaterialEnabled = false;
+}
+
+void FluidSimulation::enableBubbleDiffuseMaterial() {
+    _isBubbleDiffuseMaterialEnabled = true;
+    _isDiffuseMaterialOutputEnabled = true;
+}
+
+void FluidSimulation::enableSprayDiffuseMaterial() {
+    _isSprayDiffuseMaterialEnabled = true;
+    _isDiffuseMaterialOutputEnabled = true;
+}
+
+void FluidSimulation::enableFoamDiffuseMaterial() {
+    _isFoamDiffuseMaterialEnabled = true;
+    _isDiffuseMaterialOutputEnabled = true;
+}
+
+void FluidSimulation::disableBubbleDiffuseMaterial() {
+    _isBubbleDiffuseMaterialEnabled = false;
+}
+
+void FluidSimulation::disableSprayDiffuseMaterial() {
+    _isSprayDiffuseMaterialEnabled = false;
+}
+
+void FluidSimulation::disableFoamDiffuseMaterial() {
+    _isFoamDiffuseMaterialEnabled = false;
 }
 
 void FluidSimulation::outputDiffuseMaterialAsSeparateFiles() {
@@ -153,10 +190,6 @@ void FluidSimulation::outputDiffuseMaterialAsSeparateFiles() {
 void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
     _isDiffuseMaterialOutputEnabled = true;
     _isDiffuseMaterialFilesSeparated = false;
-}
-
-void FluidSimulation::disableDiffuseMaterialOutput() {
-    _isDiffuseMaterialOutputEnabled = false;
 }
 
 void FluidSimulation::enableBrickOutput() {
@@ -450,6 +483,43 @@ std::vector<glm::vec3> FluidSimulation::getMarkerParticleVelocities() {
     return velocities;
 }
 
+unsigned int FluidSimulation::getNumDiffuseParticles() {
+    return _diffuseParticles.size();
+}
+
+std::vector<glm::vec3> FluidSimulation::getDiffuseParticlePositions() {
+    std::vector<glm::vec3> particles;
+    particles.reserve(_diffuseParticles.size());
+
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        particles.push_back(_diffuseParticles[i].position);
+    }
+
+    return particles;
+}
+
+std::vector<glm::vec3> FluidSimulation::getDiffuseParticleVelocities() {
+    std::vector<glm::vec3> velocities;
+    velocities.reserve(_diffuseParticles.size());
+
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        velocities.push_back(_diffuseParticles[i].velocity);
+    }
+
+    return velocities;
+}
+
+std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
+    std::vector<float> lifetimes;
+    lifetimes.reserve(_diffuseParticles.size());
+
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        lifetimes.push_back(_diffuseParticles[i].lifetime);
+    }
+
+    return lifetimes;
+}
+
 std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
     return _diffuseParticles;
 }
@@ -656,7 +726,6 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
 
     _markerParticles.reserve(positions.size());
     glm::vec3 p;
-    GridIndex g;
     for (unsigned int i = 0; i < positions.size(); i++) {
         p = positions[i];
         _markerParticles.push_back(MarkerParticle(p));
@@ -665,11 +734,46 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
     positions.shrink_to_fit();
 
     std::vector<glm::vec3> velocities = state.getMarkerParticleVelocities();
-    glm::vec3 v;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        v = velocities[i];
-        _markerParticles[i].velocity = v;
+        _markerParticles[i].velocity = velocities[i];
     }
+}
+
+void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
+                                        FluidSimulationSaveState &state) {
+    std::vector<glm::vec3> positions = state.getDiffuseParticlePositions();
+
+    _diffuseParticles.reserve(positions.size());
+    GridIndex g;
+    for (unsigned int i = 0; i < positions.size(); i++) {
+        _diffuseParticles.push_back(DiffuseParticle());
+        _diffuseParticles[i].position = positions[i];
+    }
+    positions.clear();
+    positions.shrink_to_fit();
+
+    std::vector<glm::vec3> velocities = state.getDiffuseParticleVelocities();
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        _diffuseParticles[i].velocity = velocities[i];;
+    }
+    velocities.clear();
+    velocities.shrink_to_fit();
+
+    std::vector<float> lifetimes = state.getDiffuseParticleLifetimes();
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        _diffuseParticles[i].lifetime = lifetimes[i];
+    }
+
+    _isDiffuseParticleTypesInitialized = false;
+}
+
+void FluidSimulation::_initializeDiffuseParticleTypes() {
+    if (_isDiffuseParticleTypesInitialized) {
+        return;
+    }
+
+    _updateDiffuseParticleTypes();
+    _isDiffuseParticleTypesInitialized = true;
 }
 
 void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveState &state) {
@@ -695,6 +799,7 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 
     _initializeSolidCellsFromSaveState(state);
     _initializeMarkerParticlesFromSaveState(state);
+    _initializeDiffuseParticlesFromSaveState(state);
     _initializeFluidMaterialParticlesFromSaveState();
 
     _isFluidInSimulation = _fluidCellIndices.size() > 0;
@@ -953,29 +1058,56 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
                                                   std::string foamfile,
                                                   std::string sprayfile) {
+    double eps = 1e-3;
     TriangleMesh bubbleMesh;
     TriangleMesh foamMesh;
     TriangleMesh sprayMesh;
     DiffuseParticle dp;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
-        if (dp.type == DP_BUBBLE) {
+
+        if (_isVertexNearSolid(dp.position, eps)) {
+            continue;
+        }
+
+        if (dp.type == DP_BUBBLE && _isBubbleDiffuseMaterialEnabled) {
             bubbleMesh.vertices.push_back(dp.position);
-        } else if (dp.type == DP_FOAM) {
+        } else if (dp.type == DP_FOAM && _isFoamDiffuseMaterialEnabled) {
             foamMesh.vertices.push_back(dp.position);
-        } else if (dp.type == DP_SPRAY) {
+        } else if (dp.type == DP_SPRAY && _isSprayDiffuseMaterialEnabled) {
             sprayMesh.vertices.push_back(dp.position);
         }
     }
-    bubbleMesh.writeMeshToPLY(bubblefile);
-    foamMesh.writeMeshToPLY(foamfile);
-    sprayMesh.writeMeshToPLY(sprayfile);
+
+    if (_isBubbleDiffuseMaterialEnabled) {
+        bubbleMesh.writeMeshToPLY(bubblefile);
+    }
+    if (_isFoamDiffuseMaterialEnabled) {
+        foamMesh.writeMeshToPLY(foamfile);
+    }
+    if (_isSprayDiffuseMaterialEnabled) {
+        sprayMesh.writeMeshToPLY(sprayfile);
+    }
 }
 
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
+    double eps = 1e-3;
     TriangleMesh diffuseMesh;
+    DiffuseParticle dp;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
-        diffuseMesh.vertices.push_back(_diffuseParticles[i].position);
+        dp = _diffuseParticles[i];
+
+        if (_isVertexNearSolid(dp.position, eps)) {
+            continue;
+        }
+
+        if (dp.type == DP_BUBBLE && _isBubbleDiffuseMaterialEnabled) {
+            diffuseMesh.vertices.push_back(dp.position);
+        } else if (dp.type == DP_FOAM && _isFoamDiffuseMaterialEnabled) {
+            diffuseMesh.vertices.push_back(dp.position);
+        } else if (dp.type == DP_SPRAY && _isSprayDiffuseMaterialEnabled) {
+            diffuseMesh.vertices.push_back(dp.position);
+        }
     }
     diffuseMesh.writeMeshToPLY(diffusefile);
 }
@@ -1057,6 +1189,10 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
     }
 
     if (_isDiffuseMaterialOutputEnabled) {
+        if (!_isDiffuseParticleTypesInitialized) {
+            _initializeDiffuseParticleTypes();
+        }
+
         if (_isDiffuseMaterialFilesSeparated) {
             _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
                                         "bakefiles/foam" + currentFrame + ".ply",
@@ -2563,8 +2699,6 @@ void FluidSimulation::_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmi
     _getSurfaceDiffuseParticleEmitters(surfaceParticles, emitters);
     _getInsideDiffuseParticleEmitters(insideParticles, emitters);
     _shuffleDiffuseParticleEmitters(emitters);
-
-    _logfile.log("Num Diffuse Particles: ", (int)_diffuseParticles.size(), 1);
 }
 
 int FluidSimulation::_getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
@@ -2670,21 +2804,13 @@ int FluidSimulation::_getDiffuseParticleType(DiffuseParticle &dp) {
     return type;
 }
 
-void FluidSimulation::_updateDiffuseParticleTypesAndVelocities() {
+void FluidSimulation::_updateDiffuseParticleTypes() {
     DiffuseParticle dp;
     int type;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
         type = _getDiffuseParticleType(dp);
         _diffuseParticles[i].type = type;
-
-        // Foam particles don't need to calculate their own velocity,
-        // but spray and bubble particles do, so reinitialize velocity
-        // when transitioning from foam type.
-        if (type != DP_FOAM && dp.type == DP_FOAM) {
-            glm::vec3 v = _getVelocityAtPosition(dp.position);
-            _diffuseParticles[i].velocity = v;
-        }
     }
 }
 
@@ -2741,7 +2867,7 @@ void FluidSimulation::_getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                                   DiffuseParticle &nextdp,
                                                   double dt) {
     glm::vec3 v0 = _getVelocityAtPosition(dp.position);
-    nextdp.velocity = dp.velocity;
+    nextdp.velocity = v0;
     nextdp.position = _RK2(dp.position, v0, dt);
 }
 
@@ -2831,7 +2957,7 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
         return;
     }
 
-    _updateDiffuseParticleTypesAndVelocities();
+    _updateDiffuseParticleTypes();
     _updateDiffuseParticleLifetimes(dt);
     _advanceDiffuseParticles(dt);
     _removeDiffuseParticles();
@@ -2850,6 +2976,7 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
         }
     }
 
+    _logfile.log("Num Diffuse Particles: ", (int)_diffuseParticles.size(), 1);
     _logfile.log("NUM SPRAY:  ", spraycount, 2);
     _logfile.log("NUM BUBBLE: ", bubblecount, 2);
     _logfile.log("NUM FOAM:   ", foamcount, 2);
@@ -3274,9 +3401,6 @@ void FluidSimulation::_removeMarkerParticles() {
 
         aliveParticles.push_back(mp);
     }
-
-    int dead = _markerParticles.size() - aliveParticles.size();
-    std::cout << "\t\tDEAD: " << dead << std::endl;
 
     _markerParticles = aliveParticles;
     _sortMarkerParticlesByGridIndex();
