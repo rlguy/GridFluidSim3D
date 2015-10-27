@@ -120,6 +120,7 @@ public:
     int getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
     void setSurfaceSubdivisionLevel(unsigned int n);
+    void setMinimumPolyhedronTriangleCount(unsigned int n);
 
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
@@ -608,6 +609,7 @@ private:
 
     double _surfaceReconstructionSmoothingValue = 0.85;
     int _surfaceReconstructionSmoothingIterations = 3;
+    int _minimumSurfacePolyhedronTriangleCount = 0;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
 
@@ -634,9 +636,10 @@ private:
     double _foamParticleLifetimeModifier = 1.0;
     double _maxFoamToSurfaceDistance = 2.0;   // in number of grid cells
     double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
+    double _sprayBodyForceScale = 1.0;
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
-    double _sprayDragCoefficient = 0.33;
+    double _sprayDragCoefficient = 0.25;
     int _maxDiffuseParticlesPerCell = 250;
     double _markerParticleVelocityUpperBoundPercentile = 0.999;
 

@@ -527,6 +527,7 @@ void TriangleMesh::_updateVertexTriangles() {
         _vertexTriangles[t.tri[1]].push_back(i);
         _vertexTriangles[t.tri[2]].push_back(i);
     }
+
 }
 
 void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells) {
@@ -982,4 +983,146 @@ void TriangleMesh::updateTriangleAreas() {
 
 void TriangleMesh::clearTriangleAreas() {
     _triangleAreas.clear();
+}
+
+void TriangleMesh::_getPolyhedronFromTriangle(int tidx, 
+                                              std::vector<bool> &visitedTriangles,
+                                              std::vector<int> &polyhedron) {
+
+    assert(!visitedTriangles[tidx]);
+
+    std::vector<int> queue;
+    queue.push_back(tidx);
+    visitedTriangles[tidx] = true;
+
+    std::vector<int> neighbours;
+    while (!queue.empty()) {
+        int t = queue.back();
+        queue.pop_back();
+
+        neighbours.clear();
+        getFaceNeighbours(t, neighbours);
+        for (unsigned int i = 0; i < neighbours.size(); i++) {
+            int n = neighbours[i];
+
+            if (!visitedTriangles[n]) {
+                queue.push_back(n);
+                visitedTriangles[n] = true;
+            }
+        }
+
+        polyhedron.push_back(t);
+    }
+}
+
+void TriangleMesh:: _getPolyhedra(std::vector<std::vector<int> > &polyList) {
+    updateVertexTriangles();
+
+    std::vector<bool> visitedTriangles = std::vector<bool>(triangles.size(), false);
+    for (unsigned int i = 0; i < visitedTriangles.size(); i++) {
+        if (!visitedTriangles[i]) {
+            std::vector<int> polyhedron;
+            _getPolyhedronFromTriangle(i, visitedTriangles, polyhedron);
+            polyList.push_back(polyhedron);
+        }
+    }
+
+    clearVertexTriangles();
+}
+
+double TriangleMesh::_getSignedTriangleVolume(unsigned int tidx) {
+    glm::vec3 p1 = vertices[triangles[tidx].tri[0]];
+    glm::vec3 p2 = vertices[triangles[tidx].tri[1]];
+    glm::vec3 p3 = vertices[triangles[tidx].tri[2]];
+
+    double v321 = p3.x*p2.y*p1.z;
+    double v231 = p2.x*p3.y*p1.z;
+    double v312 = p3.x*p1.y*p2.z;
+    double v132 = p1.x*p3.y*p2.z;
+    double v213 = p2.x*p1.y*p3.z;
+    double v123 = p1.x*p2.y*p3.z;
+
+    return (1.0/6.0)*(-v321 + v231 + v312 - v132 - v213 + v123);
+}
+
+double TriangleMesh::_getPolyhedronVolume(std::vector<int> &polyhedron) {
+    double sum = 0.0;
+    for (unsigned int i = 0; i < polyhedron.size(); i++) {
+        sum += _getSignedTriangleVolume(i);
+    }
+
+    return fabs(sum);
+}
+
+bool compareBcomparePolyhedonByTriangleCount(const std::vector<int> p1, std::vector<int> p2) {
+    return p1.size() < p2.size();
+}
+
+void TriangleMesh::removeExtraneousVertices() {
+    //todo
+}
+
+void TriangleMesh::removeTriangles(std::vector<int> &removalTriangles) {
+    std::vector<bool> invalidTriangles = std::vector<bool>(triangles.size(), false);
+    for (unsigned int i = 0; i < removalTriangles.size(); i++) {
+        int tidx = removalTriangles[i];
+        invalidTriangles[tidx] = true;
+    }
+
+    std::vector<Triangle> newTriangleList;
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        if (!invalidTriangles[i]) {
+            newTriangleList.push_back(triangles[i]);
+        }
+    }
+
+    triangles = newTriangleList;
+}
+
+void TriangleMesh::removeMinimumVolumePolyhedra(double volume) {
+    if (volume <= 0.0) {
+        return;
+    }
+
+    std::vector<std::vector<int> > polyList;
+    _getPolyhedra(polyList);
+
+    std::vector<int> removalTriangles;
+    for (unsigned int i = 0; i < polyList.size(); i++) {
+        if (_getPolyhedronVolume(polyList[i]) <= volume) {
+            for (int j = 0; j < polyList[i].size(); j++) {
+                removalTriangles.push_back(polyList[i][j]);
+            }
+        }
+    }
+
+    if (removalTriangles.size() == 0) {
+        return;
+    }
+
+    removeTriangles(removalTriangles);
+}
+
+void TriangleMesh::removeMinimumTriangleCountPolyhedra(int count) {
+    if (count <= 0) {
+        return;
+    }
+
+    std::vector<std::vector<int> > polyList;
+    _getPolyhedra(polyList);
+
+    std::vector<int> removalTriangles;
+    for (unsigned int i = 0; i < polyList.size(); i++) {
+        if (polyList[i].size() <= count) {
+            for (int j = 0; j < polyList[i].size(); j++) {
+                removalTriangles.push_back(polyList[i][j]);
+            }
+        }
+    }
+
+    if (removalTriangles.size() == 0) {
+        return;
+    }
+
+    removeTriangles(removalTriangles);
 }

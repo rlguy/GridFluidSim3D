@@ -77,6 +77,10 @@ public:
     glm::vec3 getTriangleFaceDirection(unsigned int index);
     glm::vec3 getTriangleCenter(unsigned int index);
     glm::vec3 getBarycentricCoordinates(unsigned int index, glm::vec3 p);
+    void removeMinimumTriangleCountPolyhedra(int count);
+    void removeMinimumVolumePolyhedra(double volume);
+    void removeTriangles(std::vector<int> &triangles);
+    void removeExtraneousVertices();
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
@@ -105,6 +109,13 @@ private:
     void _getBoolVectorOfSmoothedVertices(std::vector<int> &verts, 
                                           std::vector<bool> &isSmooth);
     int _numDigitsInInteger(int num);
+
+    void _getPolyhedra(std::vector<std::vector<int> > &polyList);
+    void _getPolyhedronFromTriangle(int triangle, 
+                                    std::vector<bool> &visitedTriangles,
+                                    std::vector<int> &polyhedron);
+    double _getPolyhedronVolume(std::vector<int> &polyhedron);
+    double _getSignedTriangleVolume(unsigned int tidx);
 
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));

@@ -133,6 +133,10 @@ void FluidSimulation::setSurfaceSubdivisionLevel(unsigned int n) {
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
+void FluidSimulation::setMinimumPolyhedronTriangleCount(unsigned int n) {
+    _minimumSurfacePolyhedronTriangleCount = n;
+}
+
 void FluidSimulation::enableSurfaceMeshOutput() {
     _isSurfaceMeshOutputEnabled = true;
 }
@@ -1039,6 +1043,8 @@ TriangleMesh FluidSimulation::_polygonizeSurface() {
 
 void FluidSimulation::_reconstructFluidSurface() {
     _surfaceMesh = _polygonizeSurface();
+    _surfaceMesh.removeMinimumTriangleCountPolyhedra(
+                        _minimumSurfacePolyhedronTriangleCount);
 }
 
 /********************************************************************************
@@ -1058,7 +1064,7 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
                                                   std::string foamfile,
                                                   std::string sprayfile) {
-    double eps = 1e-3;
+    double eps = 1e-1;
     TriangleMesh bubbleMesh;
     TriangleMesh foamMesh;
     TriangleMesh sprayMesh;
@@ -1091,7 +1097,7 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
 }
 
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
-    double eps = 1e-3;
+    double eps = 1e-1;
     TriangleMesh diffuseMesh;
     DiffuseParticle dp;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
@@ -1426,6 +1432,8 @@ void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
             mesh = _surfaceMesh;
         } else {
             mesh = _polygonizeOutputSurface();
+            mesh.removeMinimumTriangleCountPolyhedra(
+                        _minimumSurfacePolyhedronTriangleCount);
         }
         _smoothSurfaceMesh(mesh);
     }
@@ -2854,8 +2862,8 @@ void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
                                                    double dt) {
     float drag = -(float)_sprayDragCoefficient*glm::dot(dp.velocity, dp.velocity);
 
-    glm::vec3 accforce = _bodyForce;
-    if (drag > 0.0) {
+    glm::vec3 accforce = (float)_sprayBodyForceScale*_bodyForce;
+    if (fabs(drag) > 0.0) {
         accforce += drag*glm::normalize(dp.velocity);
     }
 
