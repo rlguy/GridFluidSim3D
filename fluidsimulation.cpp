@@ -2862,7 +2862,7 @@ void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
                                                    double dt) {
     float drag = -(float)_sprayDragCoefficient*glm::dot(dp.velocity, dp.velocity);
 
-    glm::vec3 accforce = (float)_sprayBodyForceScale*_bodyForce;
+    glm::vec3 accforce = _bodyForce;
     if (fabs(drag) > 0.0) {
         accforce += drag*glm::normalize(dp.velocity);
     }

@@ -636,10 +636,9 @@ private:
     double _foamParticleLifetimeModifier = 1.0;
     double _maxFoamToSurfaceDistance = 2.0;   // in number of grid cells
     double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
-    double _sprayBodyForceScale = 1.0;
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
-    double _sprayDragCoefficient = 0.25;
+    double _sprayDragCoefficient = 0.15;
     int _maxDiffuseParticlesPerCell = 250;
     double _markerParticleVelocityUpperBoundPercentile = 0.999;
 

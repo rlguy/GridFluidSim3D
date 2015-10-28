@@ -1059,7 +1059,61 @@ bool compareBcomparePolyhedonByTriangleCount(const std::vector<int> p1, std::vec
 }
 
 void TriangleMesh::removeExtraneousVertices() {
-    //todo
+
+    std::vector<bool> unusedVertices = std::vector<bool>(vertices.size(), true);
+    Triangle t;
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        t = triangles[i];
+        unusedVertices[t.tri[0]] = false;
+        unusedVertices[t.tri[1]] = false;
+        unusedVertices[t.tri[2]] = false;
+    }
+
+    int unusedCount = 0;
+    for (unsigned int i = 0; i < unusedVertices.size(); i++) {
+        if (unusedVertices[i]) {
+            unusedCount++;
+        }
+    }
+
+    if (unusedCount == 0) {
+        return;
+    }
+
+    bool hasVertexColors = vertices.size() == vertexcolors.size();
+
+    std::vector<int> indexTranslationTable = std::vector<int>(vertices.size(), -1);
+    std::vector<glm::vec3> newVertexList;
+    std::vector<glm::vec3> newVertexColorList;
+    int vidx = 0;
+    for (unsigned int i = 0; i < unusedVertices.size(); i++) {
+        if (!unusedVertices[i]) {
+            newVertexList.push_back(vertices[i]);
+            indexTranslationTable[i] = vidx;
+            vidx++;
+
+            if (hasVertexColors) {
+                newVertexColorList.push_back(vertexcolors[i]);
+            }
+        }
+    }
+
+    vertices = newVertexList;
+    if (hasVertexColors) {
+        vertexcolors = newVertexColorList;
+    }
+
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        t = triangles[i];
+        t.tri[0] = indexTranslationTable[t.tri[0]];
+        t.tri[1] = indexTranslationTable[t.tri[1]];
+        t.tri[2] = indexTranslationTable[t.tri[2]];
+        assert(t.tri[0] != -1 && t.tri[1] != -1 && t.tri[2] != -1);
+
+        triangles[i] = t;
+    }
+
+    updateVertexNormals();
 }
 
 void TriangleMesh::removeTriangles(std::vector<int> &removalTriangles) {
@@ -1101,6 +1155,7 @@ void TriangleMesh::removeMinimumVolumePolyhedra(double volume) {
     }
 
     removeTriangles(removalTriangles);
+    removeExtraneousVertices();
 }
 
 void TriangleMesh::removeMinimumTriangleCountPolyhedra(int count) {
@@ -1125,4 +1180,5 @@ void TriangleMesh::removeMinimumTriangleCountPolyhedra(int count) {
     }
 
     removeTriangles(removalTriangles);
+    removeExtraneousVertices();
 }
