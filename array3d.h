@@ -33,6 +33,12 @@ struct GridIndex {
                j == other.j &&
                k == other.k;
     }
+
+    bool operator!=(const GridIndex &other) const { 
+        return i != other.i ||
+               j != other.j ||
+               k != other.k;
+    }
 };
 
 struct GridIndexHasher {
