@@ -61,9 +61,19 @@ public:
     std::vector<GridPointReference> insert(std::vector<glm::vec3> &points);
     void queryPointsInsideSphere(glm::vec3 p, double r, std::vector<glm::vec3> &points);
     void queryPointsInsideSphere(GridPointReference ref, double r, std::vector<glm::vec3> &points);
+    void queryPointsInsideSphere(glm::vec3 p, double r, std::vector<bool> &exclusions, 
+                                                        std::vector<glm::vec3> &points);
+    void queryPointsInsideSphere(GridPointReference ref, double r, 
+                                 std::vector<bool> &exclusions, std::vector<glm::vec3> &points);
     void queryPointReferencesInsideSphere(glm::vec3 p, double r, 
                                           std::vector<GridPointReference> &refs);
     void queryPointReferencesInsideSphere(GridPointReference ref, double r, 
+                                          std::vector<GridPointReference> &refs);
+    void queryPointReferencesInsideSphere(glm::vec3 p, double r, 
+                                          std::vector<bool> &exclusions, 
+                                          std::vector<GridPointReference> &refs);
+    void queryPointReferencesInsideSphere(GridPointReference ref, double r, 
+                                          std::vector<bool> &exclusions,
                                           std::vector<GridPointReference> &refs);
 
     void queryPointsInsideAABB(AABB bbox, std::vector<glm::vec3> &points);
@@ -104,7 +114,12 @@ private:
     void _updateRefIDToGridPointIndexTable();
     void _insertCellNodesIntoGrid();
     void _queryPointsInsideSphere(glm::vec3 p, double r, int refID, std::vector<glm::vec3> &points);
+    void _queryPointsInsideSphere(glm::vec3 p, double r, 
+                                  std::vector<bool> &exclusions, 
+                                  std::vector<glm::vec3> &points);
     void _queryPointReferencesInsideSphere(glm::vec3 p, double r, int refID, 
+                                           std::vector<GridPointReference> &refs);
+    void _queryPointReferencesInsideSphere(glm::vec3 p, double r, std::vector<bool> &exclusions, 
                                            std::vector<GridPointReference> &refs);
 
     void _getConnectedPoints(GridPointReference seed, double radius, 
