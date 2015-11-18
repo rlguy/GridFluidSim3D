@@ -31,6 +31,8 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 #include "levelset.h"
 #include "trianglemesh.h"
+#include "implicitsurfacescalarfield.h"
+#include "polygonizer3d.h"
 #include "stopwatch.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
@@ -45,6 +47,7 @@ public:
 
     TriangleMesh meshParticles(std::vector<glm::vec3> &particles, 
                                LevelSet &levelset,
+                               Array3d<int> &materialGrid,
                                double particleRadius);
 
 private: 
@@ -98,6 +101,10 @@ private:
     };
 
     void _clear();
+    void _computeSurfaceReconstructionParticles(std::vector<glm::vec3> &particles, 
+                                                LevelSet &levelset,
+                                                std::vector<IsotropicParticle> &iso,
+                                                std::vector<AnisotropicParticle> &aniso);
     void _sortParticlesBySurfaceDistance(std::vector<glm::vec3> &allParticles,
                                          std::vector<glm::vec3> &insideParticles,
                                          std::vector<glm::vec3> &surfaceParticles,
@@ -132,11 +139,17 @@ private:
                                                    std::vector<AnisotropicParticle> &aniso,
                                                    std::vector<glm::mat3> &anisoMatrices);
 
+    TriangleMesh _reconstructSurface(std::vector<IsotropicParticle> &iso,
+                                     std::vector<AnisotropicParticle> &aniso,
+                                     Array3d<int> &materialGrid);
+
     void _setParticleRadius(double r);
     void _setKernelRadius(double r);
     double _evaluateKernel(SurfaceParticle &pi, SurfaceParticle &pj);
 
     double _particleRadius = 0.0;
+    double _anisotropicParticleScale = 1.0;
+    double _isotropicParticleScale = 3.0;
     double _kernelRadius = 0.0;
     double _invKernelRadius = 1.0;
 

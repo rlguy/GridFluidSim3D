@@ -47,6 +47,8 @@ public:
     void addPointValue(glm::vec3 pos, double radius, double value);
     void addPointValue(glm::vec3 pos, double value);
     void addCuboid(glm::vec3 pos, double w, double h, double d);
+    void addEllipsoid(glm::vec3 p, glm::mat3 G, double r);
+    void addEllipsoid(glm::vec3 p, glm::mat3 G);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);

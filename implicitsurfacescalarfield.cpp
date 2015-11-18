@@ -226,6 +226,53 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     }
 }
 
+void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G, double r) {
+    setPointRadius(r);
+    addEllipsoid(p, G);
+}
+
+void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G) {
+    GridIndex gmin, gmax;
+    Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
+
+    glm::vec3 gpos;
+    glm::vec3 v;
+    double rsq = _radius*_radius;
+    double distsq;
+    double weight;
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
+                gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
+                v = (gpos - p);
+                v = G*v;
+
+                distsq = glm::dot(v, v);
+
+                if (distsq < rsq) {
+
+                    if (_weightType == WEIGHT_TRICUBIC) {
+                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
+                    } else {
+                        weight = _evaluateTrilinearFieldFunction(v);
+                    }
+
+                    _field.add(i, j, k, (float)weight);
+
+                    if (_isWeightFieldEnabled) {
+                        _weightField.add(i, j, k, (float)weight);
+                        _weightCountField.add(i, j, k, 1);
+                    }
+                }
+
+                if (_isCenterFieldEnabled) {
+                    _calculateCenterCellValueForPoint(p, i, j, k);
+                }
+            }
+        }
+    }
+}
+
 void ImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
     setMaterialGrid(solidCells);
 }

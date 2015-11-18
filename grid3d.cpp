@@ -355,6 +355,36 @@ void Grid3d::getGridIndexBounds(glm::vec3 p, double r, double dx, GridIndex gmax
                       (int)fmin(kmax, gmax.k-1));
 }
 
+void Grid3d::getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, 
+                                int imax, int jmax, int kmax, 
+                                GridIndex *g1, GridIndex *g2) {
+
+    double lenx = glm::length(G[0]);
+    double leny = glm::length(G[1]);
+    double lenz = glm::length(G[2]);
+
+    double minx = p.x - lenx;
+    double maxx = p.x + lenx;
+    double miny = p.y - leny;
+    double maxy = p.y + leny;
+    double minz = p.z - lenz;
+    double maxz = p.z + lenz;
+
+    *g1 = positionToGridIndex(glm::vec3(minx, miny, minz), dx);
+    *g2 = positionToGridIndex(glm::vec3(maxx, maxy, maxz), dx);
+
+    *g1 = GridIndex((int)fmax((*g1).i, 0), 
+                    (int)fmax((*g1).j, 0), 
+                    (int)fmax((*g1).k, 0));
+    *g2 = GridIndex((int)fmin((*g2).i, imax-1), 
+                     (int)fmin((*g2).j, jmax-1), 
+                     (int)fmin((*g2).k, kmax-1));
+}
+
+void Grid3d::getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, GridIndex gmax, 
+                                   GridIndex *g1, GridIndex *g2) {
+}
+
 void Grid3d::getGridIndexBounds(AABB bbox, double dx, 
                                 int imax, int jmax, int kmax,
                                 GridIndex *g1, GridIndex *g2) {

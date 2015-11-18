@@ -34,10 +34,36 @@ ParticleMesher::~ParticleMesher() {
 
 TriangleMesh ParticleMesher::meshParticles(std::vector<glm::vec3> &particles, 
                                            LevelSet &levelset,
+                                           Array3d<int> &materialGrid,
                                            double particleRadius) {
     _clear();
     _setParticleRadius(particleRadius);
 
+    std::vector<IsotropicParticle> isoParticles;
+    std::vector<AnisotropicParticle> anisoParticles;
+    _computeSurfaceReconstructionParticles(particles, levelset,
+                                           isoParticles, anisoParticles);
+
+    TriangleMesh mesh = _reconstructSurface(isoParticles, anisoParticles,
+                                            materialGrid);
+    return mesh;
+}
+
+void ParticleMesher::_clear() {
+    _surfaceParticles.clear();
+    _nearSurfaceParticleRefs.clear();
+    _farSurfaceParticleRefs.clear();
+    _pointGrid = SpatialPointGrid();
+    _smoothedPositions.clear();
+    _covarianceMatrices.clear();
+    _SVDMatrices.clear();
+}
+
+void ParticleMesher::_computeSurfaceReconstructionParticles(
+                                          std::vector<glm::vec3> &particles, 
+                                          LevelSet &levelset,
+                                          std::vector<IsotropicParticle> &iso,
+                                          std::vector<AnisotropicParticle> &aniso) {
     StopWatch t;
 
     t.start();
@@ -95,10 +121,8 @@ TriangleMesh ParticleMesher::meshParticles(std::vector<glm::vec3> &particles,
 
     std::cout << "\tCOMPUTE ANISOTROPY " << t.getTime() << "\n" << std::endl;
 
-    std::vector<IsotropicParticle> isoParticles;
-    std::vector<AnisotropicParticle> anisoParticles;
-    _initializeSurfaceReconstructionParticles(isoParticles, insideParticles,
-                                              anisoParticles, anisotropyMatrices);
+    _initializeSurfaceReconstructionParticles(iso, insideParticles,
+                                              aniso, anisotropyMatrices);
 
     _pointGrid = SpatialPointGrid();
 
@@ -111,18 +135,6 @@ TriangleMesh ParticleMesher::meshParticles(std::vector<glm::vec3> &particles,
     insideParticles.shrink_to_fit();
     _nearSurfaceParticleRefs.shrink_to_fit();
     _farSurfaceParticleRefs.shrink_to_fit();
-
-    return TriangleMesh();
-}
-
-void ParticleMesher::_clear() {
-    _surfaceParticles.clear();
-    _nearSurfaceParticleRefs.clear();
-    _farSurfaceParticleRefs.clear();
-    _pointGrid = SpatialPointGrid();
-    _smoothedPositions.clear();
-    _covarianceMatrices.clear();
-    _SVDMatrices.clear();
 }
 
 void ParticleMesher::_sortParticlesBySurfaceDistance(std::vector<glm::vec3> &allParticles,
@@ -557,6 +569,39 @@ void ParticleMesher::_initializeSurfaceReconstructionParticles(
         p = _surfaceParticles[ref.id].position;
         aniso.push_back(AnisotropicParticle(p, anisoMatrices[i]));
     }
+}
+
+TriangleMesh ParticleMesher::_reconstructSurface(std::vector<IsotropicParticle> &iso,
+                                                 std::vector<AnisotropicParticle> &aniso,
+                                                 Array3d<int> &materialGrid) {
+
+    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
+                                                                  _jsize + 1, 
+                                                                  _ksize + 1, _dx);
+    field.setMaterialGrid(materialGrid);
+
+    double r = _particleRadius*_anisotropicParticleScale;
+    field.setPointRadius(r);
+
+    glm::vec3 p, v;
+    glm::mat3 G;
+    for (unsigned int i = 0; i < aniso.size(); i++) {
+        p = aniso[i].position;
+        G = (float)r*aniso[i].anisotropy;
+        field.addEllipsoid(p, G);
+    }
+
+    r = _particleRadius*_isotropicParticleScale;
+    field.setPointRadius(r);
+    for (unsigned int i = 0; i < iso.size(); i++) {
+        p = iso[i].position;
+        field.addPoint(p);
+    }
+
+    Polygonizer3d polygonizer = Polygonizer3d(field);
+
+    polygonizer.polygonizeSurface();
+    return polygonizer.getTriangleMesh();
 }
 
 void ParticleMesher::_setParticleRadius(double r) {

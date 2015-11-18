@@ -92,6 +92,11 @@ namespace Grid3d {
                                    GridIndex *g1, GridIndex *g2);
     extern void getGridIndexBounds(glm::vec3 p, double r, double dx, GridIndex gmax, 
                                    GridIndex *g1, GridIndex *g2);
+    extern void getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, 
+                                   int imax, int jmax, int kmax, 
+                                   GridIndex *g1, GridIndex *g2);
+    extern void getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, GridIndex gmax, 
+                                   GridIndex *g1, GridIndex *g2);
     extern void getGridIndexBounds(AABB bbox, double dx, 
                                    int imax, int jmax, int kmax,
                                    GridIndex *g1, GridIndex *g2);
