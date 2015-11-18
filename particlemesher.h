@@ -19,6 +19,7 @@ freely, subject to the following restrictions:
 */
 
 #pragma once
+#define GLM_FORCE_RADIANS
 
 #include <stdio.h>
 #include <iostream>
@@ -32,6 +33,8 @@ freely, subject to the following restrictions:
 #include "trianglemesh.h"
 #include "stopwatch.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 class ParticleMesher
 {
@@ -67,6 +70,33 @@ private:
                                        componentID(compID) {}
     };
 
+    struct IsotropicParticle {
+        glm::vec3 position;
+
+        IsotropicParticle() {}
+        IsotropicParticle(glm::vec3 p) : position(p) {}
+    };
+
+    struct AnisotropicParticle {
+        glm::vec3 position;
+        glm::mat3 anisotropy;
+
+        AnisotropicParticle() {}
+        AnisotropicParticle(glm::vec3 p) : position(p), 
+                                           anisotropy(glm::mat3(1.0)) {}
+        AnisotropicParticle(glm::vec3 p, glm::mat3 G) : position(p), 
+                                                        anisotropy(G) {}
+    };
+
+    struct SVD {
+        glm::mat3 rotation;
+        glm::vec3 diag;
+
+        SVD() {}
+        SVD(glm::mat3 rot, glm::vec3 d) : rotation(rot), diag(d) {}
+        SVD(glm::vec3 d, glm::mat3 rot) : rotation(rot), diag(d) {}
+    };
+
     void _clear();
     void _sortParticlesBySurfaceDistance(std::vector<glm::vec3> &allParticles,
                                          std::vector<glm::vec3> &insideParticles,
@@ -91,7 +121,16 @@ private:
     void _computeCovarianceMatrices();
     void _computeRangeOfCovarianceMatrices(int startidx, int endidx, double radius);
     glm::mat3 _computeCovarianceMatrix(GridPointReference ref, double radius,
-                                         std::vector<GridPointReference> &neighbours);
+                                       std::vector<GridPointReference> &neighbours);
+    void _computeSVDMatrices();
+    void _covarianceMatrixToSVD(glm::mat3 &covariance, SVD &svd);
+    glm::quat _diagonalizeMatrix(glm::mat3 A);
+    glm::mat3 _SVDToAnisotropicMatrix(SVD &svd);
+
+    void _initializeSurfaceReconstructionParticles(std::vector<IsotropicParticle> &iso,
+                                                   std::vector<glm::vec3> &insideParticles,
+                                                   std::vector<AnisotropicParticle> &aniso,
+                                                   std::vector<glm::mat3> &anisoMatrices);
 
     void _setParticleRadius(double r);
     void _setKernelRadius(double r);
@@ -106,6 +145,10 @@ private:
     double _smoothingConstant = 0.95;             // in range [0.0,1.0]
     int _numThreads = 8;
 
+    int _minAnisotropicParticleNeighbourThreshold = 15;
+    double _maxEigenvalueRatio = 4.0;
+    double _eigenvalueScalingFactor = 1400.0;
+
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
@@ -119,5 +162,6 @@ private:
     std::vector<GridPointReference> _farSurfaceParticleRefs;
     std::vector<glm::vec3> _smoothedPositions;
     std::vector<glm::mat3> _covarianceMatrices;
+    std::vector<SVD> _SVDMatrices;
 };
 

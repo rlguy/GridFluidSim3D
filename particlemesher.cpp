@@ -26,6 +26,7 @@ ParticleMesher::ParticleMesher() {
 
 ParticleMesher::ParticleMesher(int isize, int jsize, int ksize, double dx) :
                                     _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx) {
+
 }
 
 ParticleMesher::~ParticleMesher() {
@@ -62,6 +63,12 @@ TriangleMesh ParticleMesher::meshParticles(std::vector<glm::vec3> &particles,
     t.start();
     _initializeSurfaceParticleSpatialGrid(surfaceParticles);
     _updateNearFarSurfaceParticleReferences(nearSurfaceParticles, farSurfaceParticles);
+    nearSurfaceParticles.clear();
+    nearSurfaceParticles.shrink_to_fit();
+    farSurfaceParticles.clear();
+    farSurfaceParticles.shrink_to_fit();
+    surfaceParticles.clear();
+    surfaceParticles.shrink_to_fit();
     t.stop();
 
     std::cout << "\tINITIALIZE GRID " << t.getTime() << "\n" << std::endl;
@@ -88,6 +95,23 @@ TriangleMesh ParticleMesher::meshParticles(std::vector<glm::vec3> &particles,
 
     std::cout << "\tCOMPUTE ANISOTROPY " << t.getTime() << "\n" << std::endl;
 
+    std::vector<IsotropicParticle> isoParticles;
+    std::vector<AnisotropicParticle> anisoParticles;
+    _initializeSurfaceReconstructionParticles(isoParticles, insideParticles,
+                                              anisoParticles, anisotropyMatrices);
+
+    _pointGrid = SpatialPointGrid();
+
+    anisotropyMatrices.clear();
+    insideParticles.clear();
+    _nearSurfaceParticleRefs.clear();
+    _farSurfaceParticleRefs.clear();
+
+    anisotropyMatrices.shrink_to_fit();
+    insideParticles.shrink_to_fit();
+    _nearSurfaceParticleRefs.shrink_to_fit();
+    _farSurfaceParticleRefs.shrink_to_fit();
+
     return TriangleMesh();
 }
 
@@ -98,6 +122,7 @@ void ParticleMesher::_clear() {
     _pointGrid = SpatialPointGrid();
     _smoothedPositions.clear();
     _covarianceMatrices.clear();
+    _SVDMatrices.clear();
 }
 
 void ParticleMesher::_sortParticlesBySurfaceDistance(std::vector<glm::vec3> &allParticles,
@@ -169,16 +194,6 @@ void ParticleMesher::_updateSurfaceParticleComponentIDs() {
             _surfaceParticles[spidx].componentID = cid;
         }
     }
-
-    // debug
-    int count = 0;
-    for (unsigned int i = 0; i < components.size(); i++) {
-        if (components[i].size() > 2) {
-            count++;
-        }
-    }
-
-    std::cout << "\t\tNUM COMPONENTS: " << components.size() << " " << count << std::endl;
 }
 
 void ParticleMesher::_smoothSurfaceParticlePositions() {
@@ -282,11 +297,22 @@ glm::vec3 ParticleMesher::_getWeightedMeanParticlePosition(GridPointReference re
     return posSum / (float)weightSum;
 }
 
-void ParticleMesher::_computeAnisotropyMatrices(std::vector<glm::mat3x3> &matrices) {
+void ParticleMesher::_computeAnisotropyMatrices(std::vector<glm::mat3x3> &anisoMatrices) {
     _computeCovarianceMatrices();
+    _computeSVDMatrices();
 
     _covarianceMatrices.clear();
     _covarianceMatrices.shrink_to_fit();
+
+    SVD svd;
+    anisoMatrices.reserve(_SVDMatrices.size());
+    for (unsigned int i = 0; i < _SVDMatrices.size(); i++) {
+        svd = _SVDMatrices[i];
+        anisoMatrices.push_back(_SVDToAnisotropicMatrix(svd));
+    }
+
+    _SVDMatrices.clear();
+    _SVDMatrices.shrink_to_fit();
 }
 
 void ParticleMesher::_computeCovarianceMatrices() {
@@ -337,6 +363,11 @@ glm::mat3 ParticleMesher::_computeCovarianceMatrix(GridPointReference ref, doubl
                                                    std::vector<GridPointReference> &neighbours) {
     neighbours.clear();
     _pointGrid.queryPointReferencesInsideSphere(ref, radius, neighbours);
+
+    if (neighbours.size() <= _minAnisotropicParticleNeighbourThreshold) {
+        return glm::mat3(1.0);
+    }
+
     glm::vec3 meanpos = _getWeightedMeanParticlePosition(ref, neighbours);
 
     SurfaceParticle meansp = SurfaceParticle(meanpos);
@@ -381,6 +412,151 @@ glm::mat3 ParticleMesher::_computeCovarianceMatrix(GridPointReference ref, doubl
     return glm::mat3(sum00, sum01, sum02,
                      sum01, sum11, sum12,
                      sum02, sum12, sum22) / (float) weightSum;
+}
+
+void ParticleMesher::_computeSVDMatrices() {
+    _SVDMatrices = std::vector<SVD>(_covarianceMatrices.size(), SVD());
+
+    for (unsigned int i = 0; i < _covarianceMatrices.size(); i++) {
+        SVD svd;
+        _covarianceMatrixToSVD(_covarianceMatrices[i], svd);
+        _SVDMatrices[i] = svd;
+    }
+}
+
+void ParticleMesher::_covarianceMatrixToSVD(glm::mat3 &covariance, SVD &svd) {
+    glm::quat q = _diagonalizeMatrix(covariance);
+    glm::mat3 Q = glm::mat3_cast(q);
+    glm::mat3 D = glm::transpose(Q) * covariance * Q;
+
+    double d0 = D[0][0];
+    double d1 = D[1][1];
+    double d2 = D[2][2];
+    int k0 = 0;
+    int k1 = 1;
+    int k2 = 2;
+
+    if (d0 > d1 && d0 > d2) {
+        if (d1 > d2) {
+            k0 = 0; k1 = 1; k2 = 2;
+        } else {
+            k0 = 0; k1 = 2; k2 = 1;
+        }
+    } else if (d1 > d0 && d1 > d2) {
+        if (d0 > d2) {
+            k0 = 1; k1 = 0; k2 = 2;
+        } else {
+            k0 = 1; k1 = 2; k2 = 0;
+        }
+    } else if (d2 > d0 && d2 > d1) {
+        if (d0 > d1) {
+            k0 = 2; k1 = 0; k2 = 1;
+        } else {
+            k0 = 2; k1 = 1; k2 = 0;
+        }
+    }
+
+    double kr = _maxEigenvalueRatio;
+    double sigma0 = (double)D[k0][k0];
+    double sigma1 = std::max((double)D[k1][k1], sigma0 / kr);
+    double sigma2 = std::max((double)D[k2][k2], sigma0 / kr);;
+
+    double ks = _eigenvalueScalingFactor;
+    svd.rotation = glm::mat3(Q[k0], Q[k1], Q[k2]);
+    svd.diag = (float)ks*glm::vec3(sigma0, sigma1, sigma2);
+}
+
+/*
+    A must be a symmetric matrix.
+	returns quaternion q such that its corresponding matrix Q 
+	can be used to Diagonalize A
+	Diagonal matrix D = Transpose(Q) * A * Q;  and  A = Q * D * Transpose(Q)
+	The columns of Q are the eigenvectors, D's diagonal is the eigenvalues
+
+    Method adapted from:
+        www.melax.com/diag.html?attredirects=0
+*/
+glm::quat ParticleMesher::_diagonalizeMatrix(glm::mat3 A) {
+
+    int maxsteps = 24;
+    glm::quat q(1.0, glm::vec3(0.0, 0.0, 0.0));
+    int i = 0;
+
+    for (i = 0; i < maxsteps; i++) {
+        glm::mat3 Q = glm::mat3_cast(q);
+        glm::mat3 D = glm::transpose(Q) * A * Q;
+        glm::vec3 offdiag(D[2][1], D[2][0], D[1][0]);
+        glm::vec3 om(fabsf(offdiag.x), fabsf(offdiag.y), fabsf(offdiag.z));
+        int k = (om.x > om.y && om.x > om.z)?0: (om.y > om.z)? 1 : 2;
+        int k1 = (k+1)%3;
+		int k2 = (k+2)%3;
+
+        if(offdiag[k]==0.0f) {
+            break;
+        }
+
+        float thet = (D[k2][k2]-D[k1][k1])/(2.0f*offdiag[k]);
+		float sgn = (thet > 0.0f)?1.0f:-1.0f;
+		thet *= sgn;
+        float t = sgn /(thet +((thet < 1.E6f)?sqrtf(thet*thet+1.0f):thet));
+		float c = 1.0f/sqrtf(t*t+1.0f);
+
+        if(c==1.0f) { 
+            break; 
+        }
+
+        float jrtemp[3] = {0.0f, 0.0f, 0.0f};
+        jrtemp[k] = sgn*sqrtf((1.0f-c)/2.0f);
+        jrtemp[k] *= -1.0f;
+
+        glm::quat jr(sqrtf(1.0f - jrtemp[k]*jrtemp[k]), 
+                     glm::vec3(jrtemp[0], jrtemp[1], jrtemp[2]));
+
+        if(jr.w==1.0f) {
+            break; 
+        }
+
+        q = glm::cross(q,jr); 
+		q = glm::normalize(q);
+    }
+
+    return q;
+}
+
+glm::mat3 ParticleMesher::_SVDToAnisotropicMatrix(SVD &svd) {
+    glm::mat3 invD = glm::mat3(glm::vec3(1.0 / svd.diag.x, 0.0, 0.0),
+                               glm::vec3(0.0, 1.0 / svd.diag.y, 0.0),
+                               glm::vec3(0.0, 0.0, 1.0 / svd.diag.z));
+
+    return svd.rotation * invD * glm::transpose(svd.rotation);
+}
+
+void ParticleMesher::_initializeSurfaceReconstructionParticles(
+                                    std::vector<IsotropicParticle> &iso,
+                                    std::vector<glm::vec3> &insideParticles,
+                                    std::vector<AnisotropicParticle> &aniso,
+                                    std::vector<glm::mat3> &anisoMatrices) {
+
+    iso.reserve(_nearSurfaceParticleRefs.size());
+    aniso.reserve(insideParticles.size() + _farSurfaceParticleRefs.size());
+
+    glm::vec3 p;
+    GridPointReference ref;
+    for (unsigned int i = 0; i < _farSurfaceParticleRefs.size(); i++) {
+        ref = _farSurfaceParticleRefs[i];
+        p = _surfaceParticles[ref.id].position;
+        iso.push_back(IsotropicParticle(p));
+    }
+
+    for (unsigned int i = 0; i < insideParticles.size(); i++) {
+        iso.push_back(insideParticles[i]);
+    }
+
+    for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
+        ref = _nearSurfaceParticleRefs[i];
+        p = _surfaceParticles[ref.id].position;
+        aniso.push_back(AnisotropicParticle(p, anisoMatrices[i]));
+    }
 }
 
 void ParticleMesher::_setParticleRadius(double r) {
