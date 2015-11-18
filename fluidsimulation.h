@@ -55,6 +55,8 @@ freely, subject to the following restrictions:
 #include "cuboidfluidsource.h"
 #include "turbulencefield.h"
 #include "fluidbrickgrid.h"
+#include "spatialpointgrid.h"
+#include "particlemesher.h"
 #include "glm/glm.hpp"
 
 struct MarkerParticle {
@@ -124,6 +126,10 @@ public:
 
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
+    void enableIsotropicSurfaceReconstruction();
+    void disableIsotropicSurfaceReconstruction();
+    void enableAnisotropicSurfaceReconstruction();
+    void disableAnisotropicSurfaceReconstruction();
     void enableDiffuseMaterialOutput();
     void enableBubbleDiffuseMaterial();
     void enableSprayDiffuseMaterial();
@@ -334,19 +340,19 @@ private:
 
     // Reconstruct output fluid surface
     void _reconstructOutputFluidSurface(double dt);
-    void _writeSurfaceMeshToFile(TriangleMesh &mesh);
+    void _writeSurfaceMeshToFile(TriangleMesh &isomesh,
+                                 TriangleMesh &anisomesh);
     void _writeDiffuseMaterialToFile(std::string bubblefile,
                                      std::string foamfile,
                                      std::string sprayfile);
     void _writeDiffuseMaterialToFile(std::string diffusefile);
-    void _writeSmoothTriangleListToFile(TriangleMesh &mesh, std::string filename);
     void _writeBrickColorListToFile(TriangleMesh &mesh, std::string filename);
     void _writeBrickMaterialToFile(std::string brickfile, std::string colorfile);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
     bool _isVertexNearSolid(glm::vec3 v, double eps);
-    void _updateSmoothTriangleList(TriangleMesh &mesh, std::vector<int> &smoothVertices);
-    TriangleMesh _polygonizeOutputSurface();
+    TriangleMesh _polygonizeIsotropicOutputSurface();
+    TriangleMesh _polygonizeAnisotropicOutputSurface();
     void _getSubdividedSurfaceCells(std::vector<GridIndex> &cells);
     void _getSubdividedSolidCells(std::vector<GridIndex> &cells);
     void _getOutputSurfaceParticles(std::vector<glm::vec3> &particles);
@@ -626,8 +632,8 @@ private:
     double _maxParticleEnergy = 40.0;
     double _minTurbulence = 100.0;
     double _maxTurbulence = 200.0;
-    double _wavecrestEmissionRate = 200;
-    double _turbulenceEmissionRate = 200.0;
+    double _wavecrestEmissionRate = 250;
+    double _turbulenceEmissionRate = 250;
     unsigned int _maxNumDiffuseParticles = 6e6;
     double _maxDiffuseParticleLifetime = 2.8;
     double _sprayParticleLifetimeModifier = 2.0;
@@ -649,10 +655,12 @@ private:
     double _maxBrickIntensityAcceleration = 10.0;
     int _maxInactiveBrickFrames = 0;
 
-    double _ratioPICFLIP = 0.35f;
+    double _ratioPICFLIP = 0.25f;
     int _maxMarkerParticlesPerCell = 500;
 
     bool _isSurfaceMeshOutputEnabled = true;
+    bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
+    bool _isAnisotropicSurfaceMeshReconstructionEnabled = false;
     bool _isDiffuseMaterialOutputEnabled = false;
     bool _isBubbleDiffuseMaterialEnabled = false;
     bool _isSprayDiffuseMaterialEnabled = false;
@@ -681,7 +689,6 @@ private:
     LogFile _logfile;
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
-    std::vector<bool> _isSurfaceTriangleSmooth;
     
     std::vector<FluidPoint> _fluidPoints;
     std::vector<FluidCuboid> _fluidCuboids;
@@ -695,4 +702,5 @@ private:
     Array3d<Brick> _brickGrid;
 
     FluidBrickGrid _fluidBrickGrid;
+
 };

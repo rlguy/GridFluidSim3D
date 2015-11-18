@@ -145,6 +145,23 @@ void FluidSimulation::disableSurfaceMeshOutput() {
     _isSurfaceMeshOutputEnabled = false;
 }
 
+void FluidSimulation::enableIsotropicSurfaceReconstruction() {
+    _isIsotropicSurfaceMeshReconstructionEnabled = true;
+}
+
+void FluidSimulation::disableIsotropicSurfaceReconstruction() {
+    _isIsotropicSurfaceMeshReconstructionEnabled = false;
+}
+
+void FluidSimulation::enableAnisotropicSurfaceReconstruction() {
+    _isAnisotropicSurfaceMeshReconstructionEnabled = true;
+}
+
+void FluidSimulation::disableAnisotropicSurfaceReconstruction() {
+    _isAnisotropicSurfaceMeshReconstructionEnabled = false;
+}
+
+
 void FluidSimulation::enableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = true;
     _isBubbleDiffuseMaterialEnabled = true;
@@ -1118,37 +1135,6 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
     diffuseMesh.writeMeshToPLY(diffusefile);
 }
 
-void FluidSimulation::_writeSmoothTriangleListToFile(TriangleMesh &mesh, 
-                                                     std::string filename) {
-    int binsize = mesh.triangles.size();
-    char *storage = new char[binsize];
-
-    if (_isSurfaceTriangleSmooth.size() != binsize) {
-        _isSurfaceTriangleSmooth = std::vector<bool>();
-        _isSurfaceTriangleSmooth.assign(binsize, false);
-    }
-
-    bool isSmooth;
-    for (int i = 0; i < binsize; i++) {
-        isSmooth = _isSurfaceTriangleSmooth[i];
-        if (isSmooth) {
-            storage[i] = 0x01;
-        } else {
-            storage[i] = 0x00;
-        }
-    }
-    
-    std::ofstream erasefile;
-    erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
-    erasefile.close();
-
-    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
-    file.write(storage, binsize);
-    file.close();
-
-    delete[] storage;
-}
-
 void FluidSimulation::_writeBrickColorListToFile(TriangleMesh &mesh, 
                                                      std::string filename) {
     int binsize = 3*sizeof(int)*mesh.vertexcolors.size();
@@ -1185,13 +1171,19 @@ void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile,
     _writeBrickColorListToFile(brickmesh, colorfile);
 }
 
-void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &mesh) {
+void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &isomesh,
+                                              TriangleMesh &anisomesh) {
     std::string currentFrame = std::to_string(_currentFrame);
     currentFrame.insert(currentFrame.begin(), 6 - currentFrame.size(), '0');
 
     if (_isSurfaceMeshOutputEnabled) {
-        mesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
-        _writeSmoothTriangleListToFile(mesh, "bakefiles/smoothfacelist" + currentFrame + ".data");
+        if (_isIsotropicSurfaceMeshReconstructionEnabled) {
+            isomesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
+        }
+
+        if (_isAnisotropicSurfaceMeshReconstructionEnabled) {
+            anisomesh.writeMeshToPLY("bakefiles/anisotropic" + currentFrame + ".ply");
+        }
     }
 
     if (_isDiffuseMaterialOutputEnabled) {
@@ -1277,31 +1269,6 @@ void FluidSimulation::_getSmoothVertices(TriangleMesh &mesh,
     }
 }
 
-void FluidSimulation::_updateSmoothTriangleList(TriangleMesh &mesh, 
-                                                std::vector<int> &smoothVertices) {
-    int vsize = mesh.vertices.size();
-    int tsize = mesh.triangles.size();
-
-    std::vector<bool> isSmooth;
-    isSmooth.assign(vsize, false);
-    for (unsigned int i = 0; i < smoothVertices.size(); i++) {
-        assert(smoothVertices[i] >= 0 && smoothVertices[i] < vsize);
-        isSmooth[smoothVertices[i]] = true;
-    }
-
-    std::vector<bool> isTriangleSmooth;
-    isTriangleSmooth.assign(tsize, false);
-    Triangle t;
-    for (int i = 0; i < tsize; i++) {
-        t = mesh.triangles[i];
-        if (isSmooth[t.tri[0]] || isSmooth[t.tri[1]] || isSmooth[t.tri[2]]) {
-            isTriangleSmooth[i] = true;
-        }
-    }
-
-    _isSurfaceTriangleSmooth = isTriangleSmooth;
-}
-
 void FluidSimulation::_smoothSurfaceMesh(TriangleMesh &mesh) {
     std::vector<int> smoothVertices;
     _getSmoothVertices(mesh, smoothVertices);
@@ -1309,7 +1276,6 @@ void FluidSimulation::_smoothSurfaceMesh(TriangleMesh &mesh) {
     mesh.smooth(_surfaceReconstructionSmoothingValue, 
                 _surfaceReconstructionSmoothingIterations,
                 smoothVertices);
-    _updateSmoothTriangleList(mesh, smoothVertices);
 }
 
 void FluidSimulation::_getSubdividedSurfaceCells(std::vector<GridIndex> &cells) {
@@ -1378,7 +1344,7 @@ void FluidSimulation::_getOutputSurfaceParticles(std::vector<glm::vec3> &particl
     }
 }
 
-TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
+TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
 
     std::vector<GridIndex> surfaceCells;
     std::vector<GridIndex> solidCells;
@@ -1414,6 +1380,16 @@ TriangleMesh FluidSimulation::_polygonizeOutputSurface() {
     return polygonizer.getTriangleMesh();
 }
 
+TriangleMesh FluidSimulation::_polygonizeAnisotropicOutputSurface() {
+    TriangleMesh mesh;
+    ParticleMesher mesher = ParticleMesher(_isize, _jsize, _ksize, _dx);
+    mesh = mesher.meshParticles(getMarkerParticlePositions(), 
+                                _levelset, _materialGrid,
+                                _markerParticleRadius);
+
+    return mesh;
+}
+
 void FluidSimulation::_updateBrickGrid(double dt) {
     std::vector<glm::vec3> points;
     points.reserve(_markerParticles.size());
@@ -1426,23 +1402,32 @@ void FluidSimulation::_updateBrickGrid(double dt) {
 
 void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
     
-    TriangleMesh mesh;
+    TriangleMesh isomesh, anisomesh;
     if (_isSurfaceMeshOutputEnabled) {
-        if (_outputFluidSurfaceSubdivisionLevel == 1) {
-            mesh = _surfaceMesh;
-        } else {
-            mesh = _polygonizeOutputSurface();
-            mesh.removeMinimumTriangleCountPolyhedra(
-                        _minimumSurfacePolyhedronTriangleCount);
+        if (_isIsotropicSurfaceMeshReconstructionEnabled) {
+            if (_outputFluidSurfaceSubdivisionLevel == 1) {
+                isomesh = _surfaceMesh;
+            } else {
+                isomesh = _polygonizeIsotropicOutputSurface();
+                isomesh.removeMinimumTriangleCountPolyhedra(
+                            _minimumSurfacePolyhedronTriangleCount);
+            }
+            _smoothSurfaceMesh(isomesh);
         }
-        _smoothSurfaceMesh(mesh);
+
+        if (_isAnisotropicSurfaceMeshReconstructionEnabled) {
+            anisomesh = _polygonizeAnisotropicOutputSurface();
+            anisomesh.removeMinimumTriangleCountPolyhedra(
+                            _minimumSurfacePolyhedronTriangleCount);
+            _smoothSurfaceMesh(anisomesh);
+        }
     }
 
     if (_isBrickOutputEnabled) {
         _updateBrickGrid(dt);
     }
 
-    _writeSurfaceMeshToFile(mesh);
+    _writeSurfaceMeshToFile(isomesh, anisomesh);
 }
 
 /********************************************************************************
@@ -3451,6 +3436,7 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 ********************************************************************************/
 
 void FluidSimulation::_stepFluid(double dt) {
+
     _simulationTime += dt;
 
     StopWatch timer1 = StopWatch();
