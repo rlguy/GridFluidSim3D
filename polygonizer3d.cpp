@@ -42,6 +42,8 @@ Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
 
 Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
 {
+    _scalarField = scalarField;
+
     int i, j, k;
     scalarField.getGridDimensions(&i, &j, &k);
     _isize = i - 1;
@@ -596,8 +598,43 @@ glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 
         return p2 - (float)(eps*_dx)*v; 
     }
 
-    double mu = (isolevel - valp1) / (valp2 - valp1);
+    double tol = 1e-6;
+    int nmax = 50;
+    int n = 0;
+    glm::vec3 a = p1;
+    glm::vec3 b = p2;
+    glm::vec3 c;
+    double vala = valp1 - isolevel;
+    double valb = valp2 - isolevel;
+    double valc = 0.0;
+    while (n < nmax) {
+        c = 0.5f*(a + b);
 
+        if (_isScalarFieldSet) {
+            valc = _scalarField.tricubicInterpolation(c) - isolevel;
+        } else {
+            valc = _field->getFieldValue(c) - isolevel;
+        }
+        
+
+        if (fabs(valc) < tol || glm::length(b - a) < tol ) {
+            return c;
+        }
+
+        n++;
+
+        if ((valc < 0.0 && vala < 0.0) || (valc > 0.0 && vala > 0.0)) {
+            a = c;
+            vala = valc;
+        } else {
+            b = c;
+            valb = valc;
+        }
+        
+    }
+
+    // method failed: linearly interpolate value
+    double mu = (isolevel - valp1) / (valp2 - valp1);
     return p1 + (float)mu*(p2 - p1);
 }
 

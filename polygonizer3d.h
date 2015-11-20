@@ -112,6 +112,8 @@ private:
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
 
+    ImplicitSurfaceScalarField _scalarField;
+
     // cell indices that are fully or partially within the iso surface
     std::vector<GridIndex> _insideIndices;
     std::vector<GridIndex> _surfaceCells;
