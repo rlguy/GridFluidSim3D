@@ -383,6 +383,7 @@ void Grid3d::getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx,
 
 void Grid3d::getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, GridIndex gmax, 
                                    GridIndex *g1, GridIndex *g2) {
+    getGridIndexBounds(p, r, G, dx, gmax.i, gmax.j, gmax.k, g1, g2);
 }
 
 void Grid3d::getGridIndexBounds(AABB bbox, double dx, 

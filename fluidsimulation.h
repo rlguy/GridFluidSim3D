@@ -614,7 +614,7 @@ private:
     int _numUpdateMarkerParticleVelocityThreads = 8;
 
     double _surfaceReconstructionSmoothingValue = 0.85;
-    int _surfaceReconstructionSmoothingIterations = 3;
+    int _surfaceReconstructionSmoothingIterations = 2;
     int _minimumSurfacePolyhedronTriangleCount = 0;
     double _markerParticleRadius;
     double _markerParticleScale = 3.0;
@@ -655,7 +655,7 @@ private:
     double _maxBrickIntensityAcceleration = 10.0;
     int _maxInactiveBrickFrames = 0;
 
-    double _ratioPICFLIP = 0.25f;
+    double _ratioPICFLIP = 0.35f;
     int _maxMarkerParticlesPerCell = 500;
 
     bool _isSurfaceMeshOutputEnabled = true;

@@ -49,6 +49,8 @@ public:
     void addCuboid(glm::vec3 pos, double w, double h, double d);
     void addEllipsoid(glm::vec3 p, glm::mat3 G, double r);
     void addEllipsoid(glm::vec3 p, glm::mat3 G);
+    void addEllipsoidValue(glm::vec3 p, glm::mat3 G, double r, double value);
+    void addEllipsoidValue(glm::vec3 p, glm::mat3 G, double value);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);
@@ -67,6 +69,7 @@ public:
     void setFieldValue(GridIndex g, double value);
     void setCellFieldValues(int i, int j, int k, double value);
     void setCellFieldValues(GridIndex g, double value);
+    double tricubicInterpolation(glm::vec3 p);
 
 private:
 
@@ -79,6 +82,11 @@ private:
 
         return 0.0;
     }
+
+    double _cubicInterpolate(double p[4], double x);
+    double _bicubicInterpolate(double p[4][4], double x, double y);
+    double _tricubicInterpolate(double p[4][4][4], double x, double y, double z);
+    double _trilinearInterpolate(double p[8], double x, double y, double z);
 
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
     double _evaluateTrilinearFieldFunction(glm::vec3 v);

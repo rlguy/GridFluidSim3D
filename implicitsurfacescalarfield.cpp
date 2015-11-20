@@ -273,6 +273,54 @@ void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G) {
     }
 }
 
+void ImplicitSurfaceScalarField::addEllipsoidValue(glm::vec3 p, glm::mat3 G, double r, double value) {
+    setPointRadius(r);
+    addEllipsoidValue(p, G, value);
+}
+
+void ImplicitSurfaceScalarField::addEllipsoidValue(glm::vec3 p, glm::mat3 G, double scale) {
+    GridIndex gmin, gmax;
+    Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
+
+    glm::vec3 gpos;
+    glm::vec3 v;
+    double rsq = _radius*_radius;
+    double distsq;
+    double weight;
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
+                gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
+                v = (gpos - p);
+                v = G*v;
+
+                distsq = glm::dot(v, v);
+
+                if (distsq < rsq) {
+
+                    if (_weightType == WEIGHT_TRICUBIC) {
+                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
+                    } else {
+                        weight = _evaluateTrilinearFieldFunction(v);
+                    }
+
+                    _field.add(i, j, k, (float)weight*scale);
+
+                    if (_isWeightFieldEnabled) {
+                        _weightField.add(i, j, k, (float)weight);
+                        _weightCountField.add(i, j, k, 1);
+                    }
+                }
+
+                if (_isCenterFieldEnabled) {
+                    _calculateCenterCellValueForPoint(p, i, j, k);
+                }
+
+            }
+        }
+    }
+}
+
 void ImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
     setMaterialGrid(solidCells);
 }
@@ -283,12 +331,7 @@ void ImplicitSurfaceScalarField::setMaterialGrid(std::vector<GridIndex> &solidCe
     for (unsigned int i = 0; i < solidCells.size(); i++) {
         g = solidCells[i];
 
-        if (!Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1)) {
-            std::cout << g.i << " " << g.j << " " << g.k << std::endl;
-        }
-
         assert(Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1));
-
         Grid3d::getGridIndexVertices(g, vertices);
         for (int idx = 0; idx < 8; idx++) {
             _isVertexSolid.set(vertices[idx], true);
@@ -389,6 +432,66 @@ void ImplicitSurfaceScalarField::setCellFieldValues(int i, int j, int k, double 
 
 void ImplicitSurfaceScalarField::setCellFieldValues(GridIndex g, double value) {
     setCellFieldValues(g.i, g.j, g.k, value);
+}
+
+double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
+    if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
+        return 0.0;
+    }
+
+    int i, j, k;
+    double gx, gy, gz;
+    Grid3d::positionToGridIndex(p.x, p.y, p.z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
+
+    double inv_dx = 1 / _dx;
+    double ix = (p.x - gx)*inv_dx;
+    double iy = (p.y - gy)*inv_dx;
+    double iz = (p.z - gz)*inv_dx;
+
+    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
+
+    int refi = i - 1;
+    int refj = j - 1;
+    int refk = k - 1;
+    double points[4][4][4];
+    for (int pk = 0; pk < 4; pk++) {
+        for (int pj = 0; pj < 4; pj++) {
+            for (int pi = 0; pi < 4; pi++) {
+                if (_field.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
+                    points[pi][pj][pk] = _field(pi + refi, pj + refj, pk + refk);
+                } else {
+                    points[pi][pj][pk] = 0;
+                }
+            }
+        }
+    }
+
+    return _tricubicInterpolate(points, ix, iy, iz);
+}
+
+double ImplicitSurfaceScalarField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
+    //assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
+
+    double arr[4];
+    arr[0] = _bicubicInterpolate(p[0], y, z);
+    arr[1] = _bicubicInterpolate(p[1], y, z);
+    arr[2] = _bicubicInterpolate(p[2], y, z);
+    arr[3] = _bicubicInterpolate(p[3], y, z);
+    return _cubicInterpolate(arr, x);
+}
+
+double ImplicitSurfaceScalarField::_bicubicInterpolate(double p[4][4], double x, double y) {
+    double arr[4];
+    arr[0] = _cubicInterpolate(p[0], y);
+    arr[1] = _cubicInterpolate(p[1], y);
+    arr[2] = _cubicInterpolate(p[2], y);
+    arr[3] = _cubicInterpolate(p[3], y);
+    return _cubicInterpolate(arr, x);
+}
+
+double ImplicitSurfaceScalarField::_cubicInterpolate(double p[4], double x) {
+    return p[1] + 0.5 * x*(p[2] - p[0] + x*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + x*(3.0*(p[1] - p[2]) + p[3] - p[0])));
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

@@ -64,9 +64,7 @@ void ParticleMesher::_computeSurfaceReconstructionParticles(
                                           LevelSet &levelset,
                                           std::vector<IsotropicParticle> &iso,
                                           std::vector<AnisotropicParticle> &aniso) {
-    StopWatch t;
 
-    t.start();
     std::vector<glm::vec3> insideParticles;
     std::vector<glm::vec3> surfaceParticles;
     std::vector<int> nearSurfaceParticles;
@@ -76,17 +74,6 @@ void ParticleMesher::_computeSurfaceReconstructionParticles(
                                     surfaceParticles, nearSurfaceParticles, farSurfaceParticles,
                                     levelset);
 
-    std::cout << "\tINSIDE: " << insideParticles.size() << std::endl;
-    std::cout << "\tSURFACE: " << surfaceParticles.size() << std::endl;
-    std::cout << "\tNEAR: " << nearSurfaceParticles.size() << std::endl;
-    std::cout << "\tFAR: " << farSurfaceParticles.size() << std::endl;
-
-    t.stop();
-
-    std::cout << "\tSORT PARTICLES " << t.getTime() << "\n" << std::endl;
-
-    t.reset();
-    t.start();
     _initializeSurfaceParticleSpatialGrid(surfaceParticles);
     _updateNearFarSurfaceParticleReferences(nearSurfaceParticles, farSurfaceParticles);
     nearSurfaceParticles.clear();
@@ -95,31 +82,12 @@ void ParticleMesher::_computeSurfaceReconstructionParticles(
     farSurfaceParticles.shrink_to_fit();
     surfaceParticles.clear();
     surfaceParticles.shrink_to_fit();
-    t.stop();
 
-    std::cout << "\tINITIALIZE GRID " << t.getTime() << "\n" << std::endl;
-
-    t.reset();
-    t.start();
     _updateSurfaceParticleComponentIDs();
-    t.stop();
-
-    std::cout << "\tUPDATE COMPONENTS " << t.getTime() << "\n" << std::endl;
-
-    t.reset();
-    t.start();
     _smoothSurfaceParticlePositions();
-    t.stop();
 
-    std::cout << "\tSMOOTH POSITIONS " << t.getTime() << "\n" << std::endl;
-
-    t.reset();
-    t.start();
     std::vector<glm::mat3x3> anisotropyMatrices;
     _computeAnisotropyMatrices(anisotropyMatrices);
-    t.stop();
-
-    std::cout << "\tCOMPUTE ANISOTROPY " << t.getTime() << "\n" << std::endl;
 
     _initializeSurfaceReconstructionParticles(iso, insideParticles,
                                               aniso, anisotropyMatrices);
@@ -434,6 +402,7 @@ void ParticleMesher::_computeSVDMatrices() {
         _covarianceMatrixToSVD(_covarianceMatrices[i], svd);
         _SVDMatrices[i] = svd;
     }
+
 }
 
 void ParticleMesher::_covarianceMatrixToSVD(glm::mat3 &covariance, SVD &svd) {
@@ -473,7 +442,7 @@ void ParticleMesher::_covarianceMatrixToSVD(glm::mat3 &covariance, SVD &svd) {
     double sigma1 = std::max((double)D[k1][k1], sigma0 / kr);
     double sigma2 = std::max((double)D[k2][k2], sigma0 / kr);;
 
-    double ks = _eigenvalueScalingFactor;
+    double ks = cbrt(1.0/(sigma0*sigma1*sigma2));          // scale so that det(covariance) == 1
     svd.rotation = glm::mat3(Q[k0], Q[k1], Q[k2]);
     svd.diag = (float)ks*glm::vec3(sigma0, sigma1, sigma2);
 }
@@ -581,6 +550,7 @@ TriangleMesh ParticleMesher::_reconstructSurface(std::vector<IsotropicParticle> 
     field.setMaterialGrid(materialGrid);
 
     double r = _particleRadius*_anisotropicParticleScale;
+
     field.setPointRadius(r);
 
     glm::vec3 p, v;
@@ -588,7 +558,7 @@ TriangleMesh ParticleMesher::_reconstructSurface(std::vector<IsotropicParticle> 
     for (unsigned int i = 0; i < aniso.size(); i++) {
         p = aniso[i].position;
         G = (float)r*aniso[i].anisotropy;
-        field.addEllipsoid(p, G);
+        field.addEllipsoidValue(p, G, _anisotropicParticleFieldScale);
     }
 
     r = _particleRadius*_isotropicParticleScale;
@@ -601,6 +571,7 @@ TriangleMesh ParticleMesher::_reconstructSurface(std::vector<IsotropicParticle> 
     Polygonizer3d polygonizer = Polygonizer3d(field);
 
     polygonizer.polygonizeSurface();
+
     return polygonizer.getTriangleMesh();
 }
 

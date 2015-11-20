@@ -1381,6 +1381,7 @@ TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
 }
 
 TriangleMesh FluidSimulation::_polygonizeAnisotropicOutputSurface() {
+
     TriangleMesh mesh;
     ParticleMesher mesher = ParticleMesher(_isize, _jsize, _ksize, _dx);
     mesh = mesher.meshParticles(getMarkerParticlePositions(), 
