@@ -452,12 +452,21 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
+
+    double min = std::numeric_limits<double>::infinity();
+    double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
                 if (_field.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
                     points[pi][pj][pk] = _field(pi + refi, pj + refj, pk + refk);
+
+                    if (points[pi][pj][pk] < min) {
+                        min = points[pi][pj][pk];
+                    } else if (points[pi][pj][pk] > max) {
+                        max = points[pi][pj][pk];
+                    }
                 } else {
                     points[pi][pj][pk] = 0;
                 }
@@ -465,7 +474,14 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
         }
     }
 
-    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (val < min) {
+        val = min;
+    } else if (val > max) {
+        val = max;
+    }
+
+    return val;
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

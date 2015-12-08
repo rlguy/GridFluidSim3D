@@ -70,6 +70,9 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     double iz = (p.z - refz)*invdx;
 
     g = GridIndex(refi - 1, refj - 1, refk - 1);
+
+    double min = std::numeric_limits<double>::infinity();
+    double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
     GridIndex c;
     for (int pk = 0; pk < 4; pk++) {
@@ -78,6 +81,12 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
                 c = GridIndex(pi + g.i, pj + g.j, pk + g.k);
                 if (Grid3d::isGridIndexInRange(c, i_width, j_height, k_depth)) {
                     points[pi][pj][pk] = _distanceField(c);
+
+                    if (points[pi][pj][pk] < min) {
+                        min = points[pi][pj][pk];
+                    } else if (points[pi][pj][pk] > max) {
+                        max = points[pi][pj][pk];
+                    }
                 } else {
                     points[pi][pj][pk] = 0.0;
                 }
@@ -86,6 +95,11 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     }
 
     double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (val < min) {
+        val = min;
+    } else if (val > max) {
+        val = max;
+    }
 
     double eps = 10e-6;
     if (isMaterialGridSet && val > surfaceThreshold && _isPointNearSolid(p)) {
