@@ -28,7 +28,7 @@ freely, subject to the following restrictions:
 #include <fstream>
 #include <assert.h>
 
-#include "implicitsurfacefield.h"
+#include "levelsetfield.h"
 #include "sparseimplicitsurfacescalarfield.h"
 #include "sparsearray3d.h"
 #include "grid3d.h"

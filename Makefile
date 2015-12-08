@@ -18,8 +18,8 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/fluidsource.cpp \
 		$(SOURCEPATH)/grid3d.cpp \
 		$(SOURCEPATH)/implicitpointprimitive.cpp \
-		$(SOURCEPATH)/implicitsurfacefield.cpp \
 		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
+		$(SOURCEPATH)/interpolation.cpp \
 		$(SOURCEPATH)/levelset.cpp \
 		$(SOURCEPATH)/levelsetfield.cpp \
 		$(SOURCEPATH)/logfile.cpp \
