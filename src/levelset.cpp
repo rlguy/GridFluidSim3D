@@ -155,6 +155,7 @@ void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> 
     GridIndex ns[6];
     double distsq;
 
+    double eps = 1e-6;
     while (!q.empty()) {
         g = q[q.size() - 1];
         q.pop_back();
@@ -171,7 +172,7 @@ void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> 
                     _setLevelSetCell(g, distsq, tidx);
                 }
 
-                if (distsq < _signedDistance(n)) {
+                if (distsq < _signedDistance(n) && fabs(distsq - _signedDistance(n)) > eps) {
                     _resetLevelSetCell(n);
                     q.push_back(n);
                 }
@@ -302,7 +303,6 @@ void LevelSet::calculateSignedDistanceField() {
 
 void LevelSet::calculateSignedDistanceField(int numLayers) {
     _numLayers = numLayers;
-
     _resetSignedDistanceField();
     _calculateUnsignedSurfaceDistanceSquared();
     _calculateUnsignedDistanceSquared();
