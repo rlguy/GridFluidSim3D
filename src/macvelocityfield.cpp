@@ -336,44 +336,6 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
     return glm::vec3(vx, vy, vz);
 }
 
-// vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
-//                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
-// x, y, z, in range [0,1]
-double MACVelocityField::_trilinearInterpolate(double p[8], double x, double y, double z) {
-    return p[0] * (1 - x) * (1 - y) * (1 - z) +
-           p[1] * x * (1 - y) * (1 - z) + 
-           p[2] * (1 - x) * y * (1 - z) + 
-           p[3] * (1 - x) * (1 - y) * z +
-           p[4] * x * (1 - y) * z + 
-           p[5] * (1 - x) * y * z + 
-           p[6] * x * y * (1 - z) + 
-           p[7] * x * y * z;
-}
-
-double MACVelocityField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
-    //assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
-
-    double arr[4];
-    arr[0] = _bicubicInterpolate(p[0], y, z);
-    arr[1] = _bicubicInterpolate(p[1], y, z);
-    arr[2] = _bicubicInterpolate(p[2], y, z);
-    arr[3] = _bicubicInterpolate(p[3], y, z);
-    return _cubicInterpolate(arr, x);
-}
-
-double MACVelocityField::_bicubicInterpolate(double p[4][4], double x, double y) {
-    double arr[4];
-    arr[0] = _cubicInterpolate(p[0], y);
-    arr[1] = _cubicInterpolate(p[1], y);
-    arr[2] = _cubicInterpolate(p[2], y);
-    arr[3] = _cubicInterpolate(p[3], y);
-    return _cubicInterpolate(arr, x);
-}
-
-double MACVelocityField::_cubicInterpolate(double p[4], double x) {
-    return p[1] + 0.5 * x*(p[2] - p[0] + x*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + x*(3.0*(p[1] - p[2]) + p[3] - p[0])));
-}
-
 double MACVelocityField::_interpolateU(double x, double y, double z) {
     if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
         return 0.0;
@@ -392,8 +354,6 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -410,7 +370,7 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateV(double x, double y, double z) {
@@ -431,8 +391,6 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -449,7 +407,7 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateW(double x, double y, double z) {
@@ -470,8 +428,6 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -488,7 +444,7 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
@@ -509,8 +465,6 @@ double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_u.isIndexInRange(i,   j,   k))   { points[0] = _u(i,   j,   k); }
     if (_u.isIndexInRange(i+1, j,   k))   { points[1] = _u(i+1, j,   k); }
@@ -521,7 +475,7 @@ double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
     if (_u.isIndexInRange(i+1, j+1, k))   { points[6] = _u(i+1, j+1, k); }
     if (_u.isIndexInRange(i+1, j+1, k+1)) { points[7] = _u(i+1, j+1, k+1); }
 
-    return _trilinearInterpolate(points, ix, iy, iz);
+    return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
@@ -542,8 +496,6 @@ double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_v.isIndexInRange(i,   j,   k))   { points[0] = _v(i,   j,   k); }
     if (_v.isIndexInRange(i+1, j,   k))   { points[1] = _v(i+1, j,   k); }
@@ -554,7 +506,7 @@ double MACVelocityField::_interpolateLinearV(double x, double y, double z) {
     if (_v.isIndexInRange(i+1, j+1, k))   { points[6] = _v(i+1, j+1, k); }
     if (_v.isIndexInRange(i+1, j+1, k+1)) { points[7] = _v(i+1, j+1, k+1); }
 
-    return _trilinearInterpolate(points, ix, iy, iz);
+    return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
@@ -575,8 +527,6 @@ double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_w.isIndexInRange(i,   j,   k))   { points[0] = _w(i,   j,   k); }
     if (_w.isIndexInRange(i+1, j,   k))   { points[1] = _w(i+1, j,   k); }
@@ -587,7 +537,7 @@ double MACVelocityField::_interpolateLinearW(double x, double y, double z) {
     if (_w.isIndexInRange(i+1, j+1, k))   { points[6] = _w(i+1, j+1, k); }
     if (_w.isIndexInRange(i+1, j+1, k+1)) { points[7] = _w(i+1, j+1, k+1); }
 
-    return _trilinearInterpolate(points, ix, iy, iz);
+    return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z,
@@ -609,8 +559,6 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -628,7 +576,7 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z,
@@ -650,8 +598,6 @@ double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -669,7 +615,7 @@ double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z,
@@ -691,8 +637,6 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
     double iy = (y - gy)*inv_dx;
     double iz = (z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -710,7 +654,7 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 

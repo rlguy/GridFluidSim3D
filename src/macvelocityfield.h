@@ -28,6 +28,7 @@ freely, subject to the following restrictions:
 
 #include "array3d.h"
 #include "grid3d.h"
+#include "interpolation.h"
 #include "glm/glm.hpp" 
 
 class MACVelocityField
@@ -115,11 +116,6 @@ private:
     inline double _randomFloat(double min, double max) {
          return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min))); 
     }
-
-    double _cubicInterpolate(double p[4], double x);
-    double _bicubicInterpolate(double p[4][4], double x, double y);
-    double _tricubicInterpolate(double p[4][4][4], double x, double y, double z);
-    double _trilinearInterpolate(double p[8], double x, double y, double z);
 
     double _interpolateU(double x, double y, double z);
     double _interpolateV(double x, double y, double z);

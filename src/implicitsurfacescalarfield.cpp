@@ -449,8 +449,6 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
     double iy = (p.y - gy)*inv_dx;
     double iz = (p.z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     int refi = i - 1;
     int refj = j - 1;
     int refk = k - 1;
@@ -467,31 +465,7 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
         }
     }
 
-    return _tricubicInterpolate(points, ix, iy, iz);
-}
-
-double ImplicitSurfaceScalarField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
-    //assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
-
-    double arr[4];
-    arr[0] = _bicubicInterpolate(p[0], y, z);
-    arr[1] = _bicubicInterpolate(p[1], y, z);
-    arr[2] = _bicubicInterpolate(p[2], y, z);
-    arr[3] = _bicubicInterpolate(p[3], y, z);
-    return _cubicInterpolate(arr, x);
-}
-
-double ImplicitSurfaceScalarField::_bicubicInterpolate(double p[4][4], double x, double y) {
-    double arr[4];
-    arr[0] = _cubicInterpolate(p[0], y);
-    arr[1] = _cubicInterpolate(p[1], y);
-    arr[2] = _cubicInterpolate(p[2], y);
-    arr[3] = _cubicInterpolate(p[3], y);
-    return _cubicInterpolate(arr, x);
-}
-
-double ImplicitSurfaceScalarField::_cubicInterpolate(double p[4], double x) {
-    return p[1] + 0.5 * x*(p[2] - p[0] + x*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + x*(3.0*(p[1] - p[2]) + p[3] - p[0])));
+    return Interpolation::tricubicInterpolate(points, ix, iy, iz);
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

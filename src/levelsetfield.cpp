@@ -69,8 +69,6 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     double iy = (p.y - refy)*invdx;
     double iz = (p.z - refz)*invdx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     g = GridIndex(refi - 1, refj - 1, refk - 1);
     double points[4][4][4];
     GridIndex c;
@@ -87,7 +85,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
         }
     }
 
-    double val = _tricubicInterpolate(points, ix, iy, iz);
+    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
 
     double eps = 10e-6;
     if (isMaterialGridSet && val > surfaceThreshold && _isPointNearSolid(p)) {
@@ -99,42 +97,4 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
 
 void LevelSetField::setSignedDistanceField(Array3d<float> distField) {
     _distanceField = distField;
-}
-
-// vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
-//                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
-// x, y, z, in range [0,1]
-double LevelSetField::_trilinearInterpolate(double p[8], double x, double y, double z) {
-    return p[0] * (1 - x) * (1 - y) * (1 - z) +
-           p[1] * x * (1 - y) * (1 - z) + 
-           p[2] * (1 - x) * y * (1 - z) + 
-           p[3] * (1 - x) * (1 - y) * z +
-           p[4] * x * (1 - y) * z + 
-           p[5] * (1 - x) * y * z + 
-           p[6] * x * y * (1 - z) + 
-           p[7] * x * y * z;
-}
-
-double LevelSetField::_tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
-    assert(x >= 0 && x <= 1 && y >= 0 && y <= 1 && z >= 0 && z <= 1);
-
-    double arr[4];
-    arr[0] = _bicubicInterpolate(p[0], y, z);
-    arr[1] = _bicubicInterpolate(p[1], y, z);
-    arr[2] = _bicubicInterpolate(p[2], y, z);
-    arr[3] = _bicubicInterpolate(p[3], y, z);
-    return _cubicInterpolate(arr, x);
-}
-
-double LevelSetField::_bicubicInterpolate(double p[4][4], double x, double y) {
-    double arr[4];
-    arr[0] = _cubicInterpolate(p[0], y);
-    arr[1] = _cubicInterpolate(p[1], y);
-    arr[2] = _cubicInterpolate(p[2], y);
-    arr[3] = _cubicInterpolate(p[3], y);
-    return _cubicInterpolate(arr, x);
-}
-
-double LevelSetField::_cubicInterpolate(double p[4], double x) {
-    return p[1] + 0.5 * x*(p[2] - p[0] + x*(2.0*p[0] - 5.0*p[1] + 4.0*p[2] - p[3] + x*(3.0*(p[1] - p[2]) + p[3] - p[0])));
 }

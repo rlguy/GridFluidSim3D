@@ -640,17 +640,6 @@ double LevelSet::getSurfaceCurvature(unsigned int tidx) {
     return (k0 + k1 + k2) / 3.0;
 }
 
-double LevelSet::_trilinearInterpolate(double p[8], double x, double y, double z) {
-    return p[0] * (1 - x) * (1 - y) * (1 - z) +
-           p[1] * x * (1 - y) * (1 - z) + 
-           p[2] * (1 - x) * y * (1 - z) + 
-           p[3] * (1 - x) * (1 - y) * z +
-           p[4] * x * (1 - y) * z + 
-           p[5] * (1 - x) * y * z + 
-           p[6] * x * y * (1 - z) + 
-           p[7] * x * y * z;
-}
-
 double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
     p -= glm::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
@@ -661,8 +650,6 @@ double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
     double ix = (p.x - gpos.x)*inv_dx;
     double iy = (p.y - gpos.y)*inv_dx;
     double iz = (p.z - gpos.z)*inv_dx;
-
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
 
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (Grid3d::isGridIndexInRange(g.i,   g.j,   g.k, _isize, _jsize, _ksize))   { 
@@ -690,7 +677,7 @@ double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
         points[7] = _signedDistance(g.i+1, g.j+1, g.k+1); 
     }
 
-    return _trilinearInterpolate(points, ix, iy, iz);
+    return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
 double LevelSet::getDistance(glm::vec3 p) {

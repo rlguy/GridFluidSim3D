@@ -120,20 +120,6 @@ void TurbulenceField::destroyTurbulenceField() {
     _field = Array3d<float>(0, 0, 0);
 }
 
-// vertices p are ordered {(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), 
-//                         (1, 0, 1), (0, 1, 1), (1, 1, 0), (1, 1, 1)}
-// x, y, z, in range [0,1]
-double TurbulenceField::_trilinearInterpolate(double p[8], double x, double y, double z) {
-    return p[0] * (1 - x) * (1 - y) * (1 - z) +
-           p[1] * x * (1 - y) * (1 - z) + 
-           p[2] * (1 - x) * y * (1 - z) + 
-           p[3] * (1 - x) * (1 - y) * z +
-           p[4] * x * (1 - y) * z + 
-           p[5] * (1 - x) * y * z + 
-           p[6] * x * y * (1 - z) + 
-           p[7] * x * y * z;
-}
-
 double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
     assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
@@ -149,8 +135,6 @@ double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
     double iy = (p.y - gy)*inv_dx;
     double iz = (p.z - gz)*inv_dx;
 
-    //assert(ix >= 0 && ix < 1 && iy >= 0 && iy < 1 && iz >= 0 && iz < 1);
-
     double points[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (_field.isIndexInRange(i,   j,   k))   { points[0] = _field(i,   j,   k); }
     if (_field.isIndexInRange(i+1, j,   k))   { points[1] = _field(i+1, j,   k); }
@@ -161,5 +145,5 @@ double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
     if (_field.isIndexInRange(i+1, j+1, k))   { points[6] = _field(i+1, j+1, k); }
     if (_field.isIndexInRange(i+1, j+1, k+1)) { points[7] = _field(i+1, j+1, k+1); }
 
-    return _trilinearInterpolate(points, ix, iy, iz);
+    return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }

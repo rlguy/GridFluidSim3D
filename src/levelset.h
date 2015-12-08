@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "glm/glm.hpp"
 #include "array3d.h"
 #include "grid3d.h"
+#include "interpolation.h"
 #include "collision.h"
 #include "trianglemesh.h"
 #include "macvelocityfield.h"
@@ -95,8 +96,6 @@ private:
     glm::vec3 _getRandomPointInTriangle(int tidx);
 
     double _interpolateSignedDistance(glm::vec3 p);
-    double _trilinearInterpolate(double points[8], 
-                                 double ix, double iy, double iz);
 
     inline bool _isPointInsideSurface(glm::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
