@@ -71,6 +71,10 @@ void FluidSimulation::saveState() {
 }
 
 void FluidSimulation::saveState(std::string filename) {
+    if (!_isSaveStateEnabled) {
+        return;
+    }
+
     FluidSimulationSaveState state = FluidSimulationSaveState();
     state.saveState(filename, this);
 }
@@ -237,6 +241,14 @@ void FluidSimulation::enableBrickOutput(double width, double height, double dept
 
 void FluidSimulation::disableBrickOutput() {
     _isBrickOutputEnabled = false;
+}
+
+void FluidSimulation::enableSaveState() {
+    _isSaveStateEnabled = true;
+}
+
+void FluidSimulation::disableSaveState() {
+    _isSaveStateEnabled = false;
 }
 
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
@@ -836,37 +848,33 @@ int FluidSimulation::_getUniqueFluidSourceID() {
 }
 
 void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &cells) {
-    std::vector<MarkerParticle> newv;
-    newv.reserve(_markerParticles.size());
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_markerParticles.size());
 
     MarkerParticle p;
     GridIndex g;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        if (!_isIndexInList(g, cells)) {
-            newv.push_back(p);
-        }
+        isRemoved.push_back(_isIndexInList(g, cells));
     }
 
-    _markerParticles = newv;
+    _removeItemsFromVector(_markerParticles, isRemoved);
 }
 
 void FluidSimulation::_removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells) {
-    std::vector<DiffuseParticle> newv;
-    newv.reserve(_diffuseParticles.size());
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_diffuseParticles.size());
 
     DiffuseParticle p;
     GridIndex g;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         p = _diffuseParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        if (!_isIndexInList(g, cells)) {
-            newv.push_back(p);
-        }
+        isRemoved.push_back(_isIndexInList(g, cells));
     }
 
-    _diffuseParticles = newv;
+    _removeItemsFromVector(_diffuseParticles, isRemoved);
 }
 
 void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
@@ -2942,8 +2950,8 @@ void FluidSimulation::_advanceDiffuseParticles(double dt) {
 void FluidSimulation::_removeDiffuseParticles() {
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
 
-    std::vector<DiffuseParticle> aliveParticles;
-    aliveParticles.reserve(_diffuseParticles.size());
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_diffuseParticles.size());
 
     DiffuseParticle dp;
     GridIndex g;
@@ -2952,26 +2960,26 @@ void FluidSimulation::_removeDiffuseParticles() {
         dp = _diffuseParticles[i];
 
         if (dp.lifetime <= 0.0) {
+            isRemoved.push_back(true);
             continue;
         }
 
         g = Grid3d::positionToGridIndex(dp.position, _dx);
         if (countGrid(g) >= _maxDiffuseParticlesPerCell) {
+            isRemoved.push_back(true);
             continue;
         }
         countGrid.add(g, 1);
 
         if (dp.type == DP_SPRAY && glm::length(dp.velocity) < eps) {
+            isRemoved.push_back(true);
             continue;
         }
 
-        aliveParticles.push_back(dp);
+        isRemoved.push_back(false);
     }
 
-    int dead = _diffuseParticles.size() - aliveParticles.size();
-    _logfile.log("Num Dead Diffuse Particles: ", dead, 1);
-
-    _diffuseParticles = aliveParticles;
+    _removeItemsFromVector(_diffuseParticles, isRemoved);
 }
 
 void FluidSimulation::_updateDiffuseMaterial(double dt) {
@@ -3399,8 +3407,8 @@ void FluidSimulation::_removeMarkerParticles() {
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
     _shuffleMarkerParticleOrder();
 
-    std::vector<MarkerParticle> aliveParticles;
-    aliveParticles.reserve(_markerParticles.size());
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_markerParticles.size());
 
     MarkerParticle mp;
     GridIndex g;
@@ -3409,19 +3417,21 @@ void FluidSimulation::_removeMarkerParticles() {
 
         double speedsq = glm::dot(mp.velocity, mp.velocity);
         if (speedsq > maxspeedsq) {
+            isRemoved.push_back(true);
             continue;
         }
 
         g = Grid3d::positionToGridIndex(mp.position, _dx);
         if (countGrid(g) >= _maxMarkerParticlesPerCell) {
+            isRemoved.push_back(true);
             continue;
         }
         countGrid.add(g, 1);
 
-        aliveParticles.push_back(mp);
+        isRemoved.push_back(false);
     }
 
-    _markerParticles = aliveParticles;
+    _removeItemsFromVector(_markerParticles, isRemoved);
     _sortMarkerParticlesByGridIndex();
 }
 
@@ -3454,7 +3464,6 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 ********************************************************************************/
 
 void FluidSimulation::_stepFluid(double dt) {
-
     _simulationTime += dt;
 
     StopWatch timer1 = StopWatch();

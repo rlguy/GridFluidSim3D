@@ -141,6 +141,8 @@ public:
     void enableBrickOutput();
     void enableBrickOutput(double width, double height, double depth);
     void disableBrickOutput();
+    void enableSaveState();
+    void disableSaveState();
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(glm::vec3 f);
@@ -475,6 +477,22 @@ private:
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
 
+    template<class T>
+    void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
+        assert(items.size() == isRemoved.size());
+
+        int currentidx = 0;
+        for (unsigned int i = 0; i < items.size(); i++) {
+            if (!isRemoved[i]) {
+                items[currentidx] = items[i];
+                currentidx++;
+            }
+        }
+
+        items.erase(items.begin() + currentidx, items.end());
+        items.shrink_to_fit();
+    }
+
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
     std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
@@ -663,8 +681,8 @@ private:
     double _maxBrickIntensityAcceleration = 10.0;
     int _maxInactiveBrickFrames = 0;
 
-    double _ratioPICFLIP = 0.35f;
-    int _maxMarkerParticlesPerCell = 500;
+    double _ratioPICFLIP = 0.20f;
+    int _maxMarkerParticlesPerCell = 100;
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
@@ -675,6 +693,7 @@ private:
     bool _isFoamDiffuseMaterialEnabled = false;
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
+    bool _isSaveStateEnabled = true;
     double _brickWidth = 1.0;
     double _brickHeight = 1.0;
     double _brickDepth = 1.0;
