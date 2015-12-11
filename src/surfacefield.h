@@ -28,7 +28,7 @@ freely, subject to the following restrictions:
 #include "implicitpointprimitive.h"
 #include "array3d.h"
 #include "grid3d.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 
 class SurfaceField
@@ -53,13 +53,13 @@ public:
 
     virtual void clear();
 
-    virtual double getFieldValue(glm::vec3 p);
-    double getFieldValue(double x, double y, double z) { return getFieldValue(glm::vec3(x, y, z)); }
-    bool isInside(double x, double y, double z) { return isInside(glm::vec3(x, y, z)); }
-    bool isInside(glm::vec3 p);
-    bool isOutside(double x, double y, double z) { return isOutside(glm::vec3(x, y, z)); }
-    bool isOutside(glm::vec3 p);
-    bool _isPointNearSolid(glm::vec3 p);
+    virtual double getFieldValue(vmath::vec3 p);
+    double getFieldValue(double x, double y, double z) { return getFieldValue(vmath::vec3(x, y, z)); }
+    bool isInside(double x, double y, double z) { return isInside(vmath::vec3(x, y, z)); }
+    bool isInside(vmath::vec3 p);
+    bool isOutside(double x, double y, double z) { return isOutside(vmath::vec3(x, y, z)); }
+    bool isOutside(vmath::vec3 p);
+    bool _isPointNearSolid(vmath::vec3 p);
 
     double width, height, depth;
 

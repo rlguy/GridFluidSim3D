@@ -55,18 +55,18 @@ freely, subject to the following restrictions:
 #include "spatialpointgrid.h"
 #include "particlemesher.h"
 #include "threading.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 struct MarkerParticle {
-    glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
-    glm::vec3 velocity = glm::vec3(0.0, 0.0, 0.0);
+    vmath::vec3 position = vmath::vec3(0.0, 0.0, 0.0);
+    vmath::vec3 velocity = vmath::vec3(0.0, 0.0, 0.0);
 
     MarkerParticle() : position(0.0, 0.0, 0.0), 
                         velocity(0.0, 0.0, 0.0) {}
 
-    MarkerParticle(glm::vec3 p) : position(p),
+    MarkerParticle(vmath::vec3 p) : position(p),
                                   velocity(0.0, 0.0, 0.0) {}
-    MarkerParticle(glm::vec3 p, glm::vec3 v) : 
+    MarkerParticle(vmath::vec3 p, vmath::vec3 v) : 
                                   position(p),
                                   velocity(v) {}
 
@@ -76,8 +76,8 @@ struct MarkerParticle {
 };
 
 struct DiffuseParticle {
-    glm::vec3 position;
-    glm::vec3 velocity;
+    vmath::vec3 position;
+    vmath::vec3 velocity;
     float lifetime;
     int type;
 
@@ -86,7 +86,7 @@ struct DiffuseParticle {
                         lifetime(0.0),
                         type(-1) {}
 
-    DiffuseParticle(glm::vec3 p, glm::vec3 v, float time) : 
+    DiffuseParticle(vmath::vec3 p, vmath::vec3 v, float time) : 
                         position(p),
                         velocity(v),
                         lifetime(time),
@@ -145,44 +145,44 @@ public:
     void disableSaveState();
 
     void addBodyForce(double fx, double fy, double fz);
-    void addBodyForce(glm::vec3 f);
+    void addBodyForce(vmath::vec3 f);
     void setBodyForce(double fx, double fy, double fz);
-    void setBodyForce(glm::vec3 f);
+    void setBodyForce(vmath::vec3 f);
     void addImplicitFluidPoint(double x, double y, double z, double r);
-    void addImplicitFluidPoint(glm::vec3 p, double radius);
+    void addImplicitFluidPoint(vmath::vec3 p, double radius);
     void addFluidCuboid(double x, double y, double z, double w, double h, double d);
-    void addFluidCuboid(glm::vec3 p, double width, double height, double depth);
-    void addFluidCuboid(glm::vec3 p1, glm::vec3 p2);
+    void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
+    void addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2);
 
     bool addFluidMesh(std::string OBJFilename);
-    bool addFluidMesh(std::string OBJFilename, glm::vec3 offset);
+    bool addFluidMesh(std::string OBJFilename, vmath::vec3 offset);
     bool addFluidMesh(std::string OBJFilename, double scale);
-    bool addFluidMesh(std::string OBJFilename, glm::vec3 offset, double scale);
+    bool addFluidMesh(std::string OBJFilename, vmath::vec3 offset, double scale);
 
-    SphericalFluidSource *addSphericalFluidSource(glm::vec3 pos, double r);
-    SphericalFluidSource *addSphericalFluidSource(glm::vec3 pos, double r, 
-                                                  glm::vec3 velocity);
+    SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r);
+    SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r, 
+                                                  vmath::vec3 velocity);
     CuboidFluidSource *addCuboidFluidSource(AABB bbox);
-    CuboidFluidSource *addCuboidFluidSource(AABB bbox, glm::vec3 velocity);
+    CuboidFluidSource *addCuboidFluidSource(AABB bbox, vmath::vec3 velocity);
     void removeFluidSource(FluidSource *source);
     void removeFluidSources();
 
     void addSolidCell(int i, int j, int k);
-    void addSolidCells(std::vector<glm::vec3> indices);
+    void addSolidCells(std::vector<vmath::vec3> indices);
     void removeSolidCell(int i, int j, int k);
-    void removeSolidCells(std::vector<glm::vec3> indices);
-    std::vector<glm::vec3> getSolidCells();
-    std::vector<glm::vec3> getSolidCellPositions();
+    void removeSolidCells(std::vector<vmath::vec3> indices);
+    std::vector<vmath::vec3> getSolidCells();
+    std::vector<vmath::vec3> getSolidCellPositions();
     void addFluidCell(int i, int j, int k);
     void addFluidCells(std::vector<GridIndex> indices);
 
     unsigned int getNumMarkerParticles();
-    std::vector<glm::vec3> getMarkerParticlePositions();
-    std::vector<glm::vec3> getMarkerParticleVelocities();
+    std::vector<vmath::vec3> getMarkerParticlePositions();
+    std::vector<vmath::vec3> getMarkerParticleVelocities();
     unsigned int getNumDiffuseParticles();
     std::vector<DiffuseParticle> getDiffuseParticles();
-    std::vector<glm::vec3> getDiffuseParticlePositions();
-    std::vector<glm::vec3> getDiffuseParticleVelocities();
+    std::vector<vmath::vec3> getDiffuseParticlePositions();
+    std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<float> getDiffuseParticleLifetimes();
     Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
@@ -198,8 +198,8 @@ public:
 private:
 
     struct DiffuseParticleEmitter {
-        glm::vec3 position;
-        glm::vec3 velocity;
+        vmath::vec3 position;
+        vmath::vec3 velocity;
         double energyPotential;
         double wavecrestPotential;
         double turbulencePotential;
@@ -210,7 +210,7 @@ private:
                                    wavecrestPotential(0.0),
                                    turbulencePotential(0.0) {}
 
-        DiffuseParticleEmitter(glm::vec3 p, glm::vec3 v, 
+        DiffuseParticleEmitter(vmath::vec3 p, vmath::vec3 v, 
                                double e, double wc, double t) : 
                                    position(p),
                                    velocity(v),
@@ -220,7 +220,7 @@ private:
     };    
 
     struct CellFace {
-        glm::vec3 normal;
+        vmath::vec3 normal;
         double minx, maxx;
         double miny, maxy;
         double minz, maxz;
@@ -230,7 +230,7 @@ private:
                      miny(0.0), maxy(0.0),
                      minz(0.0), maxz(0.0) {}
 
-        CellFace(glm::vec3 n, glm::vec3 minp, glm::vec3 maxp) :
+        CellFace(vmath::vec3 n, vmath::vec3 minp, vmath::vec3 maxp) :
                      normal(n), 
                      minx(minp.x), maxx(maxp.x),
                      miny(minp.y), maxy(maxp.y),
@@ -238,20 +238,20 @@ private:
     };
 
     struct FluidPoint {
-        glm::vec3 position;
+        vmath::vec3 position;
         double radius;
 
         FluidPoint() : position(0.0, 0.0, 0.0),
                        radius(0.0) {}
-        FluidPoint(glm::vec3 p, double r) : position(p),
+        FluidPoint(vmath::vec3 p, double r) : position(p),
                                             radius(r) {}
     };
 
     struct FluidCuboid {
         AABB bbox;
 
-        FluidCuboid() : bbox(glm::vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0) {}
-        FluidCuboid(glm::vec3 p, double w, double h, double d) : 
+        FluidCuboid() : bbox(vmath::vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0) {}
+        FluidCuboid(vmath::vec3 p, double w, double h, double d) : 
                         bbox(p, w, h, d) {}
     };
 
@@ -299,9 +299,9 @@ private:
     void _getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells);
     void _getInitialFluidCellsFromTriangleMesh(std::vector<GridIndex> &fluidCells);
     void _addMarkerParticlesToCell(GridIndex g);
-    void _addMarkerParticlesToCell(GridIndex g, glm::vec3 velocity);
-    void _addMarkerParticle(glm::vec3 p);
-    void _addMarkerParticle(glm::vec3 p, glm::vec3 velocity);
+    void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
+    void _addMarkerParticle(vmath::vec3 p);
+    void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
     void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);
@@ -321,9 +321,9 @@ private:
     void _updateAddedFluidCellQueue();
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
-    void _addNewFluidCells(std::vector<GridIndex> &cells, glm::vec3 velocity);
-    void _addNewFluidParticles(std::vector<glm::vec3> &particles, glm::vec3 velocity);
-    void _getNewFluidParticles(FluidSource *source, std::vector<glm::vec3> &particles);
+    void _addNewFluidCells(std::vector<GridIndex> &cells, vmath::vec3 velocity);
+    void _addNewFluidParticles(std::vector<vmath::vec3> &particles, vmath::vec3 velocity);
+    void _getNewFluidParticles(FluidSource *source, std::vector<vmath::vec3> &particles);
     void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
     void _removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells);
     inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
@@ -357,12 +357,12 @@ private:
     void _writeBrickMaterialToFile(std::string brickfile, std::string colorfile);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
-    bool _isVertexNearSolid(glm::vec3 v, double eps);
+    bool _isVertexNearSolid(vmath::vec3 v, double eps);
     TriangleMesh _polygonizeIsotropicOutputSurface();
     TriangleMesh _polygonizeAnisotropicOutputSurface();
     void _getSubdividedSurfaceCells(std::vector<GridIndex> &cells);
     void _getSubdividedSolidCells(std::vector<GridIndex> &cells);
-    void _getOutputSurfaceParticles(std::vector<glm::vec3> &particles);
+    void _getOutputSurfaceParticles(std::vector<vmath::vec3> &particles);
     void _updateBrickGrid(double dt);
 
     // Advect fluid velocities
@@ -394,8 +394,8 @@ private:
                                             Array3d<int> &layerGrid);
     double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex,
                                             Array3d<int> &layerGrid);
-    glm::vec3 _getVelocityAtNearestPointOnFluidSurface(glm::vec3 p);
-    glm::vec3 _getVelocityAtPosition(glm::vec3 p);
+    vmath::vec3 _getVelocityAtNearestPointOnFluidSurface(vmath::vec3 p);
+    vmath::vec3 _getVelocityAtPosition(vmath::vec3 p);
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(Array3d<float> &pressureGrid, double dt);
@@ -437,19 +437,19 @@ private:
 
     // Update diffuse material (spray, foam, bubbles)
     void _updateDiffuseMaterial(double dt);
-    void _sortMarkerParticlePositions(std::vector<glm::vec3> &surface, 
-                                      std::vector<glm::vec3> &inside);
+    void _sortMarkerParticlePositions(std::vector<vmath::vec3> &surface, 
+                                      std::vector<vmath::vec3> &inside);
     double _getVelocityUpperBoundByPercentile(double pct);
     void _getMinMaxMarkerParticleSpeeds(double *min, double *max);
     void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
-    void _getSurfaceDiffuseParticleEmitters(std::vector<glm::vec3> &surface, 
+    void _getSurfaceDiffuseParticleEmitters(std::vector<vmath::vec3> &surface, 
                                             std::vector<DiffuseParticleEmitter> &emitters);
-    void _getInsideDiffuseParticleEmitters(std::vector<glm::vec3> &inside, 
+    void _getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
                                            std::vector<DiffuseParticleEmitter> &emitters);
-    double _getWavecrestPotential(glm::vec3 p, glm::vec3 *velocity);
-    double _getTurbulencePotential(glm::vec3 p, TurbulenceField &tfield);
-    double _getEnergyPotential(glm::vec3 velocity);
+    double _getWavecrestPotential(vmath::vec3 p, vmath::vec3 *velocity);
+    double _getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield);
+    double _getEnergyPotential(vmath::vec3 velocity);
     void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
     void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt);
     int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
@@ -496,19 +496,19 @@ private:
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
     std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
-    bool _isPointOnCellFace(glm::vec3 p, CellFace f, double eps);
-    bool _isPointOnSolidBoundary(glm::vec3 p, CellFace *f, double eps);
-    CellFace _getCellFace(int i, int j, int k, glm::vec3 normal);
+    bool _isPointOnCellFace(vmath::vec3 p, CellFace f, double eps);
+    bool _isPointOnSolidBoundary(vmath::vec3 p, CellFace *f, double eps);
+    CellFace _getCellFace(int i, int j, int k, vmath::vec3 normal);
     void _getCellFaces(int i, int j, int k, CellFace[6]);
-    bool _getVectorFaceIntersection(glm::vec3 p0, glm::vec3 normal, CellFace f, glm::vec3 *intersect);
-    glm::vec3 _calculateSolidCellCollision(glm::vec3 p0, glm::vec3 p1, glm::vec3 *normal);
-    std::vector<CellFace> _getSolidCellFaceCollisionCandidates(int i, int j, int k, glm::vec3 dir);
-    bool _findFaceCollision(glm::vec3 p0, glm::vec3 p1, CellFace *face, glm::vec3 *intersection);
+    bool _getVectorFaceIntersection(vmath::vec3 p0, vmath::vec3 normal, CellFace f, vmath::vec3 *intersect);
+    vmath::vec3 _calculateSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 *normal);
+    std::vector<CellFace> _getSolidCellFaceCollisionCandidates(int i, int j, int k, vmath::vec3 dir);
+    bool _findFaceCollision(vmath::vec3 p0, vmath::vec3 p1, CellFace *face, vmath::vec3 *intersection);
     
     // Runge-Kutta integrators used in advection and advancing marker particles
-    glm::vec3 _RK2(glm::vec3 p0, glm::vec3 v0, double dt);
-    glm::vec3 _RK3(glm::vec3 p0, glm::vec3 v0, double dt);
-    glm::vec3 _RK4(glm::vec3 p0, glm::vec3 v0, double dt);
+    vmath::vec3 _RK2(vmath::vec3 p0, vmath::vec3 v0, double dt);
+    vmath::vec3 _RK3(vmath::vec3 p0, vmath::vec3 v0, double dt);
+    vmath::vec3 _RK4(vmath::vec3 p0, vmath::vec3 v0, double dt);
 
     // misc bool functions for checking cell contents and borders
     inline bool _isCellAir(int i, int j, int k) { return _materialGrid(i, j, k) == M_AIR; }
@@ -699,13 +699,13 @@ private:
     double _brickDepth = 1.0;
     int _currentBrickMeshFrame = 0;
 
-    glm::vec3 _bodyForce;
+    vmath::vec3 _bodyForce;
 
     int MESH = 0;
     int IMPLICIT = 1;
     int _fluidInitializationType = 2;
     std::string _fluidMeshFilename;
-    glm::vec3 _fluidMeshOffset;
+    vmath::vec3 _fluidMeshOffset;
     double _fluidMeshScale = 1.0;
 
     MACVelocityField _MACVelocity;

@@ -20,22 +20,22 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 
 
-AABB::AABB() : position(glm::vec3(0.0, 0.0, 0.0)),
+AABB::AABB() : position(vmath::vec3(0.0, 0.0, 0.0)),
                width(0.0), height(0.0), depth(0.0)
 {
 }
 
 AABB::AABB(double x, double y, double z, double w, double h, double d) : 
-               position(glm::vec3(x, y, z)), width(w), height(h), depth(d)
+               position(vmath::vec3(x, y, z)), width(w), height(h), depth(d)
 {
 }
 
-AABB::AABB(glm::vec3 p, double w, double h, double d) : 
+AABB::AABB(vmath::vec3 p, double w, double h, double d) : 
                position(p), width(w), height(h), depth(d)
 {
 }
 
-AABB::AABB(glm::vec3 p1, glm::vec3 p2) 
+AABB::AABB(vmath::vec3 p1, vmath::vec3 p2) 
 {
     double minx = fmin(p1.x, p2.x);
     double miny = fmin(p1.y, p2.y);
@@ -44,13 +44,13 @@ AABB::AABB(glm::vec3 p1, glm::vec3 p2)
     double maxy = fmax(p1.y, p2.y);
     double maxz = fmax(p1.z, p2.z);
 
-    position = glm::vec3(minx, miny, minz);
+    position = vmath::vec3(minx, miny, minz);
     width = maxx - minx;
     height = maxy - miny;
     depth = maxz - minz;
 }
 
-AABB::AABB(std::vector<glm::vec3> &points) {
+AABB::AABB(std::vector<vmath::vec3> &points) {
     double minx = points[0].x;
     double miny = points[0].y;
     double minz = points[0].z;
@@ -58,7 +58,7 @@ AABB::AABB(std::vector<glm::vec3> &points) {
     double maxy = points[0].y;
     double maxz = points[0].z;
 
-    glm::vec3 p;
+    vmath::vec3 p;
     for (unsigned int i = 0; i < points.size(); i++) {
         p = points[i];
         minx = fmin(p.x, minx);
@@ -69,14 +69,14 @@ AABB::AABB(std::vector<glm::vec3> &points) {
         maxz = fmax(p.z, maxz);
     }
 
-    position = glm::vec3(minx, miny, minz);
+    position = vmath::vec3(minx, miny, minz);
     width = maxx - minx;
     height = maxy - miny;
     depth = maxz - minz;
 }
 
-AABB::AABB(Triangle t, std::vector<glm::vec3> &vertices) {
-    glm::vec3 points[3] = { vertices[t.tri[0]],
+AABB::AABB(Triangle t, std::vector<vmath::vec3> &vertices) {
+    vmath::vec3 points[3] = { vertices[t.tri[0]],
                             vertices[t.tri[1]],
                             vertices[t.tri[2]] };
 
@@ -87,7 +87,7 @@ AABB::AABB(Triangle t, std::vector<glm::vec3> &vertices) {
     double maxy = points[0].y;
     double maxz = points[0].z;
 
-    glm::vec3 p;
+    vmath::vec3 p;
     for (int i = 0; i < 3; i++) {
         p = points[i];
         minx = fmin(p.x, minx);
@@ -98,14 +98,14 @@ AABB::AABB(Triangle t, std::vector<glm::vec3> &vertices) {
         maxz = fmax(p.z, maxz);
     }
 
-    position = glm::vec3(minx, miny, minz);
+    position = vmath::vec3(minx, miny, minz);
     width = maxx - minx;
     height = maxy - miny;
     depth = maxz - minz;
 }
 
 AABB::AABB(GridIndex g, double dx) {
-    position = glm::vec3(g.i*dx, g.j*dx, g.k*dx);
+    position = vmath::vec3(g.i*dx, g.j*dx, g.k*dx);
     width = height = depth = dx;
 }
 
@@ -115,18 +115,18 @@ AABB::~AABB()
 
 void AABB::expand(double v) {
     double h = 0.5 * v;
-    position -= glm::vec3(h, h, h);
+    position -= vmath::vec3(h, h, h);
     width += v;
     height += v;
     depth += v;
 }
 
-bool AABB::isPointInside(glm::vec3 p) {
+bool AABB::isPointInside(vmath::vec3 p) {
     return p.x >= position.x && p.y >= position.y && p.z >= position.z &&
            p.x < position.x + width && p.y < position.y + height && p.z < position.z + depth;
 }
 
-GridIndex AABB::_positionToGridIndex(glm::vec3 p, double dx) {
+GridIndex AABB::_positionToGridIndex(vmath::vec3 p, double dx) {
     double invdx = 1.0 / dx;
     return GridIndex((int)floor(p.x*invdx),
                      (int)floor(p.y*invdx),
@@ -134,7 +134,7 @@ GridIndex AABB::_positionToGridIndex(glm::vec3 p, double dx) {
 }
 
 void AABB::getOverlappingGridCells(double dx, std::vector<GridIndex> &cells) {
-    glm::vec3 v = position + glm::vec3(width, height, depth);
+    vmath::vec3 v = position + vmath::vec3(width, height, depth);
 
     GridIndex g1 = _positionToGridIndex(position, dx);
     GridIndex g2 = _positionToGridIndex(v, dx);
@@ -148,15 +148,15 @@ void AABB::getOverlappingGridCells(double dx, std::vector<GridIndex> &cells) {
     }
 }
 
-bool AABB::isLineIntersecting(glm::vec3 p1, glm::vec3 p2) {
+bool AABB::isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2) {
 
-    glm::vec3 min = position;
-    glm::vec3 max = position + glm::vec3(width, height, depth);
+    vmath::vec3 min = position;
+    vmath::vec3 max = position + vmath::vec3(width, height, depth);
 
-    glm::vec3 d = (p2 - p1) * 0.5f;
-    glm::vec3 e = (max - min) * 0.5f;
-    glm::vec3 c = p1 + d - (min + max) * 0.5f;
-    glm::vec3 ad = glm::vec3(fabs(d.x), fabs(d.y), fabs(d.z));
+    vmath::vec3 d = (p2 - p1) * 0.5f;
+    vmath::vec3 e = (max - min) * 0.5f;
+    vmath::vec3 c = p1 + d - (min + max) * 0.5f;
+    vmath::vec3 ad = vmath::vec3(fabs(d.x), fabs(d.y), fabs(d.z));
 
     if (fabs(c.x) > e.x + ad.x) {
         return false;
@@ -192,7 +192,7 @@ void AABB::_findminmax(double x0, double x1, double x2, double *min, double *max
     if (x2 > *max) { *max = x2; }
 }
 
-bool AABB::_planeBoxOverlap(glm::vec3 normal, glm::vec3 vert) {
+bool AABB::_planeBoxOverlap(vmath::vec3 normal, vmath::vec3 vert) {
     double minx, miny, minz, maxx, maxy, maxz;
     double vx, vy, vz;
 
@@ -226,20 +226,20 @@ bool AABB::_planeBoxOverlap(glm::vec3 normal, glm::vec3 vert) {
         maxz = -0.5*depth - vz;
     }
 
-    glm::vec3 vmin = glm::vec3(minx, miny, minz);
-    glm::vec3 vmax = glm::vec3(maxx, maxy, maxz);
+    vmath::vec3 vmin = vmath::vec3(minx, miny, minz);
+    vmath::vec3 vmax = vmath::vec3(maxx, maxy, maxz);
 
-    if (glm::dot(normal, vmin) > 0.0) {
+    if (vmath::dot(normal, vmin) > 0.0) {
         return false;
     }
-    if (glm::dot(normal, vmax) >= 0.0) {
+    if (vmath::dot(normal, vmax) >= 0.0) {
         return true;
     }
 
     return false;
 }
 
-bool AABB::_axisTestX01(glm::vec3 v0, glm::vec3 v2, 
+bool AABB::_axisTestX01(vmath::vec3 v0, vmath::vec3 v2, 
                         double a, double b, double fa, double fb) {
     double p0 = (float)a*v0.y - (float)b*v0.z;
     double p2 = (float)a*v2.y - (float)b*v2.z;
@@ -263,7 +263,7 @@ bool AABB::_axisTestX01(glm::vec3 v0, glm::vec3 v2,
     return true;
 }
 
-bool AABB::_axisTestX2(glm::vec3 v0, glm::vec3 v1, 
+bool AABB::_axisTestX2(vmath::vec3 v0, vmath::vec3 v1, 
                        double a, double b, double fa, double fb) {
     double p0 = (float)a*v0.y - (float)b*v0.z;
     double p1 = (float)a*v1.y - (float)b*v1.z;
@@ -287,7 +287,7 @@ bool AABB::_axisTestX2(glm::vec3 v0, glm::vec3 v1,
     return true;
 }
 
-bool AABB::_axisTestY02(glm::vec3 v0, glm::vec3 v2, 
+bool AABB::_axisTestY02(vmath::vec3 v0, vmath::vec3 v2, 
                         double a, double b, double fa, double fb) {
     double p0 = (float)-a*v0.x + (float)b*v0.z;
     double p2 = (float)-a*v2.x + (float)b*v2.z;
@@ -311,7 +311,7 @@ bool AABB::_axisTestY02(glm::vec3 v0, glm::vec3 v2,
     return true;
 }
 
-bool AABB::_axisTestY1(glm::vec3 v0, glm::vec3 v1,
+bool AABB::_axisTestY1(vmath::vec3 v0, vmath::vec3 v1,
                        double a, double b, double fa, double fb) {
     double p0 = (float)-a*v0.x + (float)b*v0.z;
     double p1 = (float)-a*v1.x + (float)b*v1.z;
@@ -335,7 +335,7 @@ bool AABB::_axisTestY1(glm::vec3 v0, glm::vec3 v1,
     return true;
 }
 
-bool AABB::_axisTestZ12(glm::vec3 v1, glm::vec3 v2,
+bool AABB::_axisTestZ12(vmath::vec3 v1, vmath::vec3 v2,
                        double a, double b, double fa, double fb) {
     double p1 = (float)a*v1.x - (float)b*v1.y;
     double p2 = (float)a*v2.x - (float)b*v2.y;
@@ -359,7 +359,7 @@ bool AABB::_axisTestZ12(glm::vec3 v1, glm::vec3 v2,
     return true;
 }
 
-bool AABB::_axisTestZ0(glm::vec3 v0, glm::vec3 v1,
+bool AABB::_axisTestZ0(vmath::vec3 v0, vmath::vec3 v1,
                        double a, double b, double fa, double fb) {
     double p0 = (float)a*v0.x - (float)b*v0.y;
     double p1 = (float)a*v1.x - (float)b*v1.y;
@@ -385,10 +385,10 @@ bool AABB::_axisTestZ0(glm::vec3 v0, glm::vec3 v1,
 
 // adapted from the method described in this paper: 
 // http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/pubs/tribox.pdf
-bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
-    glm::vec3 tv0 = vertices[t.tri[0]];
-    glm::vec3 tv1 = vertices[t.tri[1]];
-    glm::vec3 tv2 = vertices[t.tri[2]];
+bool AABB::isOverlappingTriangle(Triangle t, std::vector<vmath::vec3> &vertices) {
+    vmath::vec3 tv0 = vertices[t.tri[0]];
+    vmath::vec3 tv1 = vertices[t.tri[1]];
+    vmath::vec3 tv2 = vertices[t.tri[2]];
 
     if (isPointInside(tv0) || isPointInside(tv1) || isPointInside(tv2)) {
         return true;
@@ -400,15 +400,15 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
         return true;
     }
 
-    glm::vec3 boxcenter = position + (float)0.5 * glm::vec3(width, height, depth);
+    vmath::vec3 boxcenter = position + (float)0.5 * vmath::vec3(width, height, depth);
 
-    glm::vec3 v0 = tv0 - boxcenter;
-    glm::vec3 v1 = tv1 - boxcenter;
-    glm::vec3 v2 = tv2 - boxcenter;
+    vmath::vec3 v0 = tv0 - boxcenter;
+    vmath::vec3 v1 = tv1 - boxcenter;
+    vmath::vec3 v2 = tv2 - boxcenter;
 
-    glm::vec3 e0 = v1 - v0;
-    glm::vec3 e1 = v2 - v1;
-    glm::vec3 e2 = v0 - v2;
+    vmath::vec3 e0 = v1 - v0;
+    vmath::vec3 e1 = v2 - v1;
+    vmath::vec3 e2 = v0 - v2;
 
     double fex = fabs(e0.x);
     double fey = fabs(e0.y);
@@ -450,7 +450,7 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
         return false;
     }
 
-    glm::vec3 normal = glm::cross(e0, e1);
+    vmath::vec3 normal = vmath::cross(e0, e1);
     if (!_planeBoxOverlap(normal, v0)) {
         return false;
     }
@@ -458,10 +458,10 @@ bool AABB::isOverlappingTriangle(Triangle t, std::vector<glm::vec3> &vertices) {
     return true;
 }
 
-glm::vec3 AABB::getMinPoint() {
+vmath::vec3 AABB::getMinPoint() {
     return position;
 }
 
-glm::vec3 AABB::getMaxPoint() {
-    return position + glm::vec3(width, height, depth);
+vmath::vec3 AABB::getMaxPoint() {
+    return position + vmath::vec3(width, height, depth);
 }

@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "grid3d.h"
 #include "trianglemesh.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 #include "stopwatch.h"
 
@@ -82,8 +82,8 @@ private:
                      isSetW(Array3d<bool>(i + 1, j + 1, k, false)) {}
     };
 
-    void _getCellVertexPositions(GridIndex g, glm::vec3 positions[8]);
-    glm::vec3 _getVertexPosition(GridIndex v);
+    void _getCellVertexPositions(GridIndex g, vmath::vec3 positions[8]);
+    vmath::vec3 _getVertexPosition(GridIndex v);
     double _getVertexFieldValue(GridIndex v);
     bool _isCellOutsideSurface(GridIndex g);
     bool _isCellInsideSurface(GridIndex g);
@@ -92,7 +92,7 @@ private:
     void _polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges);
     int _calculateCubeIndex(GridIndex g, double isolevel);
     void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, int vertList[12], EdgeGrid &edges);
-    glm::vec3 _vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, double valp1, double valp2);
+    vmath::vec3 _vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
     void _calculateSurfaceTriangles();
 
     std::vector<GridIndex> _findSurfaceCells();

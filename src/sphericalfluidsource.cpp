@@ -23,12 +23,12 @@ freely, subject to the following restrictions:
 SphericalFluidSource::SphericalFluidSource() {
 }
 
-SphericalFluidSource::SphericalFluidSource(glm::vec3 pos, double r) : 
+SphericalFluidSource::SphericalFluidSource(vmath::vec3 pos, double r) : 
                                            FluidSource(pos),
                                            _radius(r > 0.0 ? r : 0.0) {
 }
 
-SphericalFluidSource::SphericalFluidSource(glm::vec3 pos, double r, glm::vec3 velocity) : 
+SphericalFluidSource::SphericalFluidSource(vmath::vec3 pos, double r, vmath::vec3 velocity) : 
                                            FluidSource(pos, velocity),
                                            _radius(r > 0.0 ? r : 0.0) {
 }
@@ -47,7 +47,7 @@ double SphericalFluidSource::getRadius() {
     return _radius;
 }
 
-void SphericalFluidSource::setCenter(glm::vec3 p) {
+void SphericalFluidSource::setCenter(vmath::vec3 p) {
     position = p;
 }
 
@@ -152,14 +152,14 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
 
     double rsq = r*r;
     double distsq;
-    glm::vec3 p;
-    glm::vec3 v;
+    vmath::vec3 p;
+    vmath::vec3 v;
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
                 p = Grid3d::GridIndexToCellCenter(i, j, k, dx);
                 v = p - position;
-                distsq = glm::dot(v, v);
+                distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     indices.push_back(GridIndex(i, j, k));
                 }
@@ -171,6 +171,6 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
 
 AABB SphericalFluidSource::getAABB() {
     double d = 2.0*_radius;
-    glm::vec3 p = position - glm::vec3(_radius, _radius, _radius);
+    vmath::vec3 p = position - vmath::vec3(_radius, _radius, _radius);
     return AABB(p, d, d, d);
 }

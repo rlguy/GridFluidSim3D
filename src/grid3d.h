@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "array3d.h"
 #include "aabb.h"
 
@@ -31,31 +31,31 @@ namespace Grid3d {
     
     extern void positionToGridIndex(double x, double y, double z, double dx,
                                     int *i, int *j, int *k);
-    extern void positionToGridIndex(glm::vec3 p, double dx,
+    extern void positionToGridIndex(vmath::vec3 p, double dx,
                                     int *i, int *j, int *k);
     extern GridIndex positionToGridIndex(double x, double y, double z, double dx);
-    extern GridIndex positionToGridIndex(glm::vec3 p, double dx);
+    extern GridIndex positionToGridIndex(vmath::vec3 p, double dx);
 
     extern void GridIndexToPosition(int i, int j, int k, double dx, 
                                     double *x, double *y, double *z);
     extern void GridIndexToPosition(GridIndex g, double dx, 
                                     double *x, double *y, double *z);
-    extern glm::vec3 GridIndexToPosition(int i, int j, int k, double dx);
-    extern glm::vec3 GridIndexToPosition(GridIndex g, double dx);
+    extern vmath::vec3 GridIndexToPosition(int i, int j, int k, double dx);
+    extern vmath::vec3 GridIndexToPosition(GridIndex g, double dx);
 
     extern void GridIndexToCellCenter(int i, int j, int k, double dx, 
                                       double *x, double *y, double *z);
     extern void GridIndexToCellCenter(GridIndex g, double dx, 
                                       double *x, double *y, double *z);
-    extern glm::vec3 GridIndexToCellCenter(int i, int j, int k, double dx);
-    extern glm::vec3 GridIndexToCellCenter(GridIndex g, double dx);
+    extern vmath::vec3 GridIndexToCellCenter(int i, int j, int k, double dx);
+    extern vmath::vec3 GridIndexToCellCenter(GridIndex g, double dx);
 
     extern bool isPositionInGrid(double x, double y, double z, double dx,
                                  int i, int j, int k);
-    extern bool isPositionInGrid(glm::vec3 p, double dx,
+    extern bool isPositionInGrid(vmath::vec3 p, double dx,
                                  int i, int j, int k);
     extern bool isPositionInGrid(double x, double y, double z, double dx, GridIndex g);
-    extern bool isPositionInGrid(glm::vec3 p, double dx, GridIndex g);
+    extern bool isPositionInGrid(vmath::vec3 p, double dx, GridIndex g);
 
     extern bool isGridIndexInRange(int i, int j, int k, int imax, int jmax, int kmax);
     extern bool isGridIndexInRange(GridIndex g, int imax, int jmax, int kmax);
@@ -88,15 +88,15 @@ namespace Grid3d {
     extern void getVertexGridIndexNeighbours(int i, int j, int k, GridIndex n[8]);
     extern void getVertexGridIndexNeighbours(GridIndex v, GridIndex n[8]);
 
-    extern void getGridIndexBounds(glm::vec3 p, double r, double dx, 
+    extern void getGridIndexBounds(vmath::vec3 p, double r, double dx, 
                                    int imax, int jmax, int kmax, 
                                    GridIndex *g1, GridIndex *g2);
-    extern void getGridIndexBounds(glm::vec3 p, double r, double dx, GridIndex gmax, 
+    extern void getGridIndexBounds(vmath::vec3 p, double r, double dx, GridIndex gmax, 
                                    GridIndex *g1, GridIndex *g2);
-    extern void getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, 
+    extern void getGridIndexBounds(vmath::vec3 p, double r, vmath::mat3 G, double dx, 
                                    int imax, int jmax, int kmax, 
                                    GridIndex *g1, GridIndex *g2);
-    extern void getGridIndexBounds(glm::vec3 p, double r, glm::mat3 G, double dx, GridIndex gmax, 
+    extern void getGridIndexBounds(vmath::vec3 p, double r, vmath::mat3 G, double dx, GridIndex gmax, 
                                    GridIndex *g1, GridIndex *g2);
     extern void getGridIndexBounds(AABB bbox, double dx, 
                                    int imax, int jmax, int kmax,

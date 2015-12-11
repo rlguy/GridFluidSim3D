@@ -1,15 +1,15 @@
 #ifndef QUATERNION_H
 #define QUATERNION_H
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 class Quaternion
 {
 public:
     Quaternion();
     Quaternion(float nx, float ny, float nz, float rads);
-    Quaternion(glm::vec3 v);
-    Quaternion(glm::vec3 v, float rads);
+    Quaternion(vmath::vec3 v);
+    Quaternion(vmath::vec3 v, float rads);
 
     void set(float x, float y, float z, float w);
     float length();
@@ -18,8 +18,8 @@ public:
     Quaternion mult(Quaternion q);
     Quaternion multScalar(float s);
     Quaternion inverse();
-    glm::vec3 rotateVector(glm::vec3 v);
-    glm::mat4 getRotationMatrix();
+    vmath::vec3 rotateVector(vmath::vec3 v);
+    vmath::mat4 getRotationMatrix();
     float dot(Quaternion q2);
     Quaternion normalize();
     Quaternion add(Quaternion q2);

@@ -390,7 +390,7 @@ void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
     _surface.writeMeshToOBJ(filename);
 }
 
-void Polygonizer3d::_getCellVertexPositions(GridIndex g, glm::vec3 positions[8]) {
+void Polygonizer3d::_getCellVertexPositions(GridIndex g, vmath::vec3 positions[8]) {
     GridIndex verts[8];
     Grid3d::getGridIndexVertices(g, verts);
     for (int i = 0; i < 8; i++) {
@@ -398,9 +398,9 @@ void Polygonizer3d::_getCellVertexPositions(GridIndex g, glm::vec3 positions[8])
     }
 }
 
-glm::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
+vmath::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
-    return (float)_dx*glm::vec3((float)g.i, (float)g.j, (float)g.k);
+    return (float)_dx*vmath::vec3((float)g.i, (float)g.j, (float)g.k);
 }
 
 double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
@@ -409,7 +409,7 @@ double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
     if (!_isVertexSet(g)) {
         assert(!_isScalarFieldSet);
 
-        glm::vec3 p = _getVertexPosition(g);
+        vmath::vec3 p = _getVertexPosition(g);
         _vertexValues.set(g, (float)_field->getFieldValue(p));
     }
 
@@ -579,7 +579,7 @@ int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
     return cubeIndex;
 }
 
-glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 p2, 
+vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, 
                                                         double valp1, double valp2) {
 
     // Don't return a point that is exactly on p1 or p2.
@@ -587,20 +587,20 @@ glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 
     // its normal will be calculated as undefined.
     double eps = 10e-6;
     if (fabs(isolevel - valp1) < eps || fabs(valp1 - valp2) < eps) {
-        glm::vec3 v = glm::normalize(p2 - p1);
+        vmath::vec3 v = vmath::normalize(p2 - p1);
         return p1 + (float)(eps*_dx)*v;
     }
     if (fabs(isolevel - valp2) < eps) { 
-        glm::vec3 v = glm::normalize(p2 - p1);
+        vmath::vec3 v = vmath::normalize(p2 - p1);
         return p2 - (float)(eps*_dx)*v; 
     }
 
     double tol = 1e-6;
     int nmax = 50;
     int n = 0;
-    glm::vec3 a = p1;
-    glm::vec3 b = p2;
-    glm::vec3 c;
+    vmath::vec3 a = p1;
+    vmath::vec3 b = p2;
+    vmath::vec3 c;
     double vala = valp1 - isolevel;
     double valc = 0.0;
     while (n < nmax) {
@@ -613,7 +613,7 @@ glm::vec3 Polygonizer3d::_vertexInterp(double isolevel, glm::vec3 p1, glm::vec3 
         }
         
 
-        if (fabs(valc) < tol || glm::length(b - a) < tol ) {
+        if (fabs(valc) < tol || vmath::length(b - a) < tol ) {
             return c;
         }
 
@@ -637,7 +637,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
                                          int vertexList[12], EdgeGrid &edges) {
     GridIndex vertices[8];
     double vertexValues[8];
-    glm::vec3 vertexPositions[8];
+    vmath::vec3 vertexPositions[8];
 
     Grid3d::getGridIndexVertices(g, vertices);
     for (int i = 0; i < 8; i++) {
@@ -647,7 +647,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
 
     if (_edgeTable[cubeIndex] & 1) {
         if (!edges.isSetU(vertices[0])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
                                                      vertexValues[0],    vertexValues[1]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[0], _surface.vertices.size() - 1);
@@ -657,7 +657,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 2) {
         if (!edges.isSetW(vertices[1])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2], 
                                                      vertexValues[1],    vertexValues[2]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[1], _surface.vertices.size() - 1);
@@ -667,7 +667,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 4) {
         if (!edges.isSetU(vertices[3])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3], 
                                                      vertexValues[2],    vertexValues[3]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[3], _surface.vertices.size() - 1);
@@ -677,7 +677,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 8) {
         if (!edges.isSetW(vertices[0])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0], 
                                                      vertexValues[3],    vertexValues[0]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[0], _surface.vertices.size() - 1);
@@ -687,7 +687,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 16) {
         if (!edges.isSetU(vertices[4])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5], 
                                                      vertexValues[4],    vertexValues[5]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[4], _surface.vertices.size() - 1);
@@ -697,7 +697,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 32) {
         if (!edges.isSetW(vertices[5])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6], 
                                                      vertexValues[5],    vertexValues[6]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[5], _surface.vertices.size() - 1);
@@ -707,7 +707,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 64) {
         if (!edges.isSetU(vertices[7])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7], 
                                                      vertexValues[6],    vertexValues[7]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[7], _surface.vertices.size() - 1);
@@ -717,7 +717,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 128) {
         if (!edges.isSetW(vertices[4])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4], 
                                                      vertexValues[7],    vertexValues[4]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[4], _surface.vertices.size() - 1);
@@ -727,7 +727,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 256) {
         if (!edges.isSetV(vertices[0])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4], 
                                                      vertexValues[0],    vertexValues[4]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[0], _surface.vertices.size() - 1);
@@ -737,7 +737,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 512) {
         if (!edges.isSetV(vertices[1])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5], 
                                                      vertexValues[1],    vertexValues[5]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[1], _surface.vertices.size() - 1);
@@ -747,7 +747,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 1024) {
         if (!edges.isSetV(vertices[2])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6], 
                                                      vertexValues[2],    vertexValues[6]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[2], _surface.vertices.size() - 1);
@@ -757,7 +757,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
     if (_edgeTable[cubeIndex] & 2048) {
         if (!edges.isSetV(vertices[3])) {
-            glm::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7], 
+            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7], 
                                                      vertexValues[3],    vertexValues[7]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[3], _surface.vertices.size() - 1);

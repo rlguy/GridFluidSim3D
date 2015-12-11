@@ -23,13 +23,14 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <limits>
 #include <time.h>
 #include <assert.h>
 
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
-#include "glm/glm.hpp" 
+#include "vmath.h" 
 
 class MACVelocityField
 {
@@ -89,24 +90,24 @@ public:
         return Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize + 1);
     }
 
-    glm::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
+    vmath::vec3 evaluateVelocityAtCellCenter(int i, int j, int k);
     float evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k);
     float evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k);
     float evaluateMaximumVelocityMagnitude();
 
-    glm::vec3 evaluateVelocityAtFaceCenterU(int i, int j, int k);
-    glm::vec3 evaluateVelocityAtFaceCenterV(int i, int j, int k);
-    glm::vec3 evaluateVelocityAtFaceCenterW(int i, int j, int k);
+    vmath::vec3 evaluateVelocityAtFaceCenterU(int i, int j, int k);
+    vmath::vec3 evaluateVelocityAtFaceCenterV(int i, int j, int k);
+    vmath::vec3 evaluateVelocityAtFaceCenterW(int i, int j, int k);
 
-    glm::vec3 evaluateVelocityAtPosition(double x, double y, double z);
-    glm::vec3 evaluateVelocityAtPosition(glm::vec3 pos);
-    glm::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
-    glm::vec3 evaluateVelocityAtPositionLinear(glm::vec3 pos);
-    glm::vec3 evaluateChangeInVelocityAtPosition(glm::vec3 pos, MACVelocityField &savedField);
+    vmath::vec3 evaluateVelocityAtPosition(double x, double y, double z);
+    vmath::vec3 evaluateVelocityAtPosition(vmath::vec3 pos);
+    vmath::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
+    vmath::vec3 evaluateVelocityAtPositionLinear(vmath::vec3 pos);
+    vmath::vec3 evaluateChangeInVelocityAtPosition(vmath::vec3 pos, MACVelocityField &savedField);
 
-    glm::vec3 velocityIndexToPositionU(int i, int j, int k);
-    glm::vec3 velocityIndexToPositionV(int i, int j, int k);
-    glm::vec3 velocityIndexToPositionW(int i, int j, int k);
+    vmath::vec3 velocityIndexToPositionU(int i, int j, int k);
+    vmath::vec3 velocityIndexToPositionV(int i, int j, int k);
+    vmath::vec3 velocityIndexToPositionW(int i, int j, int k);
 
 private:
     void _initializeVelocityGrids();

@@ -34,7 +34,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "aabb.h"
 #include "collision.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 class TriangleMesh
 {
@@ -43,15 +43,15 @@ public:
     ~TriangleMesh();
 
     bool loadOBJ(std::string OBJFilename) {
-        return loadOBJ(OBJFilename, glm::vec3(0.0, 0.0, 0.0), 1.0);
+        return loadOBJ(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), 1.0);
     }
-    bool loadOBJ(std::string OBJFilename, glm::vec3 offset) {
+    bool loadOBJ(std::string OBJFilename, vmath::vec3 offset) {
         return loadOBJ(OBJFilename, offset, 1.0);
     }
     bool loadOBJ(std::string OBJFilename, double scale) {
-        return loadOBJ(OBJFilename, glm::vec3(0.0, 0.0, 0.0), scale);
+        return loadOBJ(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), scale);
     }
-    bool loadOBJ(std::string OBJFilename, glm::vec3 offset, double scale);
+    bool loadOBJ(std::string OBJFilename, vmath::vec3 offset, double scale);
 
     int numVertices();
     int numFaces();
@@ -74,12 +74,12 @@ public:
     void getVertexNeighbours(unsigned int vidx, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
     void getCellsInsideMesh(std::vector<GridIndex> &cells);
-    void getTrianglePosition(unsigned int index, glm::vec3 tri[3]);
-    glm::vec3 getTriangleNormal(unsigned int index);
-    glm::vec3 getTriangleNormalSmooth(unsigned int index, glm::vec3 p);
-    glm::vec3 getTriangleFaceDirection(unsigned int index);
-    glm::vec3 getTriangleCenter(unsigned int index);
-    glm::vec3 getBarycentricCoordinates(unsigned int index, glm::vec3 p);
+    void getTrianglePosition(unsigned int index, vmath::vec3 tri[3]);
+    vmath::vec3 getTriangleNormal(unsigned int index);
+    vmath::vec3 getTriangleNormalSmooth(unsigned int index, vmath::vec3 p);
+    vmath::vec3 getTriangleFaceDirection(unsigned int index);
+    vmath::vec3 getTriangleCenter(unsigned int index);
+    vmath::vec3 getBarycentricCoordinates(unsigned int index, vmath::vec3 p);
     void removeMinimumTriangleCountPolyhedra(int count);
     void removeMinimumVolumePolyhedra(double volume);
     void removeTriangles(std::vector<int> &triangles);
@@ -89,9 +89,9 @@ public:
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
     }
 
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec3> vertexcolors;  // r, g, b values in range [0.0, 1.0]
-    std::vector<glm::vec3> normals;
+    std::vector<vmath::vec3> vertices;
+    std::vector<vmath::vec3> vertexcolors;  // r, g, b values in range [0.0, 1.0]
+    std::vector<vmath::vec3> normals;
     std::vector<Triangle> triangles;
 
 private:
@@ -100,7 +100,7 @@ private:
     bool _isOnTriangleEdge(double u, double v);
     bool _isTriangleInVector(int index, std::vector<int> &tris);
     bool _isIntInVector(int i, std::vector<int> &ints);
-    int _getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm::vec3 dir, 
+    int _getIntersectingTrianglesInCell(GridIndex g, vmath::vec3 p, vmath::vec3 dir, 
                                         std::vector<int> &tris, bool *success);
     bool _isCellInsideMesh(const GridIndex g);
     void _floodfill(GridIndex g, Array3d<bool> &cells);

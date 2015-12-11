@@ -28,7 +28,7 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 #include "levelset.h"
 #include "trianglemesh.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 struct Brick {
     float intensity = 0.0f;
@@ -54,7 +54,7 @@ public:
     Array3d<float> getDensityGrid();
     bool getBrickMesh(LevelSet &levelset, TriangleMesh &mesh);
     bool isBrickMeshReady();
-    void update(LevelSet &levelset, std::vector<glm::vec3> &markerParticles, double dt);
+    void update(LevelSet &levelset, std::vector<vmath::vec3> &markerParticles, double dt);
 
 private:
 
@@ -67,8 +67,8 @@ private:
     
 
     void _initializeBrickGrid();
-    void _updateDensityGrid(std::vector<glm::vec3> &particles, double dt);
-    void _updateTargetDensities(std::vector<glm::vec3> &particles);
+    void _updateDensityGrid(std::vector<vmath::vec3> &particles, double dt);
+    void _updateTargetDensities(std::vector<vmath::vec3> &particles);
     void _updateDensities(double dt);
     void _updateDensity(int i, int j, int k, double dt);
     void _updateBrickGrid(LevelSet &levelset);

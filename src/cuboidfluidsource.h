@@ -24,18 +24,18 @@ freely, subject to the following restrictions:
 
 #include <vector>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "aabb.h"
 
 class CuboidFluidSource : public FluidSource
 {
 public:
     CuboidFluidSource();
-    CuboidFluidSource(glm::vec3 position, double w, double h, double d);
+    CuboidFluidSource(vmath::vec3 position, double w, double h, double d);
     CuboidFluidSource(AABB bbox);
-    CuboidFluidSource(glm::vec3 position, double w, double h, double d,
-                      glm::vec3 velocity);
-    CuboidFluidSource(AABB bbox, glm::vec3 velocity);
+    CuboidFluidSource(vmath::vec3 position, double w, double h, double d,
+                      vmath::vec3 velocity);
+    CuboidFluidSource(AABB bbox, vmath::vec3 velocity);
     ~CuboidFluidSource();
 
     virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
@@ -54,8 +54,8 @@ public:
     double getDepth();
     void setBoundingBox(AABB bbox);
     AABB getBoundingBox();
-    void setCenter(glm::vec3 pos);
-    glm::vec3 getCenter();
+    void setCenter(vmath::vec3 pos);
+    vmath::vec3 getCenter();
     void expand(double value);
     
     

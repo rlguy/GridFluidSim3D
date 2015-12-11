@@ -49,16 +49,16 @@ void SurfaceField::setMaterialGrid() {
 void SurfaceField::clear() {
 }
 
-double SurfaceField::getFieldValue(glm::vec3 p) {
+double SurfaceField::getFieldValue(vmath::vec3 p) {
     return 0.0;
 }
 
-bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
+bool SurfaceField::_isPointNearSolid(vmath::vec3 p) {
     double eps = 10e-9;
 
-    glm::vec3 x = glm::vec3(eps, 0.0, 0.0);
-    glm::vec3 y = glm::vec3(0.0, eps, 0.0);
-    glm::vec3 z = glm::vec3(0.0, 0.0, eps);
+    vmath::vec3 x = vmath::vec3(eps, 0.0, 0.0);
+    vmath::vec3 y = vmath::vec3(0.0, eps, 0.0);
+    vmath::vec3 z = vmath::vec3(0.0, 0.0, eps);
 
     int i, j, k;
     Grid3d::positionToGridIndex(p, dx, &i, &j, &k);
@@ -66,7 +66,7 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
         return true;
     }
 
-    glm::vec3 points[26];
+    vmath::vec3 points[26];
     points[0] = p - x;
     points[1] = p + x;
     points[2] = p - y;
@@ -104,10 +104,10 @@ bool SurfaceField::_isPointNearSolid(glm::vec3 p) {
     return false;
 }
 
-bool SurfaceField::isInside(glm::vec3 p) {
+bool SurfaceField::isInside(vmath::vec3 p) {
     return getFieldValue(p) > surfaceThreshold;
 }
 
-bool SurfaceField::isOutside(glm::vec3 p) {
+bool SurfaceField::isOutside(vmath::vec3 p) {
     return getFieldValue(p) <= surfaceThreshold;
 }

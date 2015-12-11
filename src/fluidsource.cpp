@@ -25,17 +25,17 @@ FluidSource::FluidSource() : position(0, 0, 0),
                              direction(1.0, 0.0, 0.0) {
 }
 
-FluidSource::FluidSource(glm::vec3 pos) : position(pos),
+FluidSource::FluidSource(vmath::vec3 pos) : position(pos),
                                           velocity(0.0, 0.0, 0.0),
                                           direction(1.0, 0.0, 0.0) {
 }
 
-FluidSource::FluidSource(glm::vec3 pos, glm::vec3 vel) : 
+FluidSource::FluidSource(vmath::vec3 pos, vmath::vec3 vel) : 
                                           position(pos),
                                           velocity(vel),
-                                          direction(glm::normalize(velocity)) {
-    if (!(glm::length(velocity) > 0.0)) {
-        direction = glm::vec3(1.0, 0.0, 0.0);
+                                          direction(vmath::normalize(velocity)) {
+    if (!(vmath::length(velocity) > 0.0)) {
+        direction = vmath::vec3(1.0, 0.0, 0.0);
     }
 }
 
@@ -43,38 +43,38 @@ FluidSource::FluidSource(glm::vec3 pos, glm::vec3 vel) :
 FluidSource::~FluidSource() {
 }
 
-void FluidSource::setPosition(glm::vec3 pos) {
+void FluidSource::setPosition(vmath::vec3 pos) {
     position = pos;
 }
 
-glm::vec3 FluidSource::getPosition() {
+vmath::vec3 FluidSource::getPosition() {
    return position;
 }
 
-void FluidSource::translate(glm::vec3 trans) {
+void FluidSource::translate(vmath::vec3 trans) {
     position += trans;
 }
 
-void FluidSource::setVelocity(glm::vec3 v) {
+void FluidSource::setVelocity(vmath::vec3 v) {
     velocity = v;
-    if (glm::length(v) > 0.0) {
-        direction = glm::normalize(v);
+    if (vmath::length(v) > 0.0) {
+        direction = vmath::normalize(v);
     } else {
-        direction = glm::vec3(0.0, 0.0, 0.0);
+        direction = vmath::vec3(0.0, 0.0, 0.0);
     }
 }
 
-void FluidSource::setDirection(glm::vec3 dir) {
-    float length = glm::length(dir);
+void FluidSource::setDirection(vmath::vec3 dir) {
+    float length = vmath::length(dir);
     if (!(length > 0.0f)) {
         return;
     }
 
-    direction = glm::normalize(dir);
-    velocity = glm::length(velocity) * velocity;
+    direction = vmath::normalize(dir);
+    velocity = vmath::length(velocity) * velocity;
 }
 
-glm::vec3 FluidSource::getVelocity() {
+vmath::vec3 FluidSource::getVelocity() {
     return velocity;
 }
 

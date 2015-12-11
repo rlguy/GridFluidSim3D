@@ -114,17 +114,17 @@ int ImplicitSurfaceScalarField::getWeightCount(int i, int j, int k) {
     return _weightCountField(i, j, k);
 }
 
-void ImplicitSurfaceScalarField::addPoint(glm::vec3 p, double r) {
+void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p, double r) {
     setPointRadius(r);
     addPoint(p);
 }
 
-void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
+void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 gpos;
-    glm::vec3 v;
+    vmath::vec3 gpos;
+    vmath::vec3 v;
     double rsq = _radius*_radius;
     double distsq;
     double weight;
@@ -133,7 +133,7 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
             for (int i = gmin.i; i <= gmax.i; i++) {
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
-                distsq = glm::dot(v, v);
+                distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     if (_weightType == WEIGHT_TRICUBIC) {
                         weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
@@ -158,17 +158,17 @@ void ImplicitSurfaceScalarField::addPoint(glm::vec3 p) {
 
 }
 
-void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double r, double value) {
+void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double r, double value) {
     setPointRadius(r);
     addPointValue(p, value);
 }
 
-void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
+void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 gpos;
-    glm::vec3 v;
+    vmath::vec3 gpos;
+    vmath::vec3 v;
     double rsq = _radius*_radius;
     double distsq;
     double weight;
@@ -177,7 +177,7 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
             for (int i = gmin.i; i <= gmax.i; i++) {
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
-                distsq = glm::dot(v, v);
+                distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     if (_weightType == WEIGHT_TRICUBIC) {
                         weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
@@ -198,13 +198,13 @@ void ImplicitSurfaceScalarField::addPointValue(glm::vec3 p, double scale) {
 
 }
 
-void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, double d) {
+void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, double d) {
     GridIndex gmin = Grid3d::positionToGridIndex(pos, _dx);
-    GridIndex gmax = Grid3d::positionToGridIndex(pos + glm::vec3(w, h, d), _dx);
+    GridIndex gmax = Grid3d::positionToGridIndex(pos + vmath::vec3(w, h, d), _dx);
     AABB bbox = AABB(pos, w, h, d);
 
     double eps = 10e-6;
-    glm::vec3 gpos;
+    vmath::vec3 gpos;
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
@@ -226,17 +226,17 @@ void ImplicitSurfaceScalarField::addCuboid(glm::vec3 pos, double w, double h, do
     }
 }
 
-void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G, double r) {
+void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G, double r) {
     setPointRadius(r);
     addEllipsoid(p, G);
 }
 
-void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G) {
+void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 gpos;
-    glm::vec3 v;
+    vmath::vec3 gpos;
+    vmath::vec3 v;
     double rsq = _radius*_radius;
     double distsq;
     double weight;
@@ -247,7 +247,7 @@ void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G) {
                 v = (gpos - p);
                 v = G*v;
 
-                distsq = glm::dot(v, v);
+                distsq = vmath::dot(v, v);
 
                 if (distsq < rsq) {
 
@@ -273,17 +273,17 @@ void ImplicitSurfaceScalarField::addEllipsoid(glm::vec3 p, glm::mat3 G) {
     }
 }
 
-void ImplicitSurfaceScalarField::addEllipsoidValue(glm::vec3 p, glm::mat3 G, double r, double value) {
+void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double r, double value) {
     setPointRadius(r);
     addEllipsoidValue(p, G, value);
 }
 
-void ImplicitSurfaceScalarField::addEllipsoidValue(glm::vec3 p, glm::mat3 G, double scale) {
+void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double scale) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 gpos;
-    glm::vec3 v;
+    vmath::vec3 gpos;
+    vmath::vec3 v;
     double rsq = _radius*_radius;
     double distsq;
     double weight;
@@ -294,7 +294,7 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(glm::vec3 p, glm::mat3 G, dou
                 v = (gpos - p);
                 v = G*v;
 
-                distsq = glm::dot(v, v);
+                distsq = vmath::dot(v, v);
 
                 if (distsq < rsq) {
 
@@ -434,7 +434,7 @@ void ImplicitSurfaceScalarField::setCellFieldValues(GridIndex g, double value) {
     setCellFieldValues(g.i, g.j, g.k, value);
 }
 
-double ImplicitSurfaceScalarField::tricubicInterpolation(glm::vec3 p) {
+double ImplicitSurfaceScalarField::tricubicInterpolation(vmath::vec3 p) {
     if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
         return 0.0;
     }
@@ -488,19 +488,19 @@ double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquare
     return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
 }
 
-double ImplicitSurfaceScalarField::_evaluateTrilinearFieldFunction(glm::vec3 v) {
+double ImplicitSurfaceScalarField::_evaluateTrilinearFieldFunction(vmath::vec3 v) {
     double invdx = 1 / _dx;
     return _hatFunc(v.x*invdx) * _hatFunc(v.y*invdx) * _hatFunc(v.z*invdx);
 }
 
-void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(glm::vec3 p, int i, int j, int k) {
+void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k) {
     if ( i == _isize - 1 || j == _jsize - 1 || k == _ksize - 1 ) {
         return;
     }
 
-    glm::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    glm::vec3 v = gpos - p;
-    double distsq = glm::dot(v, v);
+    vmath::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
+    vmath::vec3 v = gpos - p;
+    double distsq = vmath::dot(v, v);
     if (distsq < _radius*_radius) {
         double val = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
         _centerField.add(i, j, k, (float)val);
@@ -512,7 +512,7 @@ void ImplicitSurfaceScalarField::_calculateCenterCellValueForCuboid(AABB &bbox, 
         return;
     }
 
-    glm::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
+    vmath::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     if (bbox.isPointInside(gpos)) {
         double eps = 10e-6;
         _centerField.add(i, j, k, (float)(_surfaceThreshold + eps));

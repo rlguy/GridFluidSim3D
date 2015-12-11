@@ -28,8 +28,8 @@ TurbulenceField::~TurbulenceField() {
 }
 
 void TurbulenceField::_getVelocityGrid(MACVelocityField *macfield, 
-                                       Array3d<glm::vec3> &vgrid) {
-    glm::vec3 v;
+                                       Array3d<vmath::vec3> &vgrid) {
+    vmath::vec3 v;
     for (int k = 0; k < vgrid.depth; k++) {
         for (int j = 0; j < vgrid.height; j++) {
             for (int i = 0; i < vgrid.width; i++) {
@@ -41,10 +41,10 @@ void TurbulenceField::_getVelocityGrid(MACVelocityField *macfield,
 }
 
 double TurbulenceField::_calculateTurbulenceAtGridCell(int i, int j, int k, 
-                                                       Array3d<glm::vec3> &vgrid) {
-    glm::vec3 vi = vgrid(i, j, k);
-    glm::vec3 xi = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    glm::vec3 vj, vij, vijnorm, xj, xij, xijnorm;
+                                                       Array3d<vmath::vec3> &vgrid) {
+    vmath::vec3 vi = vgrid(i, j, k);
+    vmath::vec3 xi = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
+    vmath::vec3 vj, vij, vijnorm, xj, xij, xijnorm;
     double vlen, xlen;
     double eps = 10e-6;
     double invradius = 1.0 / _radius;
@@ -58,7 +58,7 @@ double TurbulenceField::_calculateTurbulenceAtGridCell(int i, int j, int k,
 
             vj = vgrid(n.i, n.j, n.k);
             vij = vi - vj;
-            vlen = glm::length(vij);
+            vlen = vmath::length(vij);
 
             if (fabs(vlen) < eps) {
                 continue;
@@ -67,10 +67,10 @@ double TurbulenceField::_calculateTurbulenceAtGridCell(int i, int j, int k,
 
             xj = Grid3d::GridIndexToCellCenter(n.i, n.j, n.k, _dx);
             xij = xi - xj;
-            xlen = glm::length(xij);
+            xlen = vmath::length(xij);
             xijnorm = xij / (float)xlen;
 
-            turb += vlen*(1.0 - glm::dot(vijnorm, xijnorm))*(1.0 - (xlen*invradius));
+            turb += vlen*(1.0 - vmath::dot(vijnorm, xijnorm))*(1.0 - (xlen*invradius));
         }
     }
 
@@ -90,7 +90,7 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
         _field = Array3d<float>(_isize, _jsize, _ksize);
     }
 
-    Array3d<glm::vec3> vgrid = Array3d<glm::vec3>(_isize, _jsize, _ksize);
+    Array3d<vmath::vec3> vgrid = Array3d<vmath::vec3>(_isize, _jsize, _ksize);
     _getVelocityGrid(vfield, vgrid);
 
     double avg = 0.0;
@@ -112,18 +112,16 @@ void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
         }
     }
     avg /= fluidCells.size();
-
-    std::cout << "TFIELD avg: " << avg << " min: " << min << " max: " << max << std::endl;
 }
 
 void TurbulenceField::destroyTurbulenceField() {
     _field = Array3d<float>(0, 0, 0);
 }
 
-double TurbulenceField::evaluateTurbulenceAtPosition(glm::vec3 p) {
+double TurbulenceField::evaluateTurbulenceAtPosition(vmath::vec3 p) {
     assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
-    p -= glm::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
+    p -= vmath::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     int i, j, k;
     double gx, gy, gz;

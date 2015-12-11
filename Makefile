@@ -5,7 +5,7 @@ EIGENINCLUDE=C:/vs_dev_lib/include
 PTHREADLIB=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/lib/libpthread.a 
 
 OPTIMIZE=-O3
-CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -I$(EIGENINCLUDE) -c -std=c++11 -Wall
+CFLAGS=-large-address-aware $(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -I$(EIGENINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=$(PTHREADLIB) -lstdc++
 
 SOURCEPATH=src
@@ -35,7 +35,8 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/surfacefield.cpp \
 		$(SOURCEPATH)/threading.cpp \
 		$(SOURCEPATH)/trianglemesh.cpp \
-		$(SOURCEPATH)/turbulencefield.cpp
+		$(SOURCEPATH)/turbulencefield.cpp \
+		$(SOURCEPATH)/vmath.cpp
 		
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=fluidsim

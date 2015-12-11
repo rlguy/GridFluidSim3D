@@ -39,7 +39,7 @@ void FluidBrickGrid::getGridDimensions(int *i, int *j, int *k) {
 }
 
 void FluidBrickGrid::setBrickDimensions(double width, double height, double depth) {
-    _brick = AABB(glm::vec3(), width, height, depth);
+    _brick = AABB(vmath::vec3(), width, height, depth);
     _initializeBrickGrid();
 }
 
@@ -71,19 +71,19 @@ bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
     double bd = _brick.depth;
     double maxwidth = 2.0*fmax(bw, fmax(bh, bd));
 
-    glm::vec3 coffset = glm::vec3(0.5*bw, 0.5*bh, 0.5*bd);
+    vmath::vec3 coffset = vmath::vec3(0.5*bw, 0.5*bh, 0.5*bd);
 
-    glm::vec3 p;
+    vmath::vec3 p;
     for (int k = 0;  k < _currentBrickGrid.depth; k++) {
         for (int j = 0;  j < _currentBrickGrid.height; j++) {
             for (int i = 0;  i < _currentBrickGrid.width; i++) {
                 if (_currentBrickGrid(i, j, k).isActive) {
-                    p = coffset + glm::vec3(i*bw, j*bh, k*bd);
+                    p = coffset + vmath::vec3(i*bw, j*bh, k*bd);
 
                     if (levelset.getDistance(p) <= maxwidth) {
                         double intensity = _currentBrickGrid(i, j, k).intensity;
                         mesh.vertices.push_back(p);
-                        mesh.vertexcolors.push_back(glm::vec3(intensity, intensity, intensity));
+                        mesh.vertexcolors.push_back(vmath::vec3(intensity, intensity, intensity));
                     }
                 }
             }
@@ -262,7 +262,7 @@ void FluidBrickGrid::_postProcessBrickGrid() {
     _mergeBrickGrids();
 }
 
-void FluidBrickGrid::update(LevelSet &levelset, std::vector<glm::vec3> &particles, double dt) {
+void FluidBrickGrid::update(LevelSet &levelset, std::vector<vmath::vec3> &particles, double dt) {
     _updateDensityGrid(particles, dt);
     _updateBrickGrid(levelset);
 
@@ -301,12 +301,12 @@ void FluidBrickGrid::_initializeBrickGrid() {
     _numUpdates = 0;
 }
 
-void FluidBrickGrid::_updateDensityGrid(std::vector<glm::vec3> &particles, double dt) {
+void FluidBrickGrid::_updateDensityGrid(std::vector<vmath::vec3> &particles, double dt) {
     _updateTargetDensities(particles);
     _updateDensities(dt);
 }
 
-void FluidBrickGrid::_updateTargetDensities(std::vector<glm::vec3> &points) {
+void FluidBrickGrid::_updateTargetDensities(std::vector<vmath::vec3> &points) {
     Array3d<int> _countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
     GridIndex g;
     for (unsigned int i = 0; i < points.size(); i++) {
@@ -373,8 +373,8 @@ void FluidBrickGrid::_updateDensities(double dt) {
 }
 
 float FluidBrickGrid::_getBrickIntensity(int i, int j, int k) {
-    glm::vec3 pmin = glm::vec3(i*_brick.width, j*_brick.height, k*_brick.depth);
-    glm::vec3 pmax = pmin + glm::vec3(_brick.width, _brick.height, _brick.depth);
+    vmath::vec3 pmin = vmath::vec3(i*_brick.width, j*_brick.height, k*_brick.depth);
+    vmath::vec3 pmax = pmin + vmath::vec3(_brick.width, _brick.height, _brick.depth);
     AABB bbox = AABB(pmin, pmax);
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(bbox, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
@@ -425,13 +425,13 @@ void FluidBrickGrid::_updateBrickGrid(LevelSet &levelset) {
     double bh = _brick.height;
     double bd = _brick.depth;
 
-    glm::vec3 coffset = glm::vec3(0.5*bw, 0.5*bh, 0.5*bd);
+    vmath::vec3 coffset = vmath::vec3(0.5*bw, 0.5*bh, 0.5*bd);
 
-    glm::vec3 p;
+    vmath::vec3 p;
     for (int k = 0;  k < _brickGrid.depth; k++) {
         for (int j = 0;  j < _brickGrid.height; j++) {
             for (int i = 0;  i < _brickGrid.width; i++) {
-                p = coffset + glm::vec3(i*bw, j*bh, k*bd);
+                p = coffset + vmath::vec3(i*bw, j*bh, k*bd);
 
                 if (Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize) && 
                         levelset.isPointInInsideCell(p)) {

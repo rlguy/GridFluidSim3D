@@ -24,20 +24,20 @@ freely, subject to the following restrictions:
 
 #include <vector>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "aabb.h"
 
 class SphericalFluidSource : public FluidSource
 {
 public:
     SphericalFluidSource();
-    SphericalFluidSource(glm::vec3 pos, double r);
-    SphericalFluidSource(glm::vec3 pos, double r, glm::vec3 velocity);
+    SphericalFluidSource(vmath::vec3 pos, double r);
+    SphericalFluidSource(vmath::vec3 pos, double r, vmath::vec3 velocity);
     ~SphericalFluidSource();
 
     void setRadius(double r);
     double getRadius();
-    void setCenter(glm::vec3 p);
+    void setCenter(vmath::vec3 p);
     void expand(double val);
 
     virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,

@@ -39,9 +39,9 @@ void LevelSetField::clear() {
     _distanceField.fill(0.0);
 }
 
-double LevelSetField::getFieldValue(glm::vec3 p) {
+double LevelSetField::getFieldValue(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, dx);
-    glm::vec3 gp = Grid3d::GridIndexToPosition(g, dx);
+    vmath::vec3 gp = Grid3d::GridIndexToPosition(g, dx);
 
     double refx = gp.x - 0.5*dx;
     double refy = gp.y - 0.5*dx;
@@ -50,7 +50,7 @@ double LevelSetField::getFieldValue(glm::vec3 p) {
     int refj = g.j - 1; 
     int refk = g.k - 1;
 
-    glm::vec3 offset = p - gp;
+    vmath::vec3 offset = p - gp;
     if (offset.x >= 0.5*dx) {
         refi++;
         refx += dx;

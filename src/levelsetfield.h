@@ -20,6 +20,8 @@ freely, subject to the following restrictions:
 #ifndef LEVELSETFIEL_H
 #define LEVELSETFIEL_H
 
+#include <limits>
+
 #include "surfacefield.h"
 #include "interpolation.h"
 
@@ -32,7 +34,7 @@ public:
     ~LevelSetField();
 
     virtual void clear();
-    virtual double getFieldValue(glm::vec3 p);
+    virtual double getFieldValue(vmath::vec3 p);
 
     void setSignedDistanceField(Array3d<float> distField);
     bool isCellInside(GridIndex g) { return _distanceField(g) > 0.0; };

@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 CuboidFluidSource::CuboidFluidSource() {
 }
 
-CuboidFluidSource::CuboidFluidSource(glm::vec3 position, 
+CuboidFluidSource::CuboidFluidSource(vmath::vec3 position, 
                                      double w, double h, double d) : 
                                      FluidSource(position), 
                                      _bbox(position, w, h, d) {
@@ -34,14 +34,14 @@ CuboidFluidSource::CuboidFluidSource(AABB bbox) :
                                      _bbox(bbox) {
 }
 
-CuboidFluidSource::CuboidFluidSource(glm::vec3 position, 
+CuboidFluidSource::CuboidFluidSource(vmath::vec3 position, 
                                      double w, double h, double d,
-                                     glm::vec3 velocity) : 
+                                     vmath::vec3 velocity) : 
                                      FluidSource(position, velocity), 
                                      _bbox(position, w, h, d) {
 }
 
-CuboidFluidSource::CuboidFluidSource(AABB bbox, glm::vec3 velocity) : 
+CuboidFluidSource::CuboidFluidSource(AABB bbox, vmath::vec3 velocity) : 
                                      FluidSource(bbox.position, velocity), 
                                      _bbox(bbox) {
 }
@@ -83,20 +83,20 @@ AABB CuboidFluidSource::getBoundingBox() {
     return _bbox;
 }
 
-void CuboidFluidSource::setCenter(glm::vec3 pos) {
-    glm::vec3 c = getCenter();
+void CuboidFluidSource::setCenter(vmath::vec3 pos) {
+    vmath::vec3 c = getCenter();
     translate(pos - c);
     _bbox.position = pos;
 }
 
-glm::vec3 CuboidFluidSource::getCenter() {
-    return glm::vec3(position.x + 0.5*_bbox.width, 
+vmath::vec3 CuboidFluidSource::getCenter() {
+    return vmath::vec3(position.x + 0.5*_bbox.width, 
                      position.y + 0.5*_bbox.width, 
                      position.z + 0.5*_bbox.width);
 }
 
 void CuboidFluidSource::expand(double value) {
-    glm::vec3 p = position - glm::vec3(value, value, value);
+    vmath::vec3 p = position - vmath::vec3(value, value, value);
     _bbox = AABB(p, _bbox.width + 2*value, 
                     _bbox.height + 2*value, 
                     _bbox.depth + 2*value);

@@ -214,44 +214,44 @@ void MACVelocityField::addW(int i, int j, int k, double val) {
     _w.add(i, j, k, (float)val);
 }
 
-glm::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
+vmath::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
     assert(isIndexInRangeU(i, j, k));
 
     double gx = (double)(i-1)*_dx;
     double gy = (double)j*_dx;
     double gz = (double)k*_dx;
 
-    return glm::vec3(gx + _dx, gy + 0.5*_dx, gz + 0.5*_dx);
+    return vmath::vec3(gx + _dx, gy + 0.5*_dx, gz + 0.5*_dx);
 }
 
-glm::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
+vmath::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
     assert(isIndexInRangeV(i, j, k));
 
     double gx = (double)i*_dx;
     double gy = (double)(j-1)*_dx;
     double gz = (double)k*_dx;
 
-    return glm::vec3(gx + 0.5*_dx, gy + _dx, gz + 0.5*_dx);
+    return vmath::vec3(gx + 0.5*_dx, gy + _dx, gz + 0.5*_dx);
 }
 
-glm::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
+vmath::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
     assert(isIndexInRangeW(i, j, k));
 
     double gx = (float)i*_dx;
     double gy = (float)j*_dx;
     double gz = (float)(k-1)*_dx;
 
-    return glm::vec3(gx + 0.5f*_dx, gy + 0.5f*_dx, gz + _dx);
+    return vmath::vec3(gx + 0.5f*_dx, gy + 0.5f*_dx, gz + _dx);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
     double zavg = 0.5 * (W(i, j, k + 1) + W(i, j, k));
 
-    return glm::vec3(xavg, yavg, zavg);
+    return vmath::vec3(xavg, yavg, zavg);
 }
 
 float MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k) {
@@ -296,7 +296,7 @@ float MACVelocityField::evaluateMaximumVelocityMagnitude() {
     return (float)max;
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
     assert(isIndexInRangeU(i, j, k));
 
     // Shift reference coordinate to the left. The formula used is for calculating
@@ -309,10 +309,10 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
     double vy = 0.25 * (V(i, j, k) + V(i, j+1, k) + V(i+1, j, k) + V(i+1, j+1, k));
     double vz = 0.25 * (W(i, j, k) + W(i, j, k+1) + W(i+1, j, k) + W(i+1, j, k+1));
 
-    return glm::vec3(vx, vy, vz);
+    return vmath::vec3(vx, vy, vz);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
     assert(isIndexInRangeV(i, j, k));
 
     j--;
@@ -321,10 +321,10 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
     double vy = V(i, j + 1, k);
     double vz = 0.25 * (W(i, j, k) + W(i, j, k+1) + W(i, j+1, k) + W(i, j+1, k+1));
 
-    return glm::vec3(vx, vy, vz);
+    return vmath::vec3(vx, vy, vz);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
     assert(isIndexInRangeW(i, j, k));
 
     k--;
@@ -333,7 +333,7 @@ glm::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
     double vy = 0.25 * (V(i, j, k) + V(i, j+1, k) + V(i, j, k+1) + V(i, j+1, k+1));
     double vz = W(i, j, k + 1);
 
-    return glm::vec3(vx, vy, vz);
+    return vmath::vec3(vx, vy, vz);
 }
 
 double MACVelocityField::_interpolateU(double x, double y, double z) {
@@ -754,47 +754,47 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
 }
 
 
-glm::vec3 MACVelocityField::evaluateVelocityAtPosition(glm::vec3 pos) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtPosition(vmath::vec3 pos) {
     return evaluateVelocityAtPosition(pos.x, pos.y, pos.z);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
     if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
-        return glm::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3(0.0, 0.0, 0.0);
     }
 
     double xvel = _interpolateU(x, y, z);
     double yvel = _interpolateV(x, y, z);
     double zvel = _interpolateW(x, y, z);
 
-    return glm::vec3(xvel, yvel, zvel);
+    return vmath::vec3(xvel, yvel, zvel);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(glm::vec3 pos) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(vmath::vec3 pos) {
     return evaluateVelocityAtPositionLinear(pos.x, pos.y, pos.z);
 }
 
-glm::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double y, double z) {
+vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double y, double z) {
     if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
-        return glm::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3(0.0, 0.0, 0.0);
     }
 
     double xvel = _interpolateLinearU(x, y, z);
     double yvel = _interpolateLinearV(x, y, z);
     double zvel = _interpolateLinearW(x, y, z);
 
-    return glm::vec3(xvel, yvel, zvel);
+    return vmath::vec3(xvel, yvel, zvel);
 }
 
-glm::vec3 MACVelocityField::evaluateChangeInVelocityAtPosition(glm::vec3 p, 
+vmath::vec3 MACVelocityField::evaluateChangeInVelocityAtPosition(vmath::vec3 p, 
                                                                MACVelocityField &savedField) {
     if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
-        return glm::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3(0.0, 0.0, 0.0);
     }
 
     double xvel = _interpolateDeltaVelocityU(p.x, p.y, p.z, savedField);
     double yvel = _interpolateDeltaVelocityV(p.x, p.y, p.z, savedField);
     double zvel = _interpolateDeltaVelocityW(p.x, p.y, p.z, savedField);
 
-    return glm::vec3(xvel, yvel, zvel);
+    return vmath::vec3(xvel, yvel, zvel);
 }

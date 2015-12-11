@@ -25,7 +25,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "interpolation.h"
 #include "macvelocityfield.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 class TurbulenceField
 {
@@ -36,14 +36,14 @@ public:
     void calculateTurbulenceField(MACVelocityField *vfield,
                                   std::vector<GridIndex> &fluidCells);
     void destroyTurbulenceField();
-    double evaluateTurbulenceAtPosition(glm::vec3 p);
+    double evaluateTurbulenceAtPosition(vmath::vec3 p);
 
 private:
     
     void _getVelocityGrid(MACVelocityField *macfield, 
-                          Array3d<glm::vec3> &vgrid);
+                          Array3d<vmath::vec3> &vgrid);
     double _calculateTurbulenceAtGridCell(int i, int j, int k, 
-                                          Array3d<glm::vec3> &vgrid);
+                                          Array3d<vmath::vec3> &vgrid);
 
     int M_FLUID = 1;
 

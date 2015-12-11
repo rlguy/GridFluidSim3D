@@ -27,7 +27,7 @@ SpatialPointGrid::SpatialPointGrid() {
 SpatialPointGrid::SpatialPointGrid(int isize, int jsize, int ksize, double dx) :
                                         _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx),
                                         _grid(_isize, _jsize, _ksize),
-                                        _bbox(glm::vec3(0.0, 0.0, 0.0), 
+                                        _bbox(vmath::vec3(0.0, 0.0, 0.0), 
                                               _dx*_isize, _dx*_jsize, _dx*_ksize) {
 }
 
@@ -44,7 +44,7 @@ void SpatialPointGrid::clear() {
     _grid.fill(CellNode());
 }
 
-std::vector<GridPointReference> SpatialPointGrid::insert(std::vector<glm::vec3> &points) {
+std::vector<GridPointReference> SpatialPointGrid::insert(std::vector<vmath::vec3> &points) {
     clear();
 
     std::vector<GridPointReference> referenceList;
@@ -59,26 +59,26 @@ bool compareByFlatGridIndex(const std::pair<GridPoint, unsigned int> p1, std::pa
     return p1.second < p2.second;
 }
 
-void SpatialPointGrid::queryPointsInsideSphere(glm::vec3 p, double r, std::vector<glm::vec3> &points) {
+void SpatialPointGrid::queryPointsInsideSphere(vmath::vec3 p, double r, std::vector<vmath::vec3> &points) {
     _queryPointsInsideSphere(p, r, -1, points);
 }
 
-void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r, std::vector<glm::vec3> &points) {
+void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r, std::vector<vmath::vec3> &points) {
     assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
 
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     _queryPointsInsideSphere(gp.position, r, gp.ref.id, points);
 }
 
-void SpatialPointGrid::queryPointsInsideSphere(glm::vec3 p, double r, 
+void SpatialPointGrid::queryPointsInsideSphere(vmath::vec3 p, double r, 
                                                std::vector<bool> &exclusions, 
-                                               std::vector<glm::vec3> &points) {
+                                               std::vector<vmath::vec3> &points) {
     _queryPointsInsideSphere(p, r, exclusions, points);
 }
 
 void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r, 
                                                std::vector<bool> &exclusions, 
-                                               std::vector<glm::vec3> &points) {
+                                               std::vector<vmath::vec3> &points) {
     assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
     assert(exclusions.size() == _gridPoints.size());
 
@@ -86,7 +86,7 @@ void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r,
     _queryPointsInsideSphere(gp.position, r, exclusions, points);
 }
 
-void SpatialPointGrid::queryPointReferencesInsideSphere(glm::vec3 p, double r, 
+void SpatialPointGrid::queryPointReferencesInsideSphere(vmath::vec3 p, double r, 
                                                         std::vector<GridPointReference> &refs) {
     _queryPointReferencesInsideSphere(p, r, -1, refs);
 }
@@ -99,7 +99,7 @@ void SpatialPointGrid::queryPointReferencesInsideSphere(GridPointReference ref, 
     _queryPointReferencesInsideSphere(gp.position, r, gp.ref.id, refs);
 }
 
-void SpatialPointGrid::queryPointReferencesInsideSphere(glm::vec3 p, double r, 
+void SpatialPointGrid::queryPointReferencesInsideSphere(vmath::vec3 p, double r, 
                                                         std::vector<bool> &exclusions, 
                                                         std::vector<GridPointReference> &refs) {
     _queryPointReferencesInsideSphere(p, r, exclusions, refs);
@@ -115,11 +115,11 @@ void SpatialPointGrid::queryPointReferencesInsideSphere(GridPointReference ref, 
     _queryPointReferencesInsideSphere(gp.position, r, exclusions, refs);
 }
 
-void SpatialPointGrid::queryPointsInsideAABB(AABB bbox, std::vector<glm::vec3> &points) {
+void SpatialPointGrid::queryPointsInsideAABB(AABB bbox, std::vector<vmath::vec3> &points) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(bbox, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -143,7 +143,7 @@ void SpatialPointGrid::queryPointReferencesInsideAABB(AABB bbox, std::vector<Gri
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(bbox, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -163,8 +163,8 @@ void SpatialPointGrid::queryPointReferencesInsideAABB(AABB bbox, std::vector<Gri
     }
 }
 
-void SpatialPointGrid::getConnectedPoints(glm::vec3 seed, double radius, 
-                                          std::vector<glm::vec3> &points) {
+void SpatialPointGrid::getConnectedPoints(vmath::vec3 seed, double radius, 
+                                          std::vector<vmath::vec3> &points) {
     std::vector<GridPointReference> nearestRefs;
     queryPointReferencesInsideSphere(seed, radius, nearestRefs);
 
@@ -175,7 +175,7 @@ void SpatialPointGrid::getConnectedPoints(glm::vec3 seed, double radius,
     _getConnectedPoints(nearestRefs[0], radius, points);
 }
 
-void SpatialPointGrid::getConnectedPointReferences(glm::vec3 seed, double radius, 
+void SpatialPointGrid::getConnectedPointReferences(vmath::vec3 seed, double radius, 
                                                    std::vector<GridPointReference> &refs) {
     std::vector<GridPointReference> nearestRefs;
     queryPointReferencesInsideSphere(seed, radius, nearestRefs);
@@ -189,7 +189,7 @@ void SpatialPointGrid::getConnectedPointReferences(glm::vec3 seed, double radius
 }
 
 void SpatialPointGrid::getConnectedPoints(GridPointReference seed, double radius, 
-                                          std::vector<glm::vec3> &points) {
+                                          std::vector<vmath::vec3> &points) {
     _getConnectedPoints(seed, radius, points);
 }
 
@@ -198,21 +198,21 @@ void SpatialPointGrid::getConnectedPointReferences(GridPointReference seed, doub
     _getConnectedPointReferences(seed, radius, refs);
 }
 
-glm::vec3 SpatialPointGrid::getPointFromReference(GridPointReference ref) {
+vmath::vec3 SpatialPointGrid::getPointFromReference(GridPointReference ref) {
     assert(ref.id >= 0 && ref.id < (int)_refIDToGridPointIndexTable.size());
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     return gp.position;
 }
 
 void SpatialPointGrid::getConnectedPointComponents(double radius, 
-                                                   std::vector<std::vector<glm::vec3> > &pointsList) {
+                                                   std::vector<std::vector<vmath::vec3> > &pointsList) {
 
     std::vector<std::vector<GridPointReference> > refsList;
     getConnectedPointReferenceComponents(radius, refsList);
 
     GridPoint gp;
     for (unsigned int i = 0; i < refsList.size(); i++) {
-        std::vector<glm::vec3> points;
+        std::vector<vmath::vec3> points;
         points.reserve(refsList[i].size());
         for (unsigned int idx = 0; idx < refsList[i].size(); idx++) {
             int id = refsList[i][idx].id;
@@ -244,7 +244,7 @@ void SpatialPointGrid::getConnectedPointReferenceComponents(double radius,
 }
 
 
-void SpatialPointGrid::_sortGridPointsByGridIndex(std::vector<glm::vec3> &points,
+void SpatialPointGrid::_sortGridPointsByGridIndex(std::vector<vmath::vec3> &points,
                                                   std::vector<GridPoint> &sortedPoints,
                                                   std::vector<GridPointReference> &refList) {
 
@@ -320,14 +320,14 @@ void SpatialPointGrid::_insertCellNodesIntoGrid() {
     }
 }
 
-void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r, int refID, 
-                                                std::vector<glm::vec3> &points) {
+void SpatialPointGrid::_queryPointsInsideSphere(vmath::vec3 p, double r, int refID, 
+                                                std::vector<vmath::vec3> &points) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, r, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
     double maxdistsq = r*r;
     double distsq;
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -339,7 +339,7 @@ void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r, int refID
                         gp = _gridPoints[idx];
                         if (gp.ref.id != refID) {
                             v = gp.position - p;
-                            distsq = glm::dot(v, v);
+                            distsq = vmath::dot(v, v);
                             if (distsq < maxdistsq) {
                                 points.push_back(gp.position);
                             }
@@ -351,9 +351,9 @@ void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r, int refID
     }
 }
 
-void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r, 
+void SpatialPointGrid::_queryPointsInsideSphere(vmath::vec3 p, double r, 
                                                 std::vector<bool> &exclusions, 
-                                                std::vector<glm::vec3> &points) {
+                                                std::vector<vmath::vec3> &points) {
     assert(exclusions.size() == _gridPoints.size());
 
     GridIndex gmin, gmax;
@@ -361,7 +361,7 @@ void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r,
 
     double maxdistsq = r*r;
     double distsq;
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -373,7 +373,7 @@ void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r,
                         gp = _gridPoints[idx];
                         if (!exclusions[gp.ref.id]) {
                             v = gp.position - p;
-                            distsq = glm::dot(v, v);
+                            distsq = vmath::dot(v, v);
                             if (distsq < maxdistsq) {
                                 points.push_back(gp.position);
                             }
@@ -385,14 +385,14 @@ void SpatialPointGrid::_queryPointsInsideSphere(glm::vec3 p, double r,
     }
 }
 
-void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r, int refID, 
+void SpatialPointGrid::_queryPointReferencesInsideSphere(vmath::vec3 p, double r, int refID, 
                                                          std::vector<GridPointReference> &refs) {
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, r, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
     double maxdistsq = r*r;
     double distsq;
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -404,7 +404,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r, 
                         gp = _gridPoints[idx];
                         if (gp.ref.id != refID) {
                             v = gp.position - p;
-                            distsq = glm::dot(v, v);
+                            distsq = vmath::dot(v, v);
                             if (distsq < maxdistsq) {
                                 refs.push_back(gp.ref);
                             }
@@ -416,7 +416,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r, 
     }
 }
 
-void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r, 
+void SpatialPointGrid::_queryPointReferencesInsideSphere(vmath::vec3 p, double r, 
                                                          std::vector<bool> &exclusions, 
                                                          std::vector<GridPointReference> &refs) {
     assert(exclusions.size() == _gridPoints.size());
@@ -426,7 +426,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r,
 
     double maxdistsq = r*r;
     double distsq;
-    glm::vec3 v;
+    vmath::vec3 v;
     GridPoint gp;
     CellNode node;
     for (int k = gmin.k; k <= gmax.k; k++) {
@@ -438,7 +438,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r,
                         gp = _gridPoints[idx];
                         if (!exclusions[gp.ref.id]) {
                             v = gp.position - p;
-                            distsq = glm::dot(v, v);
+                            distsq = vmath::dot(v, v);
                             if (distsq < maxdistsq) {
                                 refs.push_back(gp.ref);
                             }
@@ -451,7 +451,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(glm::vec3 p, double r,
 }
 
 void SpatialPointGrid::_getConnectedPoints(GridPointReference seed, double radius, 
-                                           std::vector<glm::vec3> &points) {
+                                           std::vector<vmath::vec3> &points) {
 
     std::vector<bool> visitedRefs(_gridPoints.size(), false);
     std::vector<GridPointReference> queue;

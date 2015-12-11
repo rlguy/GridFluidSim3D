@@ -20,8 +20,6 @@ freely, subject to the following restrictions:
 #ifndef PARTICLEMESHER_H
 #define PARTICLEMESHER_H
 
-#define GLM_FORCE_RADIANS
-
 #include <stdio.h>
 #include <iostream>
 
@@ -35,9 +33,7 @@ freely, subject to the following restrictions:
 #include "polygonizer3d.h"
 #include "stopwatch.h"
 #include "threading.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/quaternion.hpp"
-#include "glm/gtx/quaternion.hpp"
+#include "vmath.h"
 
 class ParticleMesher
 {
@@ -46,7 +42,7 @@ public:
     ParticleMesher(int isize, int jsize, int ksize, double dx);
     ~ParticleMesher();
 
-    TriangleMesh meshParticles(std::vector<glm::vec3> &particles, 
+    TriangleMesh meshParticles(std::vector<vmath::vec3> &particles, 
                                LevelSet &levelset,
                                Array3d<int> &materialGrid,
                                double particleRadius);
@@ -56,92 +52,92 @@ public:
 private: 
 
     struct SurfaceParticle {
-        glm::vec3 position;
+        vmath::vec3 position;
         GridPointReference ref;
         int componentID;
 
-        SurfaceParticle() : position(glm::vec3(0.0, 0.0, 0.0)), 
+        SurfaceParticle() : position(vmath::vec3(0.0, 0.0, 0.0)), 
                             ref(-1),
                             componentID(-1) {}
-        SurfaceParticle(glm::vec3 p) : position(p), 
+        SurfaceParticle(vmath::vec3 p) : position(p), 
                                        ref(-1),
                                        componentID(-1) {}
-        SurfaceParticle(glm::vec3 p, GridPointReference r) : 
+        SurfaceParticle(vmath::vec3 p, GridPointReference r) : 
                                        position(p), 
                                        ref(r),
                                        componentID(-1) {}
-        SurfaceParticle(glm::vec3 p, GridPointReference r, int compID) : 
+        SurfaceParticle(vmath::vec3 p, GridPointReference r, int compID) : 
                                        position(p), 
                                        ref(r),
                                        componentID(compID) {}
     };
 
     struct IsotropicParticle {
-        glm::vec3 position;
+        vmath::vec3 position;
 
         IsotropicParticle() {}
-        IsotropicParticle(glm::vec3 p) : position(p) {}
+        IsotropicParticle(vmath::vec3 p) : position(p) {}
     };
 
     struct AnisotropicParticle {
-        glm::vec3 position;
-        glm::mat3 anisotropy;
+        vmath::vec3 position;
+        vmath::mat3 anisotropy;
 
         AnisotropicParticle() {}
-        AnisotropicParticle(glm::vec3 p) : position(p), 
-                                           anisotropy(glm::mat3(1.0)) {}
-        AnisotropicParticle(glm::vec3 p, glm::mat3 G) : position(p), 
+        AnisotropicParticle(vmath::vec3 p) : position(p), 
+                                           anisotropy(vmath::mat3(1.0)) {}
+        AnisotropicParticle(vmath::vec3 p, vmath::mat3 G) : position(p), 
                                                         anisotropy(G) {}
     };
 
     struct SVD {
-        glm::mat3 rotation;
-        glm::vec3 diag;
+        vmath::mat3 rotation;
+        vmath::vec3 diag;
 
         SVD() {}
-        SVD(glm::mat3 rot, glm::vec3 d) : rotation(rot), diag(d) {}
-        SVD(glm::vec3 d, glm::mat3 rot) : rotation(rot), diag(d) {}
+        SVD(vmath::mat3 rot, vmath::vec3 d) : rotation(rot), diag(d) {}
+        SVD(vmath::vec3 d, vmath::mat3 rot) : rotation(rot), diag(d) {}
     };
 
     void _clear();
-    void _computeSurfaceReconstructionParticles(std::vector<glm::vec3> &particles, 
+    void _computeSurfaceReconstructionParticles(std::vector<vmath::vec3> &particles, 
                                                 LevelSet &levelset,
                                                 std::vector<IsotropicParticle> &iso,
                                                 std::vector<AnisotropicParticle> &aniso);
-    std::vector<glm::vec3> _filterHighDensityParticles(std::vector<glm::vec3> &particles);
-    void _sortParticlesBySurfaceDistance(std::vector<glm::vec3> &allParticles,
-                                         std::vector<glm::vec3> &insideParticles,
-                                         std::vector<glm::vec3> &surfaceParticles,
+    std::vector<vmath::vec3> _filterHighDensityParticles(std::vector<vmath::vec3> &particles);
+    void _sortParticlesBySurfaceDistance(std::vector<vmath::vec3> &allParticles,
+                                         std::vector<vmath::vec3> &insideParticles,
+                                         std::vector<vmath::vec3> &surfaceParticles,
                                          std::vector<int> &nearSurfaceParticles,
                                          std::vector<int> &farSurfaceParticles,
                                          LevelSet &levelset);
-    void _initializeSurfaceParticleSpatialGrid(std::vector<glm::vec3> &particles);
+    void _initializeSurfaceParticleSpatialGrid(std::vector<vmath::vec3> &particles);
     void _updateNearFarSurfaceParticleReferences(std::vector<int> nearParticles,
                                                  std::vector<int> farParticles);
     void _updateSurfaceParticleComponentIDs();
     void _smoothSurfaceParticlePositions();
     void _computeSmoothedNearSurfaceParticlePositions();
     void _smoothRangeOfSurfaceParticlePositions(int startidx, int endidx);
-    glm::vec3 _getSmoothedParticlePosition(GridPointReference ref,
+    vmath::vec3 _getSmoothedParticlePosition(GridPointReference ref,
                                            double radius,
                                            std::vector<GridPointReference> &refs);
-    glm::vec3 _getWeightedMeanParticlePosition(GridPointReference ref,
+    vmath::vec3 _getWeightedMeanParticlePosition(GridPointReference ref,
                                                std::vector<GridPointReference> &neighbours);
 
-    void _computeAnisotropyMatrices(std::vector<glm::mat3x3> &matrices);
+    void _computeAnisotropyMatrices(std::vector<vmath::mat3> &matrices);
     void _computeCovarianceMatrices();
     void _computeRangeOfCovarianceMatrices(int startidx, int endidx);
-    glm::mat3 _computeCovarianceMatrix(GridPointReference ref, double radius,
+    vmath::mat3 _computeCovarianceMatrix(GridPointReference ref, double radius,
                                        std::vector<GridPointReference> &neighbours);
     void _computeSVDMatrices();
-    void _covarianceMatrixToSVD(glm::mat3 &covariance, SVD &svd);
-    glm::quat _diagonalizeMatrix(glm::mat3 A);
-    glm::mat3 _SVDToAnisotropicMatrix(SVD &svd);
+    void _covarianceMatrixToSVD(vmath::mat3 &covariance, SVD &svd);
+    vmath::quat _diagonalizeMatrix(vmath::mat3 A);
+    vmath::mat3 _SVDToAnisotropicMatrix(SVD &svd);
 
     void _initializeSurfaceReconstructionParticles(std::vector<IsotropicParticle> &iso,
-                                                   std::vector<glm::vec3> &insideParticles,
+                                                   std::vector<vmath::vec3> &insideParticles,
                                                    std::vector<AnisotropicParticle> &aniso,
-                                                   std::vector<glm::mat3> &anisoMatrices);
+                                                   std::vector<vmath::mat3> &anisoMatrices);
 
     TriangleMesh _reconstructSurface(std::vector<IsotropicParticle> &iso,
                                      std::vector<AnisotropicParticle> &aniso,
@@ -178,8 +174,8 @@ private:
     std::vector<SurfaceParticle> _surfaceParticles;
     std::vector<GridPointReference> _nearSurfaceParticleRefs;
     std::vector<GridPointReference> _farSurfaceParticleRefs;
-    std::vector<glm::vec3> _smoothedPositions;
-    std::vector<glm::mat3> _covarianceMatrices;
+    std::vector<vmath::vec3> _smoothedPositions;
+    std::vector<vmath::mat3> _covarianceMatrices;
     std::vector<SVD> _SVDMatrices;
 };
 

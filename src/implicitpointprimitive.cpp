@@ -20,18 +20,18 @@ freely, subject to the following restrictions:
 #include "implicitpointprimitive.h"
 
 
-ImplicitPointPrimitive::ImplicitPointPrimitive() : _position(glm::vec3(0.0, 0.0, 0.0))
+ImplicitPointPrimitive::ImplicitPointPrimitive() : _position(vmath::vec3(0.0, 0.0, 0.0))
 {
     _initFieldFunctionCoefficients();
 }
 
 ImplicitPointPrimitive::ImplicitPointPrimitive(double x, double y, double z, double r) :
-                                               _position(glm::vec3(x, y, z)), _radius(r)
+                                               _position(vmath::vec3(x, y, z)), _radius(r)
 {
     _initFieldFunctionCoefficients();
 }
 
-ImplicitPointPrimitive::ImplicitPointPrimitive(glm::vec3 p, double r) :
+ImplicitPointPrimitive::ImplicitPointPrimitive(vmath::vec3 p, double r) :
                                                _position(p), _radius(r)
 {
     _initFieldFunctionCoefficients();
@@ -48,9 +48,9 @@ void ImplicitPointPrimitive::_initFieldFunctionCoefficients() {
     _coef3 = (22.0 / 9.0)*(1.0 / (r*r));
 }
 
-double ImplicitPointPrimitive::getFieldValue(glm::vec3 p) {
-    glm::vec3 v = p - _position;
-    double distsq = glm::dot(v, v);
+double ImplicitPointPrimitive::getFieldValue(vmath::vec3 p) {
+    vmath::vec3 v = p - _position;
+    double distsq = vmath::dot(v, v);
 
     if (distsq > _radius*_radius) {
         return 0.0;

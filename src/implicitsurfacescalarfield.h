@@ -22,8 +22,9 @@ freely, subject to the following restrictions:
 
 #include <stdio.h>
 #include <iostream>
+#include <limits>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
@@ -44,15 +45,15 @@ public:
     void enableCellCenterValues();
     void enableWeightField();
     void applyWeightField();
-    void addPoint(glm::vec3 pos, double radius);
-    void addPoint(glm::vec3 pos);
-    void addPointValue(glm::vec3 pos, double radius, double value);
-    void addPointValue(glm::vec3 pos, double value);
-    void addCuboid(glm::vec3 pos, double w, double h, double d);
-    void addEllipsoid(glm::vec3 p, glm::mat3 G, double r);
-    void addEllipsoid(glm::vec3 p, glm::mat3 G);
-    void addEllipsoidValue(glm::vec3 p, glm::mat3 G, double r, double value);
-    void addEllipsoidValue(glm::vec3 p, glm::mat3 G, double value);
+    void addPoint(vmath::vec3 pos, double radius);
+    void addPoint(vmath::vec3 pos);
+    void addPointValue(vmath::vec3 pos, double radius, double value);
+    void addPointValue(vmath::vec3 pos, double value);
+    void addCuboid(vmath::vec3 pos, double w, double h, double d);
+    void addEllipsoid(vmath::vec3 p, vmath::mat3 G, double r);
+    void addEllipsoid(vmath::vec3 p, vmath::mat3 G);
+    void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double r, double value);
+    void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double value);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setMaterialGrid(Array3d<int> &matGrid);
@@ -71,7 +72,7 @@ public:
     void setFieldValue(GridIndex g, double value);
     void setCellFieldValues(int i, int j, int k, double value);
     void setCellFieldValues(GridIndex g, double value);
-    double tricubicInterpolation(glm::vec3 p);
+    double tricubicInterpolation(vmath::vec3 p);
 
 private:
 
@@ -86,9 +87,9 @@ private:
     }
 
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
-    double _evaluateTrilinearFieldFunction(glm::vec3 v);
+    double _evaluateTrilinearFieldFunction(vmath::vec3 v);
 
-    void _calculateCenterCellValueForPoint(glm::vec3 p, int i, int j, int k);
+    void _calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k);
     void _calculateCenterCellValueForCuboid(AABB &bbox, int i, int j, int k);
 
     int M_SOLID = 2;

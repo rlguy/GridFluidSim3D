@@ -8,13 +8,13 @@ Quaternion::Quaternion() {
 }
 
 // quaternion from point
-Quaternion::Quaternion(glm::vec3 v) {
+Quaternion::Quaternion(vmath::vec3 v) {
     x = v.x, y = v.y, z = v.z;
     w = 0.0;
 }
 
 // quaternion from unit vector v, and angle rads
-Quaternion::Quaternion(glm::vec3 v, float rads) {
+Quaternion::Quaternion(vmath::vec3 v, float rads) {
     float sinval = sin(0.5*rads);
     x = v.x*sinval; y = v.y*sinval; z = v.z*sinval;
     w = cos(0.5*rads);
@@ -32,11 +32,11 @@ Quaternion::Quaternion(float nx, float ny, float nz, float rads)
 Quaternion Quaternion::mult(Quaternion q2) {
     float s1 = w;
     float s2 = q2.w;
-    glm::vec3 v1 = glm::vec3(x, y, z);
-    glm::vec3 v2 = glm::vec3(q2.x, q2.y, q2.z);
+    vmath::vec3 v1 = vmath::vec3(x, y, z);
+    vmath::vec3 v2 = vmath::vec3(q2.x, q2.y, q2.z);
 
-    float scalar = s1*s2 - glm::dot(v1, v2);
-    glm::vec3 vect = s1*v2 + s2*v1 + glm::cross(v1, v2);
+    float scalar = s1*s2 - vmath::dot(v1, v2);
+    vmath::vec3 vect = s1*v2 + s2*v1 + vmath::cross(v1, v2);
 
     Quaternion newQ = Quaternion();
     newQ.set(vect.x, vect.y, vect.z, scalar);
@@ -72,17 +72,17 @@ float Quaternion::length() {
 }
 
 // rotate vector v by this quaternion
-glm::vec3 Quaternion::rotateVector(glm::vec3 v) {
+vmath::vec3 Quaternion::rotateVector(vmath::vec3 v) {
     Quaternion vq = Quaternion(v);
     Quaternion r = (this->mult(vq)).mult(this->inverse());
 
-    return glm::vec3(r.x, r.y, r.z);
+    return vmath::vec3(r.x, r.y, r.z);
 }
 
 // generate 4d rotation matrix from this quaternion
-glm::mat4 Quaternion::getRotationMatrix() {
-    return glm::transpose(
-           glm::mat4( 1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0,
+vmath::mat4 Quaternion::getRotationMatrix() {
+    return vmath::transpose(
+           vmath::mat4( 1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0.0,
                       2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w, 0.0,
                       2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0.0,
                       0.0, 0.0, 0.0, 1.0 ));

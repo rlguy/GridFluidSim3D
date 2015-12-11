@@ -50,7 +50,7 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &c
     AABB tbbox = AABB(t, _surfaceMesh.vertices);
     tbbox.getOverlappingGridCells(_dx, testcells);
 
-    AABB cbbox = AABB(glm::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
+    AABB cbbox = AABB(vmath::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
     for (unsigned int i = 0; i < testcells.size(); i++) {
         cbbox.position = _gridIndexToPosition(testcells[i]);
         if (cbbox.isOverlappingTriangle(t, _surfaceMesh.vertices)) {
@@ -206,26 +206,26 @@ void LevelSet::_squareRootDistanceField() {
     }
 }
 
-void LevelSet::_updateCellSign(GridIndex g, std::vector<glm::vec3> &triangleCenters, 
-                                            std::vector<glm::vec3> &triangleDirections) {
+void LevelSet::_updateCellSign(GridIndex g, std::vector<vmath::vec3> &triangleCenters, 
+                                            std::vector<vmath::vec3> &triangleDirections) {
     // Use this convention:
     //     outside mesh, signed distance is negative
     //     inside mesh, signed distance is positive
 
     int tidx = _indexGrid(g);
-    glm::vec3 p = _gridIndexToCellCenter(g);
-    glm::vec3 ct = triangleCenters[tidx];
-    glm::vec3 n = triangleDirections[tidx];
-    glm::vec3 v = ct - p;
+    vmath::vec3 p = _gridIndexToCellCenter(g);
+    vmath::vec3 ct = triangleCenters[tidx];
+    vmath::vec3 n = triangleDirections[tidx];
+    vmath::vec3 v = ct - p;
 
-    if (glm::dot(v, n) < 0) {
+    if (vmath::dot(v, n) < 0) {
         _signedDistance.set(g, (float)-1.0f*_signedDistance(g));
     }
 }
 
 void LevelSet::_calculateDistanceFieldSigns() {
-    std::vector<glm::vec3> triangleFaceDirections;
-    std::vector<glm::vec3> triangleFaceCenters;
+    std::vector<vmath::vec3> triangleFaceDirections;
+    std::vector<vmath::vec3> triangleFaceCenters;
     triangleFaceDirections.reserve(_surfaceMesh.triangles.size());
     triangleFaceCenters.reserve(_surfaceMesh.triangles.size());
 
@@ -314,47 +314,47 @@ void LevelSet::calculateSignedDistanceField(int numLayers) {
 }
 
 double LevelSet::_minDistToTriangleSquared(GridIndex g, int tidx) {
-    glm::vec3 p = _gridIndexToCellCenter(g);
+    vmath::vec3 p = _gridIndexToCellCenter(g);
     return _minDistToTriangleSquared(p, tidx);
 }
 
-double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx) {
+double LevelSet::_minDistToTriangleSquared(vmath::vec3 p, int tidx) {
     if (tidx < 0 || (unsigned int)tidx > _surfaceMesh.triangles.size()) {
         return std::numeric_limits<double>::infinity();
     }
 
-    glm::vec3 tri[3];
+    vmath::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(tidx, tri);
-    glm::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
-    glm::vec3 v = tp - p;
-    return glm::dot(v, v);
+    vmath::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
+    vmath::vec3 v = tp - p;
+    return vmath::dot(v, v);
 }
 
-double LevelSet::_minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point) {
+double LevelSet::_minDistToTriangleSquared(vmath::vec3 p, int tidx, vmath::vec3 *point) {
     if (tidx < 0 || (unsigned int)tidx > _surfaceMesh.triangles.size()) {
         return std::numeric_limits<double>::infinity();
     }
 
-    glm::vec3 tri[3];
+    vmath::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(tidx, tri);
-    glm::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
-    glm::vec3 v = tp - p;
+    vmath::vec3 tp = Collision::findClosestPointOnTriangle(p, tri[0], tri[1], tri[2]);
+    vmath::vec3 v = tp - p;
 
     *point = tp;
-    return glm::dot(v, v);
+    return vmath::dot(v, v);
 }
 
-glm::vec3 LevelSet::_findClosestPointOnSurface(GridIndex g) {
+vmath::vec3 LevelSet::_findClosestPointOnSurface(GridIndex g) {
     assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && _isDistanceSet(g));
 
-    glm::vec3 tri[3];
+    vmath::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(_indexGrid(g), tri);
-    glm::vec3 p0 = _gridIndexToCellCenter(g);
+    vmath::vec3 p0 = _gridIndexToCellCenter(g);
     
     return Collision::findClosestPointOnTriangle(p0, tri[0], tri[1], tri[2]);
 }
 
-glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
+vmath::vec3 LevelSet::_findClosestPointOnSurface(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
 
     GridIndex ns[7];
@@ -362,14 +362,14 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
     ns[6] = g;
 
     double mindistsq = std::numeric_limits<double>::infinity();
-    glm::vec3 minpoint = p;
+    vmath::vec3 minpoint = p;
     GridIndex n;
     for (int i = 0; i < 7; i++) {
         n = ns[i];
 
         if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && 
                 _isDistanceSet(n)) {
-            glm::vec3 surfacePoint;
+            vmath::vec3 surfacePoint;
             int tidx = _indexGrid(n);
 
             if (tidx < 0) {
@@ -388,7 +388,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p) {
     return minpoint;
 }
 
-glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p, int *tidx) {
+vmath::vec3 LevelSet::_findClosestPointOnSurface(vmath::vec3 p, int *tidx) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
 
     GridIndex ns[7];
@@ -396,7 +396,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p, int *tidx) {
     ns[6] = g;
 
     double mindistsq = std::numeric_limits<double>::infinity();
-    glm::vec3 minpoint = p;
+    vmath::vec3 minpoint = p;
     int mint = -1;
     GridIndex n;
     for (int i = 0; i < 7; i++) {
@@ -404,7 +404,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p, int *tidx) {
 
         if (Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && 
                 _isDistanceSet(n)) {
-            glm::vec3 surfacePoint;
+            vmath::vec3 surfacePoint;
             double distsq = _minDistToTriangleSquared(p, _indexGrid(n), &surfacePoint);
 
             if (distsq < mindistsq) {
@@ -419,7 +419,7 @@ glm::vec3 LevelSet::_findClosestPointOnSurface(glm::vec3 p, int *tidx) {
     return minpoint;
 }
 
-glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p) {
+vmath::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, vmath::vec3 p) {
     if (_isPointInsideSurface(p)) {
         return vgrid.evaluateVelocityAtPosition(p);
     } else {
@@ -430,20 +430,20 @@ glm::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::ve
     return vgrid.evaluateVelocityAtPosition(p);
 }
 
-glm::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {
+vmath::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {
     if (_isCellInsideSurface(g)) {
         return vgrid.evaluateVelocityAtCellCenter(g.i, g.j, g.k);
     } else {
-        glm::vec3 p = _findClosestPointOnSurface(g);
+        vmath::vec3 p = _findClosestPointOnSurface(g);
         return vgrid.evaluateVelocityAtPosition(p);
     }
 }
 
-glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p) {
+vmath::vec3 LevelSet::getClosestPointOnSurface(vmath::vec3 p) {
     return _findClosestPointOnSurface(p);
 }
 
-glm::vec3 LevelSet::getClosestPointOnSurface(glm::vec3 p, int *tidx) {
+vmath::vec3 LevelSet::getClosestPointOnSurface(vmath::vec3 p, int *tidx) {
     return _findClosestPointOnSurface(p, tidx);
 }
 
@@ -502,11 +502,11 @@ int LevelSet::_getRandomTriangle(std::vector<int> &tris,
     return tris.size() - 1;
 }
 
-glm::vec3 LevelSet::_getRandomPointInTriangle(int tidx) {
+vmath::vec3 LevelSet::_getRandomPointInTriangle(int tidx) {
     Triangle t = _surfaceMesh.triangles[tidx];
-    glm::vec3 A = _surfaceMesh.vertices[t.tri[0]];
-    glm::vec3 B = _surfaceMesh.vertices[t.tri[1]];
-    glm::vec3 C = _surfaceMesh.vertices[t.tri[2]];
+    vmath::vec3 A = _surfaceMesh.vertices[t.tri[0]];
+    vmath::vec3 B = _surfaceMesh.vertices[t.tri[1]];
+    vmath::vec3 C = _surfaceMesh.vertices[t.tri[2]];
 
     float r1 = (float)rand() / (float)(RAND_MAX);
     float r2 = (float)rand() / (float)(RAND_MAX);
@@ -515,7 +515,7 @@ glm::vec3 LevelSet::_getRandomPointInTriangle(int tidx) {
     return (1.0f - sqrtr1)*A + (sqrtr1*(1.0f - r2))*B + (r2*sqrtr1)*C;
 }
 
-void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &points,
+void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<vmath::vec3> &points,
                                                    std::vector<int> &tris) {
     double r = _surfaceCurvatureSampleRadius*_dx;
     double area = 3.141592653*r*r;
@@ -536,7 +536,7 @@ void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &point
     }
 
     int maxSamples = (int)fmin(_maxSurfaceCurvatureSamples, patch.size());
-    glm::vec3 p;
+    vmath::vec3 p;
     for (int i = 0; i < maxSamples; i++) {
         int tidx = _getRandomTriangle(patch, areaDistribution);
         p = _getRandomPointInTriangle(tidx);
@@ -547,15 +547,15 @@ void LevelSet::_getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &point
 
 double LevelSet::_calculateCurvatureAtVertex(int idx) {
 
-    std::vector<glm::vec3> samples;
+    std::vector<vmath::vec3> samples;
     std::vector<int> sampletris;
     _getCurvatureSamplePoints(idx, samples, sampletris);
 
     double radius = _surfaceCurvatureSampleRadius*_dx;
     double rsq = radius*radius;
-    glm::vec3 vnorm = _surfaceMesh.normals[idx];
-    glm::vec3 p, tnorm, xji;
-    glm::vec3 v = _surfaceMesh.vertices[idx];
+    vmath::vec3 vnorm = _surfaceMesh.normals[idx];
+    vmath::vec3 p, tnorm, xji;
+    vmath::vec3 v = _surfaceMesh.vertices[idx];
     int tidx;
     double curvature = 0.0;
     for (unsigned int i = 0; i < samples.size(); i++) {
@@ -563,11 +563,11 @@ double LevelSet::_calculateCurvatureAtVertex(int idx) {
         tidx = sampletris[i];
 
         xji = p - v;
-        double distsq = glm::dot(xji, xji);
+        double distsq = vmath::dot(xji, xji);
         if (distsq < rsq) {
             tnorm = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
-            double k = (1 - glm::dot(vnorm, tnorm)) * (1 - (sqrt(distsq)/radius));
-            if (glm::dot(glm::normalize(xji), vnorm) > 0.0) {
+            double k = (1 - vmath::dot(vnorm, tnorm)) * (1 - (sqrt(distsq)/radius));
+            if (vmath::dot(vmath::normalize(xji), vnorm) > 0.0) {
                 k = 0.0;
             }
 
@@ -594,19 +594,19 @@ void LevelSet::calculateSurfaceCurvature() {
     _surfaceMesh.clearVertexTriangles();
 }
 
-double LevelSet::getSurfaceCurvature(glm::vec3 p) {
-    glm::vec3 n;
+double LevelSet::getSurfaceCurvature(vmath::vec3 p) {
+    vmath::vec3 n;
     return getSurfaceCurvature(p, &n);
 }
 
-double LevelSet::getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal) {
+double LevelSet::getSurfaceCurvature(vmath::vec3 p, vmath::vec3 *normal) {
     assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
 
     int tidx;
     p = _findClosestPointOnSurface(p, &tidx);
 
     if (tidx < 0 || (unsigned int)tidx >= _surfaceMesh.triangles.size()) {
-        *normal = glm::vec3(1.0, 0.0, 0.0);
+        *normal = vmath::vec3(1.0, 0.0, 0.0);
         return 0.0;
     }
 
@@ -614,7 +614,7 @@ double LevelSet::getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal) {
     double k0 = _vertexCurvatures[t.tri[0]];
     double k1 = _vertexCurvatures[t.tri[1]];
     double k2 = _vertexCurvatures[t.tri[2]];
-    glm::vec3 bary = _surfaceMesh.getBarycentricCoordinates(tidx, p);
+    vmath::vec3 bary = _surfaceMesh.getBarycentricCoordinates(tidx, p);
 
     *normal = _surfaceMesh.getTriangleNormalSmooth(tidx, p);
 
@@ -640,11 +640,11 @@ double LevelSet::getSurfaceCurvature(unsigned int tidx) {
     return (k0 + k1 + k2) / 3.0;
 }
 
-double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
-    p -= glm::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
+double LevelSet::_interpolateSignedDistance(vmath::vec3 p) {
+    p -= vmath::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    glm::vec3 gpos = Grid3d::GridIndexToPosition(g, _dx);
+    vmath::vec3 gpos = Grid3d::GridIndexToPosition(g, _dx);
 
     double inv_dx = 1 / _dx;
     double ix = (p.x - gpos.x)*inv_dx;
@@ -680,7 +680,7 @@ double LevelSet::_interpolateSignedDistance(glm::vec3 p) {
     return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
-double LevelSet::getDistance(glm::vec3 p) {
+double LevelSet::getDistance(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
     assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
@@ -691,7 +691,7 @@ double LevelSet::getDistance(glm::vec3 p) {
     return fabs(_interpolateSignedDistance(p));
 }
 
-double LevelSet::getSignedDistance(glm::vec3 p) {
+double LevelSet::getSignedDistance(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
     assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
@@ -722,7 +722,7 @@ double LevelSet::getSignedDistance(GridIndex g) {
     return _signedDistance(g);
 }
 
-bool LevelSet::isPointInInsideCell(glm::vec3 p) {
+bool LevelSet::isPointInInsideCell(vmath::vec3 p) {
     assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);

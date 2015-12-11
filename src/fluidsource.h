@@ -24,7 +24,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "aabb.h"
@@ -33,16 +33,16 @@ class FluidSource
 {
 public:
     FluidSource();
-    FluidSource(glm::vec3 pos);
-    FluidSource(glm::vec3 pos, glm::vec3 velocity);
+    FluidSource(vmath::vec3 pos);
+    FluidSource(vmath::vec3 pos, vmath::vec3 velocity);
     virtual ~FluidSource();
 
-    void setPosition(glm::vec3 pos);
-    glm::vec3 getPosition();
-    void translate(glm::vec3 trans);
-    void setVelocity(glm::vec3 v);
-    void setDirection(glm::vec3 dir);
-    glm::vec3 getVelocity();
+    void setPosition(vmath::vec3 pos);
+    vmath::vec3 getPosition();
+    void translate(vmath::vec3 trans);
+    void setVelocity(vmath::vec3 v);
+    void setDirection(vmath::vec3 dir);
+    vmath::vec3 getVelocity();
     void setAsInFlow();
     void setAsOutFlow();
     int getSourceType();
@@ -66,9 +66,9 @@ protected:
     int M_FLUID = 1;
     int M_SOLID = 2;
 
-    glm::vec3 position;
-    glm::vec3 velocity;
-    glm::vec3 direction;
+    vmath::vec3 position;
+    vmath::vec3 velocity;
+    vmath::vec3 direction;
 
     bool isActive = true;
     int sourceType = T_INFLOW;

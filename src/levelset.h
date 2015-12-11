@@ -26,7 +26,7 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <queue>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
@@ -46,17 +46,17 @@ public:
     void calculateSignedDistanceField();
     void calculateSignedDistanceField(int numLayers);
     void calculateSurfaceCurvature();
-    double getSurfaceCurvature(glm::vec3 p);
-    double getSurfaceCurvature(glm::vec3 p, glm::vec3 *normal);
+    double getSurfaceCurvature(vmath::vec3 p);
+    double getSurfaceCurvature(vmath::vec3 p, vmath::vec3 *normal);
     double getSurfaceCurvature(unsigned int tidx);
     Array3d<float> getSignedDistanceField() { return _signedDistance; }
-    glm::vec3 getClosestPointOnSurface(glm::vec3 p);
-    glm::vec3 getClosestPointOnSurface(glm::vec3 p, int *tidx);
-    double getDistance(glm::vec3 p);
-    double getSignedDistance(glm::vec3 p);
+    vmath::vec3 getClosestPointOnSurface(vmath::vec3 p);
+    vmath::vec3 getClosestPointOnSurface(vmath::vec3 p, int *tidx);
+    double getDistance(vmath::vec3 p);
+    double getSignedDistance(vmath::vec3 p);
     double getDistance(GridIndex g);
     double getSignedDistance(GridIndex g);
-    bool isPointInInsideCell(glm::vec3 p);
+    bool isPointInInsideCell(vmath::vec3 p);
 
 private:
     void _resetSignedDistanceField();
@@ -74,30 +74,30 @@ private:
     void _resetLevelSetCell(GridIndex g);
     void _squareRootDistanceField();
     void _calculateDistanceFieldSigns();
-    void _updateCellSign(GridIndex g, std::vector<glm::vec3> &triangleCenters, 
-                                      std::vector<glm::vec3> &triangleDirections);
+    void _updateCellSign(GridIndex g, std::vector<vmath::vec3> &triangleCenters, 
+                                      std::vector<vmath::vec3> &triangleDirections);
     void _floodFillMissingSignedDistances();
     void _floodFillWithDistance(GridIndex g, double val);
 
-    glm::vec3 _findClosestPointOnSurface(GridIndex g);
-    glm::vec3 _findClosestPointOnSurface(glm::vec3 p);
-    glm::vec3 _findClosestPointOnSurface(glm::vec3 p, int *tidx);
-    glm::vec3 _evaluateVelocityAtPosition(MACVelocityField &vgrid, glm::vec3 p);
-    glm::vec3 _evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g);
-    double _minDistToTriangleSquared(glm::vec3 p, int tidx);
+    vmath::vec3 _findClosestPointOnSurface(GridIndex g);
+    vmath::vec3 _findClosestPointOnSurface(vmath::vec3 p);
+    vmath::vec3 _findClosestPointOnSurface(vmath::vec3 p, int *tidx);
+    vmath::vec3 _evaluateVelocityAtPosition(MACVelocityField &vgrid, vmath::vec3 p);
+    vmath::vec3 _evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g);
+    double _minDistToTriangleSquared(vmath::vec3 p, int tidx);
     double _minDistToTriangleSquared(GridIndex g, int tidx);
-    double _minDistToTriangleSquared(glm::vec3 p, int tidx, glm::vec3 *point);
+    double _minDistToTriangleSquared(vmath::vec3 p, int tidx, vmath::vec3 *point);
 
     double _calculateCurvatureAtVertex(int idx);
-    void _getCurvatureSamplePoints(int vidx, std::vector<glm::vec3> &points,
+    void _getCurvatureSamplePoints(int vidx, std::vector<vmath::vec3> &points,
                                              std::vector<int> &tris);
     void _getTrianglePatch(int vertexIndex, double *area, std::vector<int> &tris);
     int _getRandomTriangle(std::vector<int> &tris, std::vector<double> &distribution);
-    glm::vec3 _getRandomPointInTriangle(int tidx);
+    vmath::vec3 _getRandomPointInTriangle(int tidx);
 
-    double _interpolateSignedDistance(glm::vec3 p);
+    double _interpolateSignedDistance(vmath::vec3 p);
 
-    inline bool _isPointInsideSurface(glm::vec3 p) {
+    inline bool _isPointInsideSurface(vmath::vec3 p) {
         return _distanceField.getFieldValue(p) > 0.0;
     }
     inline bool _isCellInsideSurface(GridIndex g) {
@@ -109,15 +109,15 @@ private:
         return _signedDistance(i, j, k) > 0.0;
     }
 
-    glm::vec3 _gridIndexToPosition(GridIndex g) {
+    vmath::vec3 _gridIndexToPosition(GridIndex g) {
         assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
         return Grid3d::GridIndexToPosition(g, _dx);
     }
-    glm::vec3 _gridIndexToCellCenter(GridIndex g) {
+    vmath::vec3 _gridIndexToCellCenter(GridIndex g) {
         assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
         return Grid3d::GridIndexToCellCenter(g, _dx);
     }
-    glm::vec3 _gridIndexToCellCenter(int i, int j, int k) {
+    vmath::vec3 _gridIndexToCellCenter(int i, int j, int k) {
         assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
         return Grid3d::GridIndexToCellCenter(i, j, k, _dx);
     }

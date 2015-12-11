@@ -23,7 +23,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 
-#include "glm/glm.hpp"
+#include "vmath.h"
 #include "sparsearray3d.h"
 #include "grid3d.h"
 #include "aabb.h"
@@ -41,11 +41,11 @@ public:
     void clear();
     void reserve(int n);
     void setPointRadius(double r);
-    void addPoint(glm::vec3 pos, double radius);
-    void addPoint(glm::vec3 pos);
-    void addPointValue(glm::vec3 pos, double radius, double value);
-    void addPointValue(glm::vec3 pos, double value);
-    void addCuboid(glm::vec3 pos, double w, double h, double d);
+    void addPoint(vmath::vec3 pos, double radius);
+    void addPoint(vmath::vec3 pos);
+    void addPointValue(vmath::vec3 pos, double radius, double value);
+    void addPointValue(vmath::vec3 pos, double value);
+    void addCuboid(vmath::vec3 pos, double w, double h, double d);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
     void setSolidCells(std::vector<GridIndex> &solidCells);
@@ -66,7 +66,7 @@ private:
     }
 
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
-    double _evaluateTrilinearFieldFunction(glm::vec3 v);
+    double _evaluateTrilinearFieldFunction(vmath::vec3 v);
 
     int M_SOLID = 2;
     int WEIGHT_TRICUBIC = 0;

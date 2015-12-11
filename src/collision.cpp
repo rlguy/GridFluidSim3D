@@ -22,16 +22,16 @@ freely, subject to the following restrictions:
 
 // method adapted from:
 // http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
-bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                      glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, 
-                                      glm::vec3 *collision, double *iu, double *iv) {
-    glm::vec3 e1, e2, h, s, q;
+bool Collision::rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                      vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2, 
+                                      vmath::vec3 *collision, double *iu, double *iv) {
+    vmath::vec3 e1, e2, h, s, q;
     float a, f, u, v;
 
     e1 = v1 - v0;
     e2 = v2 - v0;
-    h = glm::cross(dir, e2);
-    a = glm::dot(e1, h);
+    h = vmath::cross(dir, e2);
+    a = vmath::dot(e1, h);
 
     double eps = 10e-9;
     if (fabs(a) < eps) {
@@ -40,14 +40,14 @@ bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
     f = 1 / a;
     s = p - v0;
-    u = f * glm::dot(s, h);
+    u = f * vmath::dot(s, h);
 
     if (u < 0.0 || u > 1.0) {
         return false;
     }
 
-    q = glm::cross(s, e1);
-    v = f * glm::dot(dir, q);
+    q = vmath::cross(s, e1);
+    v = f * vmath::dot(dir, q);
 
     if (v < 0.0 || u + v > 1.0) {
         return false;
@@ -55,7 +55,7 @@ bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
     // at this stage we can compute t to find out where
     // the intersection point is on the line
-    double t = f * glm::dot(e2, q);
+    double t = f * vmath::dot(e2, q);
 
     if (t > 0) {
         *collision = p + (float)t*dir;
@@ -70,16 +70,16 @@ bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
 // method adapted from:
 // http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
-bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2,
-                                       glm::vec3 *collision, double *iu, double *iv) {
-    glm::vec3 e1, e2, h, s, q;
+bool Collision::lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                       vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2,
+                                       vmath::vec3 *collision, double *iu, double *iv) {
+    vmath::vec3 e1, e2, h, s, q;
     float a, f, u, v;
 
     e1 = v1 - v0;
     e2 = v2 - v0;
-    h = glm::cross(dir, e2);
-    a = glm::dot(e1, h);
+    h = vmath::cross(dir, e2);
+    a = vmath::dot(e1, h);
 
     double eps = 10e-9;
     if (fabs(a) < eps) {
@@ -88,14 +88,14 @@ bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
     f = 1 / a;
     s = p - v0;
-    u = f * glm::dot(s, h);
+    u = f * vmath::dot(s, h);
 
     if (u < 0.0 || u > 1.0) {
         return false;
     }
 
-    q = glm::cross(s, e1);
-    v = f * glm::dot(dir, q);
+    q = vmath::cross(s, e1);
+    v = f * vmath::dot(dir, q);
 
     if (v < 0.0 || u + v > 1.0) {
         return false;
@@ -103,7 +103,7 @@ bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
 
     // at this stage we can compute t to find out where
     // the intersection point is on the line
-    double t = f * glm::dot(e2, q);
+    double t = f * vmath::dot(e2, q);
     *collision = p + (float)t*dir;
     *iu = u;
     *iv = v;
@@ -111,18 +111,18 @@ bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
     return true;
 }
 
-bool Collision::rayIntersectsPlane(glm::vec3 p0, glm::vec3 dir, 
-                                    glm::vec3 planePoint, glm::vec3 planeNormal, 
-                                    glm::vec3 *collision) {
+bool Collision::rayIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir, 
+                                    vmath::vec3 planePoint, vmath::vec3 planeNormal, 
+                                    vmath::vec3 *collision) {
 
     // perpendicular or p0 is on the plane
     double eps = 10e-9;
-    double dot = glm::dot(dir, planeNormal);
+    double dot = vmath::dot(dir, planeNormal);
     if (fabs(dot) < eps) {
         return false;
     }
 
-    double d = glm::dot((planePoint - p0), planeNormal) / dot;
+    double d = vmath::dot((planePoint - p0), planeNormal) / dot;
     if (d > 0) {
         *collision = p0 + (float)d*dir;
         return true;
@@ -131,18 +131,18 @@ bool Collision::rayIntersectsPlane(glm::vec3 p0, glm::vec3 dir,
     return false;
 }
 
-bool Collision::lineIntersectsPlane(glm::vec3 p0, glm::vec3 dir, 
-                                    glm::vec3 planePoint, glm::vec3 planeNormal, 
-                                    glm::vec3 *collision) {
+bool Collision::lineIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir, 
+                                    vmath::vec3 planePoint, vmath::vec3 planeNormal, 
+                                    vmath::vec3 *collision) {
 
     // perpendicular or p0 is on the plane
     double eps = 10e-9;
-    double dot = glm::dot(dir, planeNormal);
+    double dot = vmath::dot(dir, planeNormal);
     if (fabs(dot) < eps) {
         return false;
     }
 
-    double d = glm::dot((planePoint - p0), planeNormal) / dot;
+    double d = vmath::dot((planePoint - p0), planeNormal) / dot;
 
     *collision = p0 + (float)d*dir;
 
@@ -152,16 +152,16 @@ bool Collision::lineIntersectsPlane(glm::vec3 p0, glm::vec3 dir,
 
 // method adapted from:
 // http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
-glm::vec3 Collision::findClosestPointOnTriangle(glm::vec3 p0, glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) {
-    glm::vec3 edge0 = v1 - v0;
-    glm::vec3 edge1 = v2 - v0;
-    glm::vec3 pv = v0 - p0;
+vmath::vec3 Collision::findClosestPointOnTriangle(vmath::vec3 p0, vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2) {
+    vmath::vec3 edge0 = v1 - v0;
+    vmath::vec3 edge1 = v2 - v0;
+    vmath::vec3 pv = v0 - p0;
 
-    double a = glm::dot(edge0, edge0);
-    double b = glm::dot(edge0, edge1);
-    double c = glm::dot(edge1, edge1);
-    double d = glm::dot(edge0, pv);
-    double e = glm::dot(edge1, pv);
+    double a = vmath::dot(edge0, edge0);
+    double b = vmath::dot(edge0, edge1);
+    double c = vmath::dot(edge1, edge1);
+    double d = vmath::dot(edge0, pv);
+    double e = vmath::dot(edge1, pv);
 
     double det = a*c - b*b;
     double s = b*e - c*d;
@@ -224,41 +224,41 @@ glm::vec3 Collision::findClosestPointOnTriangle(glm::vec3 p0, glm::vec3 v0, glm:
     return v0 + (float)s * edge0 + (float)t * edge1;
 }
 
-bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                      glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) {
-    glm::vec3 i;
+bool Collision::rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                      vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2) {
+    vmath::vec3 i;
     double u, v;
     return rayIntersectsTriangle(p, dir, v0, v1, v2, &i, &u, &v);
 }
 
-bool Collision::rayIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                      glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 *i) {
+bool Collision::rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                      vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2, vmath::vec3 *i) {
     double u, v;
     return rayIntersectsTriangle(p, dir, v0, v1, v2, i, &u, &v);
 }
 
-bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) {
-    glm::vec3 i;
+bool Collision::lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                       vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2) {
+    vmath::vec3 i;
     double u, v;
     return lineIntersectsTriangle(p, dir, v0, v1, v2, &i, &u, &v);
 }
 
-bool Collision::lineIntersectsTriangle(glm::vec3 p, glm::vec3 dir,
-                                       glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 *i) {
+bool Collision::lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+                                       vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2, vmath::vec3 *i) {
     double u, v;
     return lineIntersectsTriangle(p, dir, v0, v1, v2, i, &u, &v);
 }
 
-bool Collision::rayIntersectsPlane(glm::vec3 p0, glm::vec3 dir,
-                                   glm::vec3 planePoint, glm::vec3 planeNormal) {
-    glm::vec3 p;
+bool Collision::rayIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir,
+                                   vmath::vec3 planePoint, vmath::vec3 planeNormal) {
+    vmath::vec3 p;
     return rayIntersectsPlane(p0, dir, planePoint, planeNormal, &p);
 }
 
-bool Collision::lineIntersectsPlane(glm::vec3 p0, glm::vec3 dir,
-                                    glm::vec3 planePoint, glm::vec3 planeNormal) {
-    glm::vec3 p;
+bool Collision::lineIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir,
+                                    vmath::vec3 planePoint, vmath::vec3 planeNormal) {
+    vmath::vec3 p;
     return lineIntersectsPlane(p0, dir, planePoint, planeNormal, &p);
 }
 

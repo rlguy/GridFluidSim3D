@@ -25,7 +25,7 @@ freely, subject to the following restrictions:
 
 #include "macvelocityfield.h"
 #include "array3d.h"
-#include "glm/glm.hpp"
+#include "vmath.h"
 
 class FluidSimulation;
 
@@ -41,10 +41,10 @@ public:
     void getGridDimensions(int *i, int *j, int *);
     double getCellSize();
     int getCurrentFrame();
-    std::vector<glm::vec3> getMarkerParticlePositions();
-    std::vector<glm::vec3> getMarkerParticleVelocities();
-    std::vector<glm::vec3> getDiffuseParticlePositions();
-    std::vector<glm::vec3> getDiffuseParticleVelocities();
+    std::vector<vmath::vec3> getMarkerParticlePositions();
+    std::vector<vmath::vec3> getMarkerParticleVelocities();
+    std::vector<vmath::vec3> getDiffuseParticlePositions();
+    std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<float> getDiffuseParticleLifetimes();
     std::vector<GridIndex> getSolidCellIndices();
     bool isLoadStateInitialized();
@@ -58,10 +58,10 @@ private:
         double dx;
         int currentFrame;
 
-        std::vector<glm::vec3> markerParticlePositions;
-        std::vector<glm::vec3> markerParticleVelocities;
-        std::vector<glm::vec3> diffuseParticlePositions;
-        std::vector<glm::vec3> diffuseParticleVelocities;
+        std::vector<vmath::vec3> markerParticlePositions;
+        std::vector<vmath::vec3> markerParticleVelocities;
+        std::vector<vmath::vec3> diffuseParticlePositions;
+        std::vector<vmath::vec3> diffuseParticleVelocities;
         std::vector<float> diffuseParticleLifetimes;
         std::vector<GridIndex> solidCellIndices;
 
@@ -80,17 +80,17 @@ private:
                                               std::ofstream *state);
     void _writeBinaryDiffuseParticleLifetimes(FluidSimulation *_fluidsim,
                                              std::ofstream *state);
-    void _writeBinaryVector3f(std::vector<glm::vec3> &vectors, std::ofstream *state);
+    void _writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state);
     void _writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state);
     void _writeSolidCellIndices(FluidSimulation *sim, std::ofstream *state);
     int _getNumSolidCells(FluidSimulation *sim);
 
     bool _readInt(int *value, std::ifstream *state);
     bool _readDouble(double *value, std::ifstream *state);
-    bool _readParticlePositions(std::vector<glm::vec3> &particles, 
+    bool _readParticlePositions(std::vector<vmath::vec3> &particles, 
                                 int numParticles,
                                 std::ifstream *state);
-    bool _readParticleVelocities(std::vector<glm::vec3> &velocities, 
+    bool _readParticleVelocities(std::vector<vmath::vec3> &velocities, 
                                 int numParticles,
                                 std::ifstream *state);
     bool _readParticleLifetimes(std::vector<float> &lifetimes, 

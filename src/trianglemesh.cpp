@@ -47,11 +47,11 @@ void TriangleMesh::clear() {
 // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 // .obj must be a closed watertight mesh with triangle with either shared triangle
 // vertices in correct winding order, or vertices with pre-computed vertex normals.
-bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale) {
+bool TriangleMesh::loadOBJ(std::string filename, vmath::vec3 offset, double scale) {
     clear();
 
-    std::vector<glm::vec3> temp_vertices;
-    std::vector<glm::vec3> temp_normals;
+    std::vector<vmath::vec3> temp_vertices;
+    std::vector<vmath::vec3> temp_normals;
     std::vector<Triangle> temp_triangles;
 
     FILE * file;
@@ -70,11 +70,11 @@ bool TriangleMesh::loadOBJ(std::string filename, glm::vec3 offset, double scale)
         }
         
         if ( strcmp( lineHeader, "v" ) == 0 ){
-            glm::vec3 vertex;
+            vmath::vec3 vertex;
             fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
             temp_vertices.push_back((float)scale*vertex + offset);
         } else if (strcmp( lineHeader, "vn" ) == 0) {
-            glm::vec3 normal;
+            vmath::vec3 normal;
             fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
             temp_normals.push_back(normal);
         } else if ( strcmp( lineHeader, "f" ) == 0 ) {
@@ -138,13 +138,13 @@ void TriangleMesh::writeMeshToOBJ(std::string filename) {
     str << "# vertex count = " << vertices.size() << std::endl;
     str << "# face count = " << triangles.size() << std::endl;
 
-    glm::vec3 p;
+    vmath::vec3 p;
     for (unsigned int i = 0; i < vertices.size(); i++) {
         p = vertices[i];
         str << "v " << p.x << " " << p.y << " " << p.z << std::endl;
     }
 
-    glm::vec3 n;
+    vmath::vec3 n;
     for (unsigned int i = 0; i < normals.size(); i++) {
         n = normals[i];
         str << "vn " << n.x << " " << n.y << " " << n.z << std::endl;
@@ -186,7 +186,7 @@ void TriangleMesh::writeMeshToSTL(std::string filename) {
 
     float tri[12*sizeof(float)];
     Triangle t;
-    glm::vec3 normal, v1, v2, v3;
+    vmath::vec3 normal, v1, v2, v3;
     for (unsigned int i = 0; i < triangles.size(); i++) {
         t = triangles[i];
         normal = getTriangleNormal(i);
@@ -306,7 +306,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
 
     if (isColorEnabled) {
         float *vertdata = new float[3*vertices.size()];
-        glm::vec3 v;
+        vmath::vec3 v;
         for (unsigned int i = 0; i < vertices.size(); i++) {
             v = vertices[i];
             vertdata[3*i] = v.x;
@@ -315,7 +315,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
         }
 
         unsigned char *colordata = new unsigned char[3*vertexcolors.size()];
-        glm::vec3 c;
+        vmath::vec3 c;
         for (unsigned int i = 0; i < vertexcolors.size(); i++) {
             c = vertexcolors[i];
             colordata[3*i] = (unsigned char)((c.x/1.0)*255.0);
@@ -341,7 +341,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
         delete[] vertdata;
     } else {
         float *vertdata = new float[3*vertices.size()];
-        glm::vec3 v;
+        vmath::vec3 v;
         for (unsigned int i = 0; i < vertices.size(); i++) {
             v = vertices[i];
             vertdata[3*i] = v.x;
@@ -428,28 +428,28 @@ void TriangleMesh::updateVertexNormals() {
     normals.clear();
     _updateVertexTriangles();
     
-    std::vector<glm::vec3> facenormals;
+    std::vector<vmath::vec3> facenormals;
     facenormals.reserve((int)triangles.size());
     Triangle t;
-    glm::vec3 v1, v2;
+    vmath::vec3 v1, v2;
     for (unsigned int i = 0; i < triangles.size(); i++) {
         t = triangles[i];
 
         v1 = vertices[t.tri[1]] - vertices[t.tri[0]];
         v2 = vertices[t.tri[2]] - vertices[t.tri[0]];
-        glm::vec3 norm = glm::normalize(glm::cross(v1, v2));
+        vmath::vec3 norm = vmath::normalize(vmath::cross(v1, v2));
 
         facenormals.push_back(norm);
     }
 
-    glm::vec3 n;
+    vmath::vec3 n;
     for (unsigned int i = 0; i < _vertexTriangles.size(); i++) {
-        n = glm::vec3(0.0, 0.0, 0.0);
+        n = vmath::vec3(0.0, 0.0, 0.0);
         for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
             n += facenormals[_vertexTriangles[i][j]];
         }
 
-        n = glm::normalize(n / (float)_vertexTriangles[i].size());
+        n = vmath::normalize(n / (float)_vertexTriangles[i].size());
         normals.push_back(n);
     }
 }
@@ -485,10 +485,10 @@ double TriangleMesh::getTriangleArea(int tidx) {
 
     Triangle t = triangles[tidx];
 
-    glm::vec3 AB = vertices[t.tri[1]] - vertices[t.tri[0]];
-    glm::vec3 AC = vertices[t.tri[2]] - vertices[t.tri[0]];
+    vmath::vec3 AB = vertices[t.tri[1]] - vertices[t.tri[0]];
+    vmath::vec3 AC = vertices[t.tri[2]] - vertices[t.tri[0]];
 
-    return 0.5f*glm::length(glm::cross(AB, AC));
+    return 0.5f*vmath::length(vmath::cross(AB, AC));
 }
 
 bool TriangleMesh::_trianglesEqual(Triangle &t1, Triangle &t2) {
@@ -535,7 +535,7 @@ void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex
     AABB tbbox = AABB(t, vertices);
     tbbox.getOverlappingGridCells(_dx, testcells);
 
-    AABB cbbox = AABB(glm::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
+    AABB cbbox = AABB(vmath::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
     for (unsigned int i = 0; i < testcells.size(); i++) {
         cbbox.position = Grid3d::GridIndexToPosition(testcells[i], _dx);
         if (cbbox.isOverlappingTriangle(t, vertices)) {
@@ -623,7 +623,7 @@ void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
     }
 }
 
-void TriangleMesh::getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
+void TriangleMesh::getTrianglePosition(unsigned int index, vmath::vec3 tri[3]) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
@@ -635,50 +635,50 @@ void TriangleMesh::getTrianglePosition(unsigned int index, glm::vec3 tri[3]) {
     tri[2] = vertices[t.tri[2]];
 }
 
-glm::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
+vmath::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
     assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
-    return glm::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
+    return vmath::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
 }
 
-glm::vec3 TriangleMesh::getBarycentricCoordinates(unsigned int index, glm::vec3 p) {
+vmath::vec3 TriangleMesh::getBarycentricCoordinates(unsigned int index, vmath::vec3 p) {
     Triangle t = triangles[index];
     int size = (int)vertices.size();
     assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
-    glm::vec3 a = vertices[t.tri[0]];
-    glm::vec3 b = vertices[t.tri[1]];
-    glm::vec3 c = vertices[t.tri[2]];
-    glm::vec3 normal = getTriangleNormal(index);
+    vmath::vec3 a = vertices[t.tri[0]];
+    vmath::vec3 b = vertices[t.tri[1]];
+    vmath::vec3 c = vertices[t.tri[2]];
+    vmath::vec3 normal = getTriangleNormal(index);
 
-    float areaABC = glm::dot(normal, glm::cross((b - a), (c - a)));
-    float areaPBC = glm::dot(normal, glm::cross((b - p), (c - p)));
-    float areaPCA = glm::dot(normal, glm::cross((c - p), (a - p)));
+    float areaABC = vmath::dot(normal, vmath::cross((b - a), (c - a)));
+    float areaPBC = vmath::dot(normal, vmath::cross((b - p), (c - p)));
+    float areaPCA = vmath::dot(normal, vmath::cross((c - p), (a - p)));
 
     float bx = areaPBC / areaABC;
     float by = areaPCA / areaABC;
     float bz = 1.0f - bx - by;
 
-    return glm::vec3(bx, by, bz);
+    return vmath::vec3(bx, by, bz);
 }
 
-glm::vec3 TriangleMesh::getTriangleNormalSmooth(unsigned int index, glm::vec3 p) {
+vmath::vec3 TriangleMesh::getTriangleNormalSmooth(unsigned int index, vmath::vec3 p) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
     assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
-    glm::vec3 bary = getBarycentricCoordinates(index, p);
+    vmath::vec3 bary = getBarycentricCoordinates(index, p);
 
     return bary.x*normals[t.tri[0]] + bary.y*normals[t.tri[1]] + bary.z*normals[t.tri[2]];
 }
 
-glm::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
+vmath::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
@@ -688,7 +688,7 @@ glm::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
     return normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]];
 }
 
-glm::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
+vmath::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
     assert(index < triangles.size());
 
     Triangle t = triangles[index];
@@ -721,7 +721,7 @@ bool TriangleMesh::_isTriangleInVector(int index, std::vector<int> &tris) {
     return false;
 }
 
-int TriangleMesh::_getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm::vec3 dir,
+int TriangleMesh::_getIntersectingTrianglesInCell(GridIndex g, vmath::vec3 p, vmath::vec3 dir,
                                                   std::vector<int> &tris, bool *success) {
     if (_triGrid(g).size() == 0) {
         *success = true;
@@ -734,8 +734,8 @@ int TriangleMesh::_getIntersectingTrianglesInCell(GridIndex g, glm::vec3 p, glm:
     // If it is detected that a line has intersected with an edge or vertex,
     // mark *success as false and return 0
     std::vector<int> *indices = _triGrid.getPointer(g);
-    glm::vec3 collision;
-    glm::vec3 tri[3];
+    vmath::vec3 collision;
+    vmath::vec3 tri[3];
     double u, v;
     int numIntersections = 0;
 
@@ -786,12 +786,12 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     // The likeliness of edge intersections is due to symmetries in the 
     // polygonization method. 
     double jit = 0.1*_dx;
-    glm::vec3 jitter = glm::vec3(_randomFloat(-jit, jit),
+    vmath::vec3 jitter = vmath::vec3(_randomFloat(-jit, jit),
                                  _randomFloat(-jit, jit),
                                  _randomFloat(-jit, jit));
 
-    glm::vec3 p = Grid3d::GridIndexToPosition(g, _dx) + 0.5f*glm::vec3(_dx, _dx, _dx) + jitter;
-    glm::vec3 dir = glm::vec3(1.0, 0.0, 0.0);
+    vmath::vec3 p = Grid3d::GridIndexToPosition(g, _dx) + 0.5f*vmath::vec3(_dx, _dx, _dx) + jitter;
+    vmath::vec3 dir = vmath::vec3(1.0, 0.0, 0.0);
     
 
     std::vector<int> allIntersections;
@@ -804,8 +804,6 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
         bool success;
         _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
         if (!success) {
-            std::cout << "Error finding cell intersections: " <<
-                          n.i << " " << n.j << " " << n.k << std::endl;
             return false;
         }
 
@@ -826,8 +824,6 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
         _getIntersectingTrianglesInCell(n, p, dir, intersections, &success);
         
         if (!success) {
-            std::cout << "Error finding cell intersections: " <<
-                          n.i << " " << n.j << " " << n.k << std::endl;
             return false;
         }
 
@@ -892,12 +888,12 @@ void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
 }
 
 void TriangleMesh::_smoothTriangleMesh(double value, std::vector<bool> &isSmooth) {
-    std::vector<glm::vec3> newvertices;
+    std::vector<vmath::vec3> newvertices;
     newvertices.reserve(vertices.size());
 
-    glm::vec3 v;
-    glm::vec3 nv;
-    glm::vec3 avg;
+    vmath::vec3 v;
+    vmath::vec3 nv;
+    vmath::vec3 avg;
     Triangle t;
     for (unsigned int i = 0; i < vertices.size(); i++) {
 
@@ -906,7 +902,7 @@ void TriangleMesh::_smoothTriangleMesh(double value, std::vector<bool> &isSmooth
             continue;
         }
 
-        avg = glm::vec3(0.0, 0.0, 0.0);
+        avg = vmath::vec3(0.0, 0.0, 0.0);
         for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
             t = triangles[_vertexTriangles[i][j]];
             if (t.tri[0] != (int)i) {
@@ -1031,9 +1027,9 @@ void TriangleMesh:: _getPolyhedra(std::vector<std::vector<int> > &polyList) {
 }
 
 double TriangleMesh::_getSignedTriangleVolume(unsigned int tidx) {
-    glm::vec3 p1 = vertices[triangles[tidx].tri[0]];
-    glm::vec3 p2 = vertices[triangles[tidx].tri[1]];
-    glm::vec3 p3 = vertices[triangles[tidx].tri[2]];
+    vmath::vec3 p1 = vertices[triangles[tidx].tri[0]];
+    vmath::vec3 p2 = vertices[triangles[tidx].tri[1]];
+    vmath::vec3 p3 = vertices[triangles[tidx].tri[2]];
 
     double v321 = p3.x*p2.y*p1.z;
     double v231 = p2.x*p3.y*p1.z;
@@ -1083,8 +1079,8 @@ void TriangleMesh::removeExtraneousVertices() {
     bool hasVertexColors = vertices.size() == vertexcolors.size();
 
     std::vector<int> indexTranslationTable = std::vector<int>(vertices.size(), -1);
-    std::vector<glm::vec3> newVertexList;
-    std::vector<glm::vec3> newVertexColorList;
+    std::vector<vmath::vec3> newVertexList;
+    std::vector<vmath::vec3> newVertexColorList;
     int vidx = 0;
     for (unsigned int i = 0; i < unusedVertices.size(); i++) {
         if (!unusedVertices[i]) {
