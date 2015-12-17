@@ -952,7 +952,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
     vmath::vec3 jit;
     for (int k = 0; k < newParticleGrid.depth; k++) {
         for (int j = 0; j < newParticleGrid.height; j++) {
-            for (int i = 0; i < newParticleGrid.depth; i++) {
+            for (int i = 0; i < newParticleGrid.width; i++) {
                 if (newParticleGrid(i, j, k)) {
                     jit = vmath::vec3(_randomDouble(-jitter, jitter),
                                     _randomDouble(-jitter, jitter),
@@ -1018,6 +1018,18 @@ void FluidSimulation::_updateFluidCells() {
         _materialGrid.set(g, M_FLUID);
     }
 
+    int count = 0;
+    for (int k = 0; k < _materialGrid.depth; k++) {
+        for (int j = 0; j < _materialGrid.height; j++) {
+            for (int i = 0; i < _materialGrid.width; i++) {
+                if (_isCellFluid(i, j, k)) {
+                    count++;
+                }
+            }
+        }
+    }
+
+    _fluidCellIndices.reserve(count);
     for (int k = 0; k < _materialGrid.depth; k++) {
         for (int j = 0; j < _materialGrid.height; j++) {
             for (int i = 0; i < _materialGrid.width; i++) {
