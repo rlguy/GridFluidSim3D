@@ -369,9 +369,7 @@ private:
     void _advectVelocityFieldU();
     void _advectVelocityFieldV();
     void _advectVelocityFieldW();
-    void _computeVelocityScalarField(Array3d<float> &field,
-                                     Array3d<float> &weightfield, 
-                                     int dir);
+    void _computeVelocityScalarField(Array3d<float> &field, int dir);
 
     // Add gravity to fluid velocities
     void _applyBodyForcesToVelocityField(double dt);

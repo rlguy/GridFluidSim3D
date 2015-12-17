@@ -29,8 +29,7 @@ ImplicitSurfaceScalarField::ImplicitSurfaceScalarField(int i, int j, int k, doub
                                                        _field(i, j, k, 0.0),
                                                        _centerField(0, 0, 0, 0.0),
                                                        _isVertexSolid(i, j, k, false),
-                                                       _weightField(0, 0, 0, 0.0),
-                                                       _weightCountField(0, 0, 0, 0){
+                                                       _weightField(0, 0, 0, 0.0) {
 }
 
 ImplicitSurfaceScalarField::~ImplicitSurfaceScalarField() {
@@ -65,8 +64,6 @@ void ImplicitSurfaceScalarField::enableWeightField() {
     }
 
     _weightField = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
-    _weightCountField = Array3d<int>(_isize, _jsize, _ksize, 0);
-
     _isWeightFieldEnabled = true;
 }
 
@@ -101,19 +98,6 @@ double ImplicitSurfaceScalarField::getWeight(int i, int j, int k) {
     return _weightField(i, j, k);
 }
 
-int ImplicitSurfaceScalarField::getWeightCount(GridIndex g) {
-    return getWeightCount(g.i, g.j, g.k);
-}
-
-int ImplicitSurfaceScalarField::getWeightCount(int i, int j, int k) {
-    if (!_isWeightFieldEnabled) {
-        return 0;
-    }
-
-    assert(_weightCountField.isIndexInRange(i, j, k));
-    return _weightCountField(i, j, k);
-}
-
 void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p, double r) {
     setPointRadius(r);
     addPoint(p);
@@ -145,7 +129,6 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
-                        _weightCountField.add(i, j, k, 1);
                     }
                 }
 
@@ -189,7 +172,6 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
-                        _weightCountField.add(i, j, k, 1);
                     }
                 }
             }
@@ -214,7 +196,6 @@ void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, 
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)(_surfaceThreshold + eps));
-                        _weightCountField.add(i, j, k, 1);
                     }
                 }
 
@@ -261,7 +242,6 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
-                        _weightCountField.add(i, j, k, 1);
                     }
                 }
 
@@ -308,7 +288,6 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
-                        _weightCountField.add(i, j, k, 1);
                     }
                 }
 

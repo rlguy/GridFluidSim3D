@@ -65,8 +65,6 @@ public:
     void setTrilinearWeighting();
     double getWeight(int i, int j, int k);
     double getWeight(GridIndex g);
-    int getWeightCount(int i, int j, int k);
-    int getWeightCount(GridIndex g);
     void getWeightField(Array3d<float> &field);
     void setFieldValue(int i, int j, int k, double value);
     void setFieldValue(GridIndex g, double value);
@@ -114,7 +112,6 @@ private:
     Array3d<float> _centerField;
     Array3d<bool> _isVertexSolid;
     Array3d<float> _weightField;
-    Array3d<int> _weightCountField;
 
     bool _isCenterFieldEnabled = false;
     bool _isWeightFieldEnabled = false;

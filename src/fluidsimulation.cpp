@@ -1452,15 +1452,13 @@ void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
     ADVECT FLUID VELOCITIES
 ********************************************************************************/
 
-void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
-                                                  Array3d<float> &weightfield, 
+void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field, 
                                                   int dir) {
     int U = 0; int V = 1; int W = 2;
 
     ImplicitSurfaceScalarField grid = ImplicitSurfaceScalarField(field.width,
                                                                  field.height,
                                                                  field.depth, _dx);
-    //grid.setTrilinearWeighting();
     grid.enableWeightField();
     grid.setPointRadius(_dx); 
 
@@ -1483,15 +1481,13 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     grid.applyWeightField();
 
     grid.getScalarField(field);
-    grid.getWeightField(weightfield);
 }
 
 void FluidSimulation::_advectVelocityFieldU() {
     _MACVelocity.clearU();
 
     Array3d<float> ugrid = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
-    Array3d<float> weightfield = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
-    _computeVelocityScalarField(ugrid, weightfield, 0);
+    _computeVelocityScalarField(ugrid, 0);
 
     std::vector<GridIndex> extrapolationIndices;
     double eps = 10e-9;
@@ -1499,7 +1495,7 @@ void FluidSimulation::_advectVelocityFieldU() {
         for (int j = 0; j < ugrid.height; j++) {
             for (int i = 0; i < ugrid.width; i++) {
                 if (_isFaceBorderingMaterialU(i, j, k, M_FLUID)) {
-                    if (weightfield(i, j, k) < eps) {
+                    if (ugrid(i, j, k) < eps) {
                         extrapolationIndices.push_back(GridIndex(i, j, k));
                     } else {
                         _MACVelocity.setU(i, j, k, ugrid(i, j, k));
@@ -1520,7 +1516,7 @@ void FluidSimulation::_advectVelocityFieldU() {
         weight = 0.0;
         for (int idx = 0; idx < 26; idx++) {
             n = nb[idx];
-            if (ugrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+            if (ugrid.isIndexInRange(n) && fabs(ugrid(n)) > 0.0) {
                 avg += ugrid(n);
                 weight += 1.0;
             }
@@ -1536,8 +1532,7 @@ void FluidSimulation::_advectVelocityFieldV() {
     _MACVelocity.clearV();
 
     Array3d<float> vgrid = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
-    Array3d<float> weightfield = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
-    _computeVelocityScalarField(vgrid, weightfield, 1);
+    _computeVelocityScalarField(vgrid, 1);
     
     std::vector<GridIndex> extrapolationIndices;
     double eps = 10e-9;
@@ -1545,7 +1540,7 @@ void FluidSimulation::_advectVelocityFieldV() {
         for (int j = 0; j < vgrid.height; j++) {
             for (int i = 0; i < vgrid.width; i++) {
                 if (_isFaceBorderingMaterialV(i, j, k, M_FLUID)) {
-                    if (weightfield(i, j, k) < eps) {
+                    if (vgrid(i, j, k) < eps) {
                         extrapolationIndices.push_back(GridIndex(i, j, k));
                     } else {
                         _MACVelocity.setV(i, j, k, vgrid(i, j, k));
@@ -1566,7 +1561,7 @@ void FluidSimulation::_advectVelocityFieldV() {
         weight = 0.0;
         for (int idx = 0; idx < 26; idx++) {
             n = nb[idx];
-            if (vgrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+            if (vgrid.isIndexInRange(n) && fabs(vgrid(n)) > 0.0) {
                 avg += vgrid(n);
                 weight += 1.0;
             }
@@ -1582,8 +1577,7 @@ void FluidSimulation::_advectVelocityFieldW() {
     _MACVelocity.clearW();
 
     Array3d<float> wgrid = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
-    Array3d<float> weightfield = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
-    _computeVelocityScalarField(wgrid, weightfield, 2);
+    _computeVelocityScalarField(wgrid, 2);
     
     std::vector<GridIndex> extrapolationIndices;
     double eps = 10e-9;
@@ -1591,7 +1585,7 @@ void FluidSimulation::_advectVelocityFieldW() {
         for (int j = 0; j < wgrid.height; j++) {
             for (int i = 0; i < wgrid.width; i++) {
                 if (_isFaceBorderingMaterialW(i, j, k, M_FLUID)) {
-                    if (weightfield(i, j, k) < eps) {
+                    if (wgrid(i, j, k) < eps) {
                         extrapolationIndices.push_back(GridIndex(i, j, k));
                     } else {
                         _MACVelocity.setW(i, j, k, wgrid(i, j, k));
@@ -1612,7 +1606,7 @@ void FluidSimulation::_advectVelocityFieldW() {
         weight = 0.0;
         for (int idx = 0; idx < 26; idx++) {
             n = nb[idx];
-            if (wgrid.isIndexInRange(n) && weightfield(n) > 0.0) {
+            if (wgrid.isIndexInRange(n) && fabs(wgrid(n)) > 0.0) {
                 avg += wgrid(n);
                 weight += 1.0;
             }
