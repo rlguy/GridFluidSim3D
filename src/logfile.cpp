@@ -135,6 +135,10 @@ std::string LogFile::getTime() {
     return std::string(buffer);
 }
 
+void LogFile::print(std::string str) {
+    _print(str);
+}
+
 void LogFile::_print(std::string str) {
     if (_isWritingToConsole) {
         std::cout << str;

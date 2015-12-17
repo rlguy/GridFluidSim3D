@@ -27,9 +27,6 @@ freely, subject to the following restrictions:
 #include <unordered_map>
 #include <assert.h>
 
-#include <Eigen\Core>
-#include <Eigen\SparseCore>
-
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
@@ -55,6 +52,8 @@ freely, subject to the following restrictions:
 #include "spatialpointgrid.h"
 #include "particlemesher.h"
 #include "threading.h"
+#include "gridindexkeymap.h"
+#include "pressuresolver.h"
 #include "vmath.h"
 
 struct MarkerParticle {
@@ -399,30 +398,6 @@ private:
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(Array3d<float> &pressureGrid, double dt);
-    double _calculateNegativeDivergenceVector(VectorCoefficients &b);
-    void _calculateMatrixCoefficients(MatrixCoefficients &A, double dt);
-    void _calculatePreconditionerVector(VectorCoefficients &precon, MatrixCoefficients &A);
-    Eigen::VectorXd _applyPreconditioner(Eigen::VectorXd r, 
-                                         VectorCoefficients &precon,
-                                         MatrixCoefficients &A);
-    Eigen::VectorXd _solvePressureSystem(MatrixCoefficients &A, 
-                                         VectorCoefficients &b, 
-                                         VectorCoefficients &precon,
-                                         Array3d<int> &vectorIndexHashTable,
-                                         double dt);
-
-    // Methods for setting up system of equations for the pressure update
-    void _EigenVectorXdToVectorCoefficients(Eigen::VectorXd v, VectorCoefficients &vc);
-    Eigen::VectorXd _VectorCoefficientsToEigenVectorXd(VectorCoefficients &p,
-                                                       std::vector<GridIndex> indices);
-    Eigen::SparseMatrix<double> _MatrixCoefficientsToEigenSparseMatrix(MatrixCoefficients &A,
-                                                                       Array3d<int> &vectorIndexHashTable,
-                                                                       double dt);
-    void _updateFluidGridIndexToEigenVectorXdIndexHashTable(Array3d<int> &hashTable);
-    int _GridIndexToVectorIndex(int i, int j, int k, Array3d<int> &hashTable);
-    int _GridIndexToVectorIndex(GridIndex index, Array3d<int> &hashTable);
-    GridIndex _VectorIndexToGridIndex(int index);
-    int _getNumFluidOrAirCellNeighbours(int i, int j, int k);
 
     // Alter fluid velocities according to calculated pressures
     // to create a divercence free velocity field
@@ -633,8 +608,6 @@ private:
                                               // integration can travel
 
     double _density = 20.0;
-    double _pressureSolveTolerance = 10e-6;
-    int _maxPressureSolveIterations = 150;
     int _numAdvanceMarkerParticleThreads = 8;
     int _numUpdateMarkerParticleVelocityThreads = 8;
     MACVelocityField _savedVelocityField;

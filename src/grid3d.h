@@ -106,6 +106,9 @@ namespace Grid3d {
 
     extern AABB fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax);
     extern AABB fitAABBtoGrid(AABB bbox, double dx, GridIndex gmax);
+
+    extern unsigned int getFlatIndex(GridIndex g, int isize, int jsize);
+    extern unsigned int getFlatIndex(int i, int j, int k, int isize, int jsize);
 }
 
 #endif

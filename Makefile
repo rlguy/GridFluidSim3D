@@ -1,11 +1,10 @@
 CC=g++
 
 PTHREADINCLUDE=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
-EIGENINCLUDE=C:/vs_dev_lib/include
 PTHREADLIB=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/lib/libpthread.a 
 
 OPTIMIZE=-O3
-CFLAGS=-large-address-aware $(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -I$(EIGENINCLUDE) -c -std=c++11 -Wall
+CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=$(PTHREADLIB) -lstdc++
 
 SOURCEPATH=src
@@ -17,6 +16,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/fluidsimulationsavestate.cpp \
 		$(SOURCEPATH)/fluidsource.cpp \
 		$(SOURCEPATH)/grid3d.cpp \
+		$(SOURCEPATH)/gridindexkeymap.cpp \
 		$(SOURCEPATH)/implicitpointprimitive.cpp \
 		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
 		$(SOURCEPATH)/interpolation.cpp \
@@ -27,6 +27,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/main.cpp \
 		$(SOURCEPATH)/particlemesher.cpp \
 		$(SOURCEPATH)/polygonizer3d.cpp \
+		$(SOURCEPATH)/pressuresolver.cpp \
 		$(SOURCEPATH)/sparseimplicitsurfacescalarfield.cpp \
 		$(SOURCEPATH)/sparsepolygonizer3d.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \

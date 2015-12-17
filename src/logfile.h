@@ -60,6 +60,7 @@ public:
     void log(std::string str, std::string value = "", int indentLevel = 0);
     std::string getTime();
     std::string getSrartTimeString() { return _startTimeString; }
+    void print(std::string str);
 
 private:
     void _print(std::string str);

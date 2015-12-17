@@ -159,6 +159,28 @@ public:
         return _grid[_getFlatIndex(g)];;
     }
 
+    T get(int i, int j, int k)
+    {
+        bool isInRange = _isIndexInRange(i, j, k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
+        return _grid[_getFlatIndex(i, j, k)];
+    }
+
+    T get(GridIndex g)
+    {
+        bool isInRange = _isIndexInRange(g.i, g.j, g.k);
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
+        return _grid[_getFlatIndex(g)];;
+    }
+
     void set(int i, int j, int k, T value) {
         assert(_isIndexInRange(i, j, k));
         _grid[_getFlatIndex(i, j, k)] = value;
