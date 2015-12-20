@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "stopwatch.h"
 #include "threading.h"
 #include "vmath.h"
+#include "fluidmaterialgrid.h"
 
 class ParticleMesher
 {
@@ -44,7 +45,7 @@ public:
 
     TriangleMesh meshParticles(std::vector<vmath::vec3> &particles, 
                                LevelSet &levelset,
-                               Array3d<int> &materialGrid,
+                               FluidMaterialGrid &materialGrid,
                                double particleRadius);
 
     void _runSmoothRangeOfSurfaceParticlePositionsThread(int startidx, int endidx);
@@ -141,7 +142,7 @@ private:
 
     TriangleMesh _reconstructSurface(std::vector<IsotropicParticle> &iso,
                                      std::vector<AnisotropicParticle> &aniso,
-                                     Array3d<int> &materialGrid);
+                                     FluidMaterialGrid &materialGrid);
 
     void _setParticleRadius(double r);
     void _setKernelRadius(double r);

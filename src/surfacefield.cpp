@@ -36,13 +36,13 @@ SurfaceField::~SurfaceField()
 {
 }
 
-void SurfaceField::setMaterialGrid(Array3d<int> matGrid) {
+void SurfaceField::setMaterialGrid(FluidMaterialGrid matGrid) {
     materialGrid = matGrid;
     isMaterialGridSet = true;
 }
 
 void SurfaceField::setMaterialGrid() {
-    materialGrid = Array3d<int>();
+    materialGrid = FluidMaterialGrid();
     isMaterialGridSet = false;
 }
 
@@ -62,7 +62,7 @@ bool SurfaceField::_isPointNearSolid(vmath::vec3 p) {
 
     int i, j, k;
     Grid3d::positionToGridIndex(p, dx, &i, &j, &k);
-    if (materialGrid(i, j, k) == 2) {
+    if (materialGrid.isCellSolid(i, j, k)) {
         return true;
     }
 
@@ -96,7 +96,7 @@ bool SurfaceField::_isPointNearSolid(vmath::vec3 p) {
     
     for (int idx = 0; idx < 26; idx++) {
         Grid3d::positionToGridIndex(points[idx], dx, &i, &j, &k);
-        if (materialGrid(i, j, k) == 2) {
+        if (materialGrid.isCellSolid(i, j, k)) {
             return true;
         }
     }

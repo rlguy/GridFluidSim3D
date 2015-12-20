@@ -437,12 +437,19 @@ AABB Grid3d::fitAABBtoGrid(AABB bbox, double dx, GridIndex gmax) {
     return fitAABBtoGrid(bbox, dx, gmax.i, gmax.j, gmax.k);
 }
 
-int getFlatIndex(GridIndex g, int isize, int jsize) {
+unsigned int Grid3d::getFlatIndex(GridIndex g, int isize, int jsize) {
     return (unsigned int)g.i + (unsigned int)isize *
                ((unsigned int)g.j + (unsigned int)jsize * (unsigned int)g.k);
 }
 
-unsigned int getFlatIndex(int i, int j, int k, int isize, int jsize) {
+unsigned int Grid3d::getFlatIndex(int i, int j, int k, int isize, int jsize) {
     return (unsigned int)i + (unsigned int)isize *
                ((unsigned int)j + (unsigned int)jsize * (unsigned int)k);
+}
+
+GridIndex Grid3d::getUnflattenedIndex(unsigned int flatidx, int isize, int jsize) {
+    int i = flatidx % isize;
+    int j = (flatidx / isize) % jsize;
+    int k = flatidx / (jsize * isize); 
+    return GridIndex(i, j, k);
 }

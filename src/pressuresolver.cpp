@@ -184,24 +184,24 @@ void PressureSolver::_calculateNegativeDivergenceVector(VectorXd &b) {
         int k = _fluidCells->at(idx).k;
         int vidx = _GridToVectorIndex(i, j, k);
 
-        if (_isCellSolid(i-1, j, k)) {
+        if (_materialGrid->isCellSolid(i-1, j, k)) {
             b[vidx] -= (float)scale*(_vField->U(i, j, k) - usolid);
         }
-        if (_isCellSolid(i+1, j, k)) {
+        if (_materialGrid->isCellSolid(i+1, j, k)) {
             b[vidx] += (float)scale*(_vField->U(i+1, j, k) - usolid);
         }
 
-        if (_isCellSolid(i, j-1, k)) {
+        if (_materialGrid->isCellSolid(i, j-1, k)) {
             b[vidx] -= (float)scale*(_vField->V(i, j, k) - vsolid);
         }
-        if (_isCellSolid(i, j+1, k)) {
+        if (_materialGrid->isCellSolid(i, j+1, k)) {
             b[vidx] += (float)scale*(_vField->V(i, j+1, k) - vsolid);
         }
 
-        if (_isCellSolid(i, j, k-1)) {
+        if (_materialGrid->isCellSolid(i, j, k-1)) {
             b[vidx] -=  (float)scale*(_vField->W(i, j, k) - wsolid);
         }
-        if (_isCellSolid(i, j, k+1)) {
+        if (_materialGrid->isCellSolid(i, j, k+1)) {
             b[vidx] += (float)scale*(_vField->W(i, j, k+1) - wsolid);
         }
     }
@@ -209,12 +209,12 @@ void PressureSolver::_calculateNegativeDivergenceVector(VectorXd &b) {
 
 int PressureSolver::_getNumFluidOrAirCellNeighbours(int i, int j, int k) {
     int n = 0;
-    if (!_isCellSolid(i-1, j, k)) { n++; }
-    if (!_isCellSolid(i+1, j, k)) { n++; }
-    if (!_isCellSolid(i, j-1, k)) { n++; }
-    if (!_isCellSolid(i, j+1, k)) { n++; }
-    if (!_isCellSolid(i, j, k-1)) { n++; }
-    if (!_isCellSolid(i, j, k+1)) { n++; }
+    if (!_materialGrid->isCellSolid(i-1, j, k)) { n++; }
+    if (!_materialGrid->isCellSolid(i+1, j, k)) { n++; }
+    if (!_materialGrid->isCellSolid(i, j-1, k)) { n++; }
+    if (!_materialGrid->isCellSolid(i, j+1, k)) { n++; }
+    if (!_materialGrid->isCellSolid(i, j, k-1)) { n++; }
+    if (!_materialGrid->isCellSolid(i, j, k+1)) { n++; }
 
     return n;
 }
@@ -229,15 +229,15 @@ void PressureSolver::_calculateMatrixCoefficients(MatrixCoefficients &A) {
         int n = _getNumFluidOrAirCellNeighbours(i, j, k);
         A.cells[vidx].diag = (char)n;
 
-        if (_isCellFluid(i + 1, j, k)) {
+        if (_materialGrid->isCellFluid(i + 1, j, k)) {
             A.cells[vidx].plusi = 0x01;
         }
 
-        if (_isCellFluid(i, j + 1, k)) {
+        if (_materialGrid->isCellFluid(i, j + 1, k)) {
             A.cells[vidx].plusj = 0x01;
         }
 
-        if (_isCellFluid(i, j, k + 1)) {
+        if (_materialGrid->isCellFluid(i, j, k + 1)) {
             A.cells[vidx].plusk = 0x01;
         }
     }

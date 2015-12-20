@@ -34,7 +34,7 @@ ParticleMesher::~ParticleMesher() {
 
 TriangleMesh ParticleMesher::meshParticles(std::vector<vmath::vec3> &particles, 
                                            LevelSet &levelset,
-                                           Array3d<int> &materialGrid,
+                                           FluidMaterialGrid &materialGrid,
                                            double particleRadius) {
     _clear();
     _setParticleRadius(particleRadius);
@@ -551,7 +551,7 @@ void ParticleMesher::_initializeSurfaceReconstructionParticles(
 
 TriangleMesh ParticleMesher::_reconstructSurface(std::vector<IsotropicParticle> &iso,
                                                  std::vector<AnisotropicParticle> &aniso,
-                                                 Array3d<int> &materialGrid) {
+                                                 FluidMaterialGrid &materialGrid) {
 
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
                                                                   _jsize + 1, 

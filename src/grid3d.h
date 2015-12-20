@@ -109,6 +109,7 @@ namespace Grid3d {
 
     extern unsigned int getFlatIndex(GridIndex g, int isize, int jsize);
     extern unsigned int getFlatIndex(int i, int j, int k, int isize, int jsize);
+    extern GridIndex getUnflattenedIndex(unsigned int flatidx, int isize, int jsize);
 }
 
 #endif

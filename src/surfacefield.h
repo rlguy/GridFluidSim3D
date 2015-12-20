@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "grid3d.h"
 #include "vmath.h"
+#include "fluidmaterialgrid.h"
 
 
 class SurfaceField
@@ -47,7 +48,7 @@ public:
     double getCellSize() { return dx; }
 
     void setSurfaceThreshold(double val) { surfaceThreshold = val; }
-    void setMaterialGrid(Array3d<int> matGrid);
+    void setMaterialGrid(FluidMaterialGrid matGrid);
     void setMaterialGrid();
     double getSurfaceThreshold() { return surfaceThreshold; }
 
@@ -68,7 +69,7 @@ protected:
     int i_width, j_height, k_depth;
     double dx = 1.0;
 
-    Array3d<int> materialGrid;
+    FluidMaterialGrid materialGrid;
     bool isMaterialGridSet = false;
 
     double surfaceThreshold;

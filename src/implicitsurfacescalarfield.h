@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "interpolation.h"
 #include "aabb.h"
+#include "fluidmaterialgrid.h"
 
 class ImplicitSurfaceScalarField
 {
@@ -56,7 +57,7 @@ public:
     void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double value);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
-    void setMaterialGrid(Array3d<int> &matGrid);
+    void setMaterialGrid(FluidMaterialGrid &matGrid);
     void setMaterialGrid(std::vector<GridIndex> &solidCells);
     void setSolidCells(std::vector<GridIndex> &solidCells);
     void getScalarField(Array3d<float> &field);

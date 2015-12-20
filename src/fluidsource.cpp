@@ -98,17 +98,17 @@ void FluidSource::deactivate() {
     isActive = false;
 }
 
-std::vector<GridIndex> FluidSource::getNewFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> FluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                      double dx) {
     return std::vector<GridIndex>();
 }
 
-std::vector<GridIndex> FluidSource::getFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> FluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                   double dx) {
     return std::vector<GridIndex>();
 }
 
-std::vector<GridIndex> FluidSource::getCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> FluidSource::getCells(FluidMaterialGrid &materialGrid,
                                              double dx) {
     return std::vector<GridIndex>();
 }

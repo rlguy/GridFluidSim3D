@@ -318,7 +318,7 @@ void ImplicitSurfaceScalarField::setMaterialGrid(std::vector<GridIndex> &solidCe
     }
 }
 
-void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
+void ImplicitSurfaceScalarField::setMaterialGrid(FluidMaterialGrid &matGrid) {
     assert(matGrid.width == _isize-1 && 
            matGrid.height == _jsize-1 && 
            matGrid.depth == _ksize-1);
@@ -327,7 +327,7 @@ void ImplicitSurfaceScalarField::setMaterialGrid(Array3d<int> &matGrid) {
     for (int k = 0; k < _ksize-1; k++) {
         for (int j = 0; j < _jsize-1; j++) {
             for (int i = 0; i < _isize-1; i++) {
-                if (matGrid(i, j, k) == M_SOLID) {
+                if (matGrid.isCellSolid(i, j, k)) {
                     Grid3d::getGridIndexVertices(i, j, k, vertices);
                     for (int idx = 0; idx < 8; idx++) {
                         _isVertexSolid.set(vertices[idx], true);

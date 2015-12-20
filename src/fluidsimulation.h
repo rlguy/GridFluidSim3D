@@ -54,6 +54,7 @@ freely, subject to the following restrictions:
 #include "threading.h"
 #include "gridindexkeymap.h"
 #include "pressuresolver.h"
+#include "fluidmaterialgrid.h"
 #include "vmath.h"
 
 struct MarkerParticle {
@@ -116,7 +117,7 @@ public:
     double getSimulationDepth();
     double getDensity();
     void setDensity(double p);
-    int getMaterial(int i, int j, int k);
+    Material getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
     void setSurfaceSubdivisionLevel(unsigned int n);
     void setMinimumPolyhedronTriangleCount(unsigned int n);
@@ -483,15 +484,6 @@ private:
     vmath::vec3 _RK3(vmath::vec3 p0, vmath::vec3 v0, double dt);
     vmath::vec3 _RK4(vmath::vec3 p0, vmath::vec3 v0, double dt);
 
-    // misc bool functions for checking cell contents and borders
-    inline bool _isCellAir(int i, int j, int k) { return _materialGrid(i, j, k) == M_AIR; }
-    inline bool _isCellFluid(int i, int j, int k) { return _materialGrid(i, j, k) == M_FLUID; }
-    inline bool _isCellSolid(int i, int j, int k) { return _materialGrid(i, j, k) == M_SOLID; }
-    inline bool _isCellAir(GridIndex g) { return _materialGrid(g) == M_AIR; }
-    inline bool _isCellFluid(GridIndex g) { return _materialGrid(g) == M_FLUID; }
-    inline bool _isCellSolid(GridIndex g) { return _materialGrid(g) == M_SOLID; }
-    
-
     inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
         if (i == grid.width) { return grid(i - 1, j, k) == value; }
         else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
@@ -516,16 +508,6 @@ private:
     }
     inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
         return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
-    }
-
-    inline bool _isFaceBorderingMaterialU(int i, int j, int k, int mat) {
-        return _isFaceBorderingGridValueU(i, j, k, mat, _materialGrid);
-    }
-    inline bool _isFaceBorderingMaterialV(int i, int j, int k, int mat) {
-        return _isFaceBorderingGridValueV(i, j, k, mat, _materialGrid);
-    }
-    inline bool _isFaceBorderingMaterialW(int i, int j, int k, int mat) {
-        return _isFaceBorderingGridValueW(i, j, k, mat, _materialGrid);
     }
 
     inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
@@ -563,18 +545,6 @@ private:
         if (k == _ksize) { return layerGrid(i, j, k - 1) >= 1.0; }
         else if (k > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0; }
         else { return layerGrid(i, j, k) >= 1.0; }
-    }
-
-    inline bool _isCellNeighbouringMaterial(GridIndex g, int material) {
-        GridIndex nbs[26];
-        Grid3d::getNeighbourGridIndices26(g, nbs);
-        for (int i = 0; i < 26; i++) {
-            if (_materialGrid(nbs[i]) == material) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     inline double _randomDouble(double min, double max) {
@@ -652,7 +622,7 @@ private:
     double _maxBrickIntensityAcceleration = 10.0;
     int _maxInactiveBrickFrames = 0;
 
-    double _ratioPICFLIP = 0.20f;
+    double _ratioPICFLIP = 0.35f;
     int _maxMarkerParticlesPerCell = 100;
 
     bool _isSurfaceMeshOutputEnabled = true;
@@ -680,7 +650,7 @@ private:
     double _fluidMeshScale = 1.0;
 
     MACVelocityField _MACVelocity;
-    Array3d<int> _materialGrid;
+    FluidMaterialGrid _materialGrid;
     std::vector<MarkerParticle> _markerParticles;
     std::vector<GridIndex> _fluidCellIndices;
     std::vector<GridIndex> _addedFluidCellQueue;

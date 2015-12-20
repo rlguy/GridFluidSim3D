@@ -25,12 +25,12 @@ freely, subject to the following restrictions:
 #include <iostream>
 #include <limits>
 #include <algorithm>
-
 #include "macvelocityfield.h"
 #include "gridindexkeymap.h"
 #include "logfile.h"
 #include "grid3d.h"
 #include "array3d.h"
+#include "fluidmaterialgrid.h"
 
 struct PressureSolverParameters {
     double cellwidth;
@@ -38,7 +38,7 @@ struct PressureSolverParameters {
     double deltaTime;
 
     std::vector<GridIndex> *fluidCells;
-    Array3d<int> *materialGrid;
+    FluidMaterialGrid *materialGrid;
     MACVelocityField *velocityField;
     LogFile *logfile;
 };
@@ -129,19 +129,6 @@ private:
         return _fluidCells->at(i);
     }
 
-    inline bool _isCellSolid(int i, int j, int k) {
-        return _materialGrid->get(i, j, k) == M_SOLID;
-    }
-    inline bool _isCellSolid(GridIndex g) {
-        return _materialGrid->get(g) == M_SOLID;
-    }
-    inline bool _isCellFluid(int i, int j, int k) {
-        return _materialGrid->get(i, j, k) == M_FLUID;
-    }
-    inline bool _isCellFluid(GridIndex g) {
-        return _materialGrid->get(g) == M_FLUID;
-    }
-
     void _initialize(PressureSolverParameters params);
     void _initializeGridIndexKeyMap();
     void _calculateNegativeDivergenceVector(VectorXd &b);
@@ -174,7 +161,7 @@ private:
     int _maxCGIterations = 200;
 
     std::vector<GridIndex> *_fluidCells;
-    Array3d<int> *_materialGrid;
+    FluidMaterialGrid *_materialGrid;
     MACVelocityField *_vField;
     LogFile *_logfile;
     GridIndexKeyMap _keymap;

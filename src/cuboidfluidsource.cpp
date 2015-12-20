@@ -102,7 +102,7 @@ void CuboidFluidSource::expand(double value) {
                     _bbox.depth + 2*value);
 }
 
-std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                               double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -124,7 +124,7 @@ std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materia
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) == M_AIR) {
+        if (materialGrid.isCellAir(g)) {
             newFluidCells.push_back(g);
         }
     }
@@ -132,7 +132,7 @@ std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(Array3d<int> &materia
     return newFluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                         double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -150,7 +150,7 @@ std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<int> &materialGr
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) == M_FLUID) {
+        if (materialGrid.isCellFluid(g)) {
             fluidCells.push_back(g);
         }
     }
@@ -158,7 +158,7 @@ std::vector<GridIndex> CuboidFluidSource::getFluidCells(Array3d<int> &materialGr
     return fluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getCells(Array3d<int> &materialGrid,
+std::vector<GridIndex> CuboidFluidSource::getCells(FluidMaterialGrid &materialGrid,
                                                    double dx) {
     if (!isActive) {
         return std::vector<GridIndex>();
@@ -180,7 +180,7 @@ std::vector<GridIndex> CuboidFluidSource::getCells(Array3d<int> &materialGrid,
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) != M_SOLID) {
+        if (!materialGrid.isCellSolid(g)) {
             cells.push_back(g);
         }
     }

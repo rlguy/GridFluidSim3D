@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 
 #include "vmath.h"
 #include "aabb.h"
+#include "fluidmaterialgrid.h"
 
 class CuboidFluidSource : public FluidSource
 {
@@ -38,11 +39,11 @@ public:
     CuboidFluidSource(AABB bbox, vmath::vec3 velocity);
     ~CuboidFluidSource();
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getFluidCells(FluidMaterialGrid &materialGrid,
                                                  double dx);
-    virtual std::vector<GridIndex> getCells(Array3d<int> &materialGrid,
+    virtual std::vector<GridIndex> getCells(FluidMaterialGrid &materialGrid,
                                             double dx);
     virtual AABB getAABB();
 
@@ -58,8 +59,6 @@ public:
     vmath::vec3 getCenter();
     void expand(double value);
     
-    
-
 private:
     AABB _bbox;
 
