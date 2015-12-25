@@ -44,13 +44,13 @@ public:
     ~TriangleMesh();
 
     bool loadOBJ(std::string OBJFilename) {
-        return loadOBJ(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), 1.0);
+        return loadOBJ(OBJFilename, vmath::vec3(), 1.0);
     }
     bool loadOBJ(std::string OBJFilename, vmath::vec3 offset) {
         return loadOBJ(OBJFilename, offset, 1.0);
     }
     bool loadOBJ(std::string OBJFilename, double scale) {
-        return loadOBJ(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), scale);
+        return loadOBJ(OBJFilename, vmath::vec3(), scale);
     }
     bool loadOBJ(std::string OBJFilename, vmath::vec3 offset, double scale);
 

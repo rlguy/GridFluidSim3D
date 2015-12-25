@@ -17,7 +17,6 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-
 #ifndef AABB_H
 #define AABB_H
 
@@ -49,10 +48,11 @@ public:
     vmath::vec3 getMaxPoint();
 
     vmath::vec3 position;
-    double width, height, depth;
+    double width = 0.0;
+    double height = 0.0;
+    double depth = 0.0;
 
 private:
-    GridIndex _positionToGridIndex(vmath::vec3 p, double dx);
     bool _axisTestX01(vmath::vec3 v0, vmath::vec3 v2,
         double a, double b, double fa, double fb);
     bool _axisTestX2(vmath::vec3 v0, vmath::vec3 v1,

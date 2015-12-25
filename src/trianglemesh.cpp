@@ -19,13 +19,10 @@ freely, subject to the following restrictions:
 */
 #include "trianglemesh.h"
 
-
-TriangleMesh::TriangleMesh()
-{
+TriangleMesh::TriangleMesh() {
 }
 
-TriangleMesh::~TriangleMesh()
-{
+TriangleMesh::~TriangleMesh() {
 }
 
 int TriangleMesh::numVertices() {
@@ -444,7 +441,7 @@ void TriangleMesh::updateVertexNormals() {
 
     vmath::vec3 n;
     for (unsigned int i = 0; i < _vertexTriangles.size(); i++) {
-        n = vmath::vec3(0.0, 0.0, 0.0);
+        n = vmath::vec3();
         for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
             n += facenormals[_vertexTriangles[i][j]];
         }
@@ -906,7 +903,7 @@ void TriangleMesh::_smoothTriangleMesh(double value, std::vector<bool> &isSmooth
             continue;
         }
 
-        avg = vmath::vec3(0.0, 0.0, 0.0);
+        avg = vmath::vec3();
         for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
             t = triangles[_vertexTriangles[i][j]];
             if (t.tri[0] != (int)i) {

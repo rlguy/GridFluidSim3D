@@ -17,9 +17,7 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-
 #include "particlemesher.h"
-
 
 ParticleMesher::ParticleMesher() {
 }
@@ -469,7 +467,7 @@ void ParticleMesher::_covarianceMatrixToSVD(vmath::mat3 &covariance, SVD &svd) {
 vmath::quat ParticleMesher::_diagonalizeMatrix(vmath::mat3 A) {
 
     int maxsteps = 24;
-    vmath::quat q(1.0, vmath::vec3(0.0, 0.0, 0.0));
+    vmath::quat q(1.0, vmath::vec3());
     int i = 0;
 
     for (i = 0; i < maxsteps; i++) {

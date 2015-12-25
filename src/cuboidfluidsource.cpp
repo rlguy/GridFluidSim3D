@@ -19,7 +19,6 @@ freely, subject to the following restrictions:
 */
 #include "cuboidfluidsource.h"
 
-
 CuboidFluidSource::CuboidFluidSource() {
 }
 
@@ -197,7 +196,7 @@ void CuboidFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                indices.push_back(GridIndex(i, j, k));
+                indices.push_back(i, j, k);
             }
         }
     }

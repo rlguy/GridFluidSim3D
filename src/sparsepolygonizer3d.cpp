@@ -19,15 +19,12 @@ freely, subject to the following restrictions:
 */
 #include "SparsePolygonizer3d.h"
 
-
 SparsePolygonizer3d::SparsePolygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
                                              _vertexValues(0, 0, 0, 0.0),
-                                             _isCellDone(0, 0, 0, false)
-{
+                                             _isCellDone(0, 0, 0, false) {
 }
 
-SparsePolygonizer3d::SparsePolygonizer3d(SparseImplicitSurfaceScalarField &scalarField)
-{
+SparsePolygonizer3d::SparsePolygonizer3d(SparseImplicitSurfaceScalarField &scalarField) {
     int i, j, k;
     scalarField.getGridDimensions(&i, &j, &k);
     _isize = i - 1;

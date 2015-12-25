@@ -35,8 +35,6 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "gridindexvector.h"
 
-#pragma once
-
 class SparsePolygonizer3d
 {
 public:

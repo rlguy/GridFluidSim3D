@@ -30,7 +30,7 @@ template <class T>
 class SparseArray3d
 {
 public:
-    SparseArray3d() : width(0), height(0), depth(0) {
+    SparseArray3d() {
     }
 
     SparseArray3d(int i, int j, int k, T defVal) : width(i), height(j), depth(k),
@@ -51,8 +51,7 @@ public:
         }
     }
 
-    SparseArray3d operator=(const SparseArray3d &rhs)
-    {
+    SparseArray3d operator=(const SparseArray3d &rhs) {
         width = rhs.width;
         height = rhs.height;
         depth = rhs.depth;
@@ -77,8 +76,7 @@ public:
         _sparseIndices.clear();
     }
     
-    T operator()(int i, int j, int k)
-    {
+    T operator()(int i, int j, int k) {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -94,8 +92,7 @@ public:
         return _defaultValue;
     }
 
-    T operator()(GridIndex g)
-    {
+    T operator()(GridIndex g) {
         bool isInRange = _isIndexInRange(g);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;

@@ -19,7 +19,6 @@ freely, subject to the following restrictions:
 */
 #include "collision.h"
 
-
 // method adapted from:
 // http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
 bool Collision::rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,

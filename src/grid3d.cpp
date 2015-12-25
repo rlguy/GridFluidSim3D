@@ -452,7 +452,7 @@ AABB Grid3d::fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax) {
     GridIndex gmax = positionToGridIndex(pmax, dx);
 
     if (!isGridIndexInRange(gmin, imax, jmax, kmax)) {
-        pmin = vmath::vec3(0.0, 0.0, 0.0);
+        pmin = vmath::vec3();
     }
 
     vmath::vec3 eps = vmath::vec3(10e-12, 10e-12, 10e-12);

@@ -23,15 +23,14 @@ freely, subject to the following restrictions:
 FluidSimulation::FluidSimulation() {
 }
 
-FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size) :
-                                _isize(x_voxels), _jsize(y_voxels), _ksize(z_voxels), _dx(cell_size),
+FluidSimulation::FluidSimulation(int isize, int jsize, int ksize, double dx) :
+                                _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx),
                                 _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0)),
-                                _bodyForce(0.0, 0.0, 0.0),
-                                _MACVelocity(_isize, _jsize, _ksize, cell_size),
+                                _MACVelocity(_isize, _jsize, _ksize, _dx),
                                 _materialGrid(_isize, _jsize, _ksize),
                                 _fluidCellIndices(_isize, _jsize, _ksize),
                                 _addedFluidCellQueue(_isize, _jsize, _ksize),
-                                _levelset(_isize, _jsize, _ksize, cell_size)
+                                _levelset(_isize, _jsize, _ksize, _dx)
 {
 }
 
@@ -439,7 +438,7 @@ void FluidSimulation::addFluidCell(int i, int j, int k) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     if (_materialGrid.isCellAir(i, j, k)) {
-        _addedFluidCellQueue.push_back(GridIndex(i, j, k));
+        _addedFluidCellQueue.push_back(i, j, k);
     }
 }
 
@@ -564,7 +563,7 @@ void FluidSimulation::_initializeSolidCells() {
 }
 
 void FluidSimulation::_addMarkerParticlesToCell(GridIndex g) {
-    _addMarkerParticlesToCell(g, vmath::vec3(0.0, 0.0, 0.0));
+    _addMarkerParticlesToCell(g, vmath::vec3());
 }
 
 void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity) {
@@ -596,7 +595,7 @@ void FluidSimulation::_addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocit
 }
 
 void FluidSimulation::_addMarkerParticle(vmath::vec3 p) {
-    _addMarkerParticle(p, vmath::vec3(0.0, 0.0, 0.0));
+    _addMarkerParticle(p, vmath::vec3());
 }
 
 void FluidSimulation::_addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity) {
@@ -675,7 +674,7 @@ void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
         for (int j = 0; j < _materialGrid.height; j++) {
             for (int i = 0; i < _materialGrid.width; i++) {
                 if (_materialGrid.isCellFluid(i, j, k)) {
-                    _fluidCellIndices.push_back(GridIndex(i, j, k));
+                    _fluidCellIndices.push_back(i, j, k);
                 }
             }
         }
@@ -753,7 +752,6 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _currentFrame = state.getCurrentFrame();
     _currentBrickMeshFrame = _currentFrame;
 
-    _bodyForce = vmath::vec3(0.0, 0.0, 0.0);
     _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
     _materialGrid = FluidMaterialGrid(_isize, _jsize, _ksize);
     _levelset = LevelSet(_isize, _jsize, _ksize, _dx);
@@ -928,7 +926,7 @@ void FluidSimulation::_updateFluidSources() {
 }
 
 void FluidSimulation::_updateAddedFluidCellQueue() {
-    vmath::vec3 velocity = vmath::vec3(0.0, 0.0, 0.0);
+    vmath::vec3 velocity;
     _addNewFluidCells(_addedFluidCellQueue, velocity);
     _addedFluidCellQueue.clear();
     _addedFluidCellQueue.shrink_to_fit();
@@ -966,7 +964,7 @@ void FluidSimulation::_updateFluidCells() {
         for (int j = 0; j < _materialGrid.height; j++) {
             for (int i = 0; i < _materialGrid.width; i++) {
                 if (_materialGrid.isCellFluid(i, j, k)) {
-                    _fluidCellIndices.push_back(GridIndex(i, j, k));
+                    _fluidCellIndices.push_back(i, j, k);
                 }
             }
         }
@@ -2926,7 +2924,7 @@ vmath::vec3 FluidSimulation::_calculateSolidCellCollision(vmath::vec3 p0,
         *normal = collisionFace.normal;
         return collisionPoint;
     } else {
-        *normal = vmath::vec3(0.0, 0.0, 0.0);
+        *normal = vmath::vec3();
         return p0;
     }
 }

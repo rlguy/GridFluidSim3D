@@ -57,20 +57,19 @@ private:
         GridPointReference ref;
         int componentID;
 
-        SurfaceParticle() : position(vmath::vec3(0.0, 0.0, 0.0)), 
-                            ref(-1),
+        SurfaceParticle() : ref(-1),
                             componentID(-1) {}
         SurfaceParticle(vmath::vec3 p) : position(p), 
-                                       ref(-1),
-                                       componentID(-1) {}
+                                         ref(-1),
+                                         componentID(-1) {}
         SurfaceParticle(vmath::vec3 p, GridPointReference r) : 
-                                       position(p), 
-                                       ref(r),
-                                       componentID(-1) {}
+                                         position(p), 
+                                         ref(r),
+                                         componentID(-1) {}
         SurfaceParticle(vmath::vec3 p, GridPointReference r, int compID) : 
-                                       position(p), 
-                                       ref(r),
-                                       componentID(compID) {}
+                                         position(p), 
+                                         ref(r),
+                                         componentID(compID) {}
     };
 
     struct IsotropicParticle {
@@ -155,8 +154,8 @@ private:
     double _kernelRadius = 0.0;
     double _invKernelRadius = 1.0;
 
-    double _supportRadiusFactor = 4.5;              // in number of _particleRadius
-    double _connectedComponentRadiusFactor = 3.0;   // in number of _particleRadius
+    double _supportRadiusFactor = 3.0;              // in number of _particleRadius
+    double _connectedComponentRadiusFactor = 2.5;   // in number of _particleRadius
     double _smoothingConstant = 0.95;               // in range [0.0,1.0]
     int _numThreads = 8;
 
@@ -169,7 +168,7 @@ private:
     double _dx = 0;
 
     int _maxParticlesPerCell = 16;
-    double _maxParticleToSurfaceDepth = 2.0; // in number of cells
+    double _maxParticleToSurfaceDepth = 1.0; // in number of cells
 
     SpatialPointGrid _pointGrid;
     std::vector<SurfaceParticle> _surfaceParticles;

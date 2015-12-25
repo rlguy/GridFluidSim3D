@@ -18,8 +18,8 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 #include "fluidsimulationsavestate.h"
-#include "fluidsimulation.h"
 
+#include "fluidsimulation.h"
 
 FluidSimulationSaveState::FluidSimulationSaveState() {
 }

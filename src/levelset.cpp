@@ -19,8 +19,7 @@ freely, subject to the following restrictions:
 */
 #include "levelset.h"
 
-LevelSet::LevelSet()
-{
+LevelSet::LevelSet() {
 }
 
 LevelSet::LevelSet(int i, int j, int k, double dx) : 
@@ -30,8 +29,7 @@ LevelSet::LevelSet(int i, int j, int k, double dx) :
                                  _isDistanceSet(i, j, k, false) {
 }
 
-LevelSet::~LevelSet()
-{
+LevelSet::~LevelSet() {
 }
 
 void LevelSet::setSurfaceMesh(TriangleMesh m) {

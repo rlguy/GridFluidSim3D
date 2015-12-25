@@ -121,7 +121,7 @@ void FluidBrickGrid::_getConnectedBricks(int i, int j, int k,
     Array3d<bool> isProcessed = Array3d<bool>(bw, bh, bd, false);
 
     GridIndexVector queue(_isize, _jsize, _ksize);
-    queue.push_back(GridIndex(i, j, k));
+    queue.push_back(i, j, k);
     newBricks.set(i, j, k, false);
     isProcessed.set(i, j, k, true);
 

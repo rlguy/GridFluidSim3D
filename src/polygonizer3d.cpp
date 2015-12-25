@@ -19,12 +19,10 @@ freely, subject to the following restrictions:
 */
 #include "polygonizer3d.h"
 
-
 Polygonizer3d::Polygonizer3d() {
 }
 
-Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
-{
+Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField) {
     _scalarField = scalarField;
 
     int i, j, k;

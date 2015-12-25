@@ -19,24 +19,18 @@ freely, subject to the following restrictions:
 */
 #include "aabb.h"
 
-
-AABB::AABB() : position(vmath::vec3(0.0, 0.0, 0.0)),
-               width(0.0), height(0.0), depth(0.0)
-{
+AABB::AABB() {
 }
 
 AABB::AABB(double x, double y, double z, double w, double h, double d) : 
-               position(vmath::vec3(x, y, z)), width(w), height(h), depth(d)
-{
+               position(x, y, z), width(w), height(h), depth(d) {
 }
 
 AABB::AABB(vmath::vec3 p, double w, double h, double d) : 
-               position(p), width(w), height(h), depth(d)
-{
+               position(p), width(w), height(h), depth(d) {
 }
 
-AABB::AABB(vmath::vec3 p1, vmath::vec3 p2) 
-{
+AABB::AABB(vmath::vec3 p1, vmath::vec3 p2) {
     double minx = fmin(p1.x, p2.x);
     double miny = fmin(p1.y, p2.y);
     double minz = fmin(p1.z, p2.z);
@@ -69,10 +63,11 @@ AABB::AABB(std::vector<vmath::vec3> &points) {
         maxz = fmax(p.z, maxz);
     }
 
+    double eps = 1e-9;
     position = vmath::vec3(minx, miny, minz);
-    width = maxx - minx;
-    height = maxy - miny;
-    depth = maxz - minz;
+    width = maxx - minx + eps;
+    height = maxy - miny + eps;
+    depth = maxz - minz + eps;
 }
 
 AABB::AABB(Triangle t, std::vector<vmath::vec3> &vertices) {
@@ -98,10 +93,11 @@ AABB::AABB(Triangle t, std::vector<vmath::vec3> &vertices) {
         maxz = fmax(p.z, maxz);
     }
 
+    double eps = 1e-9;
     position = vmath::vec3(minx, miny, minz);
-    width = maxx - minx;
-    height = maxy - miny;
-    depth = maxz - minz;
+    width = maxx - minx + eps;
+    height = maxy - miny + eps;
+    depth = maxz - minz + eps;
 }
 
 AABB::AABB(GridIndex g, double dx) {
@@ -109,8 +105,7 @@ AABB::AABB(GridIndex g, double dx) {
     width = height = depth = dx;
 }
 
-AABB::~AABB()
-{
+AABB::~AABB() {
 }
 
 void AABB::expand(double v) {
@@ -124,13 +119,6 @@ void AABB::expand(double v) {
 bool AABB::isPointInside(vmath::vec3 p) {
     return p.x >= position.x && p.y >= position.y && p.z >= position.z &&
            p.x < position.x + width && p.y < position.y + height && p.z < position.z + depth;
-}
-
-GridIndex AABB::_positionToGridIndex(vmath::vec3 p, double dx) {
-    double invdx = 1.0 / dx;
-    return GridIndex((int)floor(p.x*invdx),
-                     (int)floor(p.y*invdx),
-                     (int)floor(p.z*invdx));
 }
 
 bool AABB::isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2) {

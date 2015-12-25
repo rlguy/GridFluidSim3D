@@ -19,27 +19,22 @@ freely, subject to the following restrictions:
 */
 #include "macvelocityfield.h"
 
-
-MACVelocityField::MACVelocityField()
-{
+MACVelocityField::MACVelocityField() {
     _initializeVelocityGrids();
 }
 
-MACVelocityField::MACVelocityField(int x_voxels, int y_voxels, int z_voxels, double cell_size) :
-                                   _isize(x_voxels), _jsize(y_voxels), _ksize(z_voxels),
-                                   _dx(cell_size) {
+MACVelocityField::MACVelocityField(int isize, int jsize, int ksize, double dx) :
+                                   _isize(isize), _jsize(jsize), _ksize(ksize),
+                                   _dx(dx) {
 
     _initializeVelocityGrids();
 }
 
 
-MACVelocityField::~MACVelocityField()
-{
-
+MACVelocityField::~MACVelocityField() {
 }
 
 void MACVelocityField::_initializeVelocityGrids() {
-
     _u = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
     _v = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
     _w = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
@@ -760,7 +755,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtPosition(vmath::vec3 pos) {
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtPosition(double x, double y, double z) {
     if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
-        return vmath::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3();
     }
 
     double xvel = _interpolateU(x, y, z);
@@ -776,7 +771,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(vmath::vec3 pos) 
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double y, double z) {
     if (!Grid3d::isPositionInGrid(x, y, z, _dx, _isize, _jsize, _ksize)) {
-        return vmath::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3();
     }
 
     double xvel = _interpolateLinearU(x, y, z);
@@ -789,7 +784,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtPositionLinear(double x, double 
 vmath::vec3 MACVelocityField::evaluateChangeInVelocityAtPosition(vmath::vec3 p, 
                                                                MACVelocityField &savedField) {
     if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
-        return vmath::vec3(0.0, 0.0, 0.0);
+        return vmath::vec3();
     }
 
     double xvel = _interpolateDeltaVelocityU(p.x, p.y, p.z, savedField);

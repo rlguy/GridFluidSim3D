@@ -22,8 +22,7 @@ freely, subject to the following restrictions:
 GridIndexKeyMap::GridIndexKeyMap() {
 }
 
-GridIndexKeyMap::GridIndexKeyMap(int i, int j, int k) : 
-                                    _isize(i), _jsize(j), _ksize(k) {
+GridIndexKeyMap::GridIndexKeyMap(int i, int j, int k) : _isize(i), _jsize(j), _ksize(k) {
     _indices = std::vector<int>(i*j*k, _notFoundValue);
 }
 

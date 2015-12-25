@@ -17,9 +17,7 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-
 #include "spatialpointgrid.h"
-
 
 SpatialPointGrid::SpatialPointGrid() {
 }
@@ -27,8 +25,7 @@ SpatialPointGrid::SpatialPointGrid() {
 SpatialPointGrid::SpatialPointGrid(int isize, int jsize, int ksize, double dx) :
                                         _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx),
                                         _grid(_isize, _jsize, _ksize),
-                                        _bbox(vmath::vec3(0.0, 0.0, 0.0), 
-                                              _dx*_isize, _dx*_jsize, _dx*_ksize) {
+                                        _bbox(vmath::vec3(), _dx*_isize, _dx*_jsize, _dx*_ksize) {
 }
 
 SpatialPointGrid::~SpatialPointGrid() {

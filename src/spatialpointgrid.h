@@ -30,7 +30,6 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "vmath.h"
 
-
 struct GridPointReference {
     int id;
 

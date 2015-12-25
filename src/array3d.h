@@ -17,7 +17,6 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-
 #ifndef ARRAY3D_H
 #define ARRAY3D_H
 
@@ -58,24 +57,20 @@ template <class T>
 class Array3d
 {
 public:
-    Array3d() : width(0), height(0), depth(0)
-    {
+    Array3d() {
         _initializeGrid();
     }
 
-    Array3d(int i, int j, int k) : width(i), height(j), depth(k), _numElements(i*j*k)
-    {
+    Array3d(int i, int j, int k) : width(i), height(j), depth(k), _numElements(i*j*k) {
         _initializeGrid();
     }
 
-    Array3d(int i, int j, int k, T fillValue) : width(i), height(j), depth(k), _numElements(i*j*k)
-    {
+    Array3d(int i, int j, int k, T fillValue) : width(i), height(j), depth(k), _numElements(i*j*k) {
         _initializeGrid();
         fill(fillValue);
     }
 
-    Array3d(const Array3d &obj)
-    {
+    Array3d(const Array3d &obj) {
         width = obj.width;
         height = obj.height;
         depth = obj.depth;
@@ -98,8 +93,7 @@ public:
         }
     }
 
-    Array3d operator=(const Array3d &rhs)
-    {
+    Array3d operator=(const Array3d &rhs) {
         delete[] _grid;
 
         width = rhs.width;
@@ -126,8 +120,7 @@ public:
         return *this;
     }
 
-    ~Array3d()
-    {
+    ~Array3d() {
         delete[] _grid;
     }
 
@@ -137,8 +130,7 @@ public:
         }
     }
 
-    T operator()(int i, int j, int k)
-    {
+    T operator()(int i, int j, int k) {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -148,8 +140,7 @@ public:
         return _grid[_getFlatIndex(i, j, k)];
     }
 
-    T operator()(GridIndex g)
-    {
+    T operator()(GridIndex g) {
         bool isInRange = _isIndexInRange(g.i, g.j, g.k);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -159,8 +150,7 @@ public:
         return _grid[_getFlatIndex(g)];;
     }
 
-    T get(int i, int j, int k)
-    {
+    T get(int i, int j, int k) {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
@@ -170,8 +160,7 @@ public:
         return _grid[_getFlatIndex(i, j, k)];
     }
 
-    T get(GridIndex g)
-    {
+    T get(GridIndex g) {
         bool isInRange = _isIndexInRange(g.i, g.j, g.k);
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;

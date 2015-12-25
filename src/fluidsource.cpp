@@ -19,15 +19,11 @@ freely, subject to the following restrictions:
 */
 #include "fluidsource.h"
 
-
-FluidSource::FluidSource() : position(0, 0, 0),
-                             velocity(0.0, 0.0, 0.0),
-                             direction(1.0, 0.0, 0.0) {
+FluidSource::FluidSource() {
 }
 
 FluidSource::FluidSource(vmath::vec3 pos) : position(pos),
-                                          velocity(0.0, 0.0, 0.0),
-                                          direction(1.0, 0.0, 0.0) {
+                                            direction(1.0, 0.0, 0.0) {
 }
 
 FluidSource::FluidSource(vmath::vec3 pos, vmath::vec3 vel) : 
@@ -60,7 +56,7 @@ void FluidSource::setVelocity(vmath::vec3 v) {
     if (vmath::length(v) > 0.0) {
         direction = vmath::normalize(v);
     } else {
-        direction = vmath::vec3(0.0, 0.0, 0.0);
+        direction = vmath::vec3(1.0, 0.0, 0.0);
     }
 }
 

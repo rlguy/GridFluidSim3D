@@ -19,14 +19,12 @@ freely, subject to the following restrictions:
 */
 #include "implicitpointprimitive.h"
 
-
-ImplicitPointPrimitive::ImplicitPointPrimitive() : _position(vmath::vec3(0.0, 0.0, 0.0))
-{
+ImplicitPointPrimitive::ImplicitPointPrimitive() {
     _initFieldFunctionCoefficients();
 }
 
 ImplicitPointPrimitive::ImplicitPointPrimitive(double x, double y, double z, double r) :
-                                               _position(vmath::vec3(x, y, z)), _radius(r)
+                                               _position(x, y, z), _radius(r)
 {
     _initFieldFunctionCoefficients();
 }

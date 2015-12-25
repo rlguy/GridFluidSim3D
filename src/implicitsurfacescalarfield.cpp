@@ -19,7 +19,6 @@ freely, subject to the following restrictions:
 */
 #include "implicitsurfacescalarfield.h"
 
-
 ImplicitSurfaceScalarField::ImplicitSurfaceScalarField() {
 }
 
@@ -27,9 +26,7 @@ ImplicitSurfaceScalarField::ImplicitSurfaceScalarField() {
 ImplicitSurfaceScalarField::ImplicitSurfaceScalarField(int i, int j, int k, double dx) :
                                                        _isize(i), _jsize(j), _ksize(k), _dx(dx),
                                                        _field(i, j, k, 0.0),
-                                                       _centerField(0, 0, 0, 0.0),
-                                                       _isVertexSolid(i, j, k, false),
-                                                       _weightField(0, 0, 0, 0.0) {
+                                                       _isVertexSolid(i, j, k, false) {
 }
 
 ImplicitSurfaceScalarField::~ImplicitSurfaceScalarField() {

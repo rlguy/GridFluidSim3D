@@ -24,8 +24,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include <thread>
-#include <unordered_map>
 #include <assert.h>
 
 #include "stopwatch.h"
@@ -58,21 +56,18 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 
 struct MarkerParticle {
-    vmath::vec3 position = vmath::vec3(0.0, 0.0, 0.0);
-    vmath::vec3 velocity = vmath::vec3(0.0, 0.0, 0.0);
+    vmath::vec3 position;
+    vmath::vec3 velocity;
 
-    MarkerParticle() : position(0.0, 0.0, 0.0), 
-                        velocity(0.0, 0.0, 0.0) {}
+    MarkerParticle() {}
 
-    MarkerParticle(vmath::vec3 p) : position(p),
-                                  velocity(0.0, 0.0, 0.0) {}
+    MarkerParticle(vmath::vec3 p) : position(p) {}
     MarkerParticle(vmath::vec3 p, vmath::vec3 v) : 
                                   position(p),
                                   velocity(v) {}
 
     MarkerParticle(double x, double y, double z) : 
-                                  position(x, y, z),
-                                  velocity(0.0, 0.0, 0.0) {}
+                                  position(x, y, z) {}
 };
 
 struct DiffuseParticle {
@@ -81,9 +76,7 @@ struct DiffuseParticle {
     float lifetime;
     int type;
 
-    DiffuseParticle() : position(0.0, 0.0, 0.0),
-                        velocity(0.0, 0.0, 0.0),
-                        lifetime(0.0),
+    DiffuseParticle() : lifetime(0.0),
                         type(-1) {}
 
     DiffuseParticle(vmath::vec3 p, vmath::vec3 v, float time) : 
@@ -97,7 +90,7 @@ class FluidSimulation
 {
 public:
     FluidSimulation();
-    FluidSimulation(int x_voxels, int y_voxels, int z_voxels, double cell_size);
+    FluidSimulation(int isize, int jsize, int ksize, double dx);
     FluidSimulation(FluidSimulationSaveState &state);
     ~FluidSimulation();
 
@@ -200,9 +193,7 @@ private:
         double wavecrestPotential;
         double turbulencePotential;
 
-        DiffuseParticleEmitter() : position(0.0, 0.0, 0.0),
-                                   velocity(0.0, 0.0, 0.0),
-                                   energyPotential(0.0),
+        DiffuseParticleEmitter() : energyPotential(0.0),
                                    wavecrestPotential(0.0),
                                    turbulencePotential(0.0) {}
 
@@ -221,8 +212,7 @@ private:
         double miny, maxy;
         double minz, maxz;
 
-        CellFace() : normal(0.0, 0.0, 0.0),
-                     minx(0.0), maxx(0.0),
+        CellFace() : minx(0.0), maxx(0.0),
                      miny(0.0), maxy(0.0),
                      minz(0.0), maxz(0.0) {}
 
@@ -235,52 +225,22 @@ private:
 
     struct FluidPoint {
         vmath::vec3 position;
-        double radius;
+        double radius = 0.0;
 
-        FluidPoint() : position(0.0, 0.0, 0.0),
-                       radius(0.0) {}
+        FluidPoint() {}
         FluidPoint(vmath::vec3 p, double r) : position(p),
-                                            radius(r) {}
+                                              radius(r) {}
     };
 
     struct FluidCuboid {
         AABB bbox;
 
-        FluidCuboid() : bbox(vmath::vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0) {}
+        FluidCuboid() {}
         FluidCuboid(vmath::vec3 p, double w, double h, double d) : 
                         bbox(p, w, h, d) {}
     };
 
-    struct MatrixCoefficients {
-        Array3d<float> diag;
-        Array3d<float> plusi;
-        Array3d<float> plusj;
-        Array3d<float> plusk;
-        int width, height, depth;
-
-        MatrixCoefficients() : width(0), height(0), depth(0) {} 
-        MatrixCoefficients(int i, int j, int k) : 
-                                diag(Array3d<float>(i, j, k, 0.0f)),
-                                plusi(Array3d<float>(i, j, k, 0.0f)),
-                                plusj(Array3d<float>(i, j, k, 0.0f)),
-                                plusk(Array3d<float>(i, j, k, 0.0f)),
-                                width(i), height(j), depth(k) {};
-    };
-
-    struct VectorCoefficients {
-        Array3d<float> vector;
-        int width, height, depth;
-
-        VectorCoefficients() : width(0), height(0), depth(0) {}
-        VectorCoefficients(int i, int j, int k) : 
-                                vector(Array3d<float>(i, j, k, 0.0f)),
-                                width(i), height(j), depth(k) {}
-    };
-
     // Type constants
-    int M_AIR = 0;
-    int M_FLUID = 1;
-    int M_SOLID = 2;
     int T_INFLOW = 0;
     int T_OUTFLOW = 1;
     int DP_BUBBLE = 0;

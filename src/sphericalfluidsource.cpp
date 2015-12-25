@@ -19,7 +19,6 @@ freely, subject to the following restrictions:
 */
 #include "sphericalfluidsource.h"
 
-
 SphericalFluidSource::SphericalFluidSource() {
 }
 

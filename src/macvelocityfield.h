@@ -36,7 +36,7 @@ class MACVelocityField
 {
 public:
     MACVelocityField();
-    MACVelocityField(int x_voxels, int y_voxels, int z_voxels, double cell_size);
+    MACVelocityField(int isize, int jsize, int ksize, double dx);
     ~MACVelocityField();
 
     void getGridDimensions(int *i, int *j, int *k);

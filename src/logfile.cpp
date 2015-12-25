@@ -19,31 +19,26 @@ freely, subject to the following restrictions:
 */
 #include "logfile.h"
 
-
 LogFile::LogFile() : _path("logs"),
                      _filename(getTime() + ".txt"),
                      _startTimeString(getTime()),
-                     _separator("------------------------------------------------------------")
-{
+                     _separator("------------------------------------------------------------") {
 }
 
 LogFile::LogFile(std::string filename) : _path("logs"), 
                                          _filename(filename),
                                          _startTimeString(getTime()),
-                                         _separator("------------------------------------------------------------")
-{
+                                         _separator("------------------------------------------------------------") {
 }
 
 LogFile::LogFile(std::string filename, std::string extension) : 
                                          _path("logs"),
                                          _filename(filename + "." + extension),
                                          _startTimeString(getTime()),
-                                         _separator("------------------------------------------------------------")
-{
+                                         _separator("------------------------------------------------------------") {
 }
 
-LogFile::~LogFile()
-{
+LogFile::~LogFile() {
 }
 
 void LogFile::write() {
