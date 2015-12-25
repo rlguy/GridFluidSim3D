@@ -23,7 +23,6 @@ SOURCES=$(SOURCEPATH)/grid3d.cpp \
 		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
 		$(SOURCEPATH)/interpolation.cpp \
 		$(SOURCEPATH)/levelset.cpp \
-		$(SOURCEPATH)/levelsetfield.cpp \
 		$(SOURCEPATH)/logfile.cpp \
 		$(SOURCEPATH)/macvelocityfield.cpp \
 		$(SOURCEPATH)/main.cpp \
@@ -35,7 +34,6 @@ SOURCES=$(SOURCEPATH)/grid3d.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \
 		$(SOURCEPATH)/sphericalfluidsource.cpp \
 		$(SOURCEPATH)/stopwatch.cpp \
-		$(SOURCEPATH)/surfacefield.cpp \
 		$(SOURCEPATH)/threading.cpp \
 		$(SOURCEPATH)/trianglemesh.cpp \
 		$(SOURCEPATH)/turbulencefield.cpp \
