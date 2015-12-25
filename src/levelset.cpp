@@ -25,10 +25,9 @@ LevelSet::LevelSet()
 
 LevelSet::LevelSet(int i, int j, int k, double dx) : 
                                  _isize(i), _jsize(j), _ksize(k), _dx(dx),
-                                 _signedDistance(Array3d<float>(i, j, k, 0.0f)),
-                                 _indexGrid(Array3d<int>(i, j, k, -1)),
-                                 _isDistanceSet(Array3d<bool>(i, j, k, false)),
-                                 _distanceField(LevelSetField(i, j, k, dx)) {
+                                 _signedDistance(i, j, k, 0.0f),
+                                 _indexGrid(i, j, k, -1),
+                                 _isDistanceSet(i, j, k, false) {
 }
 
 LevelSet::~LevelSet()
@@ -52,7 +51,7 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, GridIndexVector &cells) {
 
     AABB cbbox = AABB(vmath::vec3(), _dx, _dx, _dx);
     for (unsigned int i = 0; i < testcells.size(); i++) {
-        cbbox.position = _gridIndexToPosition(testcells[i]);
+        cbbox.position = Grid3d::GridIndexToPosition(testcells[i], _dx);
         if (cbbox.isOverlappingTriangle(t, _surfaceMesh.vertices)) {
             cells.push_back(testcells[i]);
         }
@@ -213,7 +212,7 @@ void LevelSet::_updateCellSign(GridIndex g, std::vector<vmath::vec3> &triangleCe
     //     inside mesh, signed distance is positive
 
     int tidx = _indexGrid(g);
-    vmath::vec3 p = _gridIndexToCellCenter(g);
+    vmath::vec3 p =  Grid3d::GridIndexToCellCenter(g, _dx);
     vmath::vec3 ct = triangleCenters[tidx];
     vmath::vec3 n = triangleDirections[tidx];
     vmath::vec3 v = ct - p;
@@ -309,12 +308,10 @@ void LevelSet::calculateSignedDistanceField(int numLayers) {
     _squareRootDistanceField();
     _calculateDistanceFieldSigns();
     _floodFillMissingSignedDistances();
-
-    _distanceField.setSignedDistanceField(_signedDistance);
 }
 
 double LevelSet::_minDistToTriangleSquared(GridIndex g, int tidx) {
-    vmath::vec3 p = _gridIndexToCellCenter(g);
+    vmath::vec3 p =  Grid3d::GridIndexToCellCenter(g, _dx);
     return _minDistToTriangleSquared(p, tidx);
 }
 
@@ -349,7 +346,7 @@ vmath::vec3 LevelSet::_findClosestPointOnSurface(GridIndex g) {
 
     vmath::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(_indexGrid(g), tri);
-    vmath::vec3 p0 = _gridIndexToCellCenter(g);
+    vmath::vec3 p0 =  Grid3d::GridIndexToCellCenter(g, _dx);
     
     return Collision::findClosestPointOnTriangle(p0, tri[0], tri[1], tri[2]);
 }
@@ -640,7 +637,7 @@ double LevelSet::getSurfaceCurvature(unsigned int tidx) {
     return (k0 + k1 + k2) / 3.0;
 }
 
-double LevelSet::_interpolateSignedDistance(vmath::vec3 p) {
+double LevelSet::_linearInterpolateSignedDistance(vmath::vec3 p) {
     p -= vmath::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
@@ -680,6 +677,60 @@ double LevelSet::_interpolateSignedDistance(vmath::vec3 p) {
     return Interpolation::trilinearInterpolate(points, ix, iy, iz);
 }
 
+double LevelSet::_cubicInterpolateSignedDistance(vmath::vec3 p) {
+    if (!Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize)) {
+        return 0.0;
+    }
+
+    double x = p.x - 0.5*_dx;
+    double y = p.y - 0.5*_dx;
+    double z = p.z - 0.5*_dx;
+
+    int i, j, k;
+    double gx, gy, gz;
+    Grid3d::positionToGridIndex(x, y, z, _dx, &i, &j, &k);
+    Grid3d::GridIndexToPosition(i, j, k, _dx, &gx, &gy, &gz);
+
+    double inv_dx = 1 / _dx;
+    double ix = (x - gx)*inv_dx;
+    double iy = (y - gy)*inv_dx;
+    double iz = (z - gz)*inv_dx;
+
+    int refi = i - 1;
+    int refj = j - 1;
+    int refk = k - 1;
+
+    double min = std::numeric_limits<double>::infinity();
+    double max = -std::numeric_limits<double>::infinity();
+    double points[4][4][4];
+    for (int pk = 0; pk < 4; pk++) {
+        for (int pj = 0; pj < 4; pj++) {
+            for (int pi = 0; pi < 4; pi++) {
+                if (_signedDistance.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
+                    points[pi][pj][pk] = _signedDistance(pi + refi, pj + refj, pk + refk);
+
+                    if (points[pi][pj][pk] < min) {
+                        min = points[pi][pj][pk];
+                    } else if (points[pi][pj][pk] > max) {
+                        max = points[pi][pj][pk];
+                    }
+                } else {
+                    points[pi][pj][pk] = 0;
+                }
+            }
+        }
+    }
+
+    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (val < min) {
+        val = min;
+    } else if (val > max) {
+        val = max;
+    }
+
+    return val;
+}
+
 double LevelSet::getDistance(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
     assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
@@ -688,7 +739,7 @@ double LevelSet::getDistance(vmath::vec3 p) {
         return std::numeric_limits<double>::infinity();
     }
 
-    return fabs(_interpolateSignedDistance(p));
+    return fabs(_linearInterpolateSignedDistance(p));
 }
 
 double LevelSet::getSignedDistance(vmath::vec3 p) {
@@ -699,7 +750,7 @@ double LevelSet::getSignedDistance(vmath::vec3 p) {
         return std::numeric_limits<double>::infinity();
     }
 
-    return _interpolateSignedDistance(p);
+    return _linearInterpolateSignedDistance(p);
 }
 
 double LevelSet::getDistance(GridIndex g) {
@@ -729,4 +780,18 @@ bool LevelSet::isPointInInsideCell(vmath::vec3 p) {
     assert(_isDistanceSet(g));
 
     return _signedDistance(g) > 0.0;
+}
+
+bool LevelSet::_isPointInsideSurface(vmath::vec3 p) {
+    return _cubicInterpolateSignedDistance(p) > 0.0;
+}
+
+bool LevelSet::_isCellInsideSurface(GridIndex g) {
+    assert(_isDistanceSet(g));
+    return _signedDistance(g) > 0.0;
+}
+
+bool LevelSet::_isCellInsideSurface(int i, int j, int k) {
+    assert(_isDistanceSet(i, j, k));
+    return _signedDistance(i, j, k) > 0.0;
 }

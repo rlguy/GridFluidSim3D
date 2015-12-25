@@ -33,7 +33,6 @@ freely, subject to the following restrictions:
 #include "collision.h"
 #include "trianglemesh.h"
 #include "macvelocityfield.h"
-#include "levelsetfield.h"
 #include "gridindexvector.h"
 
 class LevelSet
@@ -96,32 +95,12 @@ private:
     int _getRandomTriangle(std::vector<int> &tris, std::vector<double> &distribution);
     vmath::vec3 _getRandomPointInTriangle(int tidx);
 
-    double _interpolateSignedDistance(vmath::vec3 p);
+    double _linearInterpolateSignedDistance(vmath::vec3 p);
+    double _cubicInterpolateSignedDistance(vmath::vec3 p);
 
-    inline bool _isPointInsideSurface(vmath::vec3 p) {
-        return _distanceField.getFieldValue(p) > 0.0;
-    }
-    inline bool _isCellInsideSurface(GridIndex g) {
-        assert(_isDistanceSet(g));
-        return _signedDistance(g) > 0.0;
-    }
-    inline bool _isCellInsideSurface(int i, int j, int k) {
-        assert(_isDistanceSet(i, j, k));
-        return _signedDistance(i, j, k) > 0.0;
-    }
-
-    vmath::vec3 _gridIndexToPosition(GridIndex g) {
-        assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
-        return Grid3d::GridIndexToPosition(g, _dx);
-    }
-    vmath::vec3 _gridIndexToCellCenter(GridIndex g) {
-        assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
-        return Grid3d::GridIndexToCellCenter(g, _dx);
-    }
-    vmath::vec3 _gridIndexToCellCenter(int i, int j, int k) {
-        assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
-        return Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    }
+    bool _isPointInsideSurface(vmath::vec3 p);
+    bool _isCellInsideSurface(GridIndex g);
+    bool _isCellInsideSurface(int i, int j, int k);
 
     int _isize = 0;
     int _jsize = 0;
@@ -134,8 +113,6 @@ private:
     Array3d<float> _signedDistance;
     Array3d<int> _indexGrid;
     Array3d<bool> _isDistanceSet;
-
-    LevelSetField _distanceField;
 
     std::vector<double> _vertexCurvatures;
     double _surfaceCurvatureSampleRadius = 6.0;  // radius in # of cells
