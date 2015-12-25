@@ -271,12 +271,7 @@ void FluidSimulation::addImplicitFluidPoint(double x, double y, double z, double
 }
 
 void FluidSimulation::addImplicitFluidPoint(vmath::vec3 p, double r) {
-    if (_fluidInitializationType == MESH) {
-        return;
-    }
-
     _fluidPoints.push_back(FluidPoint(p, r));
-    _fluidInitializationType = IMPLICIT;
 }
 
 void FluidSimulation::addFluidCuboid(double x, double y, double z, 
@@ -285,10 +280,6 @@ void FluidSimulation::addFluidCuboid(double x, double y, double z,
 }
 
 void FluidSimulation::addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2) {
-    if (_fluidInitializationType == MESH) {
-        return;
-    }
-
     vmath::vec3 minp = vmath::vec3(fmin(p1.x, p2.x),
                                fmin(p1.y, p2.y), 
                                fmin(p1.z, p2.z));
@@ -297,41 +288,12 @@ void FluidSimulation::addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2) {
     double depth = fabs(p2.z - p1.z);
 
     addFluidCuboid(minp, width, height, depth);
-    _fluidInitializationType = IMPLICIT;
 }
 
 void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d) {
-    if (_fluidInitializationType == MESH) {
-        return;
-    }
-
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
-    _fluidInitializationType = IMPLICIT;
 }
 
-bool FluidSimulation::addFluidMesh(std::string OBJFilename) {
-    return addFluidMesh(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), 1.0);
-}
-
-bool FluidSimulation::addFluidMesh(std::string OBJFilename, vmath::vec3 offset) {
-    return addFluidMesh(OBJFilename, offset, 1.0);
-}
-
-bool FluidSimulation::addFluidMesh(std::string OBJFilename, double scale) {
-    return addFluidMesh(OBJFilename, vmath::vec3(0.0, 0.0, 0.0), scale);
-}
-
-bool FluidSimulation::addFluidMesh(std::string OBJFilename, vmath::vec3 offset, double scale) {
-    if (_fluidInitializationType == IMPLICIT) {
-        return false;
-    }
-    _fluidMeshFilename = OBJFilename;
-    _fluidMeshOffset = offset;
-    _fluidMeshScale = scale;
-    _fluidInitializationType = MESH;
-
-    return true;
-}
 
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r) {
     SphericalFluidSource *source = new SphericalFluidSource(pos, r);
@@ -672,42 +634,10 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &
     _surfaceMesh.getCellsInsideMesh(fluidCells);
 }
 
-void FluidSimulation::_getInitialFluidCellsFromTriangleMesh(GridIndexVector &fluidCells) {
-    bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
-    assert(success);
-    _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
-    _surfaceMesh.getCellsInsideMesh(fluidCells);
-
-    LevelSetField field = LevelSetField(_isize, _jsize, _ksize, _dx);
-    Polygonizer3d levelsetPolygonizer = Polygonizer3d(&field);
-    _levelset.setSurfaceMesh(_surfaceMesh);
-    _levelset.calculateSignedDistanceField();
-    field.setMaterialGrid(_materialGrid);
-    field.setSignedDistanceField(_levelset.getSignedDistanceField());
-    levelsetPolygonizer.setInsideCellIndices(fluidCells);
-    levelsetPolygonizer.polygonizeSurface();
-
-    fluidCells.clear();
-    _surfaceMesh = levelsetPolygonizer.getTriangleMesh();
-    _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
-    _surfaceMesh.getCellsInsideMesh(fluidCells);
-
-}
-
 void FluidSimulation::_initializeFluidMaterial() {
-    _isFluidInSimulation = _fluidInitializationType == MESH ||
-                           _fluidInitializationType == IMPLICIT;
-
-    if (!_isFluidInSimulation) {
-        return;
-    }
 
     GridIndexVector fluidCells(_isize, _jsize, _ksize);
-    if (_fluidInitializationType == IMPLICIT) {
-        _getInitialFluidCellsFromImplicitSurface(fluidCells);
-    } else if (_fluidInitializationType == MESH) {
-        _getInitialFluidCellsFromTriangleMesh(fluidCells);
-    }
+    _getInitialFluidCellsFromImplicitSurface(fluidCells);
 
     _markerParticles.reserve(8*fluidCells.size());
     _fluidCellIndices.reserve(fluidCells.size());

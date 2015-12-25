@@ -33,8 +33,6 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "sparsearray3d.h"
 #include "grid3d.h"
-#include "surfacefield.h"
-#include "levelsetfield.h"
 #include "implicitsurfacescalarfield.h"
 #include "sparseimplicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
@@ -155,11 +153,6 @@ public:
     void addFluidCuboid(double x, double y, double z, double w, double h, double d);
     void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
     void addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2);
-
-    bool addFluidMesh(std::string OBJFilename);
-    bool addFluidMesh(std::string OBJFilename, vmath::vec3 offset);
-    bool addFluidMesh(std::string OBJFilename, double scale);
-    bool addFluidMesh(std::string OBJFilename, vmath::vec3 offset, double scale);
 
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r);
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r, 
@@ -300,7 +293,6 @@ private:
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _getInitialFluidCellsFromImplicitSurface(GridIndexVector &fluidCells);
-    void _getInitialFluidCellsFromTriangleMesh(GridIndexVector &fluidCells);
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
     void _addMarkerParticle(vmath::vec3 p);
@@ -644,13 +636,6 @@ private:
     int _currentBrickMeshFrame = 0;
 
     vmath::vec3 _bodyForce;
-
-    int MESH = 0;
-    int IMPLICIT = 1;
-    int _fluidInitializationType = 2;
-    std::string _fluidMeshFilename;
-    vmath::vec3 _fluidMeshOffset;
-    double _fluidMeshScale = 1.0;
 
     MACVelocityField _MACVelocity;
     FluidMaterialGrid _materialGrid;
