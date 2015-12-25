@@ -20,27 +20,7 @@ freely, subject to the following restrictions:
 #include "polygonizer3d.h"
 
 
-Polygonizer3d::Polygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
-                                 _vertexValues(0, 0, 0, 0.0),
-                                 _isVertexSet(0, 0, 0, false),
-                                 _isCellDone(0, 0, 0, false)
-{
-}
-
-Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
-{
-    _field->getGridDimensions(&_isize, &_jsize, &_ksize);
-    _dx = _field->getCellSize();
-    _surfaceThreshold = _field->getSurfaceThreshold();
-
-    _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
-    _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
-    _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
-
-    _insideIndices = GridIndexVector(_isize, _jsize, _ksize);
-    _surfaceCells = GridIndexVector(_isize, _jsize, _ksize);
-
-    _isInitialized = true;
+Polygonizer3d::Polygonizer3d() {
 }
 
 Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
@@ -59,12 +39,9 @@ Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField)
     _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
     scalarField.getScalarField(_vertexValues);
 
-    _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, true);
     _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
     _isScalarFieldSet = true;
-
-    _isInitialized = true;
 }
 
 const int Polygonizer3d::_edgeTable[256] = {
@@ -380,8 +357,6 @@ void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField &scalarField) {
     _vertexValues.fill(0.0);
     scalarField.getScalarField(_vertexValues);
 
-    _isVertexSet.fill(true);
-
     _isScalarFieldSet = true;
 }
 
@@ -404,20 +379,11 @@ vmath::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
 
 double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
     assert(_vertexValues.isIndexInRange(g));
-
-    if (!_isVertexSet(g)) {
-        assert(!_isScalarFieldSet);
-
-        vmath::vec3 p = _getVertexPosition(g);
-        _vertexValues.set(g, (float)_field->getFieldValue(p));
-    }
-
     return _vertexValues(g);;
 }
 
 void Polygonizer3d::_resetVertexValues() {
     _vertexValues.fill(0.0);
-    _isVertexSet.fill(false);
 }
 
 bool Polygonizer3d::_isCellOutsideSurface(GridIndex g) {
@@ -550,11 +516,7 @@ GridIndexVector Polygonizer3d::_findSurfaceCellsUsingScalarField() {
 }
 
 GridIndexVector Polygonizer3d::_findSurfaceCells() {
-    if (!_isScalarFieldSet) {
-        _resetVertexValues();
-    }
-
-    if (_insideIndices.size() == 0 && _isScalarFieldSet) {
+    if (_insideIndices.size() == 0) {
         return _findSurfaceCellsUsingScalarField();
     } else {
         return _findSurfaceCellsUsingInsideIndices();
@@ -605,13 +567,7 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
     while (n < nmax) {
         c = 0.5f*(a + b);
 
-        if (_isScalarFieldSet) {
-            valc = _scalarField.tricubicInterpolation(c) - isolevel;
-        } else {
-            valc = _field->getFieldValue(c) - isolevel;
-        }
-        
-
+        valc = _scalarField.tricubicInterpolation(c) - isolevel;
         if (fabs(valc) < tol || vmath::length(b - a) < tol ) {
             return c;
         }
@@ -797,6 +753,8 @@ void Polygonizer3d::_calculateSurfaceTriangles() {
 }
 
 void Polygonizer3d::polygonizeSurface() {
+    assert(_isScalarFieldSet);
+
     _surfaceCells = _findSurfaceCells();
     _calculateSurfaceTriangles();
     _surface.removeDuplicateTriangles(); // Polygonization method produces

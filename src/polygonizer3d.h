@@ -28,7 +28,6 @@ freely, subject to the following restrictions:
 #include <fstream>
 #include <assert.h>
 
-#include "levelsetfield.h"
 #include "implicitsurfacescalarfield.h"
 #include "array3d.h"
 #include "grid3d.h"
@@ -41,12 +40,10 @@ class Polygonizer3d
 {
 public:
     Polygonizer3d();
-    Polygonizer3d(SurfaceField *field);
     Polygonizer3d(ImplicitSurfaceScalarField &scalarField);
 
     ~Polygonizer3d();
 
-    void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
     void setInsideCellIndices(GridIndexVector &indices);
     void setScalarField(ImplicitSurfaceScalarField &field);
     void polygonizeSurface();
@@ -101,13 +98,12 @@ private:
     static const int _edgeTable[256];
     static const int _triTable[256][16];
 
-    bool _isInitialized = false;
-    int _isize, _jsize, _ksize;
-    double _dx;
+    int _isize = 0;
+    int _jsize = 0;
+    int _ksize = 0;
+    double _dx = 0.0;
 
-    SurfaceField *_field;
     Array3d<float> _vertexValues;
-    Array3d<bool> _isVertexSet;
     Array3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
