@@ -10,11 +10,12 @@ int main(int argc, char* args[]) {
     int xvoxels = 64;
     int yvoxels = 64;
     int zvoxels = 64;
-    double dx = 0.05333;
+    double dx = 0.125;
     FluidSimulation fluidsim(xvoxels, yvoxels, zvoxels, dx);
     //FluidSimulation fluidsim(state);
 
-    fluidsim.enableAnisotropicSurfaceReconstruction();
+    //fluidsim.enableAnisotropicSurfaceReconstruction();
+    fluidsim.enableBrickOutput(0.25, 0.25, 0.25);
     //fluidsim.disableSaveState();
 
     double x, y, z;
@@ -39,7 +40,7 @@ int main(int argc, char* args[]) {
         fluidsim.addImplicitFluidPoint(px, py, pz, pr);
     }
 
-    fluidsim.addImplicitFluidPoint(x/2, y/2, z/2, 3.0);
+    fluidsim.addImplicitFluidPoint(x/2, y/2, z/2, 7.0);
     fluidsim.addBodyForce(0.0, -40.0, 0.0);
 
     fluidsim.run();
@@ -53,26 +54,6 @@ int main(int argc, char* args[]) {
     
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

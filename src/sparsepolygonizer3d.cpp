@@ -456,11 +456,11 @@ GridIndexVector SparsePolygonizer3d::_processSeedCell(GridIndex seed,
     GridIndexVector seedSurfaceCells(_isize, _jsize, _ksize);
 
     isCellDone.set(seed, true);
-    std::vector<GridIndex> queue;
+    GridIndexVector queue(_isize, _jsize, _ksize);
     queue.push_back(seed);
 
     while (!queue.empty()) {
-        GridIndex c = queue[queue.size() - 1];
+        GridIndex c = queue.back();
         queue.pop_back();
 
         GridIndex neighbours[6];

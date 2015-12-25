@@ -28,6 +28,7 @@ freely, subject to the following restrictions:
 #include "sparsearray3d.h"
 #include "grid3d.h"
 #include "aabb.h"
+#include "gridindexvector.h"
 
 class SparseImplicitSurfaceScalarField
 {

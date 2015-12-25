@@ -1,11 +1,3 @@
-#pragma once
-
-#include <stdio.h>
-#include <iostream>
-
-#include <assert.h>
-#include "vmath.h"
-
 /*
 Copyright (c) 2015 Ryan L. Guy
 
@@ -27,6 +19,12 @@ freely, subject to the following restrictions:
 */
 #ifndef IMPLICITPOINTPRIMITIVE_H
 #define IMPLICITPOINTPRIMITIVE_H
+
+#include <stdio.h>
+#include <iostream>
+
+#include <assert.h>
+#include "vmath.h"
 
 class ImplicitPointPrimitive
 {

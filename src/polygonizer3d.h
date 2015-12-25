@@ -37,8 +37,6 @@ freely, subject to the following restrictions:
 #include "gridindexvector.h"
 #include "stopwatch.h"
 
-#pragma once
-
 class Polygonizer3d
 {
 public:

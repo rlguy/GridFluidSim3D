@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "levelset.h"
 #include "trianglemesh.h"
 #include "vmath.h"
+#include "gridindexvector.h"
 
 struct Brick {
     float intensity = 0.0f;
@@ -81,15 +82,15 @@ private:
     void _getNewBrickLocations(Array3d<Brick> &b1, Array3d<Brick> &b2,
                                Array3d<bool> &newBricks);
     void _getbrickStructures(Array3d<Brick> &brickGrid, Array3d<bool> &newBricks, 
-                         std::vector<std::vector<GridIndex>> &brickStructures);
+                         std::vector<GridIndexVector> &brickStructures);
     void _getConnectedBricks(int i, int j, int k, Array3d<Brick> &brickGrid,
                                                   Array3d<bool> &newBricks, 
-                                                  std::vector<GridIndex> &connectedBricks);
+                                                  GridIndexVector &connectedBricks);
     void _removeInvalidbrickStructures(Array3d<Brick> &brickCurrent,
                                    Array3d<Brick> &brickNext,
-                                   std::vector<std::vector<GridIndex>> &brickStructures);
-    bool _isBrickMassInBrickGrid(std::vector<GridIndex> &cells, Array3d<Brick> &brickGrid);
-    void _removeBrickStructureFromBrickGrid(std::vector<GridIndex> &cells, Array3d<Brick> &brickGrid);
+                                   std::vector<GridIndexVector> &brickStructures);
+    bool _isBrickMassInBrickGrid(GridIndexVector &cells, Array3d<Brick> &brickGrid);
+    void _removeBrickStructureFromBrickGrid(GridIndexVector &cells, Array3d<Brick> &brickGrid);
 
     int _isize = 0;
     int _jsize = 0;

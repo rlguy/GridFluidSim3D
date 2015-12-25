@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "array3d.h"
 #include "aabb.h"
+#include "gridindexvector.h"
 
 namespace Grid3d {
     
@@ -103,6 +104,10 @@ namespace Grid3d {
                                    GridIndex *g1, GridIndex *g2);
     extern void getGridIndexBounds(AABB bbox, double dx, GridIndex gmax,
                                    GridIndex *g1, GridIndex *g2);
+
+    extern void getGridCellOverlap(AABB bbox, double dx, int imax, int jmax, int kmax,
+                                   GridIndexVector &cells);
+    extern void getGridCellOverlap(AABB bbox, double dx, GridIndexVector &cells);
 
     extern AABB fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax);
     extern AABB fitAABBtoGrid(AABB bbox, double dx, GridIndex gmax);

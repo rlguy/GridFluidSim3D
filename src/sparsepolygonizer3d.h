@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "trianglemesh.h"
 #include "vmath.h"
+#include "gridindexvector.h"
 
 #pragma once
 

@@ -45,12 +45,12 @@ void LevelSet::_resetSignedDistanceField() {
     _isDistanceSet.fill(false);
 }
 
-void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells) {
-    std::vector<GridIndex> testcells;
+void LevelSet::_getTriangleGridCellOverlap(Triangle t, GridIndexVector &cells) {
+    GridIndexVector testcells(_isize, _jsize, _ksize);
     AABB tbbox = AABB(t, _surfaceMesh.vertices);
-    tbbox.getOverlappingGridCells(_dx, testcells);
+    Grid3d::getGridCellOverlap(tbbox, _dx, _isize, _jsize, _ksize, testcells);
 
-    AABB cbbox = AABB(vmath::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
+    AABB cbbox = AABB(vmath::vec3(), _dx, _dx, _dx);
     for (unsigned int i = 0; i < testcells.size(); i++) {
         cbbox.position = _gridIndexToPosition(testcells[i]);
         if (cbbox.isOverlappingTriangle(t, _surfaceMesh.vertices)) {
@@ -62,7 +62,7 @@ void LevelSet::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &c
 void LevelSet::_calculateDistancesSquaredForTriangle(int index) {
     Triangle t = _surfaceMesh.triangles[index];
 
-    std::vector<GridIndex> cells;
+    GridIndexVector cells(_isize, _jsize, _ksize);
     _getTriangleGridCellOverlap(t, cells);
 
     GridIndex g;
@@ -92,8 +92,8 @@ void LevelSet::_getNeighbourGridIndices6(GridIndex g, GridIndex n[6]) {
     n[5] = GridIndex(g.i, g.j, g.k+1);
 }
 
-void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer, 
-                                       std::vector<GridIndex> &nextLayer,
+void LevelSet::_getLayerCells(int idx, GridIndexVector &layer, 
+                                       GridIndexVector &nextLayer,
                                        Array3d<int> &layerGrid) {
     GridIndex ns[6];
     GridIndex g, n;
@@ -111,27 +111,27 @@ void LevelSet::_getLayerCells(int idx, std::vector<GridIndex> &layer,
     }
 }
 
-void LevelSet::_getCellLayers(std::vector<std::vector<GridIndex>> &layers) {
+void LevelSet::_getCellLayers(std::vector<GridIndexVector> &layers) {
     Array3d<int> layerGrid(_isize, _jsize, _ksize, -1);
 
-    std::vector<GridIndex> layer;
+    GridIndexVector layer(_isize, _jsize, _ksize);
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
                 if (_isDistanceSet(i, j, k)) {
-                    layer.push_back(GridIndex(i, j, k));
+                    layer.push_back(i, j, k);
                     layerGrid.set(i, j, k, 0);
                 }
             }
         }
     }
 
-    std::vector<GridIndex> q;
+    GridIndexVector q(_isize, _jsize, _ksize);
     layers.push_back(q);
     _getLayerCells(1, layer, layers[0], layerGrid);
 
     for (int i = 2; layers[i-2].size() > 0 && i < _numLayers; i++) {
-        std::vector<GridIndex> q;
+        GridIndexVector q(_isize, _jsize, _ksize);
         layers.push_back(q);
         _getLayerCells(i, layers[i - 2], layers[i - 1], layerGrid);
     }
@@ -149,7 +149,7 @@ void LevelSet::_resetLevelSetCell(GridIndex g) {
     _isDistanceSet.set(g, false);
 }
 
-void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q) {
+void LevelSet::_calculateUnsignedDistanceSquaredForLayer(GridIndexVector &q) {
 
     GridIndex g, n;
     GridIndex ns[6];
@@ -157,7 +157,7 @@ void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> 
 
     double eps = 1e-6;
     while (!q.empty()) {
-        g = q[q.size() - 1];
+        g = q.back();
         q.pop_back();
 
         _getNeighbourGridIndices6(g, ns);
@@ -186,7 +186,7 @@ void LevelSet::_calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> 
 }
 
 void LevelSet::_calculateUnsignedDistanceSquared() {
-    std::vector<std::vector<GridIndex>> cellLayers;
+    std::vector<GridIndexVector> cellLayers;
     _getCellLayers(cellLayers);
 
     for (unsigned int i = 0; i < cellLayers.size(); i++) {
@@ -247,7 +247,7 @@ void LevelSet::_calculateDistanceFieldSigns() {
 }
 
 void LevelSet::_floodFillWithDistance(GridIndex seed, double val) {
-    std::vector<GridIndex> queue;
+    GridIndexVector queue(_isize, _jsize, _ksize);
     queue.push_back(seed);
     _isDistanceSet.set(seed, true);
 

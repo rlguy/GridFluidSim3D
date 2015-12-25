@@ -23,8 +23,8 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <stdio.h>
 #include <iostream>
+#include <assert.h>
 
-#include "grid3d.h"
 #include "array3d.h"
 
 class GridIndexVector
@@ -78,12 +78,12 @@ public:
     }
 
     inline void push_back(GridIndex g) {
-        assert(Grid3d::isGridIndexInRange(g, width, height, depth));
+        assert(g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth);
         _indices.push_back(_getFlatIndex(g));
     }
 
     inline void push_back(int i, int j, int k) {
-        assert(Grid3d::isGridIndexInRange(i, j, k, width, height, depth));
+        assert(i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth);
         _indices.push_back(_getFlatIndex(i, j, k));
     }
 

@@ -530,12 +530,12 @@ void TriangleMesh::_updateVertexTriangles() {
 
 }
 
-void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells) {
-    std::vector<GridIndex> testcells;
+void TriangleMesh::_getTriangleGridCellOverlap(Triangle t, GridIndexVector &cells) {
+    GridIndexVector testcells(cells.width, cells.height, cells.depth);
     AABB tbbox = AABB(t, vertices);
-    tbbox.getOverlappingGridCells(_dx, testcells);
+    Grid3d::getGridCellOverlap(tbbox, _dx, testcells);
 
-    AABB cbbox = AABB(vmath::vec3(0.0, 0.0, 0.0), _dx, _dx, _dx);
+    AABB cbbox = AABB(vmath::vec3(), _dx, _dx, _dx);
     for (unsigned int i = 0; i < testcells.size(); i++) {
         cbbox.position = Grid3d::GridIndexToPosition(testcells[i], _dx);
         if (cbbox.isOverlappingTriangle(t, vertices)) {
@@ -548,7 +548,7 @@ void TriangleMesh::_updateTriangleGrid() {
     _destroyTriangleGrid();
     _triGrid = Array3d<std::vector<int>>(_gridi, _gridj, _gridk);
 
-    std::vector<GridIndex> cells;
+    GridIndexVector cells(_gridi, _gridj, _gridk);
     std::vector<int> *triVector;
     Triangle t;
     GridIndex g;
@@ -579,14 +579,14 @@ void TriangleMesh::_destroyTriangleGrid() {
     _triGrid = Array3d<std::vector<int> >();
 }
 
-void TriangleMesh::_getSurfaceCells(std::vector<GridIndex> &cells) {
+void TriangleMesh::_getSurfaceCells(GridIndexVector &cells) {
     std::vector<int> *tris;
     for (int k = 0; k < _triGrid.depth; k++) {
         for (int j = 0; j < _triGrid.height; j++) {
             for (int i = 0; i < _triGrid.width; i++) {
                 tris = _triGrid.getPointer(i, j, k);
                 if (tris->size() > 0) {
-                    cells.push_back(GridIndex(i, j, k));
+                    cells.push_back(i, j, k);
                 }
             }
         }
@@ -856,11 +856,13 @@ void TriangleMesh::getCellsInsideMesh(GridIndexVector &cells) {
 
     _updateTriangleGrid();
 
-    std::vector<GridIndex> surfaceCells;
+    GridIndexVector surfaceCells(_gridi, _gridj, _gridk);
     _getSurfaceCells(surfaceCells);
 
     Array3d<bool> insideCellGrid = Array3d<bool>(_gridi, _gridj, _gridk, false);
-    insideCellGrid.set(surfaceCells, true);
+    for (unsigned int i = 0; i < surfaceCells.size(); i++) {
+        insideCellGrid.set(surfaceCells[i], true);
+    }
 
     GridIndex neighbours[6];
     GridIndex n;

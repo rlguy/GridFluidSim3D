@@ -107,8 +107,8 @@ private:
     void _floodfill(GridIndex g, Array3d<bool> &cells);
     void _updateTriangleGrid();
     void _destroyTriangleGrid();
-    void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
-    void _getSurfaceCells(std::vector<GridIndex> &cells);
+    void _getTriangleGridCellOverlap(Triangle t, GridIndexVector &cells);
+    void _getSurfaceCells(GridIndexVector &cells);
     void _smoothTriangleMesh(double value, std::vector<bool> &isSmooth);
     void _getBoolVectorOfSmoothedVertices(std::vector<int> &verts, 
                                           std::vector<bool> &isSmooth);

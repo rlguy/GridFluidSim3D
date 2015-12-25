@@ -133,21 +133,6 @@ GridIndex AABB::_positionToGridIndex(vmath::vec3 p, double dx) {
                      (int)floor(p.z*invdx));
 }
 
-void AABB::getOverlappingGridCells(double dx, std::vector<GridIndex> &cells) {
-    vmath::vec3 v = position + vmath::vec3(width, height, depth);
-
-    GridIndex g1 = _positionToGridIndex(position, dx);
-    GridIndex g2 = _positionToGridIndex(v, dx);
-
-    for (int k = g1.k; k <= g2.k; k++) {
-        for (int j = g1.j; j <= g2.j; j++) {
-            for (int i = g1.i; i <= g2.i; i++) {
-                cells.push_back(GridIndex(i, j, k));
-            }
-        }
-    }
-}
-
 bool AABB::isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2) {
 
     vmath::vec3 min = position;

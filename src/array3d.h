@@ -191,7 +191,7 @@ public:
         _grid[_getFlatIndex(g)] = value;
     }
 
-    void set(std::vector<GridIndex> cells, T value) {
+    void set(std::vector<GridIndex> &cells, T value) {
         for (unsigned int i = 0; i < cells.size(); i++) {
             set(cells[i], value);
         }

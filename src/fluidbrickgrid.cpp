@@ -113,14 +113,14 @@ void FluidBrickGrid::_getNewBrickLocations(Array3d<Brick> &b1, Array3d<Brick> &b
 void FluidBrickGrid::_getConnectedBricks(int i, int j, int k, 
                                          Array3d<Brick> &brickGrid,
                                          Array3d<bool> &newBricks, 
-                                         std::vector<GridIndex> &connectedBricks) {
+                                         GridIndexVector &connectedBricks) {
     int bw = _brickGrid.width;
     int bh = _brickGrid.height;
     int bd = _brickGrid.depth;
 
     Array3d<bool> isProcessed = Array3d<bool>(bw, bh, bd, false);
 
-    std::vector<GridIndex> queue;
+    GridIndexVector queue(_isize, _jsize, _ksize);
     queue.push_back(GridIndex(i, j, k));
     newBricks.set(i, j, k, false);
     isProcessed.set(i, j, k, true);
@@ -147,13 +147,13 @@ void FluidBrickGrid::_getConnectedBricks(int i, int j, int k,
 }
 
 void FluidBrickGrid::_getbrickStructures(Array3d<Brick> &brickGrid, Array3d<bool> &newBricks, 
-                                     std::vector<std::vector<GridIndex>> &brickStructures) {
+                                     std::vector<GridIndexVector> &brickStructures) {
     for (int k = 0;  k < newBricks.depth; k++) {
         for (int j = 0;  j < newBricks.height; j++) {
             for (int i = 0;  i < newBricks.width; i++) {
                 if (newBricks(i, j, k)) {
 
-                    std::vector<GridIndex> connectedBricks;
+                    GridIndexVector connectedBricks(_isize, _jsize, _ksize);
                     _getConnectedBricks(i, j, k, brickGrid, newBricks, connectedBricks);
                     brickStructures.push_back(connectedBricks);
                 }
@@ -162,7 +162,7 @@ void FluidBrickGrid::_getbrickStructures(Array3d<Brick> &brickGrid, Array3d<bool
     }
 }
 
-bool FluidBrickGrid::_isBrickMassInBrickGrid(std::vector<GridIndex> &cells,
+bool FluidBrickGrid::_isBrickMassInBrickGrid(GridIndexVector &cells,
                                              Array3d<Brick> &brickGrid) {
     bool isInGrid = false;
     for (unsigned int i = 0; i < cells.size(); i++) {
@@ -175,7 +175,7 @@ bool FluidBrickGrid::_isBrickMassInBrickGrid(std::vector<GridIndex> &cells,
     return isInGrid;
 }
 
-void FluidBrickGrid::_removeBrickStructureFromBrickGrid(std::vector<GridIndex> &cells, 
+void FluidBrickGrid::_removeBrickStructureFromBrickGrid(GridIndexVector &cells, 
                                                    Array3d<Brick> &brickGrid) {
     Brick *b;
     for (unsigned int i = 0; i < cells.size(); i++) {
@@ -186,7 +186,7 @@ void FluidBrickGrid::_removeBrickStructureFromBrickGrid(std::vector<GridIndex> &
 
 void FluidBrickGrid::_removeInvalidbrickStructures(Array3d<Brick> &brickCurrent,
                                                Array3d<Brick> &brickNext,
-                                               std::vector<std::vector<GridIndex>> &brickStructures) {
+                                               std::vector<GridIndexVector> &brickStructures) {
     for (unsigned int i = 0; i < brickStructures.size(); i++) {
         if (!_isBrickMassInBrickGrid(brickStructures[i], brickNext)) {
             _removeBrickStructureFromBrickGrid(brickStructures[i], brickCurrent);
@@ -205,7 +205,7 @@ void FluidBrickGrid::_removeStrayBricks() {
     Array3d<bool> newBricks = Array3d<bool>(bw, bh, bd, false);
     _getNewBrickLocations(brickPrev, brickCurrent, newBricks);
 
-    std::vector<std::vector<GridIndex>> brickStructures;
+    std::vector<GridIndexVector> brickStructures;
     _getbrickStructures(brickCurrent, newBricks, brickStructures);
     _removeInvalidbrickStructures(brickCurrent, brickNext, brickStructures);
 
@@ -228,7 +228,7 @@ void FluidBrickGrid::_removeSmallBrickStructures() {
         }
     }
 
-    std::vector<std::vector<GridIndex>> brickStructures;
+    std::vector<GridIndexVector> brickStructures;
     _getbrickStructures(brickCurrent, allBricks, brickStructures);
     for (unsigned int i = 0; i < brickStructures.size(); i++) {
         if (brickStructures[i].size() < _minNumberOfBricksInStructure) {

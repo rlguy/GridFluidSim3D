@@ -42,7 +42,6 @@ public:
 
     void expand(double v);
     bool isPointInside(vmath::vec3 p);
-    void getOverlappingGridCells(double dx, std::vector<GridIndex> &cells);
     bool isOverlappingTriangle(Triangle t, std::vector<vmath::vec3> &vertices);
     bool isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2);
 

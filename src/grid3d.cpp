@@ -415,6 +415,36 @@ void Grid3d::getGridIndexBounds(AABB bbox, double dx, GridIndex gmax,
                      (int)fmin((*g2).k, gmax.k-1));
 }
 
+void Grid3d::getGridCellOverlap(AABB bbox, double dx, int imax, int jmax, int kmax, 
+                                GridIndexVector &cells) {
+    GridIndex gmin, gmax;
+    getGridIndexBounds(bbox, dx, imax, jmax, kmax, &gmin, &gmax);
+
+    cells.reserve(cells.size() + (gmax.i - gmin.i)*(gmax.j - gmin.j)*(gmax.k - gmin.k));
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
+                cells.push_back(i, j, k);
+            }
+        }
+    }
+}
+
+void Grid3d::getGridCellOverlap(AABB bbox, double dx, GridIndexVector &cells) {
+    vmath::vec3 trans = vmath::vec3(bbox.width, bbox.height, bbox.depth);
+    GridIndex gmin = positionToGridIndex(bbox.position, dx);
+    GridIndex gmax = positionToGridIndex(bbox.position + trans, dx);
+
+    cells.reserve(cells.size() + (gmax.i - gmin.i)*(gmax.j - gmin.j)*(gmax.k - gmin.k));
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
+                cells.push_back(i, j, k);
+            }
+        }
+    }
+}
+
 AABB Grid3d::fitAABBtoGrid(AABB bbox, double dx, int imax, int jmax, int kmax) {
     vmath::vec3 pmin = bbox.getMinPoint();
     vmath::vec3 pmax = bbox.getMaxPoint();

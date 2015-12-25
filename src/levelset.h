@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "trianglemesh.h"
 #include "macvelocityfield.h"
 #include "levelsetfield.h"
+#include "gridindexvector.h"
 
 class LevelSet
 {
@@ -62,14 +63,14 @@ private:
     void _resetSignedDistanceField();
     void _calculateUnsignedSurfaceDistanceSquared();
     void _calculateDistancesSquaredForTriangle(int triangleIndex);
-    void _getTriangleGridCellOverlap(Triangle t, std::vector<GridIndex> &cells);
+    void _getTriangleGridCellOverlap(Triangle t, GridIndexVector &cells);
     void _calculateUnsignedDistanceSquared();
-    void _getCellLayers(std::vector<std::vector<GridIndex>> &layers);
+    void _getCellLayers(std::vector<GridIndexVector> &layers);
     void _getNeighbourGridIndices6(GridIndex g, GridIndex n[6]);
-    void _getLayerCells(int idx, std::vector<GridIndex> &layer, 
-                                 std::vector<GridIndex> &nextLayer,
+    void _getLayerCells(int idx, GridIndexVector &layer, 
+                                 GridIndexVector &nextLayer,
                                  Array3d<int> &layerGrid);
-    void _calculateUnsignedDistanceSquaredForLayer(std::vector<GridIndex> &q);
+    void _calculateUnsignedDistanceSquaredForLayer(GridIndexVector &q);
     void _setLevelSetCell(GridIndex g, double dist, int tidx);
     void _resetLevelSetCell(GridIndex g);
     void _squareRootDistanceField();
