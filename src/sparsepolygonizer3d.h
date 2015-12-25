@@ -28,7 +28,6 @@ freely, subject to the following restrictions:
 #include <fstream>
 #include <assert.h>
 
-#include "levelsetfield.h"
 #include "sparseimplicitsurfacescalarfield.h"
 #include "sparsearray3d.h"
 #include "grid3d.h"
@@ -46,7 +45,6 @@ public:
 
     ~SparsePolygonizer3d();
 
-    void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
     void setSurfaceCellIndices(GridIndexVector &indices);
     void setScalarField(SparseImplicitSurfaceScalarField &field);
     void polygonizeSurface();
@@ -99,7 +97,6 @@ private:
     int _isize, _jsize, _ksize;
     double _dx;
 
-    SurfaceField *_field;
     SparseArray3d<float> _vertexValues;
     SparseArray3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;
