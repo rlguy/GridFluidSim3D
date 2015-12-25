@@ -25,6 +25,7 @@ freely, subject to the following restrictions:
 
 #include "subdividedarray3d.h"
 #include "grid3d.h"
+#include "gridindexvector.h"
 
 enum class Material : char { 
     air   = 0x00, 
@@ -47,16 +48,16 @@ public:
 
     void set(int i, int j, int k, Material m);
     void set(GridIndex g, Material m);
-    void set(std::vector<GridIndex> cells, Material m);
+    void set(GridIndexVector &cells, Material m);
     void setAir(int i, int j, int k);
     void setAir(GridIndex g);
-    void setAir(std::vector<GridIndex> cells);
+    void setAir(GridIndexVector &cells);
     void setFluid(int i, int j, int k);
     void setFluid(GridIndex g);
-    void setFluid(std::vector<GridIndex> cells);
+    void setFluid(GridIndexVector &cells);
     void setSolid(int i, int j, int k);
     void setSolid(GridIndex g);
-    void setSolid(std::vector<GridIndex> cells);
+    void setSolid(GridIndexVector &cells);
 
     bool isCellAir(int i, int j, int k);
     bool isCellAir(GridIndex g);

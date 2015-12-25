@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <assert.h>
 
+#include "gridindexvector.h"
 #include "array3d.h"
 
 template <class T>
@@ -113,7 +114,13 @@ public:
         _grid.set(g, value);
     }
 
-    void set(std::vector<GridIndex> cells, T value) {
+    void set(std::vector<GridIndex> &cells, T value) {
+        for (unsigned int i = 0; i < cells.size(); i++) {
+            _grid.set(cells[i], value);
+        }
+    }
+
+    void set(GridIndexVector &cells, T value) {
         for (unsigned int i = 0; i < cells.size(); i++) {
             _grid.set(cells[i], value);
         }

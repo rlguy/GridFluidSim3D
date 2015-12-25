@@ -98,19 +98,19 @@ void FluidSource::deactivate() {
     isActive = false;
 }
 
-std::vector<GridIndex> FluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
+GridIndexVector FluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                      double dx) {
-    return std::vector<GridIndex>();
+    return GridIndexVector();
 }
 
-std::vector<GridIndex> FluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
+GridIndexVector FluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                   double dx) {
-    return std::vector<GridIndex>();
+    return GridIndexVector();
 }
 
-std::vector<GridIndex> FluidSource::getCells(FluidMaterialGrid &materialGrid,
+GridIndexVector FluidSource::getCells(FluidMaterialGrid &materialGrid,
                                              double dx) {
-    return std::vector<GridIndex>();
+    return GridIndexVector();
 }
 
 AABB FluidSource::getAABB() {

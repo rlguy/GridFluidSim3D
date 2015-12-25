@@ -46,11 +46,10 @@ public:
     ~SparsePolygonizer3d();
 
     void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
-    void setSurfaceCellIndices(std::vector<GridIndex> indices);
+    void setSurfaceCellIndices(GridIndexVector &indices);
     void setScalarField(SparseImplicitSurfaceScalarField &field);
     void polygonizeSurface();
 
-    std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
     TriangleMesh getTriangleMesh() { return _surface; };
     void writeSurfaceToOBJ(std::string filename);
 
@@ -88,9 +87,9 @@ private:
     vmath::vec3 _vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
     void _calculateSurfaceTriangles();
 
-    std::vector<GridIndex> _findSurfaceCells();
+    GridIndexVector _findSurfaceCells();
     void _resetVertexValues();
-    std::vector<GridIndex> _processSeedCell(GridIndex seed, SparseArray3d<bool> &isCellDone);
+    GridIndexVector _processSeedCell(GridIndex seed, SparseArray3d<bool> &isCellDone);
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];
@@ -105,8 +104,8 @@ private:
     double _surfaceThreshold = 0.5;
 
     // cell indices that are fully or partially within the iso surface
-    std::vector<GridIndex> _surfaceIndices;
-    std::vector<GridIndex> _surfaceCells;
+    GridIndexVector _surfaceIndices;
+    GridIndexVector _surfaceCells;
     TriangleMesh _surface;
 
     float MISSING_DATA_VALUE = -1.0f;

@@ -285,7 +285,7 @@ int FluidSimulationSaveState::_getNumSolidCells(FluidSimulation *sim) {
     for (int k = 0; k < _depth; k++) {
         for (int j = 0; j < _height; j++) {
             for (int i = 0; i < _width; i++) {
-                if (sim->getMaterial(i, j, k) == M_SOLID) {
+                if (sim->getMaterial(i, j, k) == Material::solid) {
                     count++;
                 }
             }
@@ -301,7 +301,7 @@ void FluidSimulationSaveState::_writeSolidCellIndices(FluidSimulation *sim,
     for (int k = 0; k < _depth; k++) {
         for (int j = 0; j < _height; j++) {
             for (int i = 0; i < _width; i++) {
-                if (sim->getMaterial(i, j, k) == M_SOLID) {
+                if (sim->getMaterial(i, j, k) == Material::solid) {
                     indices.push_back(GridIndex(i, j, k));
                 }
             }

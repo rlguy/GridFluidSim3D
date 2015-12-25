@@ -17,6 +17,10 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
+
+#ifndef LOGFILE_H
+#define LOGFILE_H
+
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
@@ -26,7 +30,6 @@ freely, subject to the following restrictions:
 
 #include "stopwatch.h"
 
-#pragma once
 class LogFile
 {
 public:
@@ -73,3 +76,4 @@ private:
     bool _isWritingToConsole = true;
 };
 
+#endif

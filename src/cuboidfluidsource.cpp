@@ -102,22 +102,22 @@ void CuboidFluidSource::expand(double value) {
                     _bbox.depth + 2*value);
 }
 
-std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
+GridIndexVector CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                               double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     if (sourceType == T_OUTFLOW) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     _bbox.position = position;
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> newFluidCells;
+    GridIndexVector overlappingIndices(w, h, d);
+    GridIndexVector newFluidCells(w, h, d);
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
@@ -132,18 +132,18 @@ std::vector<GridIndex> CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &ma
     return newFluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
+GridIndexVector CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                         double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
      _bbox.position = position;
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> fluidCells;
+    GridIndexVector overlappingIndices(w, h, d);
+    GridIndexVector fluidCells(w, h, d);
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
@@ -158,22 +158,22 @@ std::vector<GridIndex> CuboidFluidSource::getFluidCells(FluidMaterialGrid &mater
     return fluidCells;
 }
 
-std::vector<GridIndex> CuboidFluidSource::getCells(FluidMaterialGrid &materialGrid,
+GridIndexVector CuboidFluidSource::getCells(FluidMaterialGrid &materialGrid,
                                                    double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     if (sourceType == T_OUTFLOW) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
      _bbox.position = position;
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> cells;
+    GridIndexVector overlappingIndices(w, h, d);
+    GridIndexVector cells(w, h, d);
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
@@ -188,7 +188,7 @@ std::vector<GridIndex> CuboidFluidSource::getCells(FluidMaterialGrid &materialGr
     return cells;
 }
 
-void CuboidFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &indices,
+void CuboidFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
                                                    int isize, int jsize, int ksize, 
                                                    double dx) {
     GridIndex gmin, gmax;

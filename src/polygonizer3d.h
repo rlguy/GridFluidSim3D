@@ -34,7 +34,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "trianglemesh.h"
 #include "vmath.h"
-
+#include "gridindexvector.h"
 #include "stopwatch.h"
 
 #pragma once
@@ -49,11 +49,10 @@ public:
     ~Polygonizer3d();
 
     void setSurfaceThreshold(double val) { _field->setSurfaceThreshold(val); }
-    void setInsideCellIndices(std::vector<GridIndex> indices);
+    void setInsideCellIndices(GridIndexVector &indices);
     void setScalarField(ImplicitSurfaceScalarField &field);
     void polygonizeSurface();
-
-    std::vector<GridIndex> getSurfaceCells() { return _surfaceCells; }
+    
     TriangleMesh getTriangleMesh() { return _surface; };
     void writeSurfaceToOBJ(std::string filename);
 
@@ -95,11 +94,11 @@ private:
     vmath::vec3 _vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
     void _calculateSurfaceTriangles();
 
-    std::vector<GridIndex> _findSurfaceCells();
-    std::vector<GridIndex> _findSurfaceCellsUsingInsideIndices();
-    std::vector<GridIndex> _findSurfaceCellsUsingScalarField();
+    GridIndexVector _findSurfaceCells();
+    GridIndexVector _findSurfaceCellsUsingInsideIndices();
+    GridIndexVector _findSurfaceCellsUsingScalarField();
     void _resetVertexValues();
-    std::vector<GridIndex> _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
+    GridIndexVector _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];
@@ -118,8 +117,8 @@ private:
     ImplicitSurfaceScalarField _scalarField;
 
     // cell indices that are fully or partially within the iso surface
-    std::vector<GridIndex> _insideIndices;
-    std::vector<GridIndex> _surfaceCells;
+    GridIndexVector _insideIndices;
+    GridIndexVector _surfaceCells;
     TriangleMesh _surface;
 };
 

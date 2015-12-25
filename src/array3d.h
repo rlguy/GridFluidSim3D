@@ -63,12 +63,12 @@ public:
         _initializeGrid();
     }
 
-    Array3d(int i, int j, int k) : width(i), height(j), depth(k)
+    Array3d(int i, int j, int k) : width(i), height(j), depth(k), _numElements(i*j*k)
     {
         _initializeGrid();
     }
 
-    Array3d(int i, int j, int k, T fillValue) : width(i), height(j), depth(k)
+    Array3d(int i, int j, int k, T fillValue) : width(i), height(j), depth(k), _numElements(i*j*k)
     {
         _initializeGrid();
         fill(fillValue);
@@ -197,6 +197,11 @@ public:
         }
     }
 
+    void set(int flatidx, T value) {
+        assert(flatidx >= 0 && flatidx < _numElements);
+        _grid[flatidx] = value;
+    }
+
     void add(int i, int j, int k, T value) {
         assert(_isIndexInRange(i, j, k));
         _grid[_getFlatIndex(i, j, k)] += value;
@@ -232,7 +237,7 @@ public:
     }
 
     int getNumElements() {
-        return width*height*depth;
+        return _numElements;
     }
 
     void setOutOfRangeValue() {
@@ -285,6 +290,7 @@ private:
 
     bool _isOutOfRangeValueSet = false;
     T _outOfRangeValue;
+    int _numElements = 0;
 };
 
 #endif

@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 
+#include "gridindexvector.h"
 #include "vmath.h"
 #include "sparsearray3d.h"
 #include "grid3d.h"
@@ -48,7 +49,7 @@ public:
     void addCuboid(vmath::vec3 pos, double w, double h, double d);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
-    void setSolidCells(std::vector<GridIndex> &solidCells);
+    void setSolidCells(GridIndexVector &solidCells);
     void getScalarField(SparseArray3d<float> &field);
     void setTricubicWeighting();
     void setTrilinearWeighting();

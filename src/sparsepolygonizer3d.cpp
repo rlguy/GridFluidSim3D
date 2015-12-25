@@ -21,8 +21,8 @@ freely, subject to the following restrictions:
 
 
 SparsePolygonizer3d::SparsePolygonizer3d() : _isize(0), _jsize(0), _ksize(0), _dx(1),
-                                 _vertexValues(0, 0, 0, 0.0),
-                                 _isCellDone(0, 0, 0, false)
+                                             _vertexValues(0, 0, 0, 0.0),
+                                             _isCellDone(0, 0, 0, false)
 {
 }
 
@@ -41,6 +41,9 @@ SparsePolygonizer3d::SparsePolygonizer3d(SparseImplicitSurfaceScalarField &scala
     scalarField.getScalarField(_vertexValues);
     
     _isCellDone = SparseArray3d<bool>(_isize, _jsize, _ksize, false);
+
+    _surfaceIndices = GridIndexVector(_isize, _jsize, _ksize);
+    _surfaceCells = GridIndexVector(_isize, _jsize, _ksize);
 
     _isInitialized = true;
 }
@@ -342,12 +345,9 @@ SparsePolygonizer3d::~SparsePolygonizer3d()
 {
 }
 
-void SparsePolygonizer3d::setSurfaceCellIndices(std::vector<GridIndex> indices) {
-    _surfaceIndices.clear();
+void SparsePolygonizer3d::setSurfaceCellIndices(GridIndexVector &indices) {
     _surfaceIndices.reserve(indices.size());
-    for (unsigned int i = 0; i < indices.size(); i++) {
-        _surfaceIndices.push_back(indices[i]);
-    }
+    _surfaceIndices = indices;
 }
 
 void SparsePolygonizer3d::setScalarField(SparseImplicitSurfaceScalarField &scalarField) {
@@ -451,9 +451,9 @@ bool SparsePolygonizer3d::_isCellDataAvailable(GridIndex g) {
     return false;
 }
 
-std::vector<GridIndex> SparsePolygonizer3d::_processSeedCell(GridIndex seed, 
+GridIndexVector SparsePolygonizer3d::_processSeedCell(GridIndex seed, 
                                                              SparseArray3d<bool> &isCellDone) {
-    std::vector<GridIndex> seedSurfaceCells;
+    GridIndexVector seedSurfaceCells(_isize, _jsize, _ksize);
 
     isCellDone.set(seed, true);
     std::vector<GridIndex> queue;
@@ -483,8 +483,8 @@ std::vector<GridIndex> SparsePolygonizer3d::_processSeedCell(GridIndex seed,
     return seedSurfaceCells;
 }
 
-std::vector<GridIndex> SparsePolygonizer3d::_findSurfaceCells() {
-    std::vector<GridIndex> surfaceCells;
+GridIndexVector SparsePolygonizer3d::_findSurfaceCells() {
+    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _isCellDone.clear();
 
     for (unsigned int i = 0; i < _surfaceIndices.size(); i++) {
@@ -501,8 +501,8 @@ std::vector<GridIndex> SparsePolygonizer3d::_findSurfaceCells() {
             }
 
             if (_isCellOnSurface(cell)) {
-                std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
-                surfaceCells.insert(surfaceCells.end(), seedSurfaceCells.begin(), seedSurfaceCells.end());
+                GridIndexVector seedSurfaceCells = _processSeedCell(cell, _isCellDone);
+                surfaceCells.insert(seedSurfaceCells);
                 break;
             }
 

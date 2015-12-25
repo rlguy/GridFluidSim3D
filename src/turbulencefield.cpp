@@ -78,7 +78,7 @@ double TurbulenceField::_calculateTurbulenceAtGridCell(int i, int j, int k,
 }
 
 void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
-                                               std::vector<GridIndex> &fluidCells) {
+                                               GridIndexVector &fluidCells) {
     _field.fill(0.0);
 
     vfield->getGridDimensions(&_isize, &_jsize, &_ksize);

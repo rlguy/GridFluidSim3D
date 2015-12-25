@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 #include <fstream>
 
 #include "macvelocityfield.h"
+#include "fluidmaterialgrid.h"
 #include "array3d.h"
 #include "vmath.h"
 

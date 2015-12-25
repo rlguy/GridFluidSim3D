@@ -35,6 +35,7 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 #include "collision.h"
 #include "vmath.h"
+#include "gridindexvector.h"
 
 class TriangleMesh
 {
@@ -73,7 +74,7 @@ public:
     double getTriangleArea(int tidx);
     void getVertexNeighbours(unsigned int vidx, std::vector<int> &n);
     bool isNeighbours(Triangle t1, Triangle t2);
-    void getCellsInsideMesh(std::vector<GridIndex> &cells);
+    void getCellsInsideMesh(GridIndexVector &cells);
     void getTrianglePosition(unsigned int index, vmath::vec3 tri[3]);
     vmath::vec3 getTriangleNormal(unsigned int index);
     vmath::vec3 getTriangleNormalSmooth(unsigned int index, vmath::vec3 p);

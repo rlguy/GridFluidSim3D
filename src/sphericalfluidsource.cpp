@@ -59,28 +59,28 @@ void SphericalFluidSource::expand(double val) {
     }
 }
 
-std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &materialGrid,
-                                                              double dx) {
+GridIndexVector SphericalFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
+                                                       double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     if (sourceType == T_OUTFLOW) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> newFluidCells;
+    GridIndexVector overlappingIndices(w, h, d);
+    GridIndexVector newFluidCells(w, h, d);
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) == M_AIR) {
+        if (materialGrid.isCellAir(g)) {
             newFluidCells.push_back(g);
         }
     }
@@ -88,24 +88,24 @@ std::vector<GridIndex> SphericalFluidSource::getNewFluidCells(Array3d<int> &mate
     return newFluidCells;
 }
 
-std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materialGrid,
+GridIndexVector SphericalFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                            double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> fluidCells;
+    GridIndexVector overlappingIndices;
+    GridIndexVector fluidCells;
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) == M_FLUID) {
+        if (materialGrid.isCellFluid(g)) {
             fluidCells.push_back(g);
         }
     }
@@ -113,28 +113,28 @@ std::vector<GridIndex> SphericalFluidSource::getFluidCells(Array3d<int> &materia
     return fluidCells;
 }
 
-std::vector<GridIndex> SphericalFluidSource::getCells(Array3d<int> &materialGrid,
+GridIndexVector SphericalFluidSource::getCells(FluidMaterialGrid &materialGrid,
                                                    double dx) {
     if (!isActive) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     if (sourceType == T_OUTFLOW) {
-        return std::vector<GridIndex>();
+        return GridIndexVector();
     }
 
     int w = materialGrid.width;
     int h = materialGrid.height;
     int d = materialGrid.depth;
-    std::vector<GridIndex> overlappingIndices;
-    std::vector<GridIndex> cells;
+    GridIndexVector overlappingIndices(w, h, d);
+    GridIndexVector cells(w, h, d);
 
     _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
 
     GridIndex g;
     for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
         g = overlappingIndices[i];
-        if (materialGrid(g) != M_SOLID) {
+        if (materialGrid.isCellSolid(g)) {
             cells.push_back(g);
         }
     }
@@ -142,7 +142,7 @@ std::vector<GridIndex> SphericalFluidSource::getCells(Array3d<int> &materialGrid
     return cells;
 }
 
-void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &indices,
+void SphericalFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
                                                       int isize, int jsize, int ksize, 
                                                       double dx) {
 
@@ -161,7 +161,7 @@ void SphericalFluidSource::_getOverlappingGridIndices(std::vector<GridIndex> &in
                 v = p - position;
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
-                    indices.push_back(GridIndex(i, j, k));
+                    indices.push_back(i, j, k);
                 }
             }
         }

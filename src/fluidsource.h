@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "aabb.h"
 #include "fluidmaterialgrid.h"
+#include "gridindexvector.h"
 
 class FluidSource
 {
@@ -52,11 +53,11 @@ public:
     int getID();
     void setID(int identifier);
 
-    virtual std::vector<GridIndex> getNewFluidCells(FluidMaterialGrid &materialGrid,
+    virtual GridIndexVector getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                     double dx);
-    virtual std::vector<GridIndex> getFluidCells(FluidMaterialGrid &materialGrid,
+    virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid,
                                                  double dx);
-    virtual std::vector<GridIndex> getCells(FluidMaterialGrid &materialGrid,
+    virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid,
                                             double dx);
     virtual AABB getAABB();
 

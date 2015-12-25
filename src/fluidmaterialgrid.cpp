@@ -51,7 +51,7 @@ void FluidMaterialGrid::set(GridIndex g, Material m) {
     _grid.set(g, m);
 }
 
-void FluidMaterialGrid::set(std::vector<GridIndex> cells, Material m) {
+void FluidMaterialGrid::set(GridIndexVector &cells, Material m) {
     _grid.set(cells, m);
 }
 
@@ -63,7 +63,7 @@ void FluidMaterialGrid::setAir(GridIndex g) {
     set(g, Material::air);
 }
 
-void FluidMaterialGrid::setAir(std::vector<GridIndex> cells) {
+void FluidMaterialGrid::setAir(GridIndexVector &cells) {
     set(cells, Material::air);
 }
 
@@ -75,7 +75,7 @@ void FluidMaterialGrid::setFluid(GridIndex g) {
     set(g, Material::fluid);
 }
 
-void FluidMaterialGrid::setFluid(std::vector<GridIndex> cells) {
+void FluidMaterialGrid::setFluid(GridIndexVector &cells) {
     set(cells, Material::fluid);
 }
 
@@ -87,7 +87,7 @@ void FluidMaterialGrid::setSolid(GridIndex g) {
     set(g, Material::solid);
 }
 
-void FluidMaterialGrid::setSolid(std::vector<GridIndex> cells) {
+void FluidMaterialGrid::setSolid(GridIndexVector &cells) {
     set(cells, Material::solid);
 }
 

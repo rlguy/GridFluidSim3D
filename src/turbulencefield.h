@@ -17,7 +17,8 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#pragma once
+#ifndef TURBULENCEFIELD_H
+#define TURBULENCEFIELD_H
 
 #include <assert.h>
 
@@ -25,6 +26,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "interpolation.h"
 #include "macvelocityfield.h"
+#include "gridindexvector.h"
 #include "vmath.h"
 
 class TurbulenceField
@@ -34,7 +36,7 @@ public:
     ~TurbulenceField();
 
     void calculateTurbulenceField(MACVelocityField *vfield,
-                                  std::vector<GridIndex> &fluidCells);
+                                  GridIndexVector &fluidCells);
     void destroyTurbulenceField();
     double evaluateTurbulenceAtPosition(vmath::vec3 p);
 
@@ -56,3 +58,4 @@ private:
     GridIndex cellNeighbours[124];
 };
 
+#endif

@@ -8,7 +8,8 @@ CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=$(PTHREADLIB) -lstdc++
 
 SOURCEPATH=src
-SOURCES=$(SOURCEPATH)/aabb.cpp \
+SOURCES=$(SOURCEPATH)/grid3d.cpp \
+		$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/collision.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
 		$(SOURCEPATH)/fluidbrickgrid.cpp \
@@ -16,8 +17,8 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/fluidsimulation.cpp \
 		$(SOURCEPATH)/fluidsimulationsavestate.cpp \
 		$(SOURCEPATH)/fluidsource.cpp \
-		$(SOURCEPATH)/grid3d.cpp \
 		$(SOURCEPATH)/gridindexkeymap.cpp \
+		$(SOURCEPATH)/gridindexvector.cpp \
 		$(SOURCEPATH)/implicitpointprimitive.cpp \
 		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
 		$(SOURCEPATH)/interpolation.cpp \

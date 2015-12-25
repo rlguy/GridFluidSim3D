@@ -29,6 +29,8 @@ FluidSimulation::FluidSimulation(int x_voxels, int y_voxels, int z_voxels, doubl
                                 _bodyForce(0.0, 0.0, 0.0),
                                 _MACVelocity(_isize, _jsize, _ksize, cell_size),
                                 _materialGrid(_isize, _jsize, _ksize),
+                                _fluidCellIndices(_isize, _jsize, _ksize),
+                                _addedFluidCellQueue(_isize, _jsize, _ksize),
                                 _levelset(_isize, _jsize, _ksize, cell_size)
 {
 }
@@ -479,9 +481,13 @@ void FluidSimulation::addFluidCell(int i, int j, int k) {
     }
 }
 
-void FluidSimulation::addFluidCells(std::vector<GridIndex> indices) {
+void FluidSimulation::addFluidCell(GridIndex g) {
+    addFluidCell(g.i, g.j, g.k);
+}
+
+void FluidSimulation::addFluidCells(GridIndexVector indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
-        addFluidCell((int)indices[i].i, (int)indices[i].j, (int)indices[i].k);
+        addFluidCell(indices[i]);
     }
 }
 
@@ -639,7 +645,7 @@ void FluidSimulation::_addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity) {
     }
 }
 
-void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells) {
+void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &fluidCells) {
     ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
 
     FluidPoint fp;
@@ -666,7 +672,7 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(std::vector<GridI
     _surfaceMesh.getCellsInsideMesh(fluidCells);
 }
 
-void FluidSimulation::_getInitialFluidCellsFromTriangleMesh(std::vector<GridIndex> &fluidCells) {
+void FluidSimulation::_getInitialFluidCellsFromTriangleMesh(GridIndexVector &fluidCells) {
     bool success = _surfaceMesh.loadOBJ(_fluidMeshFilename, _fluidMeshOffset, _fluidMeshScale);
     assert(success);
     _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
@@ -696,7 +702,7 @@ void FluidSimulation::_initializeFluidMaterial() {
         return;
     }
 
-    std::vector<GridIndex> fluidCells;
+    GridIndexVector fluidCells(_isize, _jsize, _ksize);
     if (_fluidInitializationType == IMPLICIT) {
         _getInitialFluidCellsFromImplicitSurface(fluidCells);
     } else if (_fluidInitializationType == MESH) {
@@ -704,19 +710,17 @@ void FluidSimulation::_initializeFluidMaterial() {
     }
 
     _markerParticles.reserve(8*fluidCells.size());
+    _fluidCellIndices.reserve(fluidCells.size());
     GridIndex g;
-    std::vector<GridIndex> indices;
     for (unsigned int i = 0; i < fluidCells.size(); i++) {
         g = fluidCells[i];
 
         if (_materialGrid.isCellAir(g)) {
             _materialGrid.setFluid(g);
             _addMarkerParticlesToCell(g);
-            indices.push_back(g);
+            _fluidCellIndices.push_back(g);
         }
     }
-
-    _fluidCellIndices = indices;
 }
 
 void FluidSimulation::_initializeSimulation() {
@@ -844,7 +848,7 @@ int FluidSimulation::_getUniqueFluidSourceID() {
     return id;
 }
 
-void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &cells) {
+void FluidSimulation::_removeMarkerParticlesFromCells(GridIndexVector &cells) {
     std::vector<bool> isRemoved;
     isRemoved.reserve(_markerParticles.size());
 
@@ -859,7 +863,7 @@ void FluidSimulation::_removeMarkerParticlesFromCells(std::vector<GridIndex> &ce
     _removeItemsFromVector(_markerParticles, isRemoved);
 }
 
-void FluidSimulation::_removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells) {
+void FluidSimulation::_removeDiffuseParticlesFromCells(GridIndexVector &cells) {
     std::vector<bool> isRemoved;
     isRemoved.reserve(_diffuseParticles.size());
 
@@ -874,7 +878,7 @@ void FluidSimulation::_removeDiffuseParticlesFromCells(std::vector<GridIndex> &c
     _removeItemsFromVector(_diffuseParticles, isRemoved);
 }
 
-void FluidSimulation::_addNewFluidCells(std::vector<GridIndex> &cells, 
+void FluidSimulation::_addNewFluidCells(GridIndexVector &cells, 
                                         vmath::vec3 velocity) {
 
     _markerParticles.reserve(_markerParticles.size() + 8*cells.size());
@@ -907,7 +911,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
     int kdepth = gmax.k - gmin.k + 1;
     
     Array3d<bool> isInvalidCell = Array3d<bool>(iwidth, jheight, kdepth, true);
-    std::vector<GridIndex> sourceCells = source->getCells(_materialGrid, _dx);
+    GridIndexVector sourceCells = source->getCells(_materialGrid, _dx);
     GridIndex g;
     for (unsigned int i = 0; i < sourceCells.size(); i++) {
         g = sourceCells[i];
@@ -966,7 +970,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
 
 void FluidSimulation::_updateFluidSource(FluidSource *source) {
     if (source->getSourceType() == T_INFLOW) {
-        std::vector<GridIndex> newCells = source->getNewFluidCells(_materialGrid, _dx);
+        GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
         vmath::vec3 velocity = source->getVelocity();
         if (newCells.size() > 0) {
             _addNewFluidCells(newCells, velocity);
@@ -978,7 +982,7 @@ void FluidSimulation::_updateFluidSource(FluidSource *source) {
             _addNewFluidParticles(newParticles, velocity);
         }
     } else if (source->getSourceType() == T_OUTFLOW) {
-        std::vector<GridIndex> cells = source->getFluidCells(_materialGrid, _dx);
+        GridIndexVector cells = source->getFluidCells(_materialGrid, _dx);
 
         if (cells.size() > 0) {
             _removeMarkerParticlesFromCells(cells);
@@ -1069,8 +1073,6 @@ TriangleMesh FluidSimulation::_polygonizeSurface() {
     }
 
     Polygonizer3d polygonizer = Polygonizer3d(field);
-    polygonizer.setInsideCellIndices(_fluidCellIndices);
-
     polygonizer.polygonizeSurface();
     return polygonizer.getTriangleMesh();
 }
@@ -1306,7 +1308,7 @@ void FluidSimulation::_smoothSurfaceMesh(TriangleMesh &mesh) {
                 smoothVertices);
 }
 
-void FluidSimulation::_getSubdividedSurfaceCells(std::vector<GridIndex> &cells) {
+void FluidSimulation::_getSubdividedSurfaceCells(GridIndexVector &cells) {
     int subd = _outputFluidSurfaceSubdivisionLevel;
     int numSubdivisions = subd*subd*subd;
     GridIndex *subdivisions = new GridIndex[numSubdivisions];
@@ -1330,7 +1332,7 @@ void FluidSimulation::_getSubdividedSurfaceCells(std::vector<GridIndex> &cells) 
     delete[] subdivisions;
 }
 
-void FluidSimulation::_getSubdividedSolidCells(std::vector<GridIndex> &cells) {
+void FluidSimulation::_getSubdividedSolidCells(GridIndexVector &cells) {
     int subd = _outputFluidSurfaceSubdivisionLevel;
     int numSubdivisions = subd*subd*subd;
     GridIndex *subdivisions = new GridIndex[numSubdivisions];
@@ -1374,19 +1376,19 @@ void FluidSimulation::_getOutputSurfaceParticles(std::vector<vmath::vec3> &parti
 
 TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
 
-    std::vector<GridIndex> surfaceCells;
-    std::vector<GridIndex> solidCells;
-    _getSubdividedSurfaceCells(surfaceCells);
-    _getSubdividedSolidCells(solidCells);
-
-    std::vector<vmath::vec3> particles;
-    _getOutputSurfaceParticles(particles);
-
     int subd = _outputFluidSurfaceSubdivisionLevel;
     int width = _isize*subd;
     int height = _jsize*subd;
     int depth = _ksize*subd;
     double dx = _dx / subd;
+
+    GridIndexVector surfaceCells(width, height, depth);
+    GridIndexVector solidCells(width, height, depth);
+    _getSubdividedSurfaceCells(surfaceCells);
+    _getSubdividedSolidCells(solidCells);
+
+    std::vector<vmath::vec3> particles;
+    _getOutputSurfaceParticles(particles);
 
     SparseImplicitSurfaceScalarField field = SparseImplicitSurfaceScalarField(width + 1, 
                                                                               height + 1, 
@@ -1498,14 +1500,14 @@ void FluidSimulation::_advectVelocityFieldU() {
     Array3d<float> ugrid = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
     _computeVelocityScalarField(ugrid, 0);
 
-    std::vector<GridIndex> extrapolationIndices;
+    GridIndexVector extrapolationIndices(_isize + 1, _jsize, _ksize);
     double eps = 10e-9;
     for (int k = 0; k < ugrid.depth; k++) {
         for (int j = 0; j < ugrid.height; j++) {
             for (int i = 0; i < ugrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidU(i, j, k)) {
                     if (fabs(ugrid(i, j, k)) < eps) {
-                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                        extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setU(i, j, k, ugrid(i, j, k));
                     }
@@ -1543,14 +1545,14 @@ void FluidSimulation::_advectVelocityFieldV() {
     Array3d<float> vgrid = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
     _computeVelocityScalarField(vgrid, 1);
     
-    std::vector<GridIndex> extrapolationIndices;
+    GridIndexVector extrapolationIndices(_isize, _jsize + 1, _ksize);
     double eps = 10e-9;
     for (int k = 0; k < vgrid.depth; k++) {
         for (int j = 0; j < vgrid.height; j++) {
             for (int i = 0; i < vgrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidV(i, j, k)) {
                     if (fabs(vgrid(i, j, k)) < eps) {
-                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                        extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setV(i, j, k, vgrid(i, j, k));
                     }
@@ -1588,14 +1590,14 @@ void FluidSimulation::_advectVelocityFieldW() {
     Array3d<float> wgrid = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
     _computeVelocityScalarField(wgrid, 2);
     
-    std::vector<GridIndex> extrapolationIndices;
+    GridIndexVector extrapolationIndices(_isize, _jsize, _ksize + 1);
     double eps = 10e-9;
     for (int k = 0; k < wgrid.depth; k++) {
         for (int j = 0; j < wgrid.height; j++) {
             for (int i = 0; i < wgrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidW(i, j, k)) {
                     if (fabs(wgrid(i, j, k)) < eps) {
-                        extrapolationIndices.push_back(GridIndex(i, j, k));
+                        extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setW(i, j, k, wgrid(i, j, k));
                     }
@@ -2057,7 +2059,7 @@ vmath::vec3 FluidSimulation::_getVelocityAtNearestPointOnFluidSurface(vmath::vec
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndexU(int idx, Array3d<int> &layerGrid) {
     Array3d<float> tempMACVelocityU = Array3d<float>(_isize + 1, _jsize, _ksize);
-    std::vector<GridIndex> tempIndices;
+    GridIndexVector tempIndices(_isize + 1, _jsize, _ksize);
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -2068,7 +2070,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndexU(int idx, Array3d<int>
                 if (isExtrapolated) {
                     double v = _getExtrapolatedVelocityForFaceU(i, j, k, idx, layerGrid);
                     tempMACVelocityU.set(i, j, k, (float)v);
-                    tempIndices.push_back(GridIndex(i, j, k));
+                    tempIndices.push_back(i, j, k);
                 }
             }
         }
@@ -2081,7 +2083,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndexU(int idx, Array3d<int>
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndexV(int idx, Array3d<int> &layerGrid) {
     Array3d<float> tempMACVelocityV = Array3d<float>(_isize, _jsize + 1, _ksize);
-    std::vector<GridIndex> tempIndices;
+    GridIndexVector tempIndices(_isize, _jsize + 1, _ksize);
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize + 1; j++) {
@@ -2092,7 +2094,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndexV(int idx, Array3d<int>
                 if (isExtrapolated) {
                     double v = _getExtrapolatedVelocityForFaceV(i, j, k, idx, layerGrid);
                     tempMACVelocityV.set(i, j, k, (float)v);
-                    tempIndices.push_back(GridIndex(i, j, k));
+                    tempIndices.push_back(i, j, k);
                 }
             }
         }
@@ -2105,7 +2107,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndexV(int idx, Array3d<int>
 
 void FluidSimulation::_extrapolateVelocitiesForLayerIndexW(int idx, Array3d<int> &layerGrid) {
     Array3d<float> tempMACVelocityW = Array3d<float>(_isize, _jsize, _ksize + 1);
-    std::vector<GridIndex> tempIndices;
+    GridIndexVector tempIndices(_isize, _jsize, _ksize + 1);
 
     for (int k = 0; k < _ksize + 1; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -2116,7 +2118,7 @@ void FluidSimulation::_extrapolateVelocitiesForLayerIndexW(int idx, Array3d<int>
                 if (isExtrapolated) {
                     double v = _getExtrapolatedVelocityForFaceW(i, j, k, idx, layerGrid);
                     tempMACVelocityW.set(i, j, k, (float)v);
-                    tempIndices.push_back(GridIndex(i, j, k));
+                    tempIndices.push_back(i, j, k);
                 }
             }
         }

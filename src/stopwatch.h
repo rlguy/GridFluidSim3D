@@ -17,7 +17,8 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#pragma once
+#ifndef STOPWATCH_H
+#define STOPWATCH_H
 
 #ifdef __linux__ 
     #include <sys/time.h>
@@ -41,3 +42,5 @@ private:
     float _tbegin, _tend;
     double _timeRunning = 0.0;
 };
+
+#endif

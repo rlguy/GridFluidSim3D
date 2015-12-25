@@ -31,13 +31,14 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "array3d.h"
 #include "fluidmaterialgrid.h"
+#include "gridindexvector.h"
 
 struct PressureSolverParameters {
     double cellwidth;
     double density;
     double deltaTime;
 
-    std::vector<GridIndex> *fluidCells;
+    GridIndexVector *fluidCells;
     FluidMaterialGrid *materialGrid;
     MACVelocityField *velocityField;
     LogFile *logfile;
@@ -160,7 +161,7 @@ private:
     double _pressureSolveTolerance = 1e-6;
     int _maxCGIterations = 200;
 
-    std::vector<GridIndex> *_fluidCells;
+    GridIndexVector *_fluidCells;
     FluidMaterialGrid *_materialGrid;
     MACVelocityField *_vField;
     LogFile *_logfile;

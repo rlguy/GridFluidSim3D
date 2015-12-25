@@ -39,12 +39,9 @@ public:
     CuboidFluidSource(AABB bbox, vmath::vec3 velocity);
     ~CuboidFluidSource();
 
-    virtual std::vector<GridIndex> getNewFluidCells(FluidMaterialGrid &materialGrid,
-                                                    double dx);
-    virtual std::vector<GridIndex> getFluidCells(FluidMaterialGrid &materialGrid,
-                                                 double dx);
-    virtual std::vector<GridIndex> getCells(FluidMaterialGrid &materialGrid,
-                                            double dx);
+    virtual GridIndexVector getNewFluidCells(FluidMaterialGrid &materialGrid, double dx);
+    virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid, double dx);
+    virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid, double dx);
     virtual AABB getAABB();
 
     void setWidth(double w);
@@ -62,7 +59,7 @@ public:
 private:
     AABB _bbox;
 
-    void _getOverlappingGridIndices(std::vector<GridIndex> &storage,
+    void _getOverlappingGridIndices(GridIndexVector &storage,
                                     int i, int j, int k, double dx);
 };
 

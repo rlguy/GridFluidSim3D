@@ -300,11 +300,11 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
     }
 }
 
-void ImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
+void ImplicitSurfaceScalarField::setSolidCells(GridIndexVector &solidCells) {
     setMaterialGrid(solidCells);
 }
 
-void ImplicitSurfaceScalarField::setMaterialGrid(std::vector<GridIndex> &solidCells) {
+void ImplicitSurfaceScalarField::setMaterialGrid(GridIndexVector &solidCells) {
     GridIndex vertices[8];
     GridIndex g;
     for (unsigned int i = 0; i < solidCells.size(); i++) {

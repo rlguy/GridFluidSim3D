@@ -154,7 +154,7 @@ void SparseImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos,
     }
 }
 
-void SparseImplicitSurfaceScalarField::setSolidCells(std::vector<GridIndex> &solidCells) {
+void SparseImplicitSurfaceScalarField::setSolidCells(GridIndexVector &solidCells) {
     GridIndex vertices[8];
     for (unsigned int i = 0; i < solidCells.size(); i++) {
         Grid3d::getGridIndexVertices(solidCells[i], vertices);

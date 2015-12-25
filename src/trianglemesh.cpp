@@ -842,10 +842,12 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     return leftIntersections.size() % 2 == 1;
 }
 
-void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
+void TriangleMesh::getCellsInsideMesh(GridIndexVector &cells) {
     if (_gridi == 0 || _gridj == 0 || _gridk == 0) {
         return;
     }
+
+    assert(cells.width == _gridi && cells.height == _gridj && cells.depth == _gridk);
 
     // find all cells that are on the surface boundary.
     // Iterate through surface cells and test if any of their
@@ -878,7 +880,7 @@ void TriangleMesh::getCellsInsideMesh(std::vector<GridIndex> &cells) {
         for (int j = 0; j < _triGrid.height; j++) {
             for (int i = 0; i < _triGrid.width; i++) {
                 if (insideCellGrid(i, j, k)) {
-                    cells.push_back(GridIndex(i, j, k));
+                    cells.push_back(i, j, k);
                 }
             }
         }

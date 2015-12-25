@@ -37,6 +37,9 @@ Polygonizer3d::Polygonizer3d(SurfaceField *field) : _field(field)
     _isVertexSet = Array3d<bool>(_isize+1, _jsize+1, _ksize+1, false);
     _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
 
+    _insideIndices = GridIndexVector(_isize, _jsize, _ksize);
+    _surfaceCells = GridIndexVector(_isize, _jsize, _ksize);
+
     _isInitialized = true;
 }
 
@@ -361,12 +364,8 @@ Polygonizer3d::~Polygonizer3d()
 {
 }
 
-void Polygonizer3d::setInsideCellIndices(std::vector<GridIndex> indices) {
-    _insideIndices.clear();
-    _insideIndices.reserve(indices.size());
-    for (unsigned int i = 0; i < indices.size(); i++) {
-        _insideIndices.push_back(indices[i]);
-    }
+void Polygonizer3d::setInsideCellIndices(GridIndexVector &indices) {
+    _insideIndices = indices;
 }
 
 void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField &scalarField) {
@@ -461,16 +460,16 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     }
 }
 
-std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed, 
-                                                       Array3d<bool> &isCellDone) {
-    std::vector<GridIndex> seedSurfaceCells;
+GridIndexVector Polygonizer3d::_processSeedCell(GridIndex seed, 
+                                                Array3d<bool> &isCellDone) {
+    GridIndexVector seedSurfaceCells(_isize, _jsize, _ksize);
 
     isCellDone.set(seed, true);
-    std::vector<GridIndex> queue;
+    GridIndexVector queue(_isize, _jsize, _ksize);
     queue.push_back(seed);
 
     while (!queue.empty()) {
-        GridIndex c = queue[queue.size() - 1];
+        GridIndex c = queue.back();
         queue.pop_back();
 
         GridIndex neighbours[6];
@@ -490,8 +489,8 @@ std::vector<GridIndex> Polygonizer3d::_processSeedCell(GridIndex seed,
     return seedSurfaceCells;
 }
 
-std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
-    std::vector<GridIndex> surfaceCells;
+GridIndexVector Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
+    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _isCellDone.fill(false);
 
     for (unsigned int i = 0; i < _insideIndices.size(); i++) {
@@ -504,8 +503,8 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
         while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
 
             if (_isCellOnSurface(cell)) {
-                std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
-                surfaceCells.insert(surfaceCells.end(), seedSurfaceCells.begin(), seedSurfaceCells.end());
+                GridIndexVector seedSurfaceCells = _processSeedCell(cell, _isCellDone);
+                surfaceCells.insert(seedSurfaceCells);
                 break;
             }
 
@@ -518,8 +517,8 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
     return surfaceCells;
 }
 
-std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingScalarField() {
-    std::vector<GridIndex> surfaceCells;
+GridIndexVector Polygonizer3d::_findSurfaceCellsUsingScalarField() {
+    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _isCellDone.fill(false);
 
     for (int k = 0; k < _ksize; k++) {
@@ -534,8 +533,8 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingScalarField() {
                 while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
 
                     if (_isCellOnSurface(cell)) {
-                        std::vector<GridIndex> seedSurfaceCells = _processSeedCell(cell, _isCellDone);
-                        surfaceCells.insert(surfaceCells.end(), seedSurfaceCells.begin(), seedSurfaceCells.end());
+                        GridIndexVector seedSurfaceCells = _processSeedCell(cell, _isCellDone);
+                        surfaceCells.insert(seedSurfaceCells);
                         break;
                     }
 
@@ -550,7 +549,7 @@ std::vector<GridIndex> Polygonizer3d::_findSurfaceCellsUsingScalarField() {
     return surfaceCells;
 }
 
-std::vector<GridIndex> Polygonizer3d::_findSurfaceCells() {
+GridIndexVector Polygonizer3d::_findSurfaceCells() {
     if (!_isScalarFieldSet) {
         _resetVertexValues();
     }

@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 
 #include "vmath.h"
 #include "aabb.h"
+#include "fluidmaterialgrid.h"
 
 class SphericalFluidSource : public FluidSource
 {
@@ -40,17 +41,14 @@ public:
     void setCenter(vmath::vec3 p);
     void expand(double val);
 
-    virtual std::vector<GridIndex> getNewFluidCells(Array3d<int> &materialGrid,
-                                                    double dx);
-    virtual std::vector<GridIndex> getFluidCells(Array3d<int> &materialGrid,
-                                                 double dx);
-    virtual std::vector<GridIndex> getCells(Array3d<int> &materialGrid,
-                                            double dx);
+    virtual GridIndexVector getNewFluidCells(FluidMaterialGrid &materialGrid, double dx);
+    virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid, double dx);
+    virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid, double dx);
     virtual AABB getAABB();
 
 private:
 
-    void _getOverlappingGridIndices(std::vector<GridIndex> &storage,
+    void _getOverlappingGridIndices(GridIndexVector &storage,
                                     int i, int j, int k, double dx);
 
     double _radius = 0.0;

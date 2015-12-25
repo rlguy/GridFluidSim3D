@@ -17,7 +17,8 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#pragma once
+#ifndef FLUIDSIMULATION_H
+#define FLUIDSIMULATION_H
 
 #include <pthread.h>
 #include <stdio.h>
@@ -55,6 +56,7 @@ freely, subject to the following restrictions:
 #include "gridindexkeymap.h"
 #include "pressuresolver.h"
 #include "fluidmaterialgrid.h"
+#include "gridindexvector.h"
 #include "vmath.h"
 
 struct MarkerParticle {
@@ -174,7 +176,8 @@ public:
     std::vector<vmath::vec3> getSolidCells();
     std::vector<vmath::vec3> getSolidCellPositions();
     void addFluidCell(int i, int j, int k);
-    void addFluidCells(std::vector<GridIndex> indices);
+    void addFluidCell(GridIndex g);
+    void addFluidCells(GridIndexVector indices);
 
     unsigned int getNumMarkerParticles();
     std::vector<vmath::vec3> getMarkerParticlePositions();
@@ -296,8 +299,8 @@ private:
     void _initializeSimulation();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
-    void _getInitialFluidCellsFromImplicitSurface(std::vector<GridIndex> &fluidCells);
-    void _getInitialFluidCellsFromTriangleMesh(std::vector<GridIndex> &fluidCells);
+    void _getInitialFluidCellsFromImplicitSurface(GridIndexVector &fluidCells);
+    void _getInitialFluidCellsFromTriangleMesh(GridIndexVector &fluidCells);
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
     void _addMarkerParticle(vmath::vec3 p);
@@ -321,12 +324,12 @@ private:
     void _updateAddedFluidCellQueue();
     void _updateFluidSources();
     void _updateFluidSource(FluidSource *source);
-    void _addNewFluidCells(std::vector<GridIndex> &cells, vmath::vec3 velocity);
+    void _addNewFluidCells(GridIndexVector &cells, vmath::vec3 velocity);
     void _addNewFluidParticles(std::vector<vmath::vec3> &particles, vmath::vec3 velocity);
     void _getNewFluidParticles(FluidSource *source, std::vector<vmath::vec3> &particles);
-    void _removeMarkerParticlesFromCells(std::vector<GridIndex> &cells);
-    void _removeDiffuseParticlesFromCells(std::vector<GridIndex> &cells);
-    inline bool _isIndexInList(GridIndex g, std::vector<GridIndex> &list) {
+    void _removeMarkerParticlesFromCells(GridIndexVector &cells);
+    void _removeDiffuseParticlesFromCells(GridIndexVector &cells);
+    inline bool _isIndexInList(GridIndex g, GridIndexVector &list) {
         GridIndex c;
         for (unsigned int idx = 0; idx < list.size(); idx++) {
             c = list[idx];
@@ -360,8 +363,8 @@ private:
     bool _isVertexNearSolid(vmath::vec3 v, double eps);
     TriangleMesh _polygonizeIsotropicOutputSurface();
     TriangleMesh _polygonizeAnisotropicOutputSurface();
-    void _getSubdividedSurfaceCells(std::vector<GridIndex> &cells);
-    void _getSubdividedSolidCells(std::vector<GridIndex> &cells);
+    void _getSubdividedSurfaceCells(GridIndexVector &cells);
+    void _getSubdividedSolidCells(GridIndexVector &cells);
     void _getOutputSurfaceParticles(std::vector<vmath::vec3> &particles);
     void _updateBrickGrid(double dt);
 
@@ -652,8 +655,8 @@ private:
     MACVelocityField _MACVelocity;
     FluidMaterialGrid _materialGrid;
     std::vector<MarkerParticle> _markerParticles;
-    std::vector<GridIndex> _fluidCellIndices;
-    std::vector<GridIndex> _addedFluidCellQueue;
+    GridIndexVector _fluidCellIndices;
+    GridIndexVector _addedFluidCellQueue;
     LogFile _logfile;
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
@@ -672,3 +675,5 @@ private:
     FluidBrickGrid _fluidBrickGrid;
 
 };
+
+#endif

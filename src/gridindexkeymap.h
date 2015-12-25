@@ -49,7 +49,7 @@ private:
                ((unsigned int)j + (unsigned int)_jsize * (unsigned int)k);
     }
 
-    inline unsigned int _getflatIndex(GridIndex g) {
+    inline unsigned int _getFlatIndex(GridIndex g) {
         return (unsigned int)g.i + (unsigned int)_isize *
                ((unsigned int)g.j + (unsigned int)_jsize * (unsigned int)g.k);
     }

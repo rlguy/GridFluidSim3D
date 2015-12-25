@@ -2,6 +2,7 @@
 
 int main(int argc, char* args[]) {
 
+
     //FluidSimulationSaveState state;
     //bool success = state.loadState("savestates/autosave01.state");
     //assert(success);
@@ -47,6 +48,7 @@ int main(int argc, char* args[]) {
     while (true) {
         fluidsim.update(timestep);
     }
+    
     
     
 	return 0;

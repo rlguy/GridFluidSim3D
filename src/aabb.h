@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 
 #include <math.h>
 #include <vector>
+
 #include "triangle.h"
 #include "array3d.h"
 #include "vmath.h"
