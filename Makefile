@@ -8,8 +8,7 @@ CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=$(PTHREADLIB) -lstdc++
 
 SOURCEPATH=src
-SOURCES=$(SOURCEPATH)/grid3d.cpp \
-		$(SOURCEPATH)/aabb.cpp \
+SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/collision.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
 		$(SOURCEPATH)/fluidbrickgrid.cpp \
