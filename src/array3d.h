@@ -150,6 +150,16 @@ public:
         return _grid[_getFlatIndex(g)];;
     }
 
+    T operator()(int flatidx) {
+        bool isInRange = flatidx >= 0 && flatidx < _numElements;
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
+        return _grid[flatidx];
+    }
+
     T get(int i, int j, int k) {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
@@ -168,6 +178,16 @@ public:
         assert(isInRange);
 
         return _grid[_getFlatIndex(g)];;
+    }
+
+    T get(int flatidx) {
+        bool isInRange = flatidx >= 0 && flatidx < _numElements;
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return _outOfRangeValue;
+        }
+        assert(isInRange);
+
+        return _grid[flatidx];
     }
 
     void set(int i, int j, int k, T value) {
@@ -201,6 +221,11 @@ public:
         _grid[_getFlatIndex(g)] += value;
     }
 
+    void add(int flatidx, T value) {
+        assert(flatidx >= 0 && flatidx < _numElements);
+        _grid[flatidx] += value;
+    }
+
     T *getPointer(int i, int j, int k) {
         bool isInRange = _isIndexInRange(i, j, k);
         if (!isInRange && _isOutOfRangeValueSet) {
@@ -219,6 +244,16 @@ public:
 
         assert(isInRange);
         return &_grid[_getFlatIndex(g)];
+    }
+
+    T *getPointer(int flatidx) {
+        bool isInRange = flatidx >= 0 && flatidx < _numElements;
+        if (!isInRange && _isOutOfRangeValueSet) {
+            return &_outOfRangeValue;
+        }
+
+        assert(isInRange);
+        return &_grid[flatidx];
     }
 
     T *getRawArray() {
