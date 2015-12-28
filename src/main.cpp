@@ -1,18 +1,21 @@
 #include "main.h"
 
+#include "FragmentedVector.h"
+
 int main(int argc, char* args[]) {
 
-
-    //FluidSimulationSaveState state;
-    //bool success = state.loadState("savestates/autosave01.state");
-    //assert(success);
     
-    int xvoxels = 256;
-    int yvoxels = 256;
-    int zvoxels = 128;
-    double dx = 0.0625;
-    FluidSimulation fluidsim(xvoxels, yvoxels, zvoxels, dx);
-    //FluidSimulation fluidsim(state);
+    FluidSimulationSaveState state;
+    bool success = state.loadState("savestates/autosave02.state");
+    assert(success);
+
+    
+    int xvoxels = 150;
+    int yvoxels = 150;
+    int zvoxels = 150;
+    double dx = 0.0535;
+    //FluidSimulation fluidsim(xvoxels, yvoxels, zvoxels, dx);
+    FluidSimulation fluidsim(state);
 
     fluidsim.enableAnisotropicSurfaceReconstruction();
     //fluidsim.enableBrickOutput(0.25, 0.25, 0.25);
@@ -41,6 +44,7 @@ int main(int argc, char* args[]) {
     //fluidsim.addImplicitFluidPoint(x/2, y/2, z/2, 7.0);
     fluidsim.addBodyForce(0.0, -40.0, 0.0);
 
+    
     double starti = 128;
     for (int k = 64 - 10; k <= 64 + 10; k++) {
         for (int j = 1; j <= 30; j++) {
@@ -65,14 +69,14 @@ int main(int argc, char* args[]) {
             }
         }
     }
+    
 
     fluidsim.run();
 
-    double timestep = 1.0 / 30.0;
+    double timestep = 1.0 / 300.0;
     while (true) {
         fluidsim.update(timestep);
     }
-    
     
     
 	return 0;

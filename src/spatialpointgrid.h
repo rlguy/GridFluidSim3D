@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 
 #include "array3d.h"
 #include "aabb.h"
+#include "fragmentedvector.h"
 #include "grid3d.h"
 #include "vmath.h"
 
@@ -59,6 +60,7 @@ public:
 
     void clear();
     std::vector<GridPointReference> insert(std::vector<vmath::vec3> &points);
+    std::vector<GridPointReference> insert(FragmentedVector<vmath::vec3> &points);
     void queryPointsInsideSphere(vmath::vec3 p, double r, std::vector<vmath::vec3> &points);
     void queryPointsInsideSphere(GridPointReference ref, double r, std::vector<vmath::vec3> &points);
     void queryPointsInsideSphere(vmath::vec3 p, double r, std::vector<bool> &exclusions, 

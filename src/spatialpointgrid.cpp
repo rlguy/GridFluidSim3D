@@ -52,6 +52,17 @@ std::vector<GridPointReference> SpatialPointGrid::insert(std::vector<vmath::vec3
     return referenceList;
 }
 
+std::vector<GridPointReference> SpatialPointGrid::insert(FragmentedVector<vmath::vec3> &points) {
+    std::vector<vmath::vec3> vps;
+    vps.reserve(points.size());
+
+    for (unsigned int i = 0; i < points.size(); i++) {
+        vps.push_back(points[i]);
+    }
+
+    return insert(vps);
+}
+
 bool compareByFlatGridIndex(const std::pair<GridPoint, unsigned int> p1, std::pair<GridPoint, unsigned int> p2) {
     return p1.second < p2.second;
 }

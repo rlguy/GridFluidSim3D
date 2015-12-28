@@ -514,8 +514,11 @@ std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
     return lifetimes;
 }
 
-std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
-    return _diffuseParticles;
+void FluidSimulation::getDiffuseParticles(std::vector<DiffuseParticle> &dps) {
+    dps.reserve(_diffuseParticles.size());
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        dps.push_back(_diffuseParticles[i]);
+    }
 }
 
 Array3d<float> FluidSimulation::getDensityGrid() {
@@ -1342,8 +1345,7 @@ TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
 TriangleMesh FluidSimulation::_polygonizeAnisotropicOutputSurface() {
     TriangleMesh mesh;
     ParticleMesher mesher = ParticleMesher(_isize, _jsize, _ksize, _dx);
-    std::vector<vmath::vec3> particles = getMarkerParticlePositions();
-    mesh = mesher.meshParticles(particles,_levelset, _materialGrid, _markerParticleRadius);
+    mesh = mesher.meshParticles(_markerParticles, _levelset, _materialGrid, _markerParticleRadius);
 
     return mesh;
 }
@@ -2981,10 +2983,6 @@ bool compareByMarkerParticlePosition(const MarkerParticle p1, MarkerParticle p2)
     return false;
 }
 
-void FluidSimulation::_sortMarkerParticlesByGridIndex() {
-    std::sort(_markerParticles.begin(), _markerParticles.end(), compareByMarkerParticlePosition);
-}
-
 void FluidSimulation::_removeMarkerParticles() {
     double maxspeed = (_CFLConditionNumber*_dx) / _minTimeStep;
     double maxspeedsq = maxspeed*maxspeed;
@@ -3017,7 +3015,6 @@ void FluidSimulation::_removeMarkerParticles() {
     }
 
     _removeItemsFromVector(_markerParticles, isRemoved);
-    _sortMarkerParticlesByGridIndex();
 }
 
 void FluidSimulation::_runAdvanceRangeOfMarkerParticlesThread(int startidx, int endidx) {
@@ -3078,7 +3075,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _updateFluidCells();
     timer2.stop();
 
-    _logfile.log("Update Fluid Cells:          \t", timer4.getTime(), 4);
+    _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
     _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
 
     timer3.start();

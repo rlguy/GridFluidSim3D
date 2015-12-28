@@ -53,22 +53,10 @@ freely, subject to the following restrictions:
 #include "pressuresolver.h"
 #include "fluidmaterialgrid.h"
 #include "gridindexvector.h"
+#include "fragmentedvector.h"
 #include "vmath.h"
 
-struct MarkerParticle {
-    vmath::vec3 position;
-    vmath::vec3 velocity;
-
-    MarkerParticle() {}
-
-    MarkerParticle(vmath::vec3 p) : position(p) {}
-    MarkerParticle(vmath::vec3 p, vmath::vec3 v) : 
-                                  position(p),
-                                  velocity(v) {}
-
-    MarkerParticle(double x, double y, double z) : 
-                                  position(x, y, z) {}
-};
+#include "markerparticle.h"
 
 struct DiffuseParticle {
     vmath::vec3 position;
@@ -169,7 +157,7 @@ public:
     std::vector<vmath::vec3> getMarkerParticlePositions();
     std::vector<vmath::vec3> getMarkerParticleVelocities();
     unsigned int getNumDiffuseParticles();
-    std::vector<DiffuseParticle> getDiffuseParticles();
+    void getDiffuseParticles(std::vector<DiffuseParticle> &dps);
     std::vector<vmath::vec3> getDiffuseParticlePositions();
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<float> getDiffuseParticleLifetimes();
@@ -422,6 +410,24 @@ private:
         items.shrink_to_fit();
     }
 
+    template<class T>
+    void _removeItemsFromVector(FragmentedVector<T> &items, std::vector<bool> &isRemoved) {
+        assert(items.size() == isRemoved.size());
+
+        int currentidx = 0;
+        for (unsigned int i = 0; i < items.size(); i++) {
+            if (!isRemoved[i]) {
+                items[currentidx] = items[i];
+                currentidx++;
+            }
+        }
+
+        for (int i = 0; i < items.size() - currentidx; i++) {
+            items.pop_back();
+        }
+        items.shrink_to_fit();
+    }
+
     // Methods for finding collisions between marker particles and solid cell
     // boundaries. Also used for advecting fluid when particle enters a solid.
     std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
@@ -599,7 +605,7 @@ private:
 
     MACVelocityField _MACVelocity;
     FluidMaterialGrid _materialGrid;
-    std::vector<MarkerParticle> _markerParticles;
+    FragmentedVector<MarkerParticle> _markerParticles;
     GridIndexVector _fluidCellIndices;
     GridIndexVector _addedFluidCellQueue;
     LogFile _logfile;
@@ -613,7 +619,7 @@ private:
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
     int _uniqueFluidSourceID = 0;
     TurbulenceField _turbulenceField;
-    std::vector<DiffuseParticle> _diffuseParticles;
+    FragmentedVector<DiffuseParticle> _diffuseParticles;
 
     Array3d<Brick> _brickGrid;
 

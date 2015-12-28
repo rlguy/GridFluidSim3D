@@ -34,6 +34,15 @@ public:
 		_initializeElementsPerChunk();
 	}
 
+	FragmentedVector(int numElements) {
+		_initializeElementsPerChunk();
+		reserve(numElements);
+		for (int i = 0; i < numElements; i++) {
+			push_back(T());
+		}
+		_currentNodeIndex = _nodes.size() - 1;
+	}
+
 	inline void setFragmentSize(unsigned int numElements) {
 		if (_nodes.size() != 0) {
 			return;
@@ -83,6 +92,11 @@ public:
 	}
 
 	inline void push_back(T item) {
+		if (_nodes.size() == 0) {
+			_addNewVectorNode();
+			_currentNodeIndex = 0;
+		}
+
 		if (!_isCurrentNodeFull()) {
 			_nodes[_currentNodeIndex].push_back(item);
 			_size++;
@@ -110,8 +124,6 @@ public:
 		if (_nodes[_currentNodeIndex].empty()) {
 			_currentNodeIndex--;
 		}
-
-		std::cout << "pop: " << _currentNodeIndex << " " << _nodes[_currentNodeIndex].size() << std::endl;
 	}
 
 	inline void clear() {
