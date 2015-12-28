@@ -525,7 +525,7 @@ private:
     double _dx = 0.0;
 
     double _CFLConditionNumber = 5.0;
-    double _minTimeStep = 1.0 / 300.0;
+    double _minTimeStep = 1.0 / 1200.0;
     double _maxTimeStep = 1.0 / 15.0;
     double _maxAdvectionDistanceFactor = 2.5; // max number of cells an advection
                                               // integration can travel

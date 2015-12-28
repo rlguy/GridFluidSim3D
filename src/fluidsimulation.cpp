@@ -30,8 +30,7 @@ FluidSimulation::FluidSimulation(int isize, int jsize, int ksize, double dx) :
                                 _materialGrid(_isize, _jsize, _ksize),
                                 _fluidCellIndices(_isize, _jsize, _ksize),
                                 _addedFluidCellQueue(_isize, _jsize, _ksize),
-                                _levelset(_isize, _jsize, _ksize, _dx)
-{
+                                _levelset(_isize, _jsize, _ksize, _dx) {
 }
 
 FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
@@ -756,6 +755,8 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _materialGrid = FluidMaterialGrid(_isize, _jsize, _ksize);
     _levelset = LevelSet(_isize, _jsize, _ksize, _dx);
     _markerParticleRadius = pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0);
+    _fluidCellIndices = GridIndexVector(_isize, _jsize, _ksize);
+    _addedFluidCellQueue = GridIndexVector(_isize, _jsize, _ksize);
 
     _initializeSolidCellsFromSaveState(state);
     _initializeMarkerParticlesFromSaveState(state);
