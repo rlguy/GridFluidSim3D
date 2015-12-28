@@ -33,31 +33,31 @@ namespace Grid3d {
     inline void positionToGridIndex(double x, double y, double z, double dx,
                                                    int *i, int *j, int *k) {
         double invdx = 1.0 / dx;
-        *i = (int)floor(x*invdx);
-        *j = (int)floor(y*invdx);
-        *k = (int)floor(z*invdx);
+        *i = (int)(x*invdx);
+        *j = (int)(y*invdx);
+        *k = (int)(z*invdx);
     }
 
     inline void positionToGridIndex(vmath::vec3 p, double dx,
                                     int *i, int *j, int *k) {
         double invdx = 1.0 / dx;
-        *i = (int)floor(p.x*invdx);
-        *j = (int)floor(p.y*invdx);
-        *k = (int)floor(p.z*invdx);
+        *i = (int)(p.x*invdx);
+        *j = (int)(p.y*invdx);
+        *k = (int)(p.z*invdx);
     }
 
     inline GridIndex positionToGridIndex(double x, double y, double z, double dx) {
         double invdx = 1.0 / dx;
-        return GridIndex((int)floor(x*invdx),
-                         (int)floor(y*invdx),
-                         (int)floor(z*invdx));
+        return GridIndex((int)(x*invdx),
+                         (int)(y*invdx),
+                         (int)(z*invdx));
     }
 
     inline GridIndex positionToGridIndex(vmath::vec3 p, double dx) {
         double invdx = 1.0 / dx;
-        return GridIndex((int)floor(p.x*invdx),
-                         (int)floor(p.y*invdx),
-                         (int)floor(p.z*invdx));
+        return GridIndex((int)(p.x*invdx),
+                         (int)(p.y*invdx),
+                         (int)(p.z*invdx));
     }
 
     inline void GridIndexToPosition(int i, int j, int k, double dx, 
