@@ -25,6 +25,51 @@ freely, subject to the following restrictions:
 #include <assert.h>
 
 namespace Threading {
+
+    class Mutex {
+        public:
+            Mutex() { pthread_mutex_init(&_mutex, NULL); }
+            ~Mutex() { pthread_mutex_destroy(&_mutex); }
+            void lock() { pthread_mutex_lock(&_mutex); }
+            void unlock() { pthread_mutex_unlock(&_mutex); }
+            pthread_mutex_t *getMutex() { return &_mutex; }
+
+            Mutex(const Mutex &obj) {
+                pthread_mutex_init(&_mutex, NULL);
+            }
+
+            Mutex operator=(const Mutex &rhs) {
+                pthread_mutex_destroy(&_mutex);
+                pthread_mutex_init(&_mutex, NULL);
+
+                return *this;
+            }
+
+        private:
+            pthread_mutex_t _mutex;
+    };
+
+    class ConditionVariable {
+        public:
+            ConditionVariable() { pthread_cond_init(&_cond, NULL); }
+            ~ConditionVariable() { pthread_cond_destroy(&_cond); }
+            void wait(Mutex *mutex) { pthread_cond_wait(&_cond, mutex->getMutex()); }
+            void signal() { pthread_cond_signal(&_cond); }
+
+            ConditionVariable(const ConditionVariable &obj) {
+                pthread_cond_init(&_cond, NULL);
+            }
+
+            ConditionVariable operator=(const ConditionVariable &rhs) {
+                pthread_cond_destroy(&_cond);
+                pthread_cond_init(&_cond, NULL);
+
+                return *this;
+            }
+
+        private:
+            pthread_cond_t _cond;
+    };
     
     struct IndexRangeThreadParams {
         int startIndex;
@@ -40,6 +85,7 @@ namespace Threading {
     extern bool createThread(pthread_t *thread, const pthread_attr_t *attr, 
                              void *(*routine) (void *), void *arg);
     extern bool joinThreads(std::vector<pthread_t> &threads);
+    extern bool joinThread(pthread_t thread);
     extern void splitIndexRangeWorkIntoThreads(int numElements, int numThreads, 
                                                void *obj, void *(*routine) (void *));
 }

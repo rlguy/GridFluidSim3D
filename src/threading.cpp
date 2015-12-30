@@ -16,6 +16,7 @@ freely, subject to the following restrictions:
 */
 #include "threading.h"
 
+
 std::vector<std::pair<int, int> > Threading::splitIntoIndexRanges(int numElements, int numRanges) {
     std::vector<std::pair<int, int> > indexranges;
 
@@ -36,6 +37,7 @@ std::vector<std::pair<int, int> > Threading::splitIntoIndexRanges(int numElement
 
     return indexranges;
 }
+
 
 std::vector<Threading::IndexRangeThreadParams> Threading::getIndexRangeThreadParams(
                                                             std::vector<std::pair<int, int> >ranges, 
@@ -79,6 +81,15 @@ bool Threading::joinThreads(std::vector<pthread_t> &threads) {
     }
 
     return success;
+}
+
+bool Threading::joinThread(pthread_t thread) {
+    int result = pthread_join(thread, NULL);
+    if (result) {
+        return false;
+    }
+
+    return true;
 }
 
 void Threading::splitIndexRangeWorkIntoThreads(int numElements, int numThreads, 
