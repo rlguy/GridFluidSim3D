@@ -20,6 +20,7 @@ freely, subject to the following restrictions:
 #ifndef PARTICLEMESHER_H
 #define PARTICLEMESHER_H
 
+#include <pthread.h>
 #include <stdio.h>
 #include <iostream>
 
@@ -33,6 +34,7 @@ freely, subject to the following restrictions:
 #include "polygonizer3d.h"
 #include "stopwatch.h"
 #include "threading.h"
+#include "producerconsumerstack.h"
 #include "vmath.h"
 #include "fluidmaterialgrid.h"
 #include "fragmentedvector.h"
@@ -49,9 +51,6 @@ public:
                                LevelSet &levelset,
                                FluidMaterialGrid &materialGrid,
                                double particleRadius);
-
-    void _runSmoothRangeOfSurfaceParticlePositionsThread(int startidx, int endidx);
-    void _runComputeRangeOfCovarianceMatricesThread(int startidx, int endidx);
 private: 
 
     struct SurfaceParticle {
@@ -101,25 +100,41 @@ private:
         SVD(vmath::vec3 d, vmath::mat3 rot) : rotation(rot), diag(d) {}
     };
 
+    enum class ParticleLocation : char { 
+        Inside   = 0x00, 
+        NearSurface = 0x01, 
+        FarSurface = 0x02
+    };
+
     void _clear();
-    void _computeSurfaceReconstructionParticles(FragmentedVector<MarkerParticle> &particles, 
-                                                LevelSet &levelset,
-                                                FragmentedVector<IsotropicParticle> &iso,
-                                                FragmentedVector<AnisotropicParticle> &aniso);
+
+    void _initializeSurfaceParticles(FragmentedVector<vmath::vec3> &particles, 
+                                     LevelSet &levelset);
     void _filterHighDensityParticles(FragmentedVector<MarkerParticle> &particles, 
                                      FragmentedVector<vmath::vec3> &filtered);
-    void _sortParticlesBySurfaceDistance(FragmentedVector<vmath::vec3> &allParticles,
-                                         FragmentedVector<vmath::vec3> &insideParticles,
-                                         FragmentedVector<vmath::vec3> &surfaceParticles,
-                                         FragmentedVector<int> &nearSurfaceParticles,
-                                         FragmentedVector<int> &farSurfaceParticles,
-                                         LevelSet &levelset);
-    void _initializeSurfaceParticleSpatialGrid(FragmentedVector<vmath::vec3> &particles);
-    void _updateNearFarSurfaceParticleReferences(FragmentedVector<int> nearParticles,
-                                                 FragmentedVector<int> farParticles);
+    ParticleLocation _getParticleLocationType(vmath::vec3 p, LevelSet &levelset);
+
+    inline bool _isNearSurfaceParticle(vmath::vec3 p, LevelSet &levelset) {
+        return _getParticleLocationType(p, levelset) == ParticleLocation::NearSurface;
+    }
+    inline bool _isFarSurfaceParticle(vmath::vec3 p, LevelSet &levelset) {
+        return _getParticleLocationType(p, levelset) == ParticleLocation::FarSurface;
+    }
+    inline bool _isInsideParticle(vmath::vec3 p, LevelSet &levelset) {
+        return _getParticleLocationType(p, levelset) == ParticleLocation::Inside;
+    }
+    inline bool _isSurfaceParticle(vmath::vec3 p, LevelSet &levelset) {
+        ParticleLocation type = _getParticleLocationType(p, levelset);
+        return  type == ParticleLocation::FarSurface || type == ParticleLocation::NearSurface;
+    }
+
+    void _updateNearFarSurfaceParticleReferences(LevelSet &levelset);
+
+    void _initializeSurfaceParticleSpatialGrid();
     void _updateSurfaceParticleComponentIDs();
     void _smoothSurfaceParticlePositions();
     void _computeSmoothedNearSurfaceParticlePositions();
+    static void *_startSmoothRangeOfSurfaceParticlePositionsThread(void *threadarg);
     void _smoothRangeOfSurfaceParticlePositions(int startidx, int endidx);
     vmath::vec3 _getSmoothedParticlePosition(GridPointReference ref,
                                            double radius,
@@ -127,24 +142,25 @@ private:
     vmath::vec3 _getWeightedMeanParticlePosition(GridPointReference ref,
                                                std::vector<GridPointReference> &neighbours);
 
-    void _computeAnisotropyMatrices(FragmentedVector<vmath::mat3> &matrices);
-    void _computeCovarianceMatrices();
-    void _computeRangeOfCovarianceMatrices(int startidx, int endidx);
+    void _computeScalarField(FluidMaterialGrid &materialGrid,
+                             FragmentedVector<vmath::vec3> &particles,
+                             LevelSet &levelset);
+    void _initializeScalarField(FluidMaterialGrid &materialGrid);
+    void _initializeProducerConsumerStacks();
+    void _addAnisotropicParticlesToScalarField();
+    void _addAnisotropicParticleToScalarField(AnisotropicParticle &aniso);
+    void _addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, LevelSet &levelset);
+    AnisotropicParticle _computeAnisotropicParticle(GridPointReference ref);
+    static void *_startAnisotropicParticleProducerThread(void *q);
+    static void *_startAnisotropicParticleConsumerThread(void *q);
+    void _getUnprocessedParticlesFromStack(int num, std::vector<GridPointReference> &refs);
+    void _anisotropicParticleProducerThread();
+    void _anisotropicParticleConsumerThread();
     vmath::mat3 _computeCovarianceMatrix(GridPointReference ref, double radius,
                                        std::vector<GridPointReference> &neighbours);
-    void _computeSVDMatrices();
     void _covarianceMatrixToSVD(vmath::mat3 &covariance, SVD &svd);
     vmath::quat _diagonalizeMatrix(vmath::mat3 A);
     vmath::mat3 _SVDToAnisotropicMatrix(SVD &svd);
-
-    void _initializeSurfaceReconstructionParticles(FragmentedVector<IsotropicParticle> &iso,
-                                                   FragmentedVector<vmath::vec3> &insideParticles,
-                                                   FragmentedVector<AnisotropicParticle> &aniso,
-                                                   FragmentedVector<vmath::mat3> &anisoMatrices);
-
-    TriangleMesh _reconstructSurface(FragmentedVector<IsotropicParticle> &iso,
-                                     FragmentedVector<AnisotropicParticle> &aniso,
-                                     FluidMaterialGrid &materialGrid);
 
     void _setParticleRadius(double r);
     void _setKernelRadius(double r);
@@ -178,8 +194,15 @@ private:
     FragmentedVector<GridPointReference> _nearSurfaceParticleRefs;
     FragmentedVector<GridPointReference> _farSurfaceParticleRefs;
     FragmentedVector<vmath::vec3> _smoothedPositions;
-    FragmentedVector<vmath::mat3> _covarianceMatrices;
-    FragmentedVector<SVD> _SVDMatrices;
+
+    ImplicitSurfaceScalarField _scalarField;
+    Threading::Mutex _anisotropicParticleStackMutex;
+    FragmentedVector<GridPointReference> _unprocessedAnisotropicParticleStack;
+    ProducerConsumerStack<AnisotropicParticle> _processedAnisotropicParticleStack;
+    int _numAnisotropicParticles = 0;
+    int _producerStackSize = 1000;
+    int _consumerStackSize = 10000;
+
 };
 
 #endif

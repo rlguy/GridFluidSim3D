@@ -37,8 +37,6 @@ Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField) {
     _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
     scalarField.getScalarField(_vertexValues);
 
-    _isCellDone = Array3d<bool>(_isize, _jsize, _ksize, false);
-
     _isScalarFieldSet = true;
 }
 

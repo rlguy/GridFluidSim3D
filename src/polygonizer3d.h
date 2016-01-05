@@ -100,7 +100,6 @@ private:
     double _dx = 0.0;
 
     Array3d<float> _vertexValues;
-    Array3d<bool> _isCellDone;
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
 

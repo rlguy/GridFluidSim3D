@@ -34,82 +34,21 @@ TriangleMesh ParticleMesher::meshParticles(FragmentedVector<MarkerParticle> &par
                                            LevelSet &levelset,
                                            FluidMaterialGrid &materialGrid,
                                            double particleRadius) {
-    _clear();
+
     _setParticleRadius(particleRadius);
-
-    FragmentedVector<IsotropicParticle> isoParticles;
-    FragmentedVector<AnisotropicParticle> anisoParticles;
-    _computeSurfaceReconstructionParticles(particles, levelset,
-                                           isoParticles, anisoParticles);
-
-    TriangleMesh mesh = _reconstructSurface(isoParticles, anisoParticles,
-                                            materialGrid);
-    return mesh;
-}
-
-void ParticleMesher::_runSmoothRangeOfSurfaceParticlePositionsThread(int startidx, int endidx) {
-    _smoothRangeOfSurfaceParticlePositions(startidx, endidx);
-}
-
-void ParticleMesher::_runComputeRangeOfCovarianceMatricesThread(int startidx, int endidx) {
-    _computeRangeOfCovarianceMatrices(startidx, endidx);
-}
-
-void ParticleMesher::_clear() {
-    _surfaceParticles.clear();
-    _nearSurfaceParticleRefs.clear();
-    _farSurfaceParticleRefs.clear();
-    _pointGrid = SpatialPointGrid();
-    _smoothedPositions.clear();
-    _covarianceMatrices.clear();
-    _SVDMatrices.clear();
-}
-
-void ParticleMesher::_computeSurfaceReconstructionParticles(
-                                          FragmentedVector<MarkerParticle> &particles, 
-                                          LevelSet &levelset,
-                                          FragmentedVector<IsotropicParticle> &iso,
-                                          FragmentedVector<AnisotropicParticle> &aniso) {
 
     FragmentedVector<vmath::vec3> filteredParticles;
     _filterHighDensityParticles(particles, filteredParticles);
 
-    FragmentedVector<vmath::vec3> insideParticles;
-    FragmentedVector<vmath::vec3> surfaceParticles;
-    FragmentedVector<int> nearSurfaceParticles;
-    FragmentedVector<int> farSurfaceParticles;
-    _sortParticlesBySurfaceDistance(filteredParticles, 
-                                    insideParticles, 
-                                    surfaceParticles, nearSurfaceParticles, farSurfaceParticles,
-                                    levelset);
-    _initializeSurfaceParticleSpatialGrid(surfaceParticles);
-    _updateNearFarSurfaceParticleReferences(nearSurfaceParticles, farSurfaceParticles);
-    nearSurfaceParticles.clear();
-    nearSurfaceParticles.shrink_to_fit();
-    farSurfaceParticles.clear();
-    farSurfaceParticles.shrink_to_fit();
-    surfaceParticles.clear();
-    surfaceParticles.shrink_to_fit();
-
-    _updateSurfaceParticleComponentIDs();
+    _initializeSurfaceParticles(filteredParticles, levelset);
     _smoothSurfaceParticlePositions();
 
-    FragmentedVector<vmath::mat3> anisotropyMatrices;
-    _computeAnisotropyMatrices(anisotropyMatrices);
-    _initializeSurfaceReconstructionParticles(iso, insideParticles,
-                                              aniso, anisotropyMatrices);
+    _computeScalarField(materialGrid, filteredParticles, levelset);
+   
+    Polygonizer3d polygonizer = Polygonizer3d(_scalarField);
+    polygonizer.polygonizeSurface();
 
-    _pointGrid = SpatialPointGrid();
-
-    anisotropyMatrices.clear();
-    insideParticles.clear();
-    _nearSurfaceParticleRefs.clear();
-    _farSurfaceParticleRefs.clear();
-
-    anisotropyMatrices.shrink_to_fit();
-    insideParticles.shrink_to_fit();
-    _nearSurfaceParticleRefs.shrink_to_fit();
-    _farSurfaceParticleRefs.shrink_to_fit();
+    return polygonizer.getTriangleMesh();
 }
 
 void ParticleMesher::_filterHighDensityParticles(FragmentedVector<MarkerParticle> &particles,
@@ -134,61 +73,81 @@ void ParticleMesher::_filterHighDensityParticles(FragmentedVector<MarkerParticle
 
 }
 
-void ParticleMesher::_sortParticlesBySurfaceDistance(FragmentedVector<vmath::vec3> &allParticles,
-                                                     FragmentedVector<vmath::vec3> &insideParticles,
-                                                     FragmentedVector<vmath::vec3> &surfaceParticles,
-                                                     FragmentedVector<int> &nearSurfaceParticles,
-                                                     FragmentedVector<int> &farSurfaceParticles,
-                                                     LevelSet &levelset) {
+void ParticleMesher::_clear() {
+    _surfaceParticles.clear();
+    _nearSurfaceParticleRefs.clear();
+    _farSurfaceParticleRefs.clear();
+    _pointGrid = SpatialPointGrid();
+    _smoothedPositions.clear();
+}
 
+void ParticleMesher::_initializeSurfaceParticles(FragmentedVector<vmath::vec3> &particles, 
+                                                 LevelSet &levelset) {
+
+    vmath::vec3 p;
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        p = particles[i];
+        if (_isSurfaceParticle(p, levelset)) {
+            _surfaceParticles.push_back(SurfaceParticle(p));
+        }
+    }
+
+    _initializeSurfaceParticleSpatialGrid();
+    _updateNearFarSurfaceParticleReferences(levelset);
+    _updateSurfaceParticleComponentIDs();
+}
+
+void ParticleMesher::_initializeSurfaceParticleSpatialGrid() {
+    _pointGrid = SpatialPointGrid(_isize, _jsize, _ksize, _dx);
+
+    FragmentedVector<vmath::vec3> points;
+    for (unsigned int i = 0; i < _surfaceParticles.size(); i++) {
+        points.push_back(_surfaceParticles[i].position);
+    }
+
+    std::vector<GridPointReference> refs = _pointGrid.insert(points);
+
+    for (unsigned int i = 0; i < _surfaceParticles.size(); i++) {
+        _surfaceParticles[i].ref = refs[i];
+    }
+}
+
+ParticleMesher::ParticleLocation ParticleMesher::_getParticleLocationType(vmath::vec3 p, 
+                                                                          LevelSet &levelset) {
     double supportRadius = _particleRadius*_supportRadiusFactor;
     double maxNearSurfaceDepth = _dx*_maxParticleToSurfaceDepth;
     double maxSurfaceDepth = maxNearSurfaceDepth + supportRadius;
-    vmath::vec3 p;
-    for (unsigned int i = 0; i < allParticles.size(); i++) {
-        p = allParticles[i];
+    double dist = levelset.getSignedDistance(p);
 
-        double dist = levelset.getSignedDistance(p);
-        if (dist < 0.0) {
-            surfaceParticles.push_back(p);
-            nearSurfaceParticles.push_back(surfaceParticles.size()-1);
-        } else {
-            if (dist < maxSurfaceDepth) {
-                surfaceParticles.push_back(p);
-                if (dist < maxNearSurfaceDepth) {
-                    nearSurfaceParticles.push_back(surfaceParticles.size()-1);
-                } else {
-                    farSurfaceParticles.push_back(surfaceParticles.size()-1);
-                }
+    if (dist < 0.0) {
+        return ParticleLocation::NearSurface;
+    } else {
+        if (dist < maxSurfaceDepth) {
+            if (dist < maxNearSurfaceDepth) {
+                return ParticleLocation::NearSurface;
             } else {
-                insideParticles.push_back(p);
+                return ParticleLocation::FarSurface;
             }
+        } else {
+            return ParticleLocation::Inside;
         }
     }
+
 }
 
-void ParticleMesher::_initializeSurfaceParticleSpatialGrid(FragmentedVector<vmath::vec3> &particles) {
-    _pointGrid = SpatialPointGrid(_isize, _jsize, _ksize, _dx);
-    std::vector<GridPointReference> refs = _pointGrid.insert(particles);
 
+void ParticleMesher::_updateNearFarSurfaceParticleReferences(LevelSet &levelset) {
     SurfaceParticle sp;
-    for (unsigned int i = 0; i < particles.size(); i++) {
-        sp = SurfaceParticle(particles[i], refs[i]);
-        _surfaceParticles.push_back(sp);
-    }
-}
+    ParticleLocation type;
+    for (unsigned int i = 0; i < _surfaceParticles.size(); i++) {
+        sp = _surfaceParticles[i];
+        type = _getParticleLocationType(sp.position, levelset);
 
-void ParticleMesher::_updateNearFarSurfaceParticleReferences(FragmentedVector<int> nearParticles,
-                                                             FragmentedVector<int> farParticles) {
-    SurfaceParticle sp;
-    for (unsigned int i = 0; i < nearParticles.size(); i++) {
-        sp = _surfaceParticles[nearParticles[i]];
-        _nearSurfaceParticleRefs.push_back(sp.ref);
-    }
-
-    for (unsigned int i = 0; i < farParticles.size(); i++) {
-        sp = _surfaceParticles[farParticles[i]];
-        _farSurfaceParticleRefs.push_back(sp.ref);
+        if (type == ParticleLocation::NearSurface) {
+            _nearSurfaceParticleRefs.push_back(sp.ref);
+        } else {
+            _farSurfaceParticleRefs.push_back(sp.ref);
+        }
     }
 }
 
@@ -205,6 +164,7 @@ void ParticleMesher::_updateSurfaceParticleComponentIDs() {
     }
 }
 
+
 void ParticleMesher::_smoothSurfaceParticlePositions() {
     _computeSmoothedNearSurfaceParticlePositions();
 
@@ -218,11 +178,11 @@ void ParticleMesher::_smoothSurfaceParticlePositions() {
     _smoothedPositions.shrink_to_fit();
 }
 
-void *startSmoothRangeOfSurfaceParticlePositionsThread(void *threadarg) {
+void *ParticleMesher::_startSmoothRangeOfSurfaceParticlePositionsThread(void *threadarg) {
     Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
     int start = params->startIndex;
     int end = params->endIndex;
-    ((ParticleMesher *)(params->obj))->_runSmoothRangeOfSurfaceParticlePositionsThread(start, end);
+    ((ParticleMesher *)(params->obj))->_smoothRangeOfSurfaceParticlePositions(start, end);
 
     return NULL;
 }
@@ -236,7 +196,7 @@ void ParticleMesher::_computeSmoothedNearSurfaceParticlePositions() {
     _smoothedPositions = FragmentedVector<vmath::vec3>(numElements);
     
     Threading::splitIndexRangeWorkIntoThreads(numElements, _numThreads, (void *)this, 
-                                              startSmoothRangeOfSurfaceParticlePositionsThread);
+                                              ParticleMesher::_startSmoothRangeOfSurfaceParticlePositionsThread);
 }
 
 void ParticleMesher::_smoothRangeOfSurfaceParticlePositions(int startidx, int endidx) {
@@ -253,7 +213,6 @@ void ParticleMesher::_smoothRangeOfSurfaceParticlePositions(int startidx, int en
 vmath::vec3 ParticleMesher::_getSmoothedParticlePosition(GridPointReference ref,
                                                          double radius,
                                                          std::vector<GridPointReference> &neighbourRefs) {
-
     neighbourRefs.clear();
     _pointGrid.queryPointReferencesInsideSphere(ref, radius, neighbourRefs);
     vmath::vec3 mean = _getWeightedMeanParticlePosition(ref, neighbourRefs);
@@ -295,56 +254,169 @@ vmath::vec3 ParticleMesher::_getWeightedMeanParticlePosition(GridPointReference 
     return vmath::vec3(xsum, ysum, zsum) / (float)weightSum;
 }
 
-void ParticleMesher::_computeAnisotropyMatrices(FragmentedVector<vmath::mat3> &anisoMatrices) {
-    _computeCovarianceMatrices();
-    _computeSVDMatrices();
+void ParticleMesher::_computeScalarField(FluidMaterialGrid &materialGrid,
+                                         FragmentedVector<vmath::vec3> &particles,
+                                         LevelSet &levelset) {
+    _initializeScalarField(materialGrid);
+    _initializeProducerConsumerStacks();
 
-    _covarianceMatrices.clear();
-    _covarianceMatrices.shrink_to_fit();
+    _addAnisotropicParticlesToScalarField();
+    _addIsotropicParticlesToScalarField(particles, levelset);
 
-    SVD svd;
-    anisoMatrices.reserve(_SVDMatrices.size());
-    for (unsigned int i = 0; i < _SVDMatrices.size(); i++) {
-        svd = _SVDMatrices[i];
-        anisoMatrices.push_back(_SVDToAnisotropicMatrix(svd));
-    }
-
-    _SVDMatrices.clear();
-    _SVDMatrices.shrink_to_fit();
 }
 
-void *startComputeRangeOfCovarianceMatricesThread(void *threadarg) {
-    Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
-    int start = params->startIndex;
-    int end = params->endIndex;
-    ((ParticleMesher *)(params->obj))->_runComputeRangeOfCovarianceMatricesThread(start, end);
+void ParticleMesher::_initializeScalarField(FluidMaterialGrid &materialGrid) {
+    _scalarField = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
+    _scalarField.setMaterialGrid(materialGrid);
+}
+
+void ParticleMesher::_initializeProducerConsumerStacks() {
+    _unprocessedAnisotropicParticleStack = _nearSurfaceParticleRefs;
+    _processedAnisotropicParticleStack = ProducerConsumerStack<AnisotropicParticle>(_consumerStackSize);
+    _numAnisotropicParticles = _unprocessedAnisotropicParticleStack.size();
+}
+
+void ParticleMesher::_addAnisotropicParticlesToScalarField() {
+    double r = _particleRadius*_anisotropicParticleScale;
+    _scalarField.setPointRadius(r);
+
+    std::vector<pthread_t> producers(_numThreads);
+    pthread_t consumer;
+
+    pthread_attr_t attr = Threading::createJoinableThreadAttribute();
+
+    Threading::createThread(&consumer, 
+                            &attr, 
+                            ParticleMesher::_startAnisotropicParticleConsumerThread, 
+                            (void *)this);
+
+    for (int i = 0; i < _numThreads; i++) {
+        Threading::createThread(&producers[i], 
+                                &attr, 
+                                ParticleMesher::_startAnisotropicParticleProducerThread, 
+                                (void *)this);
+    }
+
+    Threading::destroyThreadAttribute(&attr);
+
+    Threading::joinThreads(producers);
+    Threading::joinThread(consumer);
+}
+
+void ParticleMesher::_addAnisotropicParticleToScalarField(AnisotropicParticle &aniso) {
+    double r = _particleRadius*_anisotropicParticleScale;
+    vmath::vec3 p = aniso.position;
+    vmath::mat3 G = (float)r*aniso.anisotropy;
+
+    _scalarField.addEllipsoidValue(p, G, _anisotropicParticleFieldScale);
+}
+
+void ParticleMesher::_addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, LevelSet &levelset) {
+    double r = _particleRadius*_isotropicParticleScale;
+    _scalarField.setPointRadius(r);
+
+    vmath::vec3 p;
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        p = particles[i];
+
+        if (_isInsideParticle(p, levelset)) {
+            _scalarField.addPoint(p);
+        }
+    }
+}
+
+ParticleMesher::AnisotropicParticle ParticleMesher::_computeAnisotropicParticle(GridPointReference ref) {
+    std::vector<GridPointReference> neighbours;
+    vmath::mat3 covariance = _computeCovarianceMatrix(ref, _kernelRadius, neighbours);
+
+    SVD svd;
+    _covarianceMatrixToSVD(covariance, svd);
+    vmath::mat3 G = _SVDToAnisotropicMatrix(svd);
+
+    vmath::vec3 p = _surfaceParticles[ref.id].position;
+    return AnisotropicParticle(p, G);
+}
+
+void *ParticleMesher::_startAnisotropicParticleProducerThread(void *q) {
+    ParticleMesher *obj;
+    obj = (ParticleMesher *) q;
+    obj->_anisotropicParticleProducerThread();
 
     return NULL;
 }
 
-void ParticleMesher::_computeCovarianceMatrices() {
-    double radius = _supportRadiusFactor*_particleRadius;
-    _setKernelRadius(radius);
+void *ParticleMesher::_startAnisotropicParticleConsumerThread(void *q) {
+    ParticleMesher *obj;
+    obj = (ParticleMesher *) q;
+    obj->_anisotropicParticleConsumerThread();
 
-    int numElements = (int)_nearSurfaceParticleRefs.size();
-    _covarianceMatrices = FragmentedVector<vmath::mat3>(numElements);
-
-    Threading::splitIndexRangeWorkIntoThreads(numElements, _numThreads, (void *)this, 
-                                              startComputeRangeOfCovarianceMatricesThread);
+    return NULL;
 }
 
-void ParticleMesher::_computeRangeOfCovarianceMatrices(int startidx, int endidx) {
-    std::vector<GridPointReference> neighbours;
-    GridPointReference ref;
-    vmath::mat3 cmat;
-    for (int i = startidx; i <= endidx; i++) {
-        ref = _nearSurfaceParticleRefs[i];
-        _covarianceMatrices[i] = _computeCovarianceMatrix(ref, _kernelRadius, neighbours);
+void ParticleMesher::_anisotropicParticleProducerThread() {
+
+    int chunksize = _producerStackSize;
+
+    _anisotropicParticleStackMutex.lock();
+    bool isEmpty = _unprocessedAnisotropicParticleStack.empty();
+    _anisotropicParticleStackMutex.unlock();
+
+    std::vector<GridPointReference> refs;
+    std::vector<AnisotropicParticle> anisotropicParticles;
+    while (!isEmpty) {
+
+        refs.clear();
+        anisotropicParticles.clear();
+
+        _getUnprocessedParticlesFromStack(chunksize, refs);
+
+        _anisotropicParticleStackMutex.lock();
+        isEmpty = _unprocessedAnisotropicParticleStack.empty();
+        _anisotropicParticleStackMutex.unlock();
+
+        for (unsigned int i = 0; i < refs.size(); i++) {
+            anisotropicParticles.push_back(_computeAnisotropicParticle(refs[i]));
+        }
+
+        if (anisotropicParticles.empty()) {
+            break;
+        }
+
+        _processedAnisotropicParticleStack.pushAll(anisotropicParticles);
+    }
+}
+
+void ParticleMesher::_getUnprocessedParticlesFromStack(int chunksize, std::vector<GridPointReference> &refs) {
+    _anisotropicParticleStackMutex.lock();
+
+    int stackSize = (int)_unprocessedAnisotropicParticleStack.size();
+    int n = chunksize <= stackSize ? chunksize : stackSize;
+    for (int i = 0; i < n; i++) {
+        refs.push_back(_unprocessedAnisotropicParticleStack.back());
+        _unprocessedAnisotropicParticleStack.pop_back();
+    }
+
+    _anisotropicParticleStackMutex.unlock();
+}
+
+void ParticleMesher::_anisotropicParticleConsumerThread() {
+    std::vector<AnisotropicParticle> anisoParticles;
+
+    int itemsProcessed = 0;
+    while (itemsProcessed < _numAnisotropicParticles) {
+        anisoParticles.clear();
+        _processedAnisotropicParticleStack.popAll(anisoParticles);
+
+        for (unsigned int i = 0; i < anisoParticles.size(); i++) {
+            _addAnisotropicParticleToScalarField(anisoParticles[i]);
+            itemsProcessed++;
+        }
     }
 }
 
 vmath::mat3 ParticleMesher::_computeCovarianceMatrix(GridPointReference ref, double radius,
                                                    std::vector<GridPointReference> &neighbours) {
+
     neighbours.clear();
     _pointGrid.queryPointReferencesInsideSphere(ref, radius, neighbours);
 
@@ -396,17 +468,6 @@ vmath::mat3 ParticleMesher::_computeCovarianceMatrix(GridPointReference ref, dou
     return vmath::mat3(sum00, sum01, sum02,
                      sum01, sum11, sum12,
                      sum02, sum12, sum22) / (float) weightSum;
-}
-
-void ParticleMesher::_computeSVDMatrices() {
-    _SVDMatrices = FragmentedVector<SVD>(_covarianceMatrices.size());
-
-    for (unsigned int i = 0; i < _covarianceMatrices.size(); i++) {
-        SVD svd;
-        _covarianceMatrixToSVD(_covarianceMatrices[i], svd);
-        _SVDMatrices[i] = svd;
-    }
-
 }
 
 void ParticleMesher::_covarianceMatrixToSVD(vmath::mat3 &covariance, SVD &svd) {
@@ -514,69 +575,6 @@ vmath::mat3 ParticleMesher::_SVDToAnisotropicMatrix(SVD &svd) {
                                vmath::vec3(0.0, 0.0, 1.0 / svd.diag.z));
 
     return svd.rotation * invD * vmath::transpose(svd.rotation);
-}
-
-void ParticleMesher::_initializeSurfaceReconstructionParticles(
-                                    FragmentedVector<IsotropicParticle> &iso,
-                                    FragmentedVector<vmath::vec3> &insideParticles,
-                                    FragmentedVector<AnisotropicParticle> &aniso,
-                                    FragmentedVector<vmath::mat3> &anisoMatrices) {
-
-    iso.reserve(insideParticles.size() + _farSurfaceParticleRefs.size());
-    aniso.reserve(_nearSurfaceParticleRefs.size());
-
-    vmath::vec3 p;
-    GridPointReference ref;
-    for (unsigned int i = 0; i < _farSurfaceParticleRefs.size(); i++) {
-        ref = _farSurfaceParticleRefs[i];
-        p = _surfaceParticles[ref.id].position;
-        iso.push_back(IsotropicParticle(p));
-    }
-
-    for (unsigned int i = 0; i < insideParticles.size(); i++) {
-        iso.push_back(insideParticles[i]);
-    }
-
-    for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
-        ref = _nearSurfaceParticleRefs[i];
-        p = _surfaceParticles[ref.id].position;
-        aniso.push_back(AnisotropicParticle(p, anisoMatrices[i]));
-    }
-}
-
-TriangleMesh ParticleMesher::_reconstructSurface(FragmentedVector<IsotropicParticle> &iso,
-                                                 FragmentedVector<AnisotropicParticle> &aniso,
-                                                 FluidMaterialGrid &materialGrid) {
-
-    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
-                                                                  _jsize + 1, 
-                                                                  _ksize + 1, _dx);
-    field.setMaterialGrid(materialGrid);
-
-    double r = _particleRadius*_anisotropicParticleScale;
-
-    field.setPointRadius(r);
-
-    vmath::vec3 p, v;
-    vmath::mat3 G;
-    for (unsigned int i = 0; i < aniso.size(); i++) {
-        p = aniso[i].position;
-        G = (float)r*aniso[i].anisotropy;
-        field.addEllipsoidValue(p, G, _anisotropicParticleFieldScale);
-    }
-
-    r = _particleRadius*_isotropicParticleScale;
-    field.setPointRadius(r);
-    for (unsigned int i = 0; i < iso.size(); i++) {
-        p = iso[i].position;
-        field.addPoint(p);
-    }
-
-    Polygonizer3d polygonizer = Polygonizer3d(field);
-
-    polygonizer.polygonizeSurface();
-
-    return polygonizer.getTriangleMesh();
 }
 
 void ParticleMesher::_setParticleRadius(double r) {
