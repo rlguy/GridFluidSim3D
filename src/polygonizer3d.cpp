@@ -335,12 +335,7 @@ const int Polygonizer3d::_triTable[256][16] = {
     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
 
 
-Polygonizer3d::~Polygonizer3d()
-{
-}
-
-void Polygonizer3d::setInsideCellIndices(GridIndexVector &indices) {
-    _insideIndices = indices;
+Polygonizer3d::~Polygonizer3d() {
 }
 
 void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField &scalarField) {
@@ -424,101 +419,20 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     }
 }
 
-GridIndexVector Polygonizer3d::_processSeedCell(GridIndex seed, 
-                                                Array3d<bool> &isCellDone) {
-    GridIndexVector seedSurfaceCells(_isize, _jsize, _ksize);
-
-    isCellDone.set(seed, true);
-    GridIndexVector queue(_isize, _jsize, _ksize);
-    queue.push_back(seed);
-
-    while (!queue.empty()) {
-        GridIndex c = queue.back();
-        queue.pop_back();
-
-        GridIndex neighbours[6];
-        Grid3d::getNeighbourGridIndices6(c, neighbours);
-        for (int idx = 0; idx < 6; idx++) {
-            GridIndex n = neighbours[idx];
-            if (Grid3d::isGridIndexInRange(n, _isize, _jsize, _ksize) && 
-                    !isCellDone(n) && _isCellOnSurface(n)) {
-                isCellDone.set(n, true);
-                queue.push_back(n);
-            }
-        }
-
-        seedSurfaceCells.push_back(c);
-    }
-
-    return seedSurfaceCells;
-}
-
-GridIndexVector Polygonizer3d::_findSurfaceCellsUsingInsideIndices() {
+GridIndexVector Polygonizer3d::_findSurfaceCells() {
     GridIndexVector surfaceCells(_isize, _jsize, _ksize);
-    _isCellDone.fill(false);
-
-    for (unsigned int i = 0; i < _insideIndices.size(); i++) {
-        GridIndex cell = _insideIndices[i];
-        
-        if (_isCellDone(cell)) {
-            continue;
-        }
-
-        while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
-
-            if (_isCellOnSurface(cell)) {
-                GridIndexVector seedSurfaceCells = _processSeedCell(cell, _isCellDone);
-                surfaceCells.insert(seedSurfaceCells);
-                break;
-            }
-
-            // march +z until cell surface is found or index is out of range
-            _isCellDone.set(cell, true);
-            cell = GridIndex(cell.i, cell.j, cell.k + 1);
-        }
-    }
-
-    return surfaceCells;
-}
-
-GridIndexVector Polygonizer3d::_findSurfaceCellsUsingScalarField() {
-    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
-    _isCellDone.fill(false);
-
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
                 GridIndex cell = GridIndex(i, j, k);
-        
-                if (_isCellDone(cell)) {
-                    continue;
-                }
-
-                while (Grid3d::isGridIndexInRange(cell, _isize, _jsize, _ksize)) {
-
-                    if (_isCellOnSurface(cell)) {
-                        GridIndexVector seedSurfaceCells = _processSeedCell(cell, _isCellDone);
-                        surfaceCells.insert(seedSurfaceCells);
-                        break;
-                    }
-
-                    // march +z until cell surface is found or index is out of range
-                    _isCellDone.set(cell, true);
-                    cell = GridIndex(cell.i, cell.j, cell.k + 1);
+                if (_isCellOnSurface(cell)) {
+                    surfaceCells.push_back(cell);
                 }
             }
         }
     }
 
     return surfaceCells;
-}
-
-GridIndexVector Polygonizer3d::_findSurfaceCells() {
-    if (_insideIndices.size() == 0) {
-        return _findSurfaceCellsUsingScalarField();
-    } else {
-        return _findSurfaceCellsUsingInsideIndices();
-    }
 }
 
 int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
@@ -755,6 +669,7 @@ void Polygonizer3d::polygonizeSurface() {
 
     _surfaceCells = _findSurfaceCells();
     _calculateSurfaceTriangles();
+
     _surface.removeDuplicateTriangles(); // Polygonization method produces
                                          // some identical triangles for some
                                          // currently unknown reason.

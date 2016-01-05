@@ -44,7 +44,6 @@ public:
 
     ~Polygonizer3d();
 
-    void setInsideCellIndices(GridIndexVector &indices);
     void setScalarField(ImplicitSurfaceScalarField &field);
     void polygonizeSurface();
     
@@ -90,10 +89,7 @@ private:
     void _calculateSurfaceTriangles();
 
     GridIndexVector _findSurfaceCells();
-    GridIndexVector _findSurfaceCellsUsingInsideIndices();
-    GridIndexVector _findSurfaceCellsUsingScalarField();
     void _resetVertexValues();
-    GridIndexVector _processSeedCell(GridIndex seed, Array3d<bool> &isCellDone);
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];
@@ -111,7 +107,6 @@ private:
     ImplicitSurfaceScalarField _scalarField;
 
     // cell indices that are fully or partially within the iso surface
-    GridIndexVector _insideIndices;
     GridIndexVector _surfaceCells;
     TriangleMesh _surface;
 };
