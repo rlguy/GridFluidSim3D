@@ -40,11 +40,11 @@ class Polygonizer3d
 {
 public:
     Polygonizer3d();
-    Polygonizer3d(ImplicitSurfaceScalarField &scalarField);
+    Polygonizer3d(ImplicitSurfaceScalarField *scalarField);
 
     ~Polygonizer3d();
 
-    void setScalarField(ImplicitSurfaceScalarField &field);
+    void setScalarField(ImplicitSurfaceScalarField *field);
     void polygonizeSurface();
     
     TriangleMesh getTriangleMesh() { return _surface; };
@@ -89,7 +89,6 @@ private:
     void _calculateSurfaceTriangles();
 
     GridIndexVector _findSurfaceCells();
-    void _resetVertexValues();
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];
@@ -99,11 +98,10 @@ private:
     int _ksize = 0;
     double _dx = 0.0;
 
-    Array3d<float> _vertexValues;
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
 
-    ImplicitSurfaceScalarField _scalarField;
+    ImplicitSurfaceScalarField *_scalarField;
 
     // cell indices that are fully or partially within the iso surface
     GridIndexVector _surfaceCells;

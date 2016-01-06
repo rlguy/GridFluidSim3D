@@ -22,20 +22,17 @@ freely, subject to the following restrictions:
 Polygonizer3d::Polygonizer3d() {
 }
 
-Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField &scalarField) {
+Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField *scalarField) {
     _scalarField = scalarField;
 
     int i, j, k;
-    scalarField.getGridDimensions(&i, &j, &k);
+    scalarField->getGridDimensions(&i, &j, &k);
     _isize = i - 1;
     _jsize = j - 1;
     _ksize = k - 1;
 
-    _dx = scalarField.getCellSize();
-    _surfaceThreshold = scalarField.getSurfaceThreshold();
-
-    _vertexValues = Array3d<float>(_isize+1, _jsize+1, _ksize+1, 0.0f);
-    scalarField.getScalarField(_vertexValues);
+    _dx = scalarField->getCellSize();
+    _surfaceThreshold = scalarField->getSurfaceThreshold();
 
     _isScalarFieldSet = true;
 }
@@ -336,17 +333,15 @@ const int Polygonizer3d::_triTable[256][16] = {
 Polygonizer3d::~Polygonizer3d() {
 }
 
-void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField &scalarField) {
+void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField *scalarField) {
+    _scalarField = scalarField;
 
     int i, j, k;
-    scalarField.getGridDimensions(&i, &j, &k);
+    scalarField->getGridDimensions(&i, &j, &k);
 
     assert(_isize == i - 1 && _jsize == j - 1 && _ksize == k - 1);
 
-    _surfaceThreshold = scalarField.getSurfaceThreshold();
-
-    _vertexValues.fill(0.0);
-    scalarField.getScalarField(_vertexValues);
+    _surfaceThreshold = scalarField->getSurfaceThreshold();
 
     _isScalarFieldSet = true;
 }
@@ -364,17 +359,13 @@ void Polygonizer3d::_getCellVertexPositions(GridIndex g, vmath::vec3 positions[8
 }
 
 vmath::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
-    assert(_vertexValues.isIndexInRange(g));
+    assert(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
     return (float)_dx*vmath::vec3((float)g.i, (float)g.j, (float)g.k);
 }
 
 double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
-    assert(_vertexValues.isIndexInRange(g));
-    return _vertexValues(g);;
-}
-
-void Polygonizer3d::_resetVertexValues() {
-    _vertexValues.fill(0.0);
+    assert(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
+    return _scalarField->getScalarFieldValue(g);
 }
 
 bool Polygonizer3d::_isCellOutsideSurface(GridIndex g) {
@@ -477,7 +468,7 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
     while (n < nmax) {
         c = 0.5f*(a + b);
 
-        valc = _scalarField.tricubicInterpolation(c) - isolevel;
+        valc = _scalarField->tricubicInterpolation(c) - isolevel;
         if (fabs(valc) < tol || vmath::length(b - a) < tol ) {
             return c;
         }
