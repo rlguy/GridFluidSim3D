@@ -101,6 +101,8 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p, double r) {
 }
 
 void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
+    p -= _gridOffset;
+
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
@@ -144,6 +146,8 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double r, double v
 }
 
 void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
+    p -= _gridOffset;
+
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
@@ -178,6 +182,8 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
 }
 
 void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, double d) {
+    pos -= _gridOffset;
+
     GridIndex gmin = Grid3d::positionToGridIndex(pos, _dx);
     GridIndex gmax = Grid3d::positionToGridIndex(pos + vmath::vec3(w, h, d), _dx);
     AABB bbox = AABB(pos, w, h, d);
@@ -210,6 +216,8 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G, doub
 }
 
 void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
+    p -= _gridOffset;
+
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
@@ -256,6 +264,8 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
 }
 
 void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double scale) {
+    p -= _gridOffset;
+
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, _radius, G, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
@@ -373,6 +383,21 @@ void ImplicitSurfaceScalarField::getScalarField(Array3d<float> &field) {
     }
 }
 
+double ImplicitSurfaceScalarField::getScalarFieldValue(GridIndex g) {
+    return getScalarFieldValue(g.i, g.j, g.k);
+}
+
+double ImplicitSurfaceScalarField::getScalarFieldValue(int i, int j, int k) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+
+    double val = _field(i, j, k);
+    if (_isVertexSolid(i, j, k) && val > _surfaceThreshold) {
+        val = _surfaceThreshold;
+    } 
+
+    return val;
+}
+
 bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
     assert(_isCenterFieldEnabled);
     assert(_centerField.isIndexInRange(i, j, k));
@@ -458,6 +483,10 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(vmath::vec3 p) {
     }
 
     return val;
+}
+
+void ImplicitSurfaceScalarField::setOffset(vmath::vec3 offset) {
+    _gridOffset = offset;
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

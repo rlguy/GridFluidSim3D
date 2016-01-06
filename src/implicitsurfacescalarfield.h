@@ -61,6 +61,8 @@ public:
     void setMaterialGrid(GridIndexVector &solidCells);
     void setSolidCells(GridIndexVector &solidCells);
     void getScalarField(Array3d<float> &field);
+    double getScalarFieldValue(GridIndex g);
+    double getScalarFieldValue(int i, int j, int k);
     bool isCellInsideSurface(int i, int j, int k);
     void setTricubicWeighting();
     void setTrilinearWeighting();
@@ -72,6 +74,7 @@ public:
     void setCellFieldValues(int i, int j, int k, double value);
     void setCellFieldValues(GridIndex g, double value);
     double tricubicInterpolation(vmath::vec3 p);
+    void setOffset(vmath::vec3 offset);
 
 private:
 
@@ -116,6 +119,8 @@ private:
 
     bool _isCenterFieldEnabled = false;
     bool _isWeightFieldEnabled = false;
+
+    vmath::vec3 _gridOffset;
 };
 
 #endif
