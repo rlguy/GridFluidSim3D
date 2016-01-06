@@ -333,19 +333,6 @@ const int Polygonizer3d::_triTable[256][16] = {
 Polygonizer3d::~Polygonizer3d() {
 }
 
-void Polygonizer3d::setScalarField(ImplicitSurfaceScalarField *scalarField) {
-    _scalarField = scalarField;
-
-    int i, j, k;
-    scalarField->getGridDimensions(&i, &j, &k);
-
-    assert(_isize == i - 1 && _jsize == j - 1 && _ksize == k - 1);
-
-    _surfaceThreshold = scalarField->getSurfaceThreshold();
-
-    _isScalarFieldSet = true;
-}
-
 void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
     _surface.writeMeshToOBJ(filename);
 }
@@ -414,6 +401,11 @@ GridIndexVector Polygonizer3d::_findSurfaceCells() {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
                 GridIndex cell = GridIndex(i, j, k);
+
+                if (_isSurfaceCellMaskSet && !_surfaceCellMask->get(cell)) {
+                    continue;
+                }
+
                 if (_isCellOnSurface(cell)) {
                     surfaceCells.push_back(cell);
                 }
@@ -653,14 +645,19 @@ void Polygonizer3d::_calculateSurfaceTriangles() {
     }
 }
 
+void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
+    assert(mask->width == _isize && 
+           mask->height == _jsize && 
+           mask->depth == _ksize);
+
+    _surfaceCellMask = mask;
+    _isSurfaceCellMaskSet = true;
+}
+
 void Polygonizer3d::polygonizeSurface() {
     assert(_isScalarFieldSet);
 
     _surfaceCells = _findSurfaceCells();
     _calculateSurfaceTriangles();
-
-    _surface.removeDuplicateTriangles(); // Polygonization method produces
-                                         // some identical triangles for some
-                                         // currently unknown reason.
     _surface.updateVertexNormals();
 }

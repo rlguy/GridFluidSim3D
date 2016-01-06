@@ -44,7 +44,7 @@ public:
 
     ~Polygonizer3d();
 
-    void setScalarField(ImplicitSurfaceScalarField *field);
+    void setSurfaceCellMask(Array3d<bool> *mask);
     void polygonizeSurface();
     
     TriangleMesh getTriangleMesh() { return _surface; };
@@ -102,8 +102,9 @@ private:
     bool _isScalarFieldSet = false;
 
     ImplicitSurfaceScalarField *_scalarField;
+    Array3d<bool> *_surfaceCellMask;
+    bool _isSurfaceCellMaskSet = false;
 
-    // cell indices that are fully or partially within the iso surface
     GridIndexVector _surfaceCells;
     TriangleMesh _surface;
 };
