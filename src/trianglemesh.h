@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
 #include "collision.h"
 #include "vmath.h"
 #include "gridindexvector.h"
+#include "spatialpointgrid.h"
 
 class TriangleMesh
 {
@@ -87,7 +88,7 @@ public:
     void removeExtraneousVertices();
     void translate(vmath::vec3 trans);
     void append(TriangleMesh &mesh);
-    void removeDuplicateVertices();
+    void removeDuplicateVertices(int i, int j, int k, double dx);
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;
@@ -123,6 +124,8 @@ private:
                                     std::vector<int> &polyhedron);
     double _getPolyhedronVolume(std::vector<int> &polyhedron);
     double _getSignedTriangleVolume(unsigned int tidx);
+    void _findDuplicateVertexPairs(int i, int j, int k, double dx, 
+                                   std::vector<std::pair<int, int> > &pairs);
 
     inline double _randomFloat(double min, double max) {
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));

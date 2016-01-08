@@ -1213,55 +1213,93 @@ void TriangleMesh::append(TriangleMesh &mesh) {
     }
 }
 
-bool sortVertexIndexPairByPosition(const std::pair<vmath::vec3, int> &a, 
-                    const std::pair<vmath::vec3, int>  &b) {
-    double eps = 1e-9;
-    if (fabs((double)a.first.x - (double)b.first.x) < eps) {
-        if (fabs((double)a.first.y - (double)b.first.y) < eps) {
-            return a.first.z < b.first.z;
-        } else {
-            return a.first.y < b.first.y;
-        }
-    } else {
-        return a.first.x < b.first.x;
-    }
+bool sortVertexPairByFirstIndex(const std::pair<int, int> &a,
+                                const std::pair<int, int> &b) { 
+    return a.first < b.first;
 }
 
-void TriangleMesh::removeDuplicateVertices() {
+// Unique list of vertex pair indices sorted in order of first index.
+// For each pair, first < second
+void TriangleMesh::_findDuplicateVertexPairs(int i, int j, int k, double dx, 
+                                             std::vector<std::pair<int, int> > &vertexPairs) {
+    SpatialPointGrid grid(i, j, k, dx);
+    std::vector<GridPointReference> refs = grid.insert(vertices);
 
-    std::vector<std::pair<vmath::vec3, int> > vertIndexPairs;
-    vertIndexPairs.reserve(vertices.size());
+    std::vector<bool> isPaired(vertices.size(), false);
 
+    double eps = 10e-6;
+    std::vector<GridPointReference> query;
     for (unsigned int i = 0; i < vertices.size(); i++) {
-        vertIndexPairs.push_back(std::pair<vmath::vec3, int>(vertices[i], i));
-    }
-    std::sort(vertIndexPairs.begin(), vertIndexPairs.end(), sortVertexIndexPairByPosition);
 
-    double eps = 1e-6;
-    vmath::vec3 uniquePoint = vertIndexPairs[0].first;
-    int uniqueIndex = vertIndexPairs[0].second;
-
-    std::vector<int> indexTable(vertices.size(), -1);
-    indexTable[uniqueIndex] = uniqueIndex;
-
-    for (unsigned int i = 1; i < vertIndexPairs.size(); i++) {
-        vmath::vec3 p = vertIndexPairs[i].first;
-        int idx = vertIndexPairs[i].second;
-
-        if (!vmath::equals(p, uniquePoint, eps)) {
-            uniquePoint = p;
-            uniqueIndex = idx;
+        if (isPaired[i]) {
+            continue;
         }
 
-        indexTable[idx] = uniqueIndex;
+        query.clear();
+        grid.queryPointReferencesInsideSphere(refs[i], eps, query);
+
+        if (query.size() == 0) {
+            continue;
+        }
+
+        GridPointReference closestRef;
+        if (query.size() == 1) {
+            closestRef = query[0];
+        } else {
+            double mindist = std::numeric_limits<double>::infinity();
+
+            for (unsigned int idx = 0; idx < query.size(); idx++) {
+                vmath::vec3 v = vertices[i] - vertices[query[idx].id];
+                double distsq = vmath::lengthsq(v);
+                if (distsq < mindist) {
+                    mindist = distsq;
+                    closestRef = query[idx];
+                }
+            }
+        }
+
+        int pair1 = i;
+        int pair2 = closestRef.id;
+        if (pair2 < pair1) {
+            pair1 = closestRef.id;
+            pair2 = i;
+        }
+
+        vertexPairs.push_back(std::pair<int, int>(pair1, pair2));
+        isPaired[closestRef.id] = true;
+    }
+
+    std::sort(vertexPairs.begin(), vertexPairs.end(), sortVertexPairByFirstIndex);
+}
+
+void TriangleMesh::removeDuplicateVertices(int i, int j, int k, double dx) {
+
+    std::vector<std::pair<int, int> > vertexPairs;
+    _findDuplicateVertexPairs(i, j, k, dx, vertexPairs);
+
+    std::vector<int> indexTable;
+    indexTable.reserve(vertices.size());
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        indexTable.push_back(i);
+    }
+
+    for (unsigned int i = 1; i < vertexPairs.size(); i++) {
+        indexTable[vertexPairs[i].second] = vertexPairs[i].first;
     }
 
     Triangle t;
     for (unsigned int i = 0; i < triangles.size(); i++) {
         t = triangles[i];
-        triangles[i].tri[0] = indexTable[t.tri[0]];
-        triangles[i].tri[1] = indexTable[t.tri[1]];
-        triangles[i].tri[2] = indexTable[t.tri[2]];
+        t.tri[0] = indexTable[t.tri[0]];
+        t.tri[1] = indexTable[t.tri[1]];
+        t.tri[2] = indexTable[t.tri[2]];
+
+        if (t.tri[0] == t.tri[1] || t.tri[1] == t.tri[2] || t.tri[2] == t.tri[0]) {
+            // Don't collapse triangles
+            continue;
+        }
+
+        triangles[i] = t;
     }
 
     removeExtraneousVertices();
