@@ -63,7 +63,7 @@ std::vector<GridPointReference> SpatialPointGrid::insert(FragmentedVector<vmath:
     return insert(vps);
 }
 
-bool compareByFlatGridIndex(const std::pair<GridPoint, unsigned int> p1, std::pair<GridPoint, unsigned int> p2) {
+bool compareByFlatGridIndex(const std::pair<GridPoint, unsigned int> p1, const std::pair<GridPoint, unsigned int> p2) {
     return p1.second < p2.second;
 }
 

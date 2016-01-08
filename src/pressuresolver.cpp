@@ -99,9 +99,6 @@ const MatrixCell MatrixCoefficients::operator[](int i) const {
 }
 
 MatrixCell& MatrixCoefficients::operator[](int i) {
-    if (!(i >= 0 && i < (int)cells.size())) {
-        std::cout << i << " " << cells.size() << std::endl;
-    }
     assert(i >= 0 && i < (int)cells.size());
     return cells[i];
 }

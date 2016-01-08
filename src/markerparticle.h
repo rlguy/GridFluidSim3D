@@ -20,6 +20,8 @@ freely, subject to the following restrictions:
 #ifndef MARKERPARTICLE_H
 #define MARKERPARTICLE_H
 
+#include "vmath.h"
+
 struct MarkerParticle {
     vmath::vec3 position;
     vmath::vec3 velocity;

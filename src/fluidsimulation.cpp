@@ -132,6 +132,11 @@ void FluidSimulation::setSurfaceSubdivisionLevel(unsigned int n) {
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
+void FluidSimulation::setNumSurfaceReconstructionPolygonizerSlices(int n) {
+    assert(n >= 1);
+    _numSurfaceReconstructionPolygonizerSlices = n;
+}
+
 void FluidSimulation::setMinimumPolyhedronTriangleCount(unsigned int n) {
     _minimumSurfacePolyhedronTriangleCount = n;
 }
@@ -623,7 +628,7 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &
         field.addCuboid(fc.bbox.position, fc.bbox.width, fc.bbox.height, fc.bbox.depth);
     }
 
-    Polygonizer3d polygonizer(field);
+    Polygonizer3d polygonizer(&field);
 
     field.setMaterialGrid(_materialGrid);
 
@@ -981,32 +986,10 @@ void FluidSimulation::_updateFluidCells() {
 ********************************************************************************/
 
 TriangleMesh FluidSimulation::_polygonizeSurface() {
-    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, 
-                                                                  _jsize + 1, 
-                                                                  _ksize + 1, _dx);
-    field.setMaterialGrid(_materialGrid);
+    IsotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
 
     double r = _markerParticleRadius*_markerParticleScale;
-    field.setPointRadius(r);
-
-    double maxvsq = _getVelocityUpperBoundByPercentile(
-                        _markerParticleVelocityUpperBoundPercentile);
-    maxvsq *= maxvsq;
-
-    vmath::vec3 p, v;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        v = _markerParticles[i].velocity;
-        if (vmath::dot(v, v) > maxvsq) {
-            continue;
-        }
-
-        p = _markerParticles[i].position;
-        field.addPoint(p);
-    }
-
-    Polygonizer3d polygonizer = Polygonizer3d(field);
-    polygonizer.polygonizeSurface();
-    return polygonizer.getTriangleMesh();
+    return mesher.meshParticles(_markerParticles, _materialGrid, r);
 }
 
 void FluidSimulation::_reconstructFluidSurface() {
@@ -1307,39 +1290,14 @@ void FluidSimulation::_getOutputSurfaceParticles(std::vector<vmath::vec3> &parti
 }
 
 TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
-
-    int subd = _outputFluidSurfaceSubdivisionLevel;
-    int width = _isize*subd;
-    int height = _jsize*subd;
-    int depth = _ksize*subd;
-    double dx = _dx / subd;
-
-    GridIndexVector surfaceCells(width, height, depth);
-    GridIndexVector solidCells(width, height, depth);
-    _getSubdividedSurfaceCells(surfaceCells);
-    _getSubdividedSolidCells(solidCells);
-
-    std::vector<vmath::vec3> particles;
-    _getOutputSurfaceParticles(particles);
-
-    SparseImplicitSurfaceScalarField field = SparseImplicitSurfaceScalarField(width + 1, 
-                                                                              height + 1, 
-                                                                              depth + 1, dx);
-    field.setSolidCells(solidCells);
-
+    int slices = _numSurfaceReconstructionPolygonizerSlices;
     double r = _markerParticleRadius*_markerParticleScale;
-    field.setPointRadius(r);
 
-    vmath::vec3 p;
-    for (unsigned int i = 0; i < particles.size(); i++) {
-        field.addPoint(particles[i]);
-    }
+    IsotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
+    mesher.setSubdivisionLevel(_outputFluidSurfaceSubdivisionLevel);
+    mesher.setNumPolygonizationSlices(slices);
 
-    SparsePolygonizer3d polygonizer = SparsePolygonizer3d(field);
-    polygonizer.setSurfaceCellIndices(surfaceCells);
-    polygonizer.polygonizeSurface();
-
-    return polygonizer.getTriangleMesh();
+    return mesher.meshParticles(_markerParticles, _materialGrid, r);
 }
 
 TriangleMesh FluidSimulation::_polygonizeAnisotropicOutputSurface() {
@@ -2888,6 +2846,8 @@ bool FluidSimulation::_findFaceCollision(vmath::vec3 p0, vmath::vec3 p1, CellFac
 vmath::vec3 FluidSimulation::_calculateSolidCellCollision(vmath::vec3 p0, 
                                                         vmath::vec3 p1, 
                                                         vmath::vec3 *normal) {
+    vmath::vec3 orig = p0;
+
     int fi, fj, fk, si, sj, sk;
     Grid3d::positionToGridIndex(p0, _dx, &fi, &fj, &fk);
     Grid3d::positionToGridIndex(p1, _dx, &si, &sj, &sk);
@@ -2915,7 +2875,12 @@ vmath::vec3 FluidSimulation::_calculateSolidCellCollision(vmath::vec3 p0,
         }
 
         numSteps++;
-        assert(numSteps < 100);
+        
+        if (numSteps > 100) {
+            *normal = vmath::vec3();
+            return orig;
+        }
+
         assert(!(fi == si && fj == sj && fk == sk));
     }
 

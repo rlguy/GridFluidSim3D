@@ -398,6 +398,15 @@ double ImplicitSurfaceScalarField::getScalarFieldValue(int i, int j, int k) {
     return val;
 }
 
+double ImplicitSurfaceScalarField::getRawScalarFieldValue(GridIndex g) {
+    return getRawScalarFieldValue(g.i, g.j, g.k);
+}
+
+double ImplicitSurfaceScalarField::getRawScalarFieldValue(int i, int j, int k) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    return _field(i, j, k);
+}
+
 bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
     assert(_isCenterFieldEnabled);
     assert(_centerField.isIndexInRange(i, j, k));
@@ -413,13 +422,13 @@ void ImplicitSurfaceScalarField::setTrilinearWeighting() {
     _weightType = WEIGHT_TRILINEAR;
 }
 
-void ImplicitSurfaceScalarField::setFieldValue(int i, int j, int k, double value) {
+void ImplicitSurfaceScalarField::setScalarFieldValue(int i, int j, int k, double value) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.set(i, j, k, value);
 }
 
-void ImplicitSurfaceScalarField::setFieldValue(GridIndex g, double value) {
-    setFieldValue(g.i, g.j, g.k, value);
+void ImplicitSurfaceScalarField::setScalarFieldValue(GridIndex g, double value) {
+    setScalarFieldValue(g.i, g.j, g.k, value);
 }
 
 void ImplicitSurfaceScalarField::setCellFieldValues(int i, int j, int k, double value) {

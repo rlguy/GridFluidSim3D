@@ -101,6 +101,7 @@ public:
     bool isCellNeighbouringSolid(GridIndex g);
 
     void setSubdivisionLevel(int n);
+    int getSubdivisionLevel();
 
     int width = 0;
     int height = 0;

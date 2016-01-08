@@ -90,6 +90,12 @@ inline vec3 normalize(const vec3 &v) {
     return v / len;
 }
 
+inline bool equals(const vec3 &v1, const vec3 &v2, double eps) {
+    return fabs((double)v1.x - (double)v2.x) < eps && 
+           fabs((double)v1.y - (double)v2.y) < eps && 
+           fabs((double)v1.z - (double)v2.z) < eps;
+}
+
 /********************************************************************************
     MATRIX 3
 ********************************************************************************/

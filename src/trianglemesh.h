@@ -85,6 +85,9 @@ public:
     void removeMinimumVolumePolyhedra(double volume);
     void removeTriangles(std::vector<int> &triangles);
     void removeExtraneousVertices();
+    void translate(vmath::vec3 trans);
+    void append(TriangleMesh &mesh);
+    void removeDuplicateVertices();
 
     void setGridDimensions(int i, int j, int k, double dx) {
         _gridi = i; _gridj = j; _gridk = k; _dx = dx;

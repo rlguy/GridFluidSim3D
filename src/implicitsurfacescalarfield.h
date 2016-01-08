@@ -63,14 +63,16 @@ public:
     void getScalarField(Array3d<float> &field);
     double getScalarFieldValue(GridIndex g);
     double getScalarFieldValue(int i, int j, int k);
+    double getRawScalarFieldValue(GridIndex g);
+    double getRawScalarFieldValue(int i, int j, int k);
     bool isCellInsideSurface(int i, int j, int k);
     void setTricubicWeighting();
     void setTrilinearWeighting();
     double getWeight(int i, int j, int k);
     double getWeight(GridIndex g);
     void getWeightField(Array3d<float> &field);
-    void setFieldValue(int i, int j, int k, double value);
-    void setFieldValue(GridIndex g, double value);
+    void setScalarFieldValue(int i, int j, int k, double value);
+    void setScalarFieldValue(GridIndex g, double value);
     void setCellFieldValues(int i, int j, int k, double value);
     void setCellFieldValues(GridIndex g, double value);
     double tricubicInterpolation(vmath::vec3 p);

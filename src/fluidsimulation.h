@@ -47,6 +47,7 @@ freely, subject to the following restrictions:
 #include "turbulencefield.h"
 #include "fluidbrickgrid.h"
 #include "spatialpointgrid.h"
+#include "isotropicparticlemesher.h"
 #include "particlemesher.h"
 #include "threading.h"
 #include "gridindexkeymap.h"
@@ -101,6 +102,7 @@ public:
     Material getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
     void setSurfaceSubdivisionLevel(unsigned int n);
+    void setNumSurfaceReconstructionPolygonizerSlices(int n);
     void setMinimumPolyhedronTriangleCount(unsigned int n);
 
     void enableSurfaceMeshOutput();
@@ -548,6 +550,7 @@ private:
     double _markerParticleScale = 3.0;
 
     int _outputFluidSurfaceSubdivisionLevel = 1;
+    int _numSurfaceReconstructionPolygonizerSlices = 1;
     double _outputFluidSurfaceCellNarrowBandSize = 0.5;
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
     int _outputFluidSurfacePolygonizerChunkSize = 128*128*64;
@@ -557,11 +560,11 @@ private:
     double _minWavecrestCurvature = 0.20;
     double _maxWavecrestCurvature = 1.0;
     double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 40.0;
+    double _maxParticleEnergy = 60.0;
     double _minTurbulence = 100.0;
     double _maxTurbulence = 200.0;
-    double _wavecrestEmissionRate = 250;
-    double _turbulenceEmissionRate = 250;
+    double _wavecrestEmissionRate = 175;
+    double _turbulenceEmissionRate = 175;
     unsigned int _maxNumDiffuseParticles = 6e6;
     double _maxDiffuseParticleLifetime = 2.8;
     double _sprayParticleLifetimeModifier = 2.0;

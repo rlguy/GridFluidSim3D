@@ -45,7 +45,7 @@ TriangleMesh ParticleMesher::meshParticles(FragmentedVector<MarkerParticle> &par
 
     _computeScalarField(materialGrid, filteredParticles, levelset);
    
-    Polygonizer3d polygonizer = Polygonizer3d(_scalarField);
+    Polygonizer3d polygonizer = Polygonizer3d(&_scalarField);
     polygonizer.polygonizeSurface();
 
     return polygonizer.getTriangleMesh();

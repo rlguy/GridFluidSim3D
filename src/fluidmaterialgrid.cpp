@@ -264,3 +264,7 @@ void FluidMaterialGrid::setSubdivisionLevel(int n) {
     height = _grid.height;
     depth  = _grid.depth;
 }
+
+int FluidMaterialGrid::getSubdivisionLevel() {
+    return _grid.getSubdivisionLevel();
+}

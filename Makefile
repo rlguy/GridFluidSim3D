@@ -21,6 +21,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/implicitpointprimitive.cpp \
 		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
 		$(SOURCEPATH)/interpolation.cpp \
+		$(SOURCEPATH)/isotropicparticlemesher.cpp \
 		$(SOURCEPATH)/levelset.cpp \
 		$(SOURCEPATH)/logfile.cpp \
 		$(SOURCEPATH)/macvelocityfield.cpp \

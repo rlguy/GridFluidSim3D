@@ -903,21 +903,25 @@ void TriangleMesh::_smoothTriangleMesh(double value, std::vector<bool> &isSmooth
             continue;
         }
 
+        int count = 0;
         avg = vmath::vec3();
         for (unsigned int j = 0; j < _vertexTriangles[i].size(); j++) {
             t = triangles[_vertexTriangles[i][j]];
             if (t.tri[0] != (int)i) {
                 avg += vertices[t.tri[0]];
+                count++;
             }
             if (t.tri[1] != (int)i) {
                 avg += vertices[t.tri[1]];
+                count++;
             }
             if (t.tri[2] != (int)i) {
                 avg += vertices[t.tri[2]];
+                count++;
             }
         }
 
-        avg /= ((float)_vertexTriangles[i].size()*2.0);
+        avg /= (float)count;
         v = vertices[i];
         nv = v + (float)value * (avg - v);
         newvertices.push_back(nv);
@@ -1177,5 +1181,88 @@ void TriangleMesh::removeMinimumTriangleCountPolyhedra(int count) {
     }
 
     removeTriangles(removalTriangles);
+    removeExtraneousVertices();
+}
+
+void TriangleMesh::translate(vmath::vec3 trans) {
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        vertices[i] += trans;
+    }
+}
+
+void TriangleMesh::append(TriangleMesh &mesh) {
+    vertices.reserve(vertices.size() + mesh.vertices.size());
+    vertexcolors.reserve(vertexcolors.size() + mesh.vertexcolors.size());
+    normals.reserve(normals.size() + mesh.normals.size());
+    triangles.reserve(triangles.size() + mesh.triangles.size());
+
+    int indexOffset = vertices.size();
+
+    vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+    vertexcolors.insert(vertexcolors.end(), mesh.vertexcolors.begin(), mesh.vertexcolors.end());
+    normals.insert(normals.end(), mesh.normals.begin(), mesh.normals.end());
+
+    Triangle t;
+    for (unsigned int i = 0; i < mesh.triangles.size(); i++) {
+        t = mesh.triangles[i];
+        t.tri[0] += indexOffset;
+        t.tri[1] += indexOffset;
+        t.tri[2] += indexOffset;
+
+        triangles.push_back(t);
+    }
+}
+
+bool sortVertexIndexPairByPosition(const std::pair<vmath::vec3, int> &a, 
+                    const std::pair<vmath::vec3, int>  &b) {
+    double eps = 1e-9;
+    if (fabs((double)a.first.x - (double)b.first.x) < eps) {
+        if (fabs((double)a.first.y - (double)b.first.y) < eps) {
+            return a.first.z < b.first.z;
+        } else {
+            return a.first.y < b.first.y;
+        }
+    } else {
+        return a.first.x < b.first.x;
+    }
+}
+
+void TriangleMesh::removeDuplicateVertices() {
+
+    std::vector<std::pair<vmath::vec3, int> > vertIndexPairs;
+    vertIndexPairs.reserve(vertices.size());
+
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        vertIndexPairs.push_back(std::pair<vmath::vec3, int>(vertices[i], i));
+    }
+    std::sort(vertIndexPairs.begin(), vertIndexPairs.end(), sortVertexIndexPairByPosition);
+
+    double eps = 1e-6;
+    vmath::vec3 uniquePoint = vertIndexPairs[0].first;
+    int uniqueIndex = vertIndexPairs[0].second;
+
+    std::vector<int> indexTable(vertices.size(), -1);
+    indexTable[uniqueIndex] = uniqueIndex;
+
+    for (unsigned int i = 1; i < vertIndexPairs.size(); i++) {
+        vmath::vec3 p = vertIndexPairs[i].first;
+        int idx = vertIndexPairs[i].second;
+
+        if (!vmath::equals(p, uniquePoint, eps)) {
+            uniquePoint = p;
+            uniqueIndex = idx;
+        }
+
+        indexTable[idx] = uniqueIndex;
+    }
+
+    Triangle t;
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        t = triangles[i];
+        triangles[i].tri[0] = indexTable[t.tri[0]];
+        triangles[i].tri[1] = indexTable[t.tri[1]];
+        triangles[i].tri[2] = indexTable[t.tri[2]];
+    }
+
     removeExtraneousVertices();
 }

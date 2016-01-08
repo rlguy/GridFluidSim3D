@@ -439,7 +439,7 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
     // Don't return a point that is exactly on p1 or p2.
     // This could result in a triangle with equal vertices and
     // its normal will be calculated as undefined.
-    double eps = 10e-6;
+    double eps = 1e-10;
     if (fabs(isolevel - valp1) < eps || fabs(valp1 - valp2) < eps) {
         vmath::vec3 v = vmath::normalize(p2 - p1);
         return p1 + (float)(eps*_dx)*v;
@@ -449,7 +449,7 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
         return p2 - (float)(eps*_dx)*v; 
     }
 
-    double tol = 1e-6;
+    double tol = 1e-9;
     int nmax = 50;
     int n = 0;
     vmath::vec3 a = p1;
