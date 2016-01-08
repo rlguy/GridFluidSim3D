@@ -29,12 +29,9 @@ freely, subject to the following restrictions:
 #include "stopwatch.h"
 #include "macvelocityfield.h"
 #include "array3d.h"
-#include "sparsearray3d.h"
 #include "grid3d.h"
 #include "implicitsurfacescalarfield.h"
-#include "sparseimplicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
-#include "sparsepolygonizer3d.h"
 #include "triangleMesh.h"
 #include "logfile.h"
 #include "collision.h"
@@ -305,9 +302,6 @@ private:
     bool _isVertexNearSolid(vmath::vec3 v, double eps);
     TriangleMesh _polygonizeIsotropicOutputSurface();
     TriangleMesh _polygonizeAnisotropicOutputSurface();
-    void _getSubdividedSurfaceCells(GridIndexVector &cells);
-    void _getSubdividedSolidCells(GridIndexVector &cells);
-    void _getOutputSurfaceParticles(std::vector<vmath::vec3> &particles);
     void _updateBrickGrid(double dt);
 
     // Advect fluid velocities

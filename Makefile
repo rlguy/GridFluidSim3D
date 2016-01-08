@@ -29,8 +29,6 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/particlemesher.cpp \
 		$(SOURCEPATH)/polygonizer3d.cpp \
 		$(SOURCEPATH)/pressuresolver.cpp \
-		$(SOURCEPATH)/sparseimplicitsurfacescalarfield.cpp \
-		$(SOURCEPATH)/sparsepolygonizer3d.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \
 		$(SOURCEPATH)/sphericalfluidsource.cpp \
 		$(SOURCEPATH)/stopwatch.cpp \
