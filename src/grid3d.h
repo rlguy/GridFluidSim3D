@@ -370,9 +370,9 @@ namespace Grid3d {
                                    int imax, int jmax, int kmax, 
                                    GridIndex *g1, GridIndex *g2) {
 
-        double lenx = vmath::length(G[0]);
-        double leny = vmath::length(G[1]);
-        double lenz = vmath::length(G[2]);
+        double lenx = r*vmath::length(G[0]);
+        double leny = r*vmath::length(G[1]);
+        double lenz = r*vmath::length(G[2]);
 
         double minx = p.x - lenx;
         double maxx = p.x + lenx;

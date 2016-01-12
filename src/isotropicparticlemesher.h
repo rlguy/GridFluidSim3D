@@ -50,10 +50,10 @@ public:
 
 private:
 
-	TriangleMesh _polygonizeAll(FragmentedVector<MarkerParticle> &particles, 
+	TriangleMesh _polygonizeAll(FragmentedVector<MarkerParticle> &particles,
 	                            FluidMaterialGrid &materialGrid);
 
-	TriangleMesh _polygonizeSlices(FragmentedVector<MarkerParticle> &particles, 
+	TriangleMesh _polygonizeSlices(FragmentedVector<MarkerParticle> &particles,
 	                               FluidMaterialGrid &materialGrid);
 	TriangleMesh _polygonizeSlice(int startidx, int endidx, 
 		                          FragmentedVector<MarkerParticle> &particles, 

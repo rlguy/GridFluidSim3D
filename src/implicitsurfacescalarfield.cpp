@@ -494,6 +494,11 @@ double ImplicitSurfaceScalarField::tricubicInterpolation(vmath::vec3 p) {
     return val;
 }
 
+bool ImplicitSurfaceScalarField::isPointInside(vmath::vec3 p) {
+    double val = tricubicInterpolation(p);
+    return val > _surfaceThreshold;
+}
+
 void ImplicitSurfaceScalarField::setOffset(vmath::vec3 offset) {
     _gridOffset = offset;
 }

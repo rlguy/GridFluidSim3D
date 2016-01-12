@@ -9,6 +9,7 @@ LDFLAGS=$(PTHREADLIB) -lstdc++
 
 SOURCEPATH=src
 SOURCES=$(SOURCEPATH)/aabb.cpp \
+		$(SOURCEPATH)/anisotropicparticlemesher.cpp \
 		$(SOURCEPATH)/collision.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
 		$(SOURCEPATH)/fluidbrickgrid.cpp \
@@ -26,7 +27,6 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/logfile.cpp \
 		$(SOURCEPATH)/macvelocityfield.cpp \
 		$(SOURCEPATH)/main.cpp \
-		$(SOURCEPATH)/particlemesher.cpp \
 		$(SOURCEPATH)/polygonizer3d.cpp \
 		$(SOURCEPATH)/pressuresolver.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \

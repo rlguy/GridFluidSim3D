@@ -45,7 +45,7 @@ freely, subject to the following restrictions:
 #include "fluidbrickgrid.h"
 #include "spatialpointgrid.h"
 #include "isotropicparticlemesher.h"
-#include "particlemesher.h"
+#include "anisotropicparticlemesher.h"
 #include "threading.h"
 #include "gridindexkeymap.h"
 #include "pressuresolver.h"
@@ -239,11 +239,20 @@ private:
     void _initializeSimulation();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
-    void _getInitialFluidCellsFromImplicitSurface(GridIndexVector &fluidCells);
+    void _calculateInitialFluidSurfaceScalarField(ImplicitSurfaceScalarField &field);
+    void _getInitialFluidCellsFromScalarField(ImplicitSurfaceScalarField &field,
+                                              GridIndexVector &fluidCells);
+    void _getPartiallyFilledFluidCellParticles(GridIndexVector &partialFluidCells,
+                                               ImplicitSurfaceScalarField &field,
+                                               std::vector<vmath::vec3> &partialParticles);
+    void _initializeMarkerParticles(GridIndexVector &fullFluidCells,
+                                    std::vector<vmath::vec3> &partialParticles);
+    void _initializeFluidCellIndices();
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
     void _addMarkerParticle(vmath::vec3 p);
     void _addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity);
+    void _addMarkerParticles(std::vector<vmath::vec3> particles);
     void _initializeSimulationFromSaveState(FluidSimulationSaveState &state);
     void _initializeMarkerParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);

@@ -17,8 +17,8 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#ifndef PARTICLEMESHER_H
-#define PARTICLEMESHER_H
+#ifndef ANISOTROPICPARTICLEMESHER_H
+#define ANISOTROPICPARTICLEMESHER_H
 
 #include <pthread.h>
 #include <stdio.h>
@@ -40,12 +40,15 @@ freely, subject to the following restrictions:
 #include "fragmentedvector.h"
 #include "markerparticle.h"
 
-class ParticleMesher
+class AnisotropicParticleMesher
 {
 public:
-    ParticleMesher();
-    ParticleMesher(int isize, int jsize, int ksize, double dx);
-    ~ParticleMesher();
+    AnisotropicParticleMesher();
+    AnisotropicParticleMesher(int isize, int jsize, int ksize, double dx);
+    ~AnisotropicParticleMesher();
+
+    void setSubdivisionLevel(int n);
+    void setNumPolygonizationSlices(int n);
 
     TriangleMesh meshParticles(FragmentedVector<MarkerParticle> &particles, 
                                LevelSet &levelset,
@@ -141,12 +144,43 @@ private:
                                            std::vector<GridPointReference> &refs);
     vmath::vec3 _getWeightedMeanParticlePosition(GridPointReference ref,
                                                std::vector<GridPointReference> &neighbours);
+    TriangleMesh _polygonizeAll(FragmentedVector<vmath::vec3> &particles, 
+                                LevelSet &levelset,
+                                FluidMaterialGrid &materialGrid);
+    TriangleMesh _polygonizeSlices(FragmentedVector<vmath::vec3> &particles, 
+                                   LevelSet &levelset,
+                                   FluidMaterialGrid &materialGrid);
+    TriangleMesh _polygonizeSlice(int startidx, int endidx, 
+                                  FragmentedVector<vmath::vec3> &particles, 
+                                  LevelSet &levelset,
+                                  FluidMaterialGrid &materialGrid);
+
+    void _getSubdividedGridDimensions(int *i, int *j, int *k, double *dx);
+    void _computeSliceScalarField(int startidx, int endidx, 
+                                  FragmentedVector<vmath::vec3> &particles,
+                                  LevelSet &levelset,
+                                  FluidMaterialGrid &materialGrid);
+    vmath::vec3 _getSliceGridPositionOffset(int startidx, int endidx);
+    void _getSliceParticles(int startidx, int endidx, 
+                            FragmentedVector<vmath::vec3> &markerParticles,
+                            FragmentedVector<vmath::vec3> &sliceParticles);
+    void _getSliceMaterialGrid(int startidx, int endidx,
+                               FluidMaterialGrid &materialGrid,
+                               FluidMaterialGrid &sliceMaterialGrid);
+    AABB _getSliceAABB(int startidx, int endidx);
+    void _updateScalarFieldSeam(int startidx, int endidx);
+    void _applyScalarFieldSliceSeamData();
+    void _saveScalarFieldSliceSeamData();
+    void _getSliceMask(int startidx, int endidx, Array3d<bool> &mask);
 
     void _computeScalarField(FluidMaterialGrid &materialGrid,
                              FragmentedVector<vmath::vec3> &particles,
                              LevelSet &levelset);
     void _initializeScalarField(FluidMaterialGrid &materialGrid);
+    void _initializeSliceScalarField(int startidx, int endidx, 
+                                     FluidMaterialGrid &materialGrid);
     void _initializeProducerConsumerStacks();
+    void _initializeSliceProducerConsumerStacks(int startidx, int endidx);
     void _addAnisotropicParticlesToScalarField();
     void _addAnisotropicParticleToScalarField(AnisotropicParticle &aniso);
     void _addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, LevelSet &levelset);
@@ -167,9 +201,11 @@ private:
     double _evaluateKernel(SurfaceParticle &pi, SurfaceParticle &pj);
 
     double _particleRadius = 0.0;
-    double _anisotropicParticleScale = 0.7;
-    double _anisotropicParticleFieldScale = 0.4;
-    double _isotropicParticleScale = 3.0;
+    //double _anisotropicParticleScale = 0.7;
+    //double _anisotropicParticleFieldScale = 0.4;
+    double _anisotropicParticleScale = 3.0;
+    double _anisotropicParticleFieldScale = 1.0;
+    double _isotropicParticleScale = 3.5;
     double _kernelRadius = 0.0;
     double _invKernelRadius = 1.0;
 
@@ -178,8 +214,8 @@ private:
     double _smoothingConstant = 0.95;               // in range [0.0,1.0]
     int _numThreads = 8;
 
-    int _minAnisotropicParticleNeighbourThreshold = 10;
-    double _maxEigenvalueRatio = 5.5;
+    int _minAnisotropicParticleNeighbourThreshold = 6;
+    double _maxEigenvalueRatio = 4.0;
 
     int _isize = 0;
     int _jsize = 0;
@@ -203,6 +239,10 @@ private:
     int _producerStackSize = 1000;
     int _consumerStackSize = 10000;
 
+    int _subdivisionLevel = 1;
+    int _numPolygonizationSlices = 1;
+
+    Array3d<float> _scalarFieldSeamData;
 };
 
 #endif

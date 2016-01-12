@@ -117,7 +117,7 @@ TriangleMesh IsotropicParticleMesher::_polygonizeSlices(FragmentedVector<MarkerP
 		mesh.append(sliceMesh);
 	}
 
-	mesh.removeDuplicateVertices();
+	mesh.removeDuplicateVertices(_isize, _jsize, _ksize, _dx);
 
 	return mesh;
 }

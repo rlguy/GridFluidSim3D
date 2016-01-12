@@ -77,6 +77,7 @@ public:
     void setCellFieldValues(GridIndex g, double value);
     double tricubicInterpolation(vmath::vec3 p);
     void setOffset(vmath::vec3 offset);
+    bool isPointInside(vmath::vec3 p);
 
 private:
 

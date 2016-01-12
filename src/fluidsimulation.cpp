@@ -613,9 +613,13 @@ void FluidSimulation::_addMarkerParticle(vmath::vec3 p, vmath::vec3 velocity) {
     }
 }
 
-void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &fluidCells) {
-    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
+void FluidSimulation::_addMarkerParticles(std::vector<vmath::vec3> particles) {
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        _addMarkerParticle(particles[i], vmath::vec3());
+    }
+}
 
+void FluidSimulation::_calculateInitialFluidSurfaceScalarField(ImplicitSurfaceScalarField &field) {
     FluidPoint fp;
     for (unsigned int i = 0; i < _fluidPoints.size(); i++) {
         fp = _fluidPoints[i];
@@ -627,7 +631,10 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &
         fc = _fluidCuboids[i];
         field.addCuboid(fc.bbox.position, fc.bbox.width, fc.bbox.height, fc.bbox.depth);
     }
+}
 
+void FluidSimulation::_getInitialFluidCellsFromScalarField(ImplicitSurfaceScalarField &field,
+                                                           GridIndexVector &fluidCells) {
     Polygonizer3d polygonizer(&field);
 
     field.setMaterialGrid(_materialGrid);
@@ -640,23 +647,96 @@ void FluidSimulation::_getInitialFluidCellsFromImplicitSurface(GridIndexVector &
     _surfaceMesh.getCellsInsideMesh(fluidCells);
 }
 
-void FluidSimulation::_initializeFluidMaterial() {
 
-    GridIndexVector fluidCells(_isize, _jsize, _ksize);
-    _getInitialFluidCellsFromImplicitSurface(fluidCells);
-
-    _markerParticles.reserve(8*fluidCells.size());
-    _fluidCellIndices.reserve(fluidCells.size());
+void FluidSimulation::_getPartiallyFilledFluidCellParticles(GridIndexVector &partialFluidCells,
+                                                            ImplicitSurfaceScalarField &field,
+                                                            std::vector<vmath::vec3> &partialParticles) {
+    FluidMaterialGrid submgrid(_isize, _jsize, _ksize);
     GridIndex g;
-    for (unsigned int i = 0; i < fluidCells.size(); i++) {
-        g = fluidCells[i];
+    for (unsigned int i = 0; i < partialFluidCells.size(); i++) {
+        g = partialFluidCells[i];
+        submgrid.setFluid(g);
+    }
+    submgrid.setSubdivisionLevel(2);
+    double subdx = 0.5 * _dx;
 
-        if (_materialGrid.isCellAir(g)) {
+    double eps = 10e-6;
+    double jitter = 0.25*_dx - eps;
+    vmath::vec3 jit;
+
+    vmath::vec3 c;
+    for (int k = 0; k < submgrid.depth; k++) {
+        for (int j = 0; j < submgrid.height; j++) {
+            for (int i = 0; i < submgrid.width; i++) {
+                if (!submgrid.isCellFluid(i, j, k)) {
+                    continue;
+                }
+
+                c = Grid3d::GridIndexToCellCenter(i, j, k, subdx);
+                if (field.isPointInside(c)) {
+                    jit = vmath::vec3(_randomDouble(-jitter, jitter),
+                              _randomDouble(-jitter, jitter),
+                              _randomDouble(-jitter, jitter));
+
+                    partialParticles.push_back(c + jit);
+                }
+            }
+        }
+    }
+}
+
+void FluidSimulation::_initializeMarkerParticles(GridIndexVector &fullFluidCells,
+                                                 std::vector<vmath::vec3> &partialParticles) {
+    _markerParticles.reserve(8*fullFluidCells.size() + partialParticles.size());
+    GridIndex g;
+    for (unsigned int i = 0; i < fullFluidCells.size(); i++) {
+        g = fullFluidCells[i];
+        _addMarkerParticlesToCell(g);
+    }
+    _addMarkerParticles(partialParticles);
+}
+
+void FluidSimulation::_initializeFluidCellIndices() {
+    GridIndex g;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        g = Grid3d::positionToGridIndex(_markerParticles[i].position, _dx);
+        if (!_materialGrid.isCellFluid(g)) {
             _materialGrid.setFluid(g);
-            _addMarkerParticlesToCell(g);
             _fluidCellIndices.push_back(g);
         }
     }
+}
+
+void FluidSimulation::_initializeFluidMaterial() {
+
+    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
+    _calculateInitialFluidSurfaceScalarField(field);
+
+    GridIndexVector fluidCells(_isize, _jsize, _ksize);
+    _getInitialFluidCellsFromScalarField(field, fluidCells);
+
+    FluidMaterialGrid mgrid(_isize, _jsize, _ksize);
+    for (unsigned int i = 0; i < fluidCells.size(); i++) {
+        mgrid.setFluid(fluidCells[i]);
+    }
+
+    GridIndexVector fullFluidCells(_isize, _jsize, _ksize);
+    GridIndexVector partialFluidCells(_isize, _jsize, _ksize);
+    GridIndex g;
+    for (unsigned int i = 0; i < fluidCells.size(); i++) {
+        g = fluidCells[i];
+        if (mgrid.isCellNeighbouringAir(g)) {
+            partialFluidCells.push_back(g);
+        } else {
+            fullFluidCells.push_back(g);
+        }
+    }
+
+    std::vector<vmath::vec3> partialParticles;
+    _getPartiallyFilledFluidCellParticles(partialFluidCells, field, partialParticles);
+
+    _initializeMarkerParticles(fullFluidCells, partialParticles);
+    _initializeFluidCellIndices();
 }
 
 void FluidSimulation::_initializeSimulation() {
@@ -1235,11 +1315,14 @@ TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
 }
 
 TriangleMesh FluidSimulation::_polygonizeAnisotropicOutputSurface() {
-    TriangleMesh mesh;
-    ParticleMesher mesher(_isize, _jsize, _ksize, _dx);
-    mesh = mesher.meshParticles(_markerParticles, _levelset, _materialGrid, _markerParticleRadius);
+    int slices = _numSurfaceReconstructionPolygonizerSlices;
+    double r = _markerParticleRadius;
 
-    return mesh;
+    AnisotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
+    mesher.setSubdivisionLevel(_outputFluidSurfaceSubdivisionLevel);
+    mesher.setNumPolygonizationSlices(slices);
+
+    return mesher.meshParticles(_markerParticles, _levelset, _materialGrid, r);
 }
 
 void FluidSimulation::_updateBrickGrid(double dt) {
