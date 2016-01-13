@@ -362,6 +362,10 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
                 if (_u.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
                     points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk);
 
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
+
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];
                     } else if (points[pi][pj][pk] > max) {
@@ -415,6 +419,10 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
                 if (_v.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
                     points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk);
 
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
+
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];
                     } else if (points[pi][pj][pk] > max) {
@@ -467,6 +475,10 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
             for (int pi = 0; pi < 4; pi++) {
                 if (_w.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
                     points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk);
+
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
 
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];
@@ -616,6 +628,10 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
                     points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk) - 
                                          savedField.U(pi + refi, pj + refj, pk + refk);
 
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
+
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];
                     } else if (points[pi][pj][pk] > max) {
@@ -671,6 +687,10 @@ double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z
                     points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk) - 
                                          savedField.V(pi + refi, pj + refj, pk + refk);
 
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
+
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];
                     } else if (points[pi][pj][pk] > max) {
@@ -725,6 +745,10 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
                 if (_w.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
                     points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk) - 
                                          savedField.W(pi + refi, pj + refj, pk + refk);
+
+                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                        continue;
+                    }
 
                     if (points[pi][pj][pk] < min) {
                         min = points[pi][pj][pk];

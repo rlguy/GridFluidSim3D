@@ -546,7 +546,7 @@ private:
     int _numUpdateMarkerParticleVelocityThreads = 8;
     MACVelocityField _savedVelocityField;
 
-    double _surfaceReconstructionSmoothingValue = 0.85;
+    double _surfaceReconstructionSmoothingValue = 0.5;
     int _surfaceReconstructionSmoothingIterations = 2;
     int _minimumSurfacePolyhedronTriangleCount = 0;
     double _markerParticleRadius;

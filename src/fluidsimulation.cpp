@@ -1868,11 +1868,13 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
 
     // First two layers are calculate by averaging neighbours so that values exist for tricubic
     // interpolation at the fluid boundary for layers > 2
+    /*
     if (layerIdx > 2) {
         vmath::vec3 pos = _MACVelocity.velocityIndexToPositionU(i, j, k);
         vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
         return v.x;
     }
+    */
 
     GridIndex n[6];
     Grid3d::getNeighbourGridIndices6(i, j, k, n);
@@ -1899,11 +1901,13 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, in
 double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIdx,
                                                          Array3d<int> &layerGrid) {
 
+    /*
     if (layerIdx > 2) {
         vmath::vec3 pos = _MACVelocity.velocityIndexToPositionV(i, j, k);
         vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
         return v.y;
     }
+    */
 
     GridIndex n[6];
     Grid3d::getNeighbourGridIndices6(i, j, k, n);
@@ -1930,11 +1934,13 @@ double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, in
 double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIdx,
                                                          Array3d<int> &layerGrid) {
 
+    /*
     if (layerIdx > 2) {
         vmath::vec3 pos = _MACVelocity.velocityIndexToPositionW(i, j, k);
         vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
         return v.z;
     }
+    */
 
     GridIndex n[6];
     Grid3d::getNeighbourGridIndices6(i, j, k, n);

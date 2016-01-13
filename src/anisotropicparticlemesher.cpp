@@ -176,10 +176,17 @@ void AnisotropicParticleMesher::_updateSurfaceParticleComponentIDs() {
     std::vector<std::vector<GridPointReference> > components;
     _pointGrid.getConnectedPointReferenceComponents(r, components);
 
+
     for (unsigned int cid = 0; cid < components.size(); cid++) {
+
+        int componentID = cid;
+        if ((int)components[cid].size() < _minComponentParticleCount) {
+            componentID = -1;
+        }
+
         for (unsigned int idx = 0; idx < components[cid].size(); idx++) {
             int spidx = components[cid][idx].id;
-            _surfaceParticles[spidx].componentID = cid;
+            _surfaceParticles[spidx].componentID = componentID;
         }
     }
 }
@@ -588,7 +595,16 @@ void AnisotropicParticleMesher::_initializeSliceScalarField(int startidx, int en
 
 
 void AnisotropicParticleMesher::_initializeProducerConsumerStacks() {
-    _unprocessedAnisotropicParticleStack = _nearSurfaceParticleRefs;
+    _unprocessedAnisotropicParticleStack.clear();
+
+    GridPointReference ref;
+    for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
+        ref = _nearSurfaceParticleRefs[i];
+        if (_surfaceParticles[ref.id].componentID != -1) {
+            _unprocessedAnisotropicParticleStack.push_back(ref);
+        }
+    }
+
     _processedAnisotropicParticleStack = ProducerConsumerStack<AnisotropicParticle>(_consumerStackSize);
     _numAnisotropicParticles = _unprocessedAnisotropicParticleStack.size();
 }
@@ -600,6 +616,10 @@ void AnisotropicParticleMesher::_initializeSliceProducerConsumerStacks(int start
     GridPointReference ref;
     for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
         ref = _nearSurfaceParticleRefs[i];
+
+        if (_surfaceParticles[ref.id].componentID == -1) {
+            continue;
+        }
 
         if (bbox.isPointInside(_surfaceParticles[ref.id].position)) {
             _unprocessedAnisotropicParticleStack.push_back(ref);
@@ -640,7 +660,8 @@ void AnisotropicParticleMesher::_addAnisotropicParticlesToScalarField() {
 void AnisotropicParticleMesher::_addAnisotropicParticleToScalarField(AnisotropicParticle &aniso) {
     vmath::vec3 p = aniso.position;
     vmath::mat3 G = aniso.anisotropy;
-    _scalarField.addEllipsoidValue(p, G, _anisotropicParticleFieldScale);
+    double scale = _anisotropicParticleFieldScale;
+    _scalarField.addEllipsoidValue(p, G, scale);
 }
 
 void AnisotropicParticleMesher::_addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, 

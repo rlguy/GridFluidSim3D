@@ -201,8 +201,6 @@ private:
     double _evaluateKernel(SurfaceParticle &pi, SurfaceParticle &pj);
 
     double _particleRadius = 0.0;
-    //double _anisotropicParticleScale = 0.7;
-    //double _anisotropicParticleFieldScale = 0.4;
     double _anisotropicParticleScale = 3.0;
     double _anisotropicParticleFieldScale = 1.0;
     double _isotropicParticleScale = 3.5;
@@ -211,6 +209,7 @@ private:
 
     double _supportRadiusFactor = 3.0;              // in number of _particleRadius
     double _connectedComponentRadiusFactor = 2.5;   // in number of _particleRadius
+    int _minComponentParticleCount = 5;
     double _smoothingConstant = 0.95;               // in range [0.0,1.0]
     int _numThreads = 8;
 
