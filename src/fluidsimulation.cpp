@@ -72,7 +72,7 @@ void FluidSimulation::saveState(std::string filename) {
         return;
     }
 
-    FluidSimulationSaveState state = FluidSimulationSaveState();
+    FluidSimulationSaveState state;
     state.saveState(filename, this);
 }
 
@@ -383,6 +383,10 @@ void FluidSimulation::addSolidCell(int i, int j, int k) {
     _materialGrid.setSolid(i, j, k);
 }
 
+void FluidSimulation::addSolidCell(GridIndex g) {
+    addSolidCell(g.i, g.j, g.k);
+}
+
 void FluidSimulation::addSolidCells(std::vector<vmath::vec3> indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         addSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
@@ -461,10 +465,17 @@ unsigned int FluidSimulation::getNumMarkerParticles() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
-    std::vector<vmath::vec3> particles;
-    particles.reserve(_markerParticles.size());
+    return getMarkerParticlePositions(0, _markerParticles.size() - 1);
+}
 
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startidx, int endidx) {
+    assert(startidx >= 0 && startidx < (int)_markerParticles.size());
+    assert(endidx >= 0 && endidx < (int)_markerParticles.size());
+
+    std::vector<vmath::vec3> particles;
+    particles.reserve(endidx - startidx + 1);
+
+    for (int i = startidx; i <= endidx; i++) {
         particles.push_back(_markerParticles[i].position);
     }
 
@@ -472,10 +483,17 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities() {
-    std::vector<vmath::vec3> velocities;
-    velocities.reserve(_markerParticles.size());
+    return getMarkerParticleVelocities(0, _markerParticles.size() - 1);
+}
 
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int startidx, int endidx) {
+    assert(startidx >= 0 && startidx < (int)_markerParticles.size());
+    assert(endidx >= 0 && endidx < (int)_markerParticles.size());
+
+    std::vector<vmath::vec3> velocities;
+    velocities.reserve(endidx - startidx + 1);
+
+    for (int i = startidx; i <= endidx; i++) {
         velocities.push_back(_markerParticles[i].velocity);
     }
 
@@ -487,10 +505,17 @@ unsigned int FluidSimulation::getNumDiffuseParticles() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
-    std::vector<vmath::vec3> particles;
-    particles.reserve(_diffuseParticles.size());
+    return getDiffuseParticlePositions(0, _diffuseParticles.size() - 1);
+}
 
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int startidx, int endidx) {
+    assert(startidx >= 0 && startidx < (int)_diffuseParticles.size());
+    assert(endidx >= 0 && endidx < (int)_diffuseParticles.size());
+
+    std::vector<vmath::vec3> particles;
+    particles.reserve(endidx - startidx + 1);
+
+    for (int i = startidx; i <= endidx; i++) {
         particles.push_back(_diffuseParticles[i].position);
     }
 
@@ -498,25 +523,39 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities() {
-    std::vector<vmath::vec3> velocities;
-    velocities.reserve(_diffuseParticles.size());
+    return getDiffuseParticleVelocities(0, _diffuseParticles.size() - 1);
+}
 
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int startidx, int endidx) {
+    assert(startidx >= 0 && startidx < (int)_diffuseParticles.size());
+    assert(endidx >= 0 && endidx < (int)_diffuseParticles.size());
+
+    std::vector<vmath::vec3> velocities;
+    velocities.reserve(endidx - startidx + 1);
+
+    for (int i = startidx; i <= endidx; i++) {
         velocities.push_back(_diffuseParticles[i].velocity);
     }
 
     return velocities;
 }
 
-std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
-    std::vector<float> lifetimes;
-    lifetimes.reserve(_diffuseParticles.size());
+std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, int endidx) {
+    assert(startidx >= 0 && startidx < (int)_diffuseParticles.size());
+    assert(endidx >= 0 && endidx < (int)_diffuseParticles.size());
 
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+    std::vector<float> lifetimes;
+    lifetimes.reserve(endidx - startidx + 1);
+
+    for (int i = startidx; i <= endidx; i++) {
         lifetimes.push_back(_diffuseParticles[i].lifetime);
     }
 
     return lifetimes;
+}
+
+std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
+    return getDiffuseParticleLifetimes(0, _diffuseParticles.size() - 1);
 }
 
 void FluidSimulation::getDiffuseParticles(std::vector<DiffuseParticle> &dps) {
@@ -770,46 +809,105 @@ void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
 
 void FluidSimulation::_initializeMarkerParticlesFromSaveState(
                                         FluidSimulationSaveState &state) {
-    std::vector<vmath::vec3> positions = state.getMarkerParticlePositions();
 
-    _markerParticles.reserve(positions.size());
-    vmath::vec3 p;
-    for (unsigned int i = 0; i < positions.size(); i++) {
-        p = positions[i];
-        _markerParticles.push_back(MarkerParticle(p));
-    }
-    positions.clear();
-    positions.shrink_to_fit();
+    int n = state.getNumMarkerParticles();
+    _markerParticles.reserve(n);
 
-    std::vector<vmath::vec3> velocities = state.getMarkerParticleVelocities();
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        _markerParticles[i].velocity = velocities[i];
+    int chunksize = _loadStateReadChunkSize;
+    int numRead = 0;
+
+    std::vector<vmath::vec3> vectors;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        vectors = state.getMarkerParticlePositions(startidx, endidx);
+        for (unsigned int i = 0; i < vectors.size(); i++) {
+            _markerParticles.push_back(MarkerParticle(vectors[i]));
+        }
+
+        numRead += vectors.size();
     }
+
+    numRead = 0;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        vectors = state.getMarkerParticleVelocities(startidx, endidx);
+        for (unsigned int i = 0; i < vectors.size(); i++) {
+            _markerParticles[startidx + i].velocity = vectors[i];
+        }
+
+        numRead += vectors.size();
+    }
+
 }
 
 void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
                                         FluidSimulationSaveState &state) {
-    std::vector<vmath::vec3> positions = state.getDiffuseParticlePositions();
+    int n = state.getNumDiffuseParticles();
+    _diffuseParticles.reserve(n);
 
-    _diffuseParticles.reserve(positions.size());
-    GridIndex g;
-    for (unsigned int i = 0; i < positions.size(); i++) {
-        _diffuseParticles.push_back(DiffuseParticle());
-        _diffuseParticles[i].position = positions[i];
+    int chunksize = _loadStateReadChunkSize;
+    int numRead = 0;
+
+    std::vector<vmath::vec3> vectors;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        vectors = state.getDiffuseParticlePositions(startidx, endidx);
+        for (unsigned int i = 0; i < vectors.size(); i++) {
+            _diffuseParticles.push_back(DiffuseParticle());
+            _diffuseParticles[startidx + i].position = vectors[i];
+        }
+
+        numRead += vectors.size();
     }
-    positions.clear();
-    positions.shrink_to_fit();
 
-    std::vector<vmath::vec3> velocities = state.getDiffuseParticleVelocities();
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
-        _diffuseParticles[i].velocity = velocities[i];;
+    numRead = 0;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        vectors = state.getDiffuseParticleVelocities(startidx, endidx);
+        for (unsigned int i = 0; i < vectors.size(); i++) {
+            _diffuseParticles[startidx + i].velocity = vectors[i];
+        }
+
+        numRead += vectors.size();
     }
-    velocities.clear();
-    velocities.shrink_to_fit();
+    vectors.clear();
+    vectors.shrink_to_fit();
 
-    std::vector<float> lifetimes = state.getDiffuseParticleLifetimes();
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
-        _diffuseParticles[i].lifetime = lifetimes[i];
+    numRead = 0;
+    std::vector<float> lifetimes;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        lifetimes = state.getDiffuseParticleLifetimes(startidx, endidx);
+        for (unsigned int i = 0; i < lifetimes.size(); i++) {
+            _diffuseParticles[startidx + i].lifetime = lifetimes[i];
+        }
+
+        numRead += lifetimes.size();
     }
 
     _isDiffuseParticleTypesInitialized = false;
@@ -825,11 +923,24 @@ void FluidSimulation::_initializeDiffuseParticleTypes() {
 }
 
 void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveState &state) {
-    std::vector<GridIndex> indices = state.getSolidCellIndices();
-    GridIndex g;
-    for (unsigned int i = 0; i < indices.size(); i++) {
-        g = indices[i];
-        addSolidCell(g.i, g.j, g.k);
+    int n = state.getNumSolidCells();
+    int chunksize = _loadStateReadChunkSize;
+    int numRead = 0;
+
+    std::vector<GridIndex> indices;
+    while (numRead < n) {
+        int startidx = numRead;
+        int endidx = numRead + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        indices = state.getSolidCells(startidx, endidx);
+        for (unsigned int i = 0; i < indices.size(); i++) {
+            addSolidCell(indices[i]);
+        }
+
+        numRead += indices.size();
     }
 }
 

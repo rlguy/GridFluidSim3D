@@ -26,6 +26,9 @@ FluidSimulationSaveState::FluidSimulationSaveState() {
 
 
 FluidSimulationSaveState::~FluidSimulationSaveState() {
+    if (_loadState.is_open()) {
+        _loadState.close();
+    }
 }
 
 void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *_fluidsim) {
@@ -35,6 +38,8 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     erasefile.close();
 
     std::ofstream state(filename.c_str(), std::ios::out | std::ios::binary);
+
+    assert(state.is_open());
 
     int i, j, k;
     _fluidsim->getGridDimensions(&i, &j, &k);
@@ -81,115 +86,242 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     _writeBinaryDiffuseParticleLifetimes(_fluidsim, &state);
 
     // ints: solid cell indicies in form [i1, j1, k1, i2, j2, k2, ...]
-    _writeSolidCellIndices(_fluidsim, &state);
+    _writeBinarySolidCellIndices(_fluidsim, &state);
 
     state.close();
 }
 
 bool FluidSimulationSaveState::loadState(std::string filename) {
-    _stateData = LoadStateData();
 
-    std::ifstream state(filename.c_str(), std::ios::in | std::ios::binary);
+    _loadState.open(filename.c_str(), std::ios::in | std::ios::binary);
+    
+    if (!_loadState.is_open()) {
+        return false;
+    }
 
-    int numMarkerParticles, numDiffuseParticles, numSolidCellIndices;
-
-    bool success = _readInt(&_stateData.i, &state) &&
-                   _readInt(&_stateData.j, &state) &&
-                   _readInt(&_stateData.k, &state) &&
-                   _readDouble(&_stateData.dx, &state) &&
-                   _readInt(&numMarkerParticles, &state) &&
-                   _readInt(&numDiffuseParticles, &state) &&
-                   _readInt(&_stateData.currentFrame, &state) &&
-                   _readInt(&numSolidCellIndices, &state);
+    bool success = _readInt(&_isize, &_loadState) &&
+                   _readInt(&_jsize, &_loadState) &&
+                   _readInt(&_ksize, &_loadState) &&
+                   _readDouble(&_dx, &_loadState) &&
+                   _readInt(&_numMarkerParticles, &_loadState) &&
+                   _readInt(&_numDiffuseParticles, &_loadState) &&
+                   _readInt(&_currentFrame, &_loadState) &&
+                   _readInt(&_numSolidCells, &_loadState);
 
     if (!success) {
         return false;
     }
 
-    success = _readParticlePositions(_stateData.markerParticlePositions, 
-                                     numMarkerParticles, &state);
-    if (!success) {
+    _mpPositionOffset = _loadState.tellg();
+    _mpVelocityOffset = _mpPositionOffset + _numMarkerParticles*(3*sizeof(float));
+    _dpPositionOffset = _mpVelocityOffset + _numMarkerParticles*(3*sizeof(float));
+    _dpVelocityOffset = _dpPositionOffset + _numDiffuseParticles*(3*sizeof(float));
+    _dpLifetimeOffset = _dpVelocityOffset + _numDiffuseParticles*(3*sizeof(float));
+    _solidCellOffset = _dpLifetimeOffset + _numDiffuseParticles*sizeof(float);
+    unsigned int endoff = _solidCellOffset + _numSolidCells*(3*sizeof(int));
+
+    _loadState.seekg (0, _loadState.end);
+    _oefOffset = _loadState.tellg();
+    _loadState.seekg (0, _loadState.beg);
+
+    if (endoff != _oefOffset) {
         return false;
     }
 
-    success = _readParticleVelocities(_stateData.markerParticleVelocities, 
-                                      numMarkerParticles, &state);
-    if (!success) {
-        return false;
-    }
-
-    success = _readParticlePositions(_stateData.diffuseParticlePositions, 
-                                     numDiffuseParticles, &state);
-    if (!success) {
-        return false;
-    }
-
-    success = _readParticleVelocities(_stateData.diffuseParticleVelocities, 
-                                      numDiffuseParticles, &state);
-    if (!success) {
-        return false;
-    }
-
-    success = _readParticleLifetimes(_stateData.diffuseParticleLifetimes, 
-                                     numDiffuseParticles, &state);
-    if (!success) {
-        return false;
-    }
-
-    success = _readSolidCellIndices(_stateData.solidCellIndices, numSolidCellIndices, &state);
-    if (!success) {
-        return false;
-    }
+    _currentOffset = _loadState.tellg();
 
     _isLoadStateInitialized = true;
     return true;
 }
 
+void FluidSimulationSaveState::closeState() {
+    if (_loadState.is_open()) {
+        _loadState.close();
+        _isLoadStateInitialized = false;
+    }
+}
+
 void FluidSimulationSaveState::getGridDimensions(int *i, int *j, int *k) {
     assert(_isLoadStateInitialized);
-    *i = _stateData.i;
-    *j = _stateData.j;
-    *k = _stateData.k;
+    *i = _isize;
+    *j = _jsize;
+    *k = _ksize;
 }
 
 double FluidSimulationSaveState::getCellSize() {
     assert(_isLoadStateInitialized);
-    return _stateData.dx;
+    return _dx;
 }
 
 int FluidSimulationSaveState::getCurrentFrame() {
     assert(_isLoadStateInitialized);
-    return _stateData.currentFrame;
+    return _currentFrame;
+}
+
+int FluidSimulationSaveState::getNumMarkerParticles() {
+    assert(_isLoadStateInitialized);
+    return _numMarkerParticles;
+}
+
+int FluidSimulationSaveState::getNumDiffuseParticles() {
+    assert(_isLoadStateInitialized);
+    return _numDiffuseParticles;
+}
+
+int FluidSimulationSaveState::getNumSolidCells() {
+    assert(_isLoadStateInitialized);
+    return _numSolidCells;
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions() {
-    assert(_isLoadStateInitialized);
-    return _stateData.markerParticlePositions;
+    return getMarkerParticlePositions(0, _numMarkerParticles - 1);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities() {
-    assert(_isLoadStateInitialized);
-    return _stateData.markerParticleVelocities;
+    return getMarkerParticleVelocities(0, _numMarkerParticles - 1);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions() {
-    assert(_isLoadStateInitialized);
-    return _stateData.diffuseParticlePositions;
+    return getDiffuseParticlePositions(0, _numDiffuseParticles - 1);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities() {
-    assert(_isLoadStateInitialized);
-    return _stateData.diffuseParticleVelocities;
+    return getDiffuseParticleVelocities(0, _numDiffuseParticles - 1);
 }
 
 std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes() {
-    assert(_isLoadStateInitialized);
-    return _stateData.diffuseParticleLifetimes;
+    return getDiffuseParticleLifetimes(0, _numDiffuseParticles - 1);
 }
 
-std::vector<GridIndex> FluidSimulationSaveState::getSolidCellIndices() {
+std::vector<GridIndex> FluidSimulationSaveState::getSolidCells() {
+    return getSolidCells(0, _numSolidCells - 1);
+}
+
+std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<vmath::vec3>();
+    }
+
     assert(_isLoadStateInitialized);
-    return _stateData.solidCellIndices;
+    assert(endidx >= 0 && endidx < _numMarkerParticles);
+
+    unsigned int foffset = _mpPositionOffset + startidx*(3*sizeof(float));
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<vmath::vec3> positions;
+    positions.reserve(n);
+
+    _readParticleVectors(positions, n, &_loadState);
+
+    return positions;
+}
+
+std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<vmath::vec3>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(endidx >= 0 && endidx < _numMarkerParticles);
+
+    unsigned int foffset = _mpVelocityOffset + startidx*(3*sizeof(float));
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<vmath::vec3> velocities;
+    velocities.reserve(n);
+
+    _readParticleVectors(velocities, n, &_loadState);
+
+    return velocities;
+}
+
+std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<vmath::vec3>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+
+    unsigned int foffset = _dpPositionOffset + startidx*(3*sizeof(float));
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<vmath::vec3> positions;
+    positions.reserve(n);
+
+    _readParticleVectors(positions, n, &_loadState);
+
+    return positions;
+}
+
+std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<vmath::vec3>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+
+    unsigned int foffset = _dpVelocityOffset + startidx*(3*sizeof(float));
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<vmath::vec3> velocities;
+    velocities.reserve(n);
+
+    _readParticleVectors(velocities, n, &_loadState);
+
+    return velocities;
+}
+
+std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<float>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(startidx <= endidx);
+    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+
+    unsigned int foffset = _dpLifetimeOffset + startidx*sizeof(float);
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<float> lifetimes;
+    lifetimes.reserve(n);
+
+    _readParticleLifetimes(lifetimes, n, &_loadState);
+
+    return lifetimes;
+}
+
+std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
+                                                        int startidx, int endidx) {
+    if (startidx > endidx) {
+        return std::vector<GridIndex>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(endidx >= 0 && endidx < _numSolidCells);
+
+    unsigned int foffset = _solidCellOffset + startidx*(3*sizeof(float));
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<GridIndex> cells;
+    cells.reserve(n);
+
+    _readSolidCells(cells, n, &_loadState);
+
+    return cells;
 }
 
 bool FluidSimulationSaveState::isLoadStateInitialized() {
@@ -198,86 +330,107 @@ bool FluidSimulationSaveState::isLoadStateInitialized() {
 
 void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(FluidSimulation *_fluidsim,
                                                                    std::ofstream *state) {
-    std::vector<vmath::vec3> mps = _fluidsim->getMarkerParticlePositions();
-    _writeBinaryVector3f(mps, state);
+    int n = _fluidsim->getNumMarkerParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
+    std::vector<vmath::vec3> mps;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        mps = _fluidsim->getMarkerParticlePositions(startidx, endidx);
+        _writeBinaryVector3f(mps, state);
+
+        numWritten += chunksize;
+    }
 }
 
 void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
                                                                     std::ofstream *state) {
-    std::vector<vmath::vec3> mvs = _fluidsim->getMarkerParticleVelocities();
-    _writeBinaryVector3f(mvs, state);
+    int n = _fluidsim->getNumMarkerParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
+    std::vector<vmath::vec3> mvs;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        std::vector<vmath::vec3> mvs = _fluidsim->getMarkerParticleVelocities(startidx, endidx);
+        _writeBinaryVector3f(mvs, state);
+
+        numWritten += chunksize;
+    }
 }
 
 void FluidSimulationSaveState::_writeBinaryDiffuseParticlePositions(FluidSimulation *_fluidsim,
                                                                     std::ofstream *state) {
-    std::vector<vmath::vec3> dps = _fluidsim->getDiffuseParticlePositions();
-    _writeBinaryVector3f(dps, state);
+    int n = _fluidsim->getNumDiffuseParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
+    std::vector<vmath::vec3> dps;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        std::vector<vmath::vec3> dps = _fluidsim->getDiffuseParticlePositions(startidx, endidx);
+        _writeBinaryVector3f(dps, state);
+
+        numWritten += chunksize;
+    }
 }
 
 void FluidSimulationSaveState::_writeBinaryDiffuseParticleVelocities(FluidSimulation *_fluidsim,
                                                                      std::ofstream *state) {
-    std::vector<vmath::vec3> dvs = _fluidsim->getDiffuseParticleVelocities();
-    _writeBinaryVector3f(dvs, state);
+    int n = _fluidsim->getNumDiffuseParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
+    std::vector<vmath::vec3> dvs;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        std::vector<vmath::vec3> dvs = _fluidsim->getDiffuseParticleVelocities(startidx, endidx);
+        _writeBinaryVector3f(dvs, state);
+
+        numWritten += chunksize;
+    }
 }
 
 void FluidSimulationSaveState::_writeBinaryDiffuseParticleLifetimes(FluidSimulation *_fluidsim,
                                                                     std::ofstream *state) {
-    std::vector<float> dfs = _fluidsim->getDiffuseParticleLifetimes();
-    _writeBinaryVectorf(dfs, state);
-}
+    int n = _fluidsim->getNumDiffuseParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
 
-void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state) {
-    int binsize = 3 * vectors.size() * sizeof(float);
-    char *storage = new char[binsize];
+    std::vector<float> dfs;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
 
-    int fsize = (int)sizeof(float);
-    int offset = 0;
-    char position[3*sizeof(float)];
+        std::vector<float> dfs = _fluidsim->getDiffuseParticleLifetimes(startidx, endidx);
+        _writeBinaryVectorf(dfs, state);
 
-    vmath::vec3 v;
-    for (unsigned int i = 0; i < vectors.size(); i++) {
-        v = vectors[i];
-
-        memcpy(position, &v.x, fsize);
-        memcpy(position + fsize, &v.y, fsize);
-        memcpy(position + 2*fsize, &v.z, fsize);
-        memcpy(storage + offset, position, 3*fsize);
-
-        offset += 3*fsize;
+        numWritten += chunksize;
     }
-
-    state->write(storage, binsize);
-    delete[] storage;
-}
-
-void FluidSimulationSaveState::_writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state) {
-    int binsize = floats.size() * sizeof(float);
-    char *storage = new char[binsize];
-
-    int fsize = (int)sizeof(float);
-    int offset = 0;
-
-    float f;
-    for (unsigned int i = 0; i < floats.size(); i++) {
-        f = floats[i];
-        memcpy(storage + offset, &f, fsize);
-        offset += fsize;
-    }
-
-    state->write(storage, binsize);
-    delete[] storage;
-}
-
-void FluidSimulationSaveState::_writeInt(int *value, std::ofstream *state) {
-    char bin[sizeof(int)];
-    memcpy(bin, value, sizeof(int));
-    state->write(bin, sizeof(int));
-}
-
-void FluidSimulationSaveState::_writeDouble(double *value, std::ofstream *state) {
-    char bin[sizeof(double)];
-    memcpy(bin, value, sizeof(double));
-    state->write(bin, sizeof(double));
 }
 
 int FluidSimulationSaveState::_getNumSolidCells(FluidSimulation *sim) {
@@ -295,40 +448,80 @@ int FluidSimulationSaveState::_getNumSolidCells(FluidSimulation *sim) {
     return count;
 }
 
-void FluidSimulationSaveState::_writeSolidCellIndices(FluidSimulation *sim, 
-                                                      std::ofstream *state) {
+void FluidSimulationSaveState::_writeBinarySolidCellIndices(FluidSimulation *_fluidsim, 
+                                                            std::ofstream *state) {
+
+    int n = _getNumSolidCells(_fluidsim);
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
     std::vector<GridIndex> indices;
-    for (int k = 0; k < _depth; k++) {
-        for (int j = 0; j < _height; j++) {
-            for (int i = 0; i < _width; i++) {
-                if (sim->getMaterial(i, j, k) == Material::solid) {
-                    indices.push_back(GridIndex(i, j, k));
+    indices.reserve(chunksize);
+    GridIndex startIndex(0, 0, 0);
+    while (numWritten < n) {
+        indices.clear();
+
+        for (int k = startIndex.k; k < _depth; k++) {
+            for (int j = startIndex.j; j < _height; j++) {
+                for (int i = startIndex.i; i < _width; i++) {
+
+                    if ((int)indices.size() == chunksize) {
+                        startIndex = GridIndex(i, j, k);
+                        goto endLoop;
+                    }
+
+                    if (_fluidsim->getMaterial(i, j, k) == Material::solid) {
+                        indices.push_back(GridIndex(i, j, k));
+                    }
+
                 }
+                startIndex.i = 0;
             }
+            startIndex.j = 0;
         }
+        endLoop:
+
+        _writeBinaryVectorGridIndex(indices, state);
+        numWritten += indices.size();
     }
 
-    int *data = new int[3*indices.size()];
-    GridIndex g;
-    for (unsigned int i = 0; i < indices.size(); i++) {
-        g = indices[i];
-        data[3*i] = g.i;
-        data[3*i + 1] = g.j;
-        data[3*i + 2] = g.k;
-    }
+}
 
+void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state) {
+    int binsize = 3 * vectors.size() * sizeof(float);
+    state->write((char *)&vectors[0], binsize);
+}
+
+void FluidSimulationSaveState::_writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state) {
+    int binsize = floats.size() * sizeof(float);
+    state->write((char *)&floats[0], binsize);
+}
+
+void FluidSimulationSaveState::_writeBinaryVectorGridIndex(std::vector<GridIndex> &indices, 
+                                                           std::ofstream *state) {
     int binsize = 3*indices.size()*sizeof(int);
-    char *storage = new char[binsize];
-    memcpy(storage, data, binsize);
-    delete[] data;
-    state->write(storage, binsize);
+    state->write((char *)&indices[0], binsize);
+}
 
-    delete[] storage;
+void FluidSimulationSaveState::_writeInt(int *value, std::ofstream *state) {
+    state->write((char *)value, sizeof(int));
+}
+
+void FluidSimulationSaveState::_writeDouble(double *value, std::ofstream *state) {
+    state->write((char *)value, sizeof(double));
+}
+
+void FluidSimulationSaveState::_setLoadStateFileOffset(unsigned int foffset) {
+    if (foffset != _currentOffset) {
+        _loadState.seekg(foffset);
+        _currentOffset = _loadState.tellg();
+    }
 }
 
 bool FluidSimulationSaveState::_readInt(int *value, std::ifstream *state) {
     char bin[sizeof(int)];
     state->read(bin, sizeof(int));
+    _currentOffset = _loadState.tellg();
 
     if (!state->good()) {
         return false;
@@ -342,6 +535,7 @@ bool FluidSimulationSaveState::_readInt(int *value, std::ifstream *state) {
 bool FluidSimulationSaveState::_readDouble(double *value, std::ifstream *state) {
     char bin[sizeof(double)];
     state->read(bin, sizeof(double));
+    _currentOffset = _loadState.tellg();
 
     if (!state->good()) {
         return false;
@@ -352,58 +546,23 @@ bool FluidSimulationSaveState::_readDouble(double *value, std::ifstream *state) 
     return true;
 }
 
-bool FluidSimulationSaveState::_readParticlePositions(std::vector<vmath::vec3> &particles, 
-                                                            int numParticles,
-                                                            std::ifstream *state) {
+bool FluidSimulationSaveState::_readParticleVectors(std::vector<vmath::vec3> &vectors, 
+                                                    int numParticles,
+                                                    std::ifstream *state) {
     int binsize = 3*numParticles*sizeof(float);
     char *bin = new char[binsize];
 
     state->read(bin, binsize);
+    _currentOffset = _loadState.tellg();
 
     if (!state->good()) {
         delete[] bin;
         return false;
     }
 
-    float *positions = new float[3*numParticles];
-    memcpy(positions, bin, binsize);
+    vmath::vec3 *positions = (vmath::vec3 *)bin;
+    vectors.assign(positions, positions + numParticles);
     delete[] bin;
-    for (int i = 0; i < 3*numParticles; i += 3) {
-        float x = positions[i];
-        float y = positions[i + 1];
-        float z = positions[i + 2];
-
-        particles.push_back(vmath::vec3(x, y, z));
-    }
-    delete[] positions;
-
-    return true;
-}
-
-bool FluidSimulationSaveState::_readParticleVelocities(std::vector<vmath::vec3> &pvs, 
-                                                             int numParticles,
-                                                             std::ifstream *state) {
-    int binsize = 3*numParticles*sizeof(float);
-    char *bin = new char[binsize];
-
-    state->read(bin, binsize);
-
-    if (!state->good()) {
-        delete[] bin;
-        return false;
-    }
-
-    float *velocities = new float[3*numParticles];
-    memcpy(velocities, bin, binsize);
-    delete[] bin;
-    for (int i = 0; i < 3*numParticles; i += 3) {
-        float x = velocities[i];
-        float y = velocities[i + 1];
-        float z = velocities[i + 2];
-
-        pvs.push_back(vmath::vec3(x, y, z));
-    }
-    delete[] velocities;
 
     return true;
 }
@@ -415,48 +574,38 @@ bool FluidSimulationSaveState::_readParticleLifetimes(std::vector<float> &pls,
     char *bin = new char[binsize];
 
     state->read(bin, binsize);
+    _currentOffset = _loadState.tellg();
 
     if (!state->good()) {
         delete[] bin;
         return false;
     }
 
-    float *lifetimes = new float[numParticles];
-    memcpy(lifetimes, bin, binsize);
+    float *lifetimes = (float *)bin;
+    pls.assign(lifetimes, lifetimes + numParticles);
     delete[] bin;
-    for (int i = 0; i < numParticles; i++) {
-        pls.push_back(lifetimes[i]);
-    }
-    delete[] lifetimes;
 
     return true;
 }
 
-bool FluidSimulationSaveState::_readSolidCellIndices(std::vector<GridIndex> &indices, 
-                                                     int numIndices,
-                                                     std::ifstream *state) {
+bool FluidSimulationSaveState::_readSolidCells(std::vector<GridIndex> &indices, 
+                                               int numIndices,
+                                               std::ifstream *state) {
 
     int binsize = 3*numIndices*sizeof(int);
     char *bin = new char[binsize];
 
     state->read(bin, binsize);
+    _currentOffset = _loadState.tellg();
 
     if (!state->good()) {
         delete[] bin;
         return false;
     }
 
-    int *data = new int[3*numIndices];
-    memcpy(data, bin, binsize);
+    GridIndex *data = (GridIndex *)bin;
+    indices.assign(data, data + numIndices);
     delete[] bin;
-    for (int idx = 0; idx < 3*numIndices; idx += 3) {
-        int i = data[idx];
-        int j = data[idx + 1];
-        int k = data[idx + 2];
-
-        indices.push_back(GridIndex(i, j, k));
-    }
-    delete[] data;
 
     return true;
 }

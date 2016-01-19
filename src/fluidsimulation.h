@@ -143,6 +143,7 @@ public:
     void removeFluidSources();
 
     void addSolidCell(int i, int j, int k);
+    void addSolidCell(GridIndex g);
     void addSolidCells(std::vector<vmath::vec3> indices);
     void removeSolidCell(int i, int j, int k);
     void removeSolidCells(std::vector<vmath::vec3> indices);
@@ -154,12 +155,17 @@ public:
 
     unsigned int getNumMarkerParticles();
     std::vector<vmath::vec3> getMarkerParticlePositions();
+    std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
     std::vector<vmath::vec3> getMarkerParticleVelocities();
+    std::vector<vmath::vec3> getMarkerParticleVelocities(int startidx, int endidx);
     unsigned int getNumDiffuseParticles();
     void getDiffuseParticles(std::vector<DiffuseParticle> &dps);
     std::vector<vmath::vec3> getDiffuseParticlePositions();
+    std::vector<vmath::vec3> getDiffuseParticlePositions(int startidx, int endidx);
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
+    std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
     std::vector<float> getDiffuseParticleLifetimes();
+    std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
     Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
     LevelSet* getLevelSet();
@@ -529,6 +535,7 @@ private:
     double _simulationTime = 0;
     double _realTime = 0;
     bool _isDiffuseParticleTypesInitialized = true;
+    int _loadStateReadChunkSize = 50000;
 
     int _isize = 0;
     int _jsize = 0;
