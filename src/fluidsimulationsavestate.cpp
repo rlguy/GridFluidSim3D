@@ -54,6 +54,10 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     _writeInt(&k, &state);
     _writeDouble(&dx, &state);
 
+    // next frame to be processed
+    int currentFrame = _fluidsim->getCurrentFrame();
+    _writeInt(&currentFrame, &state);
+
     // number of marker particles
     int n = _fluidsim->getNumMarkerParticles();
     _writeInt(&n, &state);
@@ -61,10 +65,6 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     // number of diffuse particles
     n = _fluidsim->getNumDiffuseParticles();
     _writeInt(&n, &state);
-
-    // next frame to be processed
-    int currentFrame = _fluidsim->getCurrentFrame();
-    _writeInt(&currentFrame, &state);
 
     // number of solid cell indices
     int numIndices = _getNumSolidCells(_fluidsim);
@@ -103,9 +103,9 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
                    _readInt(&_jsize, &_loadState) &&
                    _readInt(&_ksize, &_loadState) &&
                    _readDouble(&_dx, &_loadState) &&
+                   _readInt(&_currentFrame, &_loadState) &&
                    _readInt(&_numMarkerParticles, &_loadState) &&
                    _readInt(&_numDiffuseParticles, &_loadState) &&
-                   _readInt(&_currentFrame, &_loadState) &&
                    _readInt(&_numSolidCells, &_loadState);
 
     if (!success) {
