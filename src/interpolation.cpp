@@ -25,11 +25,11 @@ freely, subject to the following restrictions:
 +*/
 double Interpolation::tricubicInterpolate(double p[4][4][4], double x, double y, double z) {
     double arr[4];
-    arr[0] = bicubicInterpolate(p[0], y, z);
-    arr[1] = bicubicInterpolate(p[1], y, z);
-    arr[2] = bicubicInterpolate(p[2], y, z);
-    arr[3] = bicubicInterpolate(p[3], y, z);
-    return cubicInterpolate(arr, x);
+    arr[0] = bicubicInterpolate(p[0], y, x);
+    arr[1] = bicubicInterpolate(p[1], y, x);
+    arr[2] = bicubicInterpolate(p[2], y, x);
+    arr[3] = bicubicInterpolate(p[3], y, x);
+    return cubicInterpolate(arr, z);
 }
 
 double Interpolation::bicubicInterpolate(double p[4][4], double x, double y) {
