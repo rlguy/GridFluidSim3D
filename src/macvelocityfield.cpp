@@ -38,6 +38,10 @@ void MACVelocityField::_initializeVelocityGrids() {
     _u = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
     _v = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
     _w = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
+
+    _u.setOutOfRangeValue(0.0f);
+    _v.setOutOfRangeValue(0.0f);
+    _w.setOutOfRangeValue(0.0f);
 }
 
 void MACVelocityField::getGridDimensions(int *i, int *j, int *k) {
@@ -356,36 +360,34 @@ double MACVelocityField::_interpolateU(double x, double y, double z) {
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_u.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk);
+                val = U(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0.0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 double MACVelocityField::_interpolateV(double x, double y, double z) {
@@ -413,36 +415,34 @@ double MACVelocityField::_interpolateV(double x, double y, double z) {
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_v.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk);
+                val = V(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 double MACVelocityField::_interpolateW(double x, double y, double z) {
@@ -470,36 +470,34 @@ double MACVelocityField::_interpolateW(double x, double y, double z) {
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_w.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk);
+                val = W(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 double MACVelocityField::_interpolateLinearU(double x, double y, double z) {
@@ -621,37 +619,35 @@ double MACVelocityField::_interpolateDeltaVelocityU(double x, double y, double z
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_u.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = U(pi + refi, pj + refj, pk + refk) - 
-                                         savedField.U(pi + refi, pj + refj, pk + refk);
+                val = U(pi + refi, pj + refj, pk + refk) - 
+                      savedField.U(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z,
@@ -680,37 +676,35 @@ double MACVelocityField::_interpolateDeltaVelocityV(double x, double y, double z
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_v.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = V(pi + refi, pj + refj, pk + refk) - 
-                                         savedField.V(pi + refi, pj + refj, pk + refk);
+                val = V(pi + refi, pj + refj, pk + refk) - 
+                      savedField.V(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z,
@@ -739,37 +733,35 @@ double MACVelocityField::_interpolateDeltaVelocityW(double x, double y, double z
     double min = std::numeric_limits<double>::infinity();
     double max = -std::numeric_limits<double>::infinity();
     double points[4][4][4];
+    float val;
     for (int pk = 0; pk < 4; pk++) {
         for (int pj = 0; pj < 4; pj++) {
             for (int pi = 0; pi < 4; pi++) {
-                if (_w.isIndexInRange(pi + refi, pj + refj, pk + refk)) {
-                    points[pi][pj][pk] = W(pi + refi, pj + refj, pk + refk) - 
-                                         savedField.W(pi + refi, pj + refj, pk + refk);
+                val = W(pi + refi, pj + refj, pk + refk) - 
+                      savedField.W(pi + refi, pj + refj, pk + refk);
+                points[pk][pj][pi] = val;
 
-                    if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
-                        continue;
-                    }
+                if (pi >= 1 && pj >= 1 && pk >= 1 && pi <= 2 && pj <= 2 && pk <= 2) {
+                    continue;
+                }
 
-                    if (points[pi][pj][pk] < min) {
-                        min = points[pi][pj][pk];
-                    } else if (points[pi][pj][pk] > max) {
-                        max = points[pi][pj][pk];
-                    }
-                } else {
-                    points[pi][pj][pk] = 0;
+                if (val < min) {
+                    min = val;
+                } else if (val > max) {
+                    max = val;
                 }
             }
         }
     }
 
-    double val = Interpolation::tricubicInterpolate(points, ix, iy, iz);
-    if (val < min) {
-        val = min;
-    } else if (val > max) {
-        val = max;
+    double v = Interpolation::tricubicInterpolate(points, ix, iy, iz);
+    if (v < min) {
+        v = min;
+    } else if (v > max) {
+        v = max;
     }
 
-    return val;
+    return v;
 }
 
 
