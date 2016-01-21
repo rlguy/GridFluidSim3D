@@ -74,6 +74,7 @@ public:
         width = obj.width;
         height = obj.height;
         depth = obj.depth;
+        _numElements = obj._numElements;
 
         _initializeGrid();
 
@@ -99,6 +100,7 @@ public:
         width = rhs.width;
         height = rhs.height;
         depth = rhs.depth;
+        _numElements = rhs._numElements;
 
         _initializeGrid();
 
