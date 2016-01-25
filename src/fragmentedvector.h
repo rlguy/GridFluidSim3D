@@ -148,6 +148,70 @@ public:
 		return _nodes[nodeIdx][itemIdx];
 	}
 
+	void sort() {
+		sort(_defaultCompare);
+	}
+
+	//  This quicksort function is adapted from a public-domain C implementation 
+	//  by Darel Rex Finley.
+	//
+	//  http://alienryderflex.com/quicksort/
+	void sort(bool (*compare)(const T&, const T&)) {
+
+		#define  MAX_LEVELS  300
+
+		int elements = size();
+		T piv;
+		int beg[MAX_LEVELS];
+		int end[MAX_LEVELS];
+		int i = 0;
+		int L;
+		int R;
+		int swap;
+
+		beg[0] = 0; 
+		end[0] = elements;
+
+		while (i >= 0) {
+			L = beg[i]; 
+			R = end[i] - 1;
+
+			if (L<R) {
+				piv = (*this)[L];
+				while (L < R) {
+				    while (!compare((*this)[R], piv) && L < R) {
+				    	R--;
+				    }
+
+				    if (L < R) { 
+				    	(*this)[L++] = (*this)[R];
+				    }
+
+
+				    while (compare((*this)[L], piv) && L < R) {
+				    	L++; 
+				    }
+
+				    if (L < R) {
+				    	(*this)[R--] = (*this)[L]; 
+				    }
+				}
+
+				(*this)[L] = piv; 
+				beg[i + 1] = L + 1; 
+				end[i + 1] = end[i]; 
+				end[i++] = L;
+
+				if (end[i] - beg[i] > end[i - 1] - beg[i - 1]) {
+				    swap = beg[i]; beg[i] = beg[i - 1]; beg[i - 1] = swap;
+				    swap = end[i]; end[i] = end[i - 1]; end[i - 1] = swap; 
+				}
+			} else {
+			  	i--; 
+			}
+		}
+	}
+
 private:
 
 	class VectorNode 
@@ -235,6 +299,10 @@ private:
 
 	inline bool _isCurrentNodeFull() {
 		return _currentNodeIndex == -1 || _nodes[_currentNodeIndex].isFull();
+	}
+
+	inline static bool _defaultCompare(const T &p1, const T &p2) {
+		return p1 < p2;
 	}
 
 	std::vector<VectorNode> _nodes;
