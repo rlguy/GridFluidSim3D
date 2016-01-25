@@ -45,6 +45,10 @@ AABB::AABB(vmath::vec3 p1, vmath::vec3 p2) {
 }
 
 AABB::AABB(std::vector<vmath::vec3> &points) {
+    if (points.size() == 0) {
+        return;
+    }
+
     double minx = points[0].x;
     double miny = points[0].y;
     double minz = points[0].z;
@@ -154,6 +158,44 @@ bool AABB::isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2) {
     }
 
     return true;
+}
+
+AABB AABB::getIntersection(AABB bbox) {
+    vmath::vec3 minp1 = getMinPoint();
+    vmath::vec3 minp2 = bbox.getMinPoint();
+    vmath::vec3 maxp1 = getMaxPoint();
+    vmath::vec3 maxp2 = bbox.getMaxPoint();
+
+    if (minp1.x > maxp2.x || minp1.y > maxp2.y || minp1.z > maxp2.z) {
+        return AABB();
+    }
+
+    double interminx = fmax(minp1.x, minp2.x);
+    double interminy = fmax(minp1.y, minp2.y);
+    double interminz = fmax(minp1.z, minp2.z);
+    double intermaxx = fmin(maxp1.x, maxp2.x);
+    double intermaxy = fmin(maxp1.y, maxp2.y);
+    double intermaxz = fmin(maxp1.z, maxp2.z);
+
+    return AABB(vmath::vec3(interminx, interminy, interminz), 
+                vmath::vec3(intermaxx, intermaxy, intermaxz));
+}
+
+AABB AABB::getUnion(AABB bbox) {
+    vmath::vec3 minp1 = getMinPoint();
+    vmath::vec3 minp2 = bbox.getMinPoint();
+    vmath::vec3 maxp1 = getMaxPoint();
+    vmath::vec3 maxp2 = bbox.getMaxPoint();
+
+    double unionminx = fmin(minp1.x, minp2.x);
+    double unionminy = fmin(minp1.y, minp2.y);
+    double unionminz = fmin(minp1.z, minp2.z);
+    double unionmaxx = fmax(maxp1.x, maxp2.x);
+    double unionmaxy = fmax(maxp1.y, maxp2.y);
+    double unionmaxz = fmax(maxp1.z, maxp2.z);
+
+    return AABB(vmath::vec3(unionminx, unionminy, unionminz), 
+                vmath::vec3(unionmaxx, unionmaxy, unionmaxz));
 }
 
 void AABB::_findminmax(double x0, double x1, double x2, double *min, double *max) {

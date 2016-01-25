@@ -43,6 +43,8 @@ public:
     bool isPointInside(vmath::vec3 p);
     bool isOverlappingTriangle(Triangle t, std::vector<vmath::vec3> &vertices);
     bool isLineIntersecting(vmath::vec3 p1, vmath::vec3 p2);
+    AABB getIntersection(AABB bbox);
+    AABB getUnion(AABB bbox);
 
     vmath::vec3 getMinPoint();
     vmath::vec3 getMaxPoint();

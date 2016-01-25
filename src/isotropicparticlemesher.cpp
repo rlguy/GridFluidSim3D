@@ -114,10 +114,8 @@ TriangleMesh IsotropicParticleMesher::_polygonizeSlices(FragmentedVector<MarkerP
 
 		vmath::vec3 offset = _getSliceGridPositionOffset(startidx, endidx);
 		sliceMesh.translate(offset);
-		mesh.append(sliceMesh);
+		mesh.join(sliceMesh);
 	}
-
-	mesh.removeDuplicateVertices(_isize, _jsize, _ksize, _dx);
 
 	return mesh;
 }

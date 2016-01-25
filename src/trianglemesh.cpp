@@ -1086,6 +1086,12 @@ void TriangleMesh::removeExtraneousVertices() {
     std::vector<int> indexTranslationTable = std::vector<int>(vertices.size(), -1);
     std::vector<vmath::vec3> newVertexList;
     std::vector<vmath::vec3> newVertexColorList;
+
+    newVertexList.reserve(vertices.size() - unusedCount);
+    if (hasVertexColors) {
+        newVertexColorList.reserve(vertices.size() - unusedCount);
+    }
+
     int vidx = 0;
     for (unsigned int i = 0; i < unusedVertices.size(); i++) {
         if (!unusedVertices[i]) {
@@ -1098,6 +1104,8 @@ void TriangleMesh::removeExtraneousVertices() {
             }
         }
     }
+    newVertexList.shrink_to_fit();
+    newVertexColorList.shrink_to_fit();
 
     vertices = newVertexList;
     if (hasVertexColors) {
@@ -1213,6 +1221,85 @@ void TriangleMesh::append(TriangleMesh &mesh) {
     }
 }
 
+void TriangleMesh::join(TriangleMesh &mesh) {
+    double tol = 10e-5;
+    join(mesh, tol);
+}
+
+void TriangleMesh::join(TriangleMesh &mesh, double tolerance) {
+    if (mesh.vertices.size() == 0) {
+        return;
+    }
+
+    if (vertices.size() == 0) {
+        append(mesh);
+        return;
+    }
+
+    AABB bbox = _getMeshVertexIntersectionAABB(vertices, mesh.vertices, tolerance);
+
+    unsigned int indexOffset = vertices.size();
+    append(mesh);
+
+    std::vector<int> verts1;
+    for (unsigned int i = 0; i < indexOffset; i++) {
+        if (bbox.isPointInside(vertices[i])) {
+            verts1.push_back(i);
+        }
+    }
+
+    std::vector<int> verts2;
+    for (unsigned int i = indexOffset; i < vertices.size(); i++) {
+        if (bbox.isPointInside(vertices[i])) {
+            verts2.push_back(i);
+        }
+    }
+
+    std::vector<std::pair<int, int> > vertexPairs;
+    _findDuplicateVertexPairs(verts1, verts2, bbox, tolerance, vertexPairs);
+
+    std::vector<int> indexTable;
+    indexTable.reserve(vertices.size());
+    for (unsigned int i = 0; i < vertices.size(); i++) {
+        indexTable.push_back(i);
+    }
+
+    for (unsigned int i = 0; i < vertexPairs.size(); i++) {
+        indexTable[vertexPairs[i].second] = vertexPairs[i].first;
+    }
+
+    Triangle t;
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        t = triangles[i];
+        t.tri[0] = indexTable[t.tri[0]];
+        t.tri[1] = indexTable[t.tri[1]];
+        t.tri[2] = indexTable[t.tri[2]];
+
+        if (t.tri[0] == t.tri[1] || t.tri[1] == t.tri[2] || t.tri[2] == t.tri[0]) {
+            // Don't collapse triangles
+            continue;
+        }
+
+        triangles[i] = t;
+    }
+
+    removeExtraneousVertices();
+}
+
+AABB TriangleMesh::_getMeshVertexIntersectionAABB(std::vector<vmath::vec3> verts1,
+                                                  std::vector<vmath::vec3> verts2, 
+                                                  double tolerance) {
+    AABB bbox1(verts1);
+    AABB bbox2(verts2);
+
+    bbox1.expand(2.0*tolerance);
+    bbox2.expand(2.0*tolerance);
+
+    AABB inter = bbox1.getIntersection(bbox2);
+
+    return inter;
+}
+
 bool sortVertexPairByFirstIndex(const std::pair<int, int> &a,
                                 const std::pair<int, int> &b) { 
     return a.first < b.first;
@@ -1270,6 +1357,64 @@ void TriangleMesh::_findDuplicateVertexPairs(int i, int j, int k, double dx,
     }
 
     std::sort(vertexPairs.begin(), vertexPairs.end(), sortVertexPairByFirstIndex);
+}
+
+// matches vertex pairs between verts1 and verts2
+// AABB bbox bounds verts1 and verts2
+void TriangleMesh::_findDuplicateVertexPairs(std::vector<int> &verts1, 
+                                             std::vector<int> &verts2, 
+                                             AABB bbox,
+                                             double tolerance, 
+                                             std::vector<std::pair<int, int> > &vertexPairs) {
+
+    double dx = 0.0625;
+    int isize = (int)ceil(bbox.width / dx);
+    int jsize = (int)ceil(bbox.height / dx);
+    int ksize = (int)ceil(bbox.depth / dx);
+
+    vmath::vec3 offset = bbox.position;
+    std::vector<vmath::vec3> gridpoints;
+    gridpoints.reserve(verts2.size());
+    for (unsigned int i = 0; i < verts2.size(); i++) {
+        gridpoints.push_back(vertices[verts2[i]] - offset);
+    }
+
+    SpatialPointGrid grid(isize, jsize, ksize, dx);
+    grid.insert(gridpoints);
+
+    double eps = tolerance;
+    std::vector<GridPointReference> query;
+    for (unsigned int i = 0; i < verts1.size(); i++) {
+
+        vmath::vec3 v1 = vertices[verts1[i]] - offset;
+        query.clear();
+        grid.queryPointReferencesInsideSphere(v1, eps, query);
+
+        if (query.size() == 0) {
+            continue;
+        }
+
+        GridPointReference closestRef;
+        if (query.size() == 1) {
+            closestRef = query[0];
+        } else {
+            double mindist = std::numeric_limits<double>::infinity();
+
+            for (unsigned int idx = 0; idx < query.size(); idx++) {
+                vmath::vec3 v = vertices[i] - vertices[query[idx].id];
+                double distsq = vmath::lengthsq(v);
+                if (distsq < mindist) {
+                    mindist = distsq;
+                    closestRef = query[idx];
+                }
+            }
+        }
+
+        int pair1 = verts1[i];
+        int pair2 = verts2[closestRef.id];
+
+        vertexPairs.push_back(std::pair<int, int>(pair1, pair2));
+    }
 }
 
 void TriangleMesh::removeDuplicateVertices(int i, int j, int k, double dx) {

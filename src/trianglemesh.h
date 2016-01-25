@@ -88,6 +88,8 @@ public:
     void removeExtraneousVertices();
     void translate(vmath::vec3 trans);
     void append(TriangleMesh &mesh);
+    void join(TriangleMesh &mesh);
+    void join(TriangleMesh &mesh, double tolerance);
     void removeDuplicateVertices(int i, int j, int k, double dx);
 
     void setGridDimensions(int i, int j, int k, double dx) {
@@ -124,7 +126,15 @@ private:
                                     std::vector<int> &polyhedron);
     double _getPolyhedronVolume(std::vector<int> &polyhedron);
     double _getSignedTriangleVolume(unsigned int tidx);
+    AABB _getMeshVertexIntersectionAABB(std::vector<vmath::vec3> verts1,
+                                        std::vector<vmath::vec3> verts2, 
+                                        double tolerance);
     void _findDuplicateVertexPairs(int i, int j, int k, double dx, 
+                                   std::vector<std::pair<int, int> > &pairs);
+    void _findDuplicateVertexPairs(std::vector<int> &verts1, 
+                                   std::vector<int> &verts2, 
+                                   AABB bbox,
+                                   double tolerance, 
                                    std::vector<std::pair<int, int> > &pairs);
 
     inline double _randomFloat(double min, double max) {

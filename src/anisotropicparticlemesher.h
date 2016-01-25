@@ -214,7 +214,7 @@ private:
     int _numThreads = 8;
 
     int _minAnisotropicParticleNeighbourThreshold = 6;
-    double _maxEigenvalueRatio = 4.0;
+    double _maxEigenvalueRatio = 5.5;
 
     int _isize = 0;
     int _jsize = 0;

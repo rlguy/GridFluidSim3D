@@ -62,7 +62,6 @@ TriangleMesh AnisotropicParticleMesher::meshParticles(FragmentedVector<MarkerPar
     _filterHighDensityParticles(particles, filteredParticles);
 
     _initializeSurfaceParticles(filteredParticles, levelset);
-    _smoothSurfaceParticlePositions();
 
     if (_numPolygonizationSlices == 1) {
         return _polygonizeAll(filteredParticles, levelset, materialGrid);
@@ -115,6 +114,7 @@ void AnisotropicParticleMesher::_initializeSurfaceParticles(FragmentedVector<vma
     _initializeSurfaceParticleSpatialGrid();
     _updateNearFarSurfaceParticleReferences(levelset);
     _updateSurfaceParticleComponentIDs();
+    _smoothSurfaceParticlePositions();
 }
 
 void AnisotropicParticleMesher::_initializeSurfaceParticleSpatialGrid() {
@@ -321,10 +321,9 @@ TriangleMesh AnisotropicParticleMesher::_polygonizeSlices(FragmentedVector<vmath
 
         vmath::vec3 offset = _getSliceGridPositionOffset(startidx, endidx);
         sliceMesh.translate(offset);
-        mesh.append(sliceMesh);
-    }
 
-    mesh.removeDuplicateVertices(_isize, _jsize, _ksize, _dx);
+        mesh.join(sliceMesh);
+    }
 
     return mesh;
 }
@@ -631,6 +630,10 @@ void AnisotropicParticleMesher::_initializeSliceProducerConsumerStacks(int start
 }
 
 void AnisotropicParticleMesher::_addAnisotropicParticlesToScalarField() {
+    if (_unprocessedAnisotropicParticleStack.size() == 0) {
+        return;
+    }
+
     double r = _particleRadius*_anisotropicParticleScale;
     _scalarField.setPointRadius(r);
 
