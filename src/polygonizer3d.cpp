@@ -396,6 +396,23 @@ int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
 }
 
 GridIndexVector Polygonizer3d::_findSurfaceCells() {
+    bool isEmpty = true;
+    for (int k = 0; k < _ksize + 1; k++) {
+        for (int j = 0; j < _jsize + 1; j++) {
+            for (int i = 0; i < _isize + 1; i++) {
+                if (_scalarField->getScalarFieldValue(i, j, k) > _surfaceThreshold) {
+                    isEmpty = false;
+                    goto endLoop;
+                }
+            }
+        }
+    }
+    endLoop:
+
+    if (isEmpty) {
+        return GridIndexVector(_isize, _jsize, _ksize);
+    }
+
     GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
