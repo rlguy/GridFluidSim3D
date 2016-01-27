@@ -1055,10 +1055,6 @@ double TriangleMesh::_getPolyhedronVolume(std::vector<int> &polyhedron) {
     return fabs(sum);
 }
 
-bool compareBcomparePolyhedonByTriangleCount(const std::vector<int> p1, std::vector<int> p2) {
-    return p1.size() < p2.size();
-}
-
 void TriangleMesh::removeExtraneousVertices() {
 
     std::vector<bool> unusedVertices = std::vector<bool>(vertices.size(), true);
