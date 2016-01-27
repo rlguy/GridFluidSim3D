@@ -104,7 +104,6 @@ public:
     vmath::vec3 evaluateVelocityAtPosition(vmath::vec3 pos);
     vmath::vec3 evaluateVelocityAtPositionLinear(double x, double y, double z);
     vmath::vec3 evaluateVelocityAtPositionLinear(vmath::vec3 pos);
-    vmath::vec3 evaluateChangeInVelocityAtPosition(vmath::vec3 pos, MACVelocityField &savedField);
 
     vmath::vec3 velocityIndexToPositionU(int i, int j, int k);
     vmath::vec3 velocityIndexToPositionV(int i, int j, int k);
@@ -127,9 +126,6 @@ private:
     double _interpolateLinearU(double x, double y, double z);
     double _interpolateLinearV(double x, double y, double z);
     double _interpolateLinearW(double x, double y, double z);
-    double _interpolateDeltaVelocityU(double x, double y, double z, MACVelocityField &savedField);
-    double _interpolateDeltaVelocityV(double x, double y, double z, MACVelocityField &savedField);
-    double _interpolateDeltaVelocityW(double x, double y, double z, MACVelocityField &savedField);
 
     void _resetExtrapolatedFluidVelocities(FluidMaterialGrid &matGrid);
     void _updateExtrapolationLayers(FluidMaterialGrid &matGrid, 
