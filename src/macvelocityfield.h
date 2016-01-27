@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 #include <time.h>
 #include <assert.h>
 
+#include "fluidmaterialgrid.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
@@ -109,6 +110,8 @@ public:
     vmath::vec3 velocityIndexToPositionV(int i, int j, int k);
     vmath::vec3 velocityIndexToPositionW(int i, int j, int k);
 
+    void extrapolateVelocityField(FluidMaterialGrid &materialGrid, int numLayers);
+
 private:
     void _initializeVelocityGrids();
 
@@ -128,6 +131,94 @@ private:
     double _interpolateDeltaVelocityV(double x, double y, double z, MACVelocityField &savedField);
     double _interpolateDeltaVelocityW(double x, double y, double z, MACVelocityField &savedField);
 
+    void _resetExtrapolatedFluidVelocities(FluidMaterialGrid &matGrid);
+    void _updateExtrapolationLayers(FluidMaterialGrid &matGrid, 
+                                    Array3d<int> &layerGrid);
+    void _updateExtrapolationLayer(int layerIndex, 
+                                   FluidMaterialGrid &matGrid,
+                                   Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndex(int idx, 
+                                             FluidMaterialGrid &matGrid,
+                                             Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexU(int idx, 
+                                              FluidMaterialGrid &matGrid,
+                                              Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexV(int idx, 
+                                              FluidMaterialGrid &matGrid,
+                                              Array3d<int> &layerGrid);
+    void _extrapolateVelocitiesForLayerIndexW(int idx, 
+                                              FluidMaterialGrid &matGrid,
+                                              Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIdx,
+                                            Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIdx,
+                                            Array3d<int> &layerGrid);
+    double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIdx,
+                                            Array3d<int> &layerGrid);
+
+    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (i == grid.width) { return grid(i - 1, j, k) == value; }
+        else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (j == grid.height) { return grid(i, j - 1, k) == value; }
+        else if (j > 0) { return grid(i, j, k) == value || grid(i, j - 1, k) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<int> &grid) {
+        if (k == grid.depth) { return grid(i, j, k - 1) == value; }
+        else if (k > 0) { return grid(i, j, k) == value || grid(i, j, k - 1) == value; }
+        else { return grid(i, j, k) == value; }
+    }
+
+    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueU(g.i, g.j, g.k, value, grid);
+    }
+    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueV(g.i, g.j, g.k, value, grid);
+    }
+    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
+        return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
+    }
+
+    inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueU(i, j, k, layer, layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueV(i, j, k, layer, layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueW(i, j, k, layer, layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexU(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueU(g, layer, layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexV(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueV(g, layer, layerGrid);
+    }
+    inline bool _isFaceBorderingLayerIndexW(GridIndex g, int layer, Array3d<int> &layerGrid) {
+        return _isFaceBorderingGridValueW(g, layer, layerGrid);
+    }
+
+    inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (i == _isize) {  return layerGrid(i - 1, j, k) >= 1.0; }
+        else if (i > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i - 1, j, k) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
+    }
+
+    inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (j == _jsize) { return layerGrid(i, j - 1, k) >= 1.0; }
+        else if (j > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j - 1, k) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
+    }
+
+    inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k, Array3d<int> &layerGrid) {
+        if (k == _ksize) { return layerGrid(i, j, k - 1) >= 1.0; }
+        else if (k > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0; }
+        else { return layerGrid(i, j, k) >= 1.0; }
+    }
+
     int _isize = 10;
     int _jsize = 10;
     int _ksize = 10;
@@ -136,6 +227,8 @@ private:
     Array3d<float> _u;
     Array3d<float> _v;
     Array3d<float> _w;
+
+    int _numExtrapolationLayers = 0;
 };
 
 #endif

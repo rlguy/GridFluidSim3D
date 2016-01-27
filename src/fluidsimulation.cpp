@@ -1487,6 +1487,7 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     ImplicitSurfaceScalarField grid = ImplicitSurfaceScalarField(field.width,
                                                                  field.height,
                                                                  field.depth, _dx);
+
     grid.enableWeightField();
     grid.setPointRadius(_dx); 
 
@@ -1680,8 +1681,8 @@ void FluidSimulation::_advectVelocityField() {
     Threading::createThread(&threads[0], &attr, startAdvectVelocityFieldUThread, (void *)this);
     Threading::createThread(&threads[1], &attr, startAdvectVelocityFieldVThread, (void *)this);
     Threading::createThread(&threads[2], &attr, startAdvectVelocityFieldWThread, (void *)this);
-
     Threading::destroyThreadAttribute(&attr);
+
     Threading::joinThreads(threads);
 }
 
@@ -1725,10 +1726,6 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
             }
         }
     }
-}
-
-vmath::vec3 FluidSimulation::_getVelocityAtPosition(vmath::vec3 p) {
-    return _MACVelocity.evaluateVelocityAtPosition(p);
 }
 
 
@@ -1933,274 +1930,10 @@ void FluidSimulation::_applyPressureToVelocityField(Array3d<float> &pressureGrid
     EXTRAPOLATE FLUID VELOCITIES
 ********************************************************************************/
 
-void FluidSimulation::_updateExtrapolationLayer(int layerIndex, Array3d<int> &layerGrid) {
-    GridIndex neighbours[6];
-    GridIndex n;
-
-    for (int k = 0; k < layerGrid.depth; k++) {
-        for (int j = 0; j < layerGrid.height; j++) {
-            for (int i = 0; i < layerGrid.width; i++) {
-                if (layerGrid(i, j, k) == layerIndex - 1 && !_materialGrid.isCellSolid(i, j, k)) {
-                    Grid3d::getNeighbourGridIndices6(i, j, k, neighbours);
-                    for (int idx = 0; idx < 6; idx++) {
-                        n = neighbours[idx];
-
-                        if (Grid3d::isGridIndexInRange(n, _isize, _jsize, _ksize) && 
-                                layerGrid(n) == -1 && !_materialGrid.isCellSolid(n)) {
-                            layerGrid.set(n, layerIndex);
-                        }
-                    }
-                }
-            }
-        }
-    }
+void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid) {
+    int numLayers = (int)ceil(_CFLConditionNumber + 2);
+    MACGrid.extrapolateVelocityField(_materialGrid, numLayers);
 }
-
-int FluidSimulation::_updateExtrapolationLayers(Array3d<int> &layerGrid) {
-
-    GridIndex idx;
-    for (unsigned int i = 0; i < _fluidCellIndices.size(); i++) {
-        idx = _fluidCellIndices[i];
-        layerGrid.set(idx, 0);
-    }
-
-    // add 2 extra layers to account for extra values needed during cubic 
-    // interpolation calculations
-    int numLayers = (int)ceil(_CFLConditionNumber) + 2;
-    for (int layer = 1; layer <= numLayers; layer++) {
-        _updateExtrapolationLayer(layer, layerGrid);
-    }
-
-    return numLayers;
-}
-
-double FluidSimulation::_getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIdx,
-                                                         Array3d<int> &layerGrid) {
-
-    // First two layers are calculate by averaging neighbours so that values exist for tricubic
-    // interpolation at the fluid boundary for layers > 2
-    /*
-    if (layerIdx > 2) {
-        vmath::vec3 pos = _MACVelocity.velocityIndexToPositionU(i, j, k);
-        vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
-        return v.x;
-    }
-    */
-
-    GridIndex n[6];
-    Grid3d::getNeighbourGridIndices6(i, j, k, n);
-
-    GridIndex c;
-    double sum = 0.0;
-    double weightsum = 0.0;
-
-    for (int idx = 0; idx < 6; idx++) {
-        c = n[idx];
-        if (_MACVelocity.isIndexInRangeU(c) && _isFaceBorderingLayerIndexU(c, layerIdx - 1, layerGrid)) {
-                sum += _MACVelocity.U(c);
-                weightsum++;
-        }
-    }
-
-    if (sum == 0.0) {
-        return 0.0;
-    }
-
-    return sum / weightsum;
-}
-
-double FluidSimulation::_getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIdx,
-                                                         Array3d<int> &layerGrid) {
-
-    /*
-    if (layerIdx > 2) {
-        vmath::vec3 pos = _MACVelocity.velocityIndexToPositionV(i, j, k);
-        vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
-        return v.y;
-    }
-    */
-
-    GridIndex n[6];
-    Grid3d::getNeighbourGridIndices6(i, j, k, n);
-
-    GridIndex c;
-    double sum = 0.0;
-    double weightsum = 0.0;
-
-    for (int idx = 0; idx < 6; idx++) {
-        c = n[idx];
-        if (_MACVelocity.isIndexInRangeV(c) && _isFaceBorderingLayerIndexV(c, layerIdx - 1, layerGrid)) {
-            sum += _MACVelocity.V(c);
-            weightsum++;
-        }
-    }
-
-    if (sum == 0.0) {
-        return 0.0;
-    }
-
-    return sum / weightsum;
-}
-
-double FluidSimulation::_getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIdx,
-                                                         Array3d<int> &layerGrid) {
-
-    /*
-    if (layerIdx > 2) {
-        vmath::vec3 pos = _MACVelocity.velocityIndexToPositionW(i, j, k);
-        vmath::vec3 v = _getVelocityAtNearestPointOnFluidSurface(pos);
-        return v.z;
-    }
-    */
-
-    GridIndex n[6];
-    Grid3d::getNeighbourGridIndices6(i, j, k, n);
-
-    GridIndex c;
-    double sum = 0.0;
-    double weightsum = 0.0;
-
-    for (int idx = 0; idx < 6; idx++) {
-        c = n[idx];
-        if (_MACVelocity.isIndexInRangeW(c) && _isFaceBorderingLayerIndexW(c, layerIdx - 1, layerGrid)) {
-            sum += _MACVelocity.W(c);
-            weightsum++;
-        }
-    }
-
-    if (sum == 0.0) {
-        return 0.0;
-    }
-
-    return sum / weightsum;
-}
-
-vmath::vec3 FluidSimulation::_getVelocityAtNearestPointOnFluidSurface(vmath::vec3 p) {
-    p = _levelset.getClosestPointOnSurface(p);
-    return _getVelocityAtPosition(p);
-}
-
-void FluidSimulation::_extrapolateVelocitiesForLayerIndexU(int idx, Array3d<int> &layerGrid) {
-    Array3d<float> tempMACVelocityU = Array3d<float>(_isize + 1, _jsize, _ksize);
-    GridIndexVector tempIndices(_isize + 1, _jsize, _ksize);
-
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                bool isExtrapolated = _isFaceBorderingLayerIndexU(i, j, k, idx, layerGrid) && 
-                                     !_isFaceBorderingLayerIndexU(i, j, k, idx-1, layerGrid) &&
-                                    (!_materialGrid.isFaceBorderingSolidU(i, j, k));
-                if (isExtrapolated) {
-                    double v = _getExtrapolatedVelocityForFaceU(i, j, k, idx, layerGrid);
-                    tempMACVelocityU.set(i, j, k, (float)v);
-                    tempIndices.push_back(i, j, k);
-                }
-            }
-        }
-    }
-
-    for (unsigned int i = 0; i < tempIndices.size(); i++) {
-        _MACVelocity.setU(tempIndices[i], tempMACVelocityU(tempIndices[i]));
-    }
-}
-
-void FluidSimulation::_extrapolateVelocitiesForLayerIndexV(int idx, Array3d<int> &layerGrid) {
-    Array3d<float> tempMACVelocityV = Array3d<float>(_isize, _jsize + 1, _ksize);
-    GridIndexVector tempIndices(_isize, _jsize + 1, _ksize);
-
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize; i++) {
-                bool isExtrapolated = _isFaceBorderingLayerIndexV(i, j, k, idx, layerGrid) && 
-                                     !_isFaceBorderingLayerIndexV(i, j, k, idx-1, layerGrid) &&
-                                    (!_materialGrid.isFaceBorderingSolidV(i, j, k));
-                if (isExtrapolated) {
-                    double v = _getExtrapolatedVelocityForFaceV(i, j, k, idx, layerGrid);
-                    tempMACVelocityV.set(i, j, k, (float)v);
-                    tempIndices.push_back(i, j, k);
-                }
-            }
-        }
-    }
-
-    for (unsigned int i = 0; i < tempIndices.size(); i++) {
-        _MACVelocity.setV(tempIndices[i], tempMACVelocityV(tempIndices[i]));
-    }
-}
-
-void FluidSimulation::_extrapolateVelocitiesForLayerIndexW(int idx, Array3d<int> &layerGrid) {
-    Array3d<float> tempMACVelocityW = Array3d<float>(_isize, _jsize, _ksize + 1);
-    GridIndexVector tempIndices(_isize, _jsize, _ksize + 1);
-
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                bool isExtrapolated = _isFaceBorderingLayerIndexW(i, j, k, idx, layerGrid) && 
-                                     !_isFaceBorderingLayerIndexW(i, j, k, idx-1, layerGrid) &&
-                                    (!_materialGrid.isFaceBorderingSolidW(i, j, k));
-                if (isExtrapolated) {
-                    double v = _getExtrapolatedVelocityForFaceW(i, j, k, idx, layerGrid);
-                    tempMACVelocityW.set(i, j, k, (float)v);
-                    tempIndices.push_back(i, j, k);
-                }
-            }
-        }
-    }
-
-    for (unsigned int i = 0; i < tempIndices.size(); i++) {
-        _MACVelocity.setW(tempIndices[i], tempMACVelocityW(tempIndices[i]));
-    }
-}
-
-void FluidSimulation::_extrapolateVelocitiesForLayerIndex(int idx, Array3d<int> &layerGrid) {
-    _extrapolateVelocitiesForLayerIndexU(idx, layerGrid);
-    _extrapolateVelocitiesForLayerIndexV(idx, layerGrid);
-    _extrapolateVelocitiesForLayerIndexW(idx, layerGrid);
-}
-
-void FluidSimulation::_resetExtrapolatedFluidVelocities() {
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize + 1; i++) {
-                if (!_materialGrid.isFaceBorderingFluidU(i, j, k)) {
-                    _MACVelocity.setU(i, j, k, 0.0);
-                }
-            }
-        }
-    }
-
-    for (int k = 0; k < _ksize; k++) {
-        for (int j = 0; j < _jsize + 1; j++) {
-            for (int i = 0; i < _isize; i++) {
-                if (!_materialGrid.isFaceBorderingFluidV(i, j, k)) {
-                    _MACVelocity.setV(i, j, k, 0.0);
-                }
-            }
-        }
-    }
-
-    for (int k = 0; k < _ksize + 1; k++) {
-        for (int j = 0; j < _jsize; j++) {
-            for (int i = 0; i < _isize; i++) {
-                if (!_materialGrid.isFaceBorderingFluidW(i, j, k)) {
-                    _MACVelocity.setW(i, j, k, 0.0);
-                }
-            }
-        }
-    }
-}
-
-void FluidSimulation::_extrapolateFluidVelocities() {
-    Array3d<int> layerGrid = Array3d<int>(_isize, _jsize, _ksize, -1);
-
-    _resetExtrapolatedFluidVelocities();
-    int numLayers = _updateExtrapolationLayers(layerGrid);
-
-    for (int i = 1; i <= numLayers; i++) {
-        _extrapolateVelocitiesForLayerIndex(i, layerGrid);
-    }
-}
-
 
 /********************************************************************************
     UPDATE DIFFUSE MATERIAL PARTICLES
@@ -2702,7 +2435,7 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
 void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx) {
     MarkerParticle p;
     vmath::vec3 vPIC, vFLIP;
-    vmath::vec3 dv;
+    vmath::vec3 vnew, vold, dv;
     for (int i = startIdx; i <= endIdx; i++) {
         p = _markerParticles[i];
 
@@ -2710,7 +2443,9 @@ void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int e
             vPIC = _MACVelocity.evaluateVelocityAtPosition(p.position);
         }
         if (_ratioPICFLIP < 1.0) {
-            dv = _MACVelocity.evaluateChangeInVelocityAtPosition(p.position, _savedVelocityField);
+            vnew = _ratioPICFLIP < 1.0 ? vPIC : _MACVelocity.evaluateVelocityAtPosition(p.position);
+            vold = _savedVelocityField.evaluateVelocityAtPosition(p.position);
+            dv = vnew - vold;
             vFLIP = p.velocity + dv;
         }
         
@@ -2744,6 +2479,10 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
     ADVANCE MARKER PARTICLES
 ********************************************************************************/
 
+vmath::vec3 FluidSimulation::_getVelocityAtPosition(vmath::vec3 p) {
+    return _MACVelocity.evaluateVelocityAtPosition(p);
+}
+
 vmath::vec3 FluidSimulation::_RK2(vmath::vec3 p0, vmath::vec3 v0, double dt) {
     vmath::vec3 k1 = v0;
     vmath::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
@@ -2766,6 +2505,7 @@ vmath::vec3 FluidSimulation::_RK4(vmath::vec3 p0, vmath::vec3 v0, double dt) {
     vmath::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
     vmath::vec3 k3 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k2);
     vmath::vec3 k4 = _getVelocityAtPosition(p0 + (float)dt*k3);
+    
     vmath::vec3 p1 = p0 + (float)(dt/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
 
     return p1;
@@ -3040,7 +2780,7 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx) {
     for (int idx = startIdx; idx <= endIdx; idx++) {
         mp = _markerParticles[idx];
 
-        vi = mp.velocity;
+        vi = _getVelocityAtPosition(mp.position);
         p = _RK4(mp.position, vi, _currentDeltaTime);
 
         if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
@@ -3075,7 +2815,7 @@ void FluidSimulation::_shuffleMarkerParticleOrder() {
     }
 }
 
-bool compareByMarkerParticlePosition(const MarkerParticle p1, MarkerParticle p2) {
+bool compareByMarkerParticlePosition(const MarkerParticle &p1, const MarkerParticle &p2) {
     if (p1.position.x != p2.position.x) { return p1.position.x < p2.position.x; }
     if (p1.position.y != p2.position.y) { return p1.position.y < p2.position.y; }
     if (p1.position.z != p2.position.z) { return p1.position.z < p2.position.z; }
@@ -3145,6 +2885,7 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
 ********************************************************************************/
 
 void FluidSimulation::_stepFluid(double dt) {
+
     _simulationTime += dt;
 
     StopWatch timer1 = StopWatch();
@@ -3176,6 +2917,7 @@ void FluidSimulation::_stepFluid(double dt) {
 
     _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
     _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
+    _logfile.log("Num Marker Particles: \t", (int)_markerParticles.size(), 4, 1);
 
     timer3.start();
     _reconstructFluidSurface();
@@ -3199,20 +2941,20 @@ void FluidSimulation::_stepFluid(double dt) {
 
     timer6.start();
     _advectVelocityField();
+    _savedVelocityField = _MACVelocity;
+    _extrapolateFluidVelocities(_savedVelocityField);
     timer6.stop();
 
     _logfile.log("Advect Velocity Field:       \t", timer6.getTime(), 4);
 
     timer7.start();
     _applyBodyForcesToVelocityField(dt);
-    
-    _savedVelocityField = _MACVelocity;
     timer7.stop();
 
     _logfile.log("Apply Body Forces:           \t", timer7.getTime(), 4);
 
-    timer8.start();
     {
+        timer8.start();
         Array3d<float> pressureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
         _updatePressureGrid(pressureGrid, dt);
         timer8.stop();
@@ -3221,13 +2963,13 @@ void FluidSimulation::_stepFluid(double dt) {
 
         timer9.start();
         _applyPressureToVelocityField(pressureGrid, dt);
-    }
-    timer9.stop();
+        timer9.stop();
 
-    _logfile.log("Apply Pressure:              \t", timer9.getTime(), 4);
+        _logfile.log("Apply Pressure:              \t", timer9.getTime(), 4);
+    }
 
     timer10.start();
-    _extrapolateFluidVelocities();
+    _extrapolateFluidVelocities(_MACVelocity);
     timer10.stop();
 
     _logfile.log("Extrapolate Fluid Velocities:\t", timer10.getTime(), 4);

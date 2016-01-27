@@ -332,22 +332,7 @@ private:
     // Extrapolate fluid velocities into surrounding air and solids so
     // that velocities can be computed when marker particles move to cells
     // outside of current fluid region
-    void _extrapolateFluidVelocities();
-    void _resetExtrapolatedFluidVelocities();
-    int _updateExtrapolationLayers(Array3d<int> &layerGrid);
-    void _updateExtrapolationLayer(int layerIndex, Array3d<int> &layerGrid);
-    void _extrapolateVelocitiesForLayerIndex(int layerIndex, Array3d<int> &layerGrid);
-    void _extrapolateVelocitiesForLayerIndexU(int layerIndex, Array3d<int> &layerGrid);
-    void _extrapolateVelocitiesForLayerIndexV(int layerIndex, Array3d<int> &layerGrid);
-    void _extrapolateVelocitiesForLayerIndexW(int layerIndex, Array3d<int> &layerGrid);
-    double _getExtrapolatedVelocityForFaceU(int i, int j, int k, int layerIndex,
-                                            Array3d<int> &layerGrid);
-    double _getExtrapolatedVelocityForFaceV(int i, int j, int k, int layerIndex,
-                                            Array3d<int> &layerGrid);
-    double _getExtrapolatedVelocityForFaceW(int i, int j, int k, int layerIndex,
-                                            Array3d<int> &layerGrid);
-    vmath::vec3 _getVelocityAtNearestPointOnFluidSurface(vmath::vec3 p);
-    vmath::vec3 _getVelocityAtPosition(vmath::vec3 p);
+    void _extrapolateFluidVelocities(MACVelocityField &MACGrid);
 
     // Calculate pressure values to satisfy incompressibility condition
     void _updatePressureGrid(Array3d<float> &pressureGrid, double dt);
@@ -404,6 +389,7 @@ private:
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
+    vmath::vec3 _getVelocityAtPosition(vmath::vec3 p);
 
     template<class T>
     void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
@@ -456,71 +442,8 @@ private:
     vmath::vec3 _RK3(vmath::vec3 p0, vmath::vec3 v0, double dt);
     vmath::vec3 _RK4(vmath::vec3 p0, vmath::vec3 v0, double dt);
 
-    inline bool _isFaceBorderingGridValueU(int i, int j, int k, int value, Array3d<int> &grid) {
-        if (i == grid.width) { return grid(i - 1, j, k) == value; }
-        else if (i > 0) { return grid(i, j, k) == value || grid(i - 1, j, k) == value; }
-        else { return grid(i, j, k) == value; }
-    }
-    inline bool _isFaceBorderingGridValueV(int i, int j, int k, int value, Array3d<int> &grid) {
-        if (j == grid.height) { return grid(i, j - 1, k) == value; }
-        else if (j > 0) { return grid(i, j, k) == value || grid(i, j - 1, k) == value; }
-        else { return grid(i, j, k) == value; }
-    }
-    inline bool _isFaceBorderingGridValueW(int i, int j, int k, int value, Array3d<int> &grid) {
-        if (k == grid.depth) { return grid(i, j, k - 1) == value; }
-        else if (k > 0) { return grid(i, j, k) == value || grid(i, j, k - 1) == value; }
-        else { return grid(i, j, k) == value; }
-    }
-
-    inline bool _isFaceBorderingGridValueU(GridIndex g, int value, Array3d<int> &grid) {
-        return _isFaceBorderingGridValueU(g.i, g.j, g.k, value, grid);
-    }
-    inline bool _isFaceBorderingGridValueV(GridIndex g, int value, Array3d<int> &grid) {
-        return _isFaceBorderingGridValueV(g.i, g.j, g.k, value, grid);
-    }
-    inline bool _isFaceBorderingGridValueW(GridIndex g, int value, Array3d<int> &grid) {
-        return _isFaceBorderingGridValueW(g.i, g.j, g.k, value, grid);
-    }
-
-    inline bool _isFaceBorderingLayerIndexU(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueU(i, j, k, layer, layerGrid);
-    }
-    inline bool _isFaceBorderingLayerIndexV(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueV(i, j, k, layer, layerGrid);
-    }
-    inline bool _isFaceBorderingLayerIndexW(int i, int j, int k, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueW(i, j, k, layer, layerGrid);
-    }
-    inline bool _isFaceBorderingLayerIndexU(GridIndex g, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueU(g, layer, layerGrid);
-    }
-    inline bool _isFaceBorderingLayerIndexV(GridIndex g, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueV(g, layer, layerGrid);
-    }
-    inline bool _isFaceBorderingLayerIndexW(GridIndex g, int layer, Array3d<int> &layerGrid) {
-        return _isFaceBorderingGridValueW(g, layer, layerGrid);
-    }
-
-    inline bool _isFaceVelocityExtrapolatedU(int i, int j, int k, Array3d<int> &layerGrid) {
-        if (i == _isize) {  return layerGrid(i - 1, j, k) >= 1.0; }
-        else if (i > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i - 1, j, k) >= 1.0; }
-        else { return layerGrid(i, j, k) >= 1.0; }
-    }
-
-    inline bool _isFaceVelocityExtrapolatedV(int i, int j, int k, Array3d<int> &layerGrid) {
-        if (j == _jsize) { return layerGrid(i, j - 1, k) >= 1.0; }
-        else if (j > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j - 1, k) >= 1.0; }
-        else { return layerGrid(i, j, k) >= 1.0; }
-    }
-
-    inline bool _isFaceVelocityExtrapolatedW(int i, int j, int k, Array3d<int> &layerGrid) {
-        if (k == _ksize) { return layerGrid(i, j, k - 1) >= 1.0; }
-        else if (k > 0) { return layerGrid(i, j, k) >= 1.0 || layerGrid(i, j, k - 1) >= 1.0; }
-        else { return layerGrid(i, j, k) >= 1.0; }
-    }
-
     inline double _randomDouble(double min, double max) {
-        return min + static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / (max - min)));
+        return min + (double)rand() / ((double)RAND_MAX / (max - min));
     }
 
     bool _isSimulationInitialized = false;
@@ -596,8 +519,8 @@ private:
     double _maxBrickIntensityAcceleration = 10.0;
     int _maxInactiveBrickFrames = 0;
 
-    double _ratioPICFLIP = 0.35f;
-    int _maxMarkerParticlesPerCell = 100;
+    double _ratioPICFLIP = 0.05f;
+    int _maxMarkerParticlesPerCell = 35;
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
