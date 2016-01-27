@@ -1647,30 +1647,18 @@ void FluidSimulation::_advectVelocityFieldW() {
     }
 }
 
-void FluidSimulation::_runAdvectVelocityFieldUThread() {
-    _advectVelocityFieldU();
-}
-
-void FluidSimulation::_runAdvectVelocityFieldVThread() {
-    _advectVelocityFieldV();
-}
-
-void FluidSimulation::_runAdvectVelocityFieldWThread() {
-    _advectVelocityFieldW();
-}
-
-void *startAdvectVelocityFieldUThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_runAdvectVelocityFieldUThread();
+void *FluidSimulation::_startAdvectVelocityFieldUThread(void *threadarg) {
+    ((FluidSimulation *)(threadarg))->_advectVelocityFieldU();
     return NULL;
 }
 
-void *startAdvectVelocityFieldVThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_runAdvectVelocityFieldVThread();
+void *FluidSimulation::_startAdvectVelocityFieldVThread(void *threadarg) {
+    ((FluidSimulation *)(threadarg))->_advectVelocityFieldV();
     return NULL;
 }
 
-void *startAdvectVelocityFieldWThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_runAdvectVelocityFieldWThread();
+void *FluidSimulation::_startAdvectVelocityFieldWThread(void *threadarg) {
+    ((FluidSimulation *)(threadarg))->_advectVelocityFieldW();
     return NULL;
 }
 
@@ -1678,9 +1666,9 @@ void FluidSimulation::_advectVelocityField() {
     pthread_attr_t attr = Threading::createJoinableThreadAttribute();
 
     std::vector<pthread_t> threads(3);
-    Threading::createThread(&threads[0], &attr, startAdvectVelocityFieldUThread, (void *)this);
-    Threading::createThread(&threads[1], &attr, startAdvectVelocityFieldVThread, (void *)this);
-    Threading::createThread(&threads[2], &attr, startAdvectVelocityFieldWThread, (void *)this);
+    Threading::createThread(&threads[0], &attr, _startAdvectVelocityFieldUThread, (void *)this);
+    Threading::createThread(&threads[1], &attr, _startAdvectVelocityFieldVThread, (void *)this);
+    Threading::createThread(&threads[2], &attr, _startAdvectVelocityFieldWThread, (void *)this);
     Threading::destroyThreadAttribute(&attr);
 
     Threading::joinThreads(threads);
@@ -2453,15 +2441,11 @@ void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int e
     }
 }
 
-void FluidSimulation::_runUpdateRangeOfMarkerParticleVelocitiesThread(int startidx, int endidx) {
-    _updateRangeOfMarkerParticleVelocities(startidx, endidx);
-}
-
-void *startUpdateRangeOfMarkerParticleVelocitiesThread(void *threadarg) {
+void *FluidSimulation::_startUpdateRangeOfMarkerParticleVelocitiesThread(void *threadarg) {
     Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
     int start = params->startIndex;
     int end = params->endIndex;
-    ((FluidSimulation *)(params->obj))->_runUpdateRangeOfMarkerParticleVelocitiesThread(start, end);
+    ((FluidSimulation *)(params->obj))->_updateRangeOfMarkerParticleVelocities(start, end);
 
     return NULL;
 }
@@ -2472,7 +2456,7 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
     Threading::splitIndexRangeWorkIntoThreads(numElements,
                                               _numUpdateMarkerParticleVelocityThreads, 
                                               (void *)this, 
-                                              startUpdateRangeOfMarkerParticleVelocitiesThread);
+                                              _startUpdateRangeOfMarkerParticleVelocitiesThread);
 }
 
 /********************************************************************************
@@ -2856,15 +2840,11 @@ void FluidSimulation::_removeMarkerParticles() {
     _removeItemsFromVector(_markerParticles, isRemoved);
 }
 
-void FluidSimulation::_runAdvanceRangeOfMarkerParticlesThread(int startidx, int endidx) {
-    _advanceRangeOfMarkerParticles(startidx, endidx);
-}
-
-void *startAdvanceRangeOfMarkerParticlesThread(void *threadarg) {
+void *FluidSimulation::_startAdvanceRangeOfMarkerParticlesThread(void *threadarg) {
     Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
     int start = params->startIndex;
     int end = params->endIndex;
-    ((FluidSimulation *)(params->obj))->_runAdvanceRangeOfMarkerParticlesThread(start, end);
+    ((FluidSimulation *)(params->obj))->_advanceRangeOfMarkerParticles(start, end);
 
     return NULL;
 }
@@ -2875,7 +2855,7 @@ void FluidSimulation::_advanceMarkerParticles(double dt) {
     Threading::splitIndexRangeWorkIntoThreads(numElements, 
                                               _numAdvanceMarkerParticleThreads, 
                                               (void *)this, 
-                                              startAdvanceRangeOfMarkerParticlesThread);
+                                              _startAdvanceRangeOfMarkerParticlesThread);
 
     _removeMarkerParticles();
 }

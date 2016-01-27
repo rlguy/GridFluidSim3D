@@ -171,12 +171,6 @@ public:
     LevelSet* getLevelSet();
     TriangleMesh* getFluidSurfaceTriangles();
 
-    void _runAdvectVelocityFieldUThread();
-    void _runAdvectVelocityFieldVThread();
-    void _runAdvectVelocityFieldWThread();
-    void _runUpdateRangeOfMarkerParticleVelocitiesThread(int startidx, int endidx);
-    void _runAdvanceRangeOfMarkerParticlesThread(int startidx, int endixd);
-
 private:
 
     struct DiffuseParticleEmitter {
@@ -324,6 +318,9 @@ private:
     void _advectVelocityFieldU();
     void _advectVelocityFieldV();
     void _advectVelocityFieldW();
+    static void *_startAdvectVelocityFieldUThread(void *threadarg);
+    static void *_startAdvectVelocityFieldVThread(void *threadarg);
+    static void *_startAdvectVelocityFieldWThread(void *threadarg);
     void _computeVelocityScalarField(Array3d<float> &field, int dir);
 
     // Add gravity to fluid velocities
@@ -382,10 +379,12 @@ private:
     // Transfer grid velocity to marker particles
     void _updateMarkerParticleVelocities();
     void _updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx);
+    static void *_startUpdateRangeOfMarkerParticleVelocitiesThread(void *threadarg);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx);
+    static void *_startAdvanceRangeOfMarkerParticlesThread(void *threadarg);
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
