@@ -114,16 +114,16 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
+
+                if (_field(i, j, k) > _maxFieldThreshold) {
+                    continue;
+                }
+
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
-                    if (_weightType == WEIGHT_TRICUBIC) {
-                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    } else {
-                        weight = _evaluateTrilinearFieldFunction(v);
-                    }
-
+                    weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
                     _field.add(i, j, k, (float)weight);
 
                     if (_isWeightFieldEnabled) {
@@ -159,16 +159,16 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
+
+                if (_field(i, j, k) > _maxFieldThreshold) {
+                    continue;
+                }
+
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = gpos - p;
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
-                    if (_weightType == WEIGHT_TRICUBIC) {
-                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    } else {
-                        weight = _evaluateTrilinearFieldFunction(v);
-                    }
-
+                    weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
                     _field.add(i, j, k, (float)(weight*scale));
 
                     if (_isWeightFieldEnabled) {
@@ -193,6 +193,11 @@ void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, 
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
+
+                if (_field(i, j, k) > _maxFieldThreshold) {
+                    continue;
+                }
+
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 if (bbox.isPointInside(gpos)) {
                     _field.add(i, j, k, (float)(_surfaceThreshold + eps));
@@ -229,6 +234,11 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
+
+                if (_field(i, j, k) > _maxFieldThreshold) {
+                    continue;
+                }
+
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = (gpos - p);
                 v = G*v;
@@ -236,22 +246,12 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
                 distsq = vmath::dot(v, v);
 
                 if (distsq < rsq) {
-
-                    if (_weightType == WEIGHT_TRICUBIC) {
-                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    } else {
-                        weight = _evaluateTrilinearFieldFunction(v);
-                    }
-
+                    weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
                     _field.add(i, j, k, (float)weight);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
                     }
-                }
-
-                if (_isCenterFieldEnabled) {
-                    _calculateCenterCellValueForPoint(p, i, j, k);
                 }
             }
         }
@@ -277,6 +277,10 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
+                if (_field(i, j, k) > _maxFieldThreshold) {
+                    continue;
+                }
+
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 v = (gpos - p);
                 v = G*v;
@@ -285,23 +289,13 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
 
                 if (distsq < rsq) {
 
-                    if (_weightType == WEIGHT_TRICUBIC) {
-                        weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    } else {
-                        weight = _evaluateTrilinearFieldFunction(v);
-                    }
-
+                    weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
                     _field.add(i, j, k, (float)weight*scale);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
                     }
                 }
-
-                if (_isCenterFieldEnabled) {
-                    _calculateCenterCellValueForPoint(p, i, j, k);
-                }
-
             }
         }
     }
@@ -414,14 +408,6 @@ bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
     return _centerField(i, j, k) > _surfaceThreshold;
 }
 
-void ImplicitSurfaceScalarField::setTricubicWeighting() {
-    _weightType = WEIGHT_TRICUBIC;
-}
-
-void ImplicitSurfaceScalarField::setTrilinearWeighting() {
-    _weightType = WEIGHT_TRILINEAR;
-}
-
 void ImplicitSurfaceScalarField::setScalarFieldValue(int i, int j, int k, double value) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.set(i, j, k, value);
@@ -505,11 +491,6 @@ void ImplicitSurfaceScalarField::setOffset(vmath::vec3 offset) {
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {
     return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
-}
-
-double ImplicitSurfaceScalarField::_evaluateTrilinearFieldFunction(vmath::vec3 v) {
-    double invdx = 1 / _dx;
-    return _hatFunc(v.x*invdx) * _hatFunc(v.y*invdx) * _hatFunc(v.z*invdx);
 }
 
 void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k) {

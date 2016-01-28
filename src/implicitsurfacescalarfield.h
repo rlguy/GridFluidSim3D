@@ -56,7 +56,9 @@ public:
     void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double r, double value);
     void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double value);
     void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
+    void setMaxFieldThreshold(double t) { _maxFieldThreshold = t; }
     double getSurfaceThreshold() { return _surfaceThreshold; }
+    double getMaxFieldThreshold() { return _maxFieldThreshold; }
     void setMaterialGrid(FluidMaterialGrid &matGrid);
     void setMaterialGrid(GridIndexVector &solidCells);
     void setSolidCells(GridIndexVector &solidCells);
@@ -66,8 +68,6 @@ public:
     double getRawScalarFieldValue(GridIndex g);
     double getRawScalarFieldValue(int i, int j, int k);
     bool isCellInsideSurface(int i, int j, int k);
-    void setTricubicWeighting();
-    void setTrilinearWeighting();
     double getWeight(int i, int j, int k);
     double getWeight(GridIndex g);
     void getWeightField(Array3d<float> &field);
@@ -81,26 +81,11 @@ public:
 
 private:
 
-    inline double _hatFunc(double r) {
-        if (r >= 0.0 && r <= 1.0) {
-            return 1 - r;
-        } else if (r >= -1.0 && r <= 0.0) {
-            return 1 + r;
-        }
-
-        return 0.0;
-    }
-
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
     double _evaluateTrilinearFieldFunction(vmath::vec3 v);
 
     void _calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k);
     void _calculateCenterCellValueForCuboid(AABB &bbox, int i, int j, int k);
-
-    int M_SOLID = 2;
-    int WEIGHT_TRICUBIC = 0;
-    int WEIGHT_TRILINEAR = 1;
-    int _weightType = 0;
 
     int _isize = 0;
     int _jsize = 0;
@@ -114,6 +99,7 @@ private:
     double _coef3 = 0.0;
 
     double _surfaceThreshold = 0.5;
+    double _maxFieldThreshold = 3.0;
 
     Array3d<float> _field;
     Array3d<float> _centerField;
