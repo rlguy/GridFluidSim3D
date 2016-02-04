@@ -70,7 +70,8 @@ namespace Collision {
     extern bool lineIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir,
                                     vmath::vec3 planePoint, vmath::vec3 planeNormal);
    
-
+    extern vmath::vec3 getTriangleCentroid(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2);
+    extern vmath::vec3 getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2);
 
 }
 

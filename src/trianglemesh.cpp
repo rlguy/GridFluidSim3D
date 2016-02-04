@@ -1188,6 +1188,56 @@ void TriangleMesh::removeMinimumTriangleCountPolyhedra(int count) {
     removeExtraneousVertices();
 }
 
+bool TriangleMesh::_isPolyhedronHole(std::vector<int> &poly) {
+
+    if (poly.size() == 0) {
+        return false;
+    }
+
+    vmath::vec3 centroid;
+    for (unsigned int i = 0; i < poly.size(); i++) {
+        centroid += getTriangleCenter(poly[i]);
+    }
+    centroid /= poly.size();
+
+    Triangle t;
+    vmath::vec3 p, vn, normal;
+    double sum = 0;
+    for (unsigned int i = 0; i < poly.size(); i++) {
+        t = triangles[poly[i]];
+        normal = Collision::getTriangleNormal(vertices[t.tri[0]], 
+                                              vertices[t.tri[1]], 
+                                              vertices[t.tri[2]]);
+        p = getTriangleCenter(poly[i]);
+        vn = p - centroid;
+        double dot = vmath::dot(vn, normal);
+        sum += dot;
+    }
+
+    return sum < 0;
+}
+
+void TriangleMesh::removeHoles() {
+    std::vector<std::vector<int> > polyList;
+    _getPolyhedra(polyList);
+
+    std::vector<int> removalTriangles;
+    for (unsigned int i = 0; i < polyList.size(); i++) {
+        if (_isPolyhedronHole(polyList[i])) {
+            for (unsigned int j = 0; j < polyList[i].size(); j++) {
+                removalTriangles.push_back(polyList[i][j]);
+            }
+        }
+    }
+
+    if (removalTriangles.size() == 0) {
+        return;
+    }
+
+    removeTriangles(removalTriangles);
+    removeExtraneousVertices();
+}
+
 void TriangleMesh::translate(vmath::vec3 trans) {
     for (unsigned int i = 0; i < vertices.size(); i++) {
         vertices[i] += trans;

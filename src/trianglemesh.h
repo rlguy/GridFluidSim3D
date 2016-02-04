@@ -84,6 +84,7 @@ public:
     vmath::vec3 getBarycentricCoordinates(unsigned int index, vmath::vec3 p);
     void removeMinimumTriangleCountPolyhedra(int count);
     void removeMinimumVolumePolyhedra(double volume);
+    void removeHoles();
     void removeTriangles(std::vector<int> &triangles);
     void removeExtraneousVertices();
     void translate(vmath::vec3 trans);
@@ -125,7 +126,7 @@ private:
                                     std::vector<bool> &visitedTriangles,
                                     std::vector<int> &polyhedron);
     double _getPolyhedronVolume(std::vector<int> &polyhedron);
-    double _getSignedTriangleVolume(unsigned int tidx);
+    bool _isPolyhedronHole(std::vector<int> &poly);
     AABB _getMeshVertexIntersectionAABB(std::vector<vmath::vec3> verts1,
                                         std::vector<vmath::vec3> verts2, 
                                         double tolerance);

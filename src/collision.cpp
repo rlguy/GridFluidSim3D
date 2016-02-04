@@ -267,3 +267,22 @@ double Collision::_clamp(double v, double min, double max) {
 
     return v;
 }
+
+vmath::vec3 Collision::getTriangleCentroid(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2) {
+    return (1.0/3.0) * (p0 + p1 + p2);
+}
+
+vmath::vec3 Collision::getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2) {
+    vmath::vec3 v1 = p1 - p0;
+    vmath::vec3 v2 = p2 - p0;
+
+    double eps = 1e-9;
+    if (fabs(v1.x) < eps && fabs(v1.y) < eps && fabs(v1.z) < eps) {
+        return vmath::vec3();
+    }
+    if (fabs(v2.x) < eps && fabs(v2.y) < eps && fabs(v2.z) < eps) {
+        return vmath::vec3();
+    }
+
+    return vmath::normalize(vmath::cross(v1, v2));
+}
