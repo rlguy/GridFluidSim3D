@@ -99,7 +99,7 @@ private:
     double _coef3 = 0.0;
 
     double _surfaceThreshold = 0.5;
-    double _maxFieldThreshold = 3.0;
+    double _maxFieldThreshold = 1.0;
 
     Array3d<float> _field;
     Array3d<float> _centerField;

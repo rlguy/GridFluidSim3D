@@ -32,7 +32,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "implicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
-#include "triangleMesh.h"
+#include "trianglemesh.h"
 #include "logfile.h"
 #include "collision.h"
 #include "aabb.h"

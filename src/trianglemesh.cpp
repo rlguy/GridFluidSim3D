@@ -1194,6 +1194,12 @@ bool TriangleMesh::_isPolyhedronHole(std::vector<int> &poly) {
         return false;
     }
 
+    // TEST - DELETE
+    if (poly.size() > 10000) {
+        return false;
+    }
+    // END TEST
+
     vmath::vec3 centroid;
     for (unsigned int i = 0; i < poly.size(); i++) {
         centroid += getTriangleCenter(poly[i]);

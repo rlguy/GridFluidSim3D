@@ -125,6 +125,7 @@ private:
     void _getPolyhedronFromTriangle(int triangle, 
                                     std::vector<bool> &visitedTriangles,
                                     std::vector<int> &polyhedron);
+    double _getSignedTriangleVolume(unsigned int tidx);
     double _getPolyhedronVolume(std::vector<int> &polyhedron);
     bool _isPolyhedronHole(std::vector<int> &poly);
     AABB _getMeshVertexIntersectionAABB(std::vector<vmath::vec3> verts1,

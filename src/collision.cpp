@@ -275,12 +275,16 @@ vmath::vec3 Collision::getTriangleCentroid(vmath::vec3 p0, vmath::vec3 p1, vmath
 vmath::vec3 Collision::getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2) {
     vmath::vec3 v1 = p1 - p0;
     vmath::vec3 v2 = p2 - p0;
+    vmath::vec3 v3 = p2 - p1;
 
     double eps = 1e-9;
     if (fabs(v1.x) < eps && fabs(v1.y) < eps && fabs(v1.z) < eps) {
         return vmath::vec3();
     }
     if (fabs(v2.x) < eps && fabs(v2.y) < eps && fabs(v2.z) < eps) {
+        return vmath::vec3();
+    }
+    if (fabs(v3.x) < eps && fabs(v3.y) < eps && fabs(v3.z) < eps) {
         return vmath::vec3();
     }
 
