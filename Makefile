@@ -39,7 +39,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=fluidsim
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS) 
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
