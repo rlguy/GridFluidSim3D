@@ -50,4 +50,4 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(SOURCEPATH)/*.o $(EXECUTABLE)
+	$(RM) $(SOURCEPATH)/*.o $(EXECUTABLE)
