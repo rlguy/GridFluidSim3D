@@ -37,7 +37,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/trianglemesh.cpp \
 		$(SOURCEPATH)/turbulencefield.cpp \
 		$(SOURCEPATH)/vmath.cpp
-		
+
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=fluidsim
 
@@ -48,6 +48,6 @@ $(EXECUTABLE): $(OBJECTS)
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
-	
+
 clean:
 	rm $(SOURCEPATH)/*.o $(EXECUTABLE)
