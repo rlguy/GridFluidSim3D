@@ -1,8 +1,8 @@
-PTHREADINCLUDE=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
+PTHREADINCLUDE=-IC:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
 PTHREADLIB=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/lib/libpthread.a 
 
 OPTIMIZE=-O3
-CXXFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=$(PTHREADLIB) -lstdc++
 
