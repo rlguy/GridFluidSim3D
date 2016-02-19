@@ -6,6 +6,8 @@ CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=$(PTHREADLIB) -lstdc++
 
+.PHONY: all clean
+
 SOURCEPATH=src
 SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/anisotropicparticlemesher.cpp \
