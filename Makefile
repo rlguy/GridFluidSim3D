@@ -1,10 +1,8 @@
-CC=g++
-
 PTHREADINCLUDE=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
 PTHREADLIB=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/lib/libpthread.a 
 
 OPTIMIZE=-O3
-CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=$(PTHREADLIB) -lstdc++
 
@@ -44,10 +42,10 @@ EXECUTABLE=fluidsim
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
 
 .cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
 	$(RM) $(SOURCEPATH)/*.o $(EXECUTABLE)
