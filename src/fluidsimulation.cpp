@@ -1649,17 +1649,17 @@ void FluidSimulation::_advectVelocityFieldW() {
 
 void *FluidSimulation::_startAdvectVelocityFieldUThread(void *threadarg) {
     ((FluidSimulation *)(threadarg))->_advectVelocityFieldU();
-    return NULL;
+    return nullptr;
 }
 
 void *FluidSimulation::_startAdvectVelocityFieldVThread(void *threadarg) {
     ((FluidSimulation *)(threadarg))->_advectVelocityFieldV();
-    return NULL;
+    return nullptr;
 }
 
 void *FluidSimulation::_startAdvectVelocityFieldWThread(void *threadarg) {
     ((FluidSimulation *)(threadarg))->_advectVelocityFieldW();
-    return NULL;
+    return nullptr;
 }
 
 void FluidSimulation::_advectVelocityField() {
@@ -2447,7 +2447,7 @@ void *FluidSimulation::_startUpdateRangeOfMarkerParticleVelocitiesThread(void *t
     int end = params->endIndex;
     ((FluidSimulation *)(params->obj))->_updateRangeOfMarkerParticleVelocities(start, end);
 
-    return NULL;
+    return nullptr;
 }
 
 void FluidSimulation::_updateMarkerParticleVelocities() {
@@ -2846,7 +2846,7 @@ void *FluidSimulation::_startAdvanceRangeOfMarkerParticlesThread(void *threadarg
     int end = params->endIndex;
     ((FluidSimulation *)(params->obj))->_advanceRangeOfMarkerParticles(start, end);
 
-    return NULL;
+    return nullptr;
 }
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {

@@ -211,7 +211,7 @@ void *AnisotropicParticleMesher::_startSmoothRangeOfSurfaceParticlePositionsThre
     int end = params->endIndex;
     ((AnisotropicParticleMesher *)(params->obj))->_smoothRangeOfSurfaceParticlePositions(start, end);
 
-    return NULL;
+    return nullptr;
 }
 
 void AnisotropicParticleMesher::_computeSmoothedNearSurfaceParticlePositions() {
@@ -700,7 +700,7 @@ void *AnisotropicParticleMesher::_startAnisotropicParticleProducerThread(void *q
     obj = (AnisotropicParticleMesher *) q;
     obj->_anisotropicParticleProducerThread();
 
-    return NULL;
+    return nullptr;
 }
 
 void *AnisotropicParticleMesher::_startAnisotropicParticleConsumerThread(void *q) {
@@ -708,7 +708,7 @@ void *AnisotropicParticleMesher::_startAnisotropicParticleConsumerThread(void *q
     obj = (AnisotropicParticleMesher *) q;
     obj->_anisotropicParticleConsumerThread();
 
-    return NULL;
+    return nullptr;
 }
 
 void AnisotropicParticleMesher::_anisotropicParticleProducerThread() {

@@ -27,7 +27,7 @@ void StopWatch::start() {
     
     #ifdef __linux__ 
         struct timeval tp;
-        gettimeofday(&tp, NULL);
+        gettimeofday(&tp, nullptr);
         _tbegin = (double)(tp.tv_sec * 1000 + tp.tv_usec / 1000);
     #elif _WIN32
         _tbegin = (float)GetTickCount() / 1000.0;
@@ -45,7 +45,7 @@ void StopWatch::stop() {
 
     #ifdef __linux__ 
         struct timeval tp;
-        gettimeofday(&tp, NULL);
+        gettimeofday(&tp, nullptr);
         _tend = (double)(tp.tv_sec * 1000 + tp.tv_usec / 1000);
     #elif _WIN32
         _tend = (float)GetTickCount() / 1000.0;

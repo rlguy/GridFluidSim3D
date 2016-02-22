@@ -53,7 +53,7 @@ bool TriangleMesh::loadOBJ(std::string filename, vmath::vec3 offset, double scal
 
     FILE * file;
     file = fopen(filename.c_str(), "rb");
-    if( file == NULL ){
+    if( file == nullptr ){
         printf("Unable to open the OBJ file!\n");
         return false;
     }

@@ -28,19 +28,19 @@ namespace Threading {
 
     class Mutex {
         public:
-            Mutex() { pthread_mutex_init(&_mutex, NULL); }
+            Mutex() { pthread_mutex_init(&_mutex, nullptr); }
             ~Mutex() { pthread_mutex_destroy(&_mutex); }
             void lock() { pthread_mutex_lock(&_mutex); }
             void unlock() { pthread_mutex_unlock(&_mutex); }
             pthread_mutex_t *getMutex() { return &_mutex; }
 
             Mutex(const Mutex &obj) {
-                pthread_mutex_init(&_mutex, NULL);
+                pthread_mutex_init(&_mutex, nullptr);
             }
 
             Mutex operator=(const Mutex &rhs) {
                 pthread_mutex_destroy(&_mutex);
-                pthread_mutex_init(&_mutex, NULL);
+                pthread_mutex_init(&_mutex, nullptr);
 
                 return *this;
             }
@@ -51,18 +51,18 @@ namespace Threading {
 
     class ConditionVariable {
         public:
-            ConditionVariable() { pthread_cond_init(&_cond, NULL); }
+            ConditionVariable() { pthread_cond_init(&_cond, nullptr); }
             ~ConditionVariable() { pthread_cond_destroy(&_cond); }
             void wait(Mutex *mutex) { pthread_cond_wait(&_cond, mutex->getMutex()); }
             void signal() { pthread_cond_signal(&_cond); }
 
             ConditionVariable(const ConditionVariable &obj) {
-                pthread_cond_init(&_cond, NULL);
+                pthread_cond_init(&_cond, nullptr);
             }
 
             ConditionVariable operator=(const ConditionVariable &rhs) {
                 pthread_cond_destroy(&_cond);
-                pthread_cond_init(&_cond, NULL);
+                pthread_cond_init(&_cond, nullptr);
 
                 return *this;
             }

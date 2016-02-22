@@ -84,7 +84,7 @@ bool Threading::joinThreads(std::vector<pthread_t> &threads) {
 }
 
 bool Threading::joinThread(pthread_t thread) {
-    int result = pthread_join(thread, NULL);
+    int result = pthread_join(thread, nullptr);
     if (result) {
         return false;
     }
