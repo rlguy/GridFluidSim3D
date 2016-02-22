@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 Ryan L. Guy
+Copyright (c) 2016 Ryan L. Guy
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages

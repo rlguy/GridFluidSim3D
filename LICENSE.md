@@ -1,4 +1,3 @@
-/*
 Copyright (c) 2016 Ryan L. Guy
 
 This software is provided 'as-is', without any express or implied
@@ -16,31 +15,3 @@ freely, subject to the following restrictions:
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
-*/
-#ifndef STOPWATCH_H
-#define STOPWATCH_H
-
-#ifdef __linux__ 
-    #include <sys/time.h>
-#elif _WIN32
-    #include <Windows.h>
-    #include <Winbase.h>
-#else
-#endif
-
-class StopWatch
-{
-public:
-    StopWatch();
-    void start();
-    void stop();
-    void reset();
-    double getTime();    // in seconds
-
-private:
-    bool _isStarted = false;
-    float _tbegin, _tend;
-    double _timeRunning = 0.0;
-};
-
-#endif
