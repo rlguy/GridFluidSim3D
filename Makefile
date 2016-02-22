@@ -1,12 +1,12 @@
-CC=g++
-
-PTHREADINCLUDE=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
+PTHREADINCLUDE=-IC:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/include
 PTHREADLIB=C:/cygwin64/usr/i686-pc-mingw32/sys-root/mingw/lib/libpthread.a 
 
 OPTIMIZE=-O3
-CFLAGS=$(OPTIMIZE) -pthread -I$(PTHREADINCLUDE) -c -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=$(PTHREADLIB) -lstdc++
+
+.PHONY: all clean
 
 SOURCEPATH=src
 SOURCES=$(SOURCEPATH)/aabb.cpp \
@@ -37,17 +37,14 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/trianglemesh.cpp \
 		$(SOURCEPATH)/turbulencefield.cpp \
 		$(SOURCEPATH)/vmath.cpp
-		
+
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=fluidsim
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
 
-.cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
-	
 clean:
-	rm $(SOURCEPATH)/*.o $(EXECUTABLE)
+	$(RM) $(SOURCEPATH)/*.o $(EXECUTABLE)
