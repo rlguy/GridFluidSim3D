@@ -137,8 +137,8 @@ bool FluidMaterialGrid::isFaceBorderingMaterialV(GridIndex g, Material m) {
 }
 
 bool FluidMaterialGrid::isFaceBorderingMaterialW(int i, int j, int k, Material m) {
-    if (j == _grid.height) { return _grid(i, j - 1, k) == m; }
-    else if (j > 0) { return _grid(i, j, k) == m || _grid(i, j - 1, k) == m; }
+    if (k == _grid.depth) { return _grid(i, j, k - 1) == m; }
+    else if (k > 0) { return _grid(i, j, k) == m || _grid(i, j, k - 1) == m; }
     else { return _grid(i, j, k) == m; }
 }
 
