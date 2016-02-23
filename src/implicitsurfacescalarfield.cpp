@@ -26,7 +26,8 @@ ImplicitSurfaceScalarField::ImplicitSurfaceScalarField() {
 ImplicitSurfaceScalarField::ImplicitSurfaceScalarField(int i, int j, int k, double dx) :
                                                        _isize(i), _jsize(j), _ksize(k), _dx(dx),
                                                        _field(i, j, k, 0.0),
-                                                       _isVertexSolid(i, j, k, false) {
+                                                       _isVertexSolid(i, j, k, false),
+                                                       _isVertexSet(i, j, k, false) {
 }
 
 ImplicitSurfaceScalarField::~ImplicitSurfaceScalarField() {
@@ -75,7 +76,7 @@ void ImplicitSurfaceScalarField::applyWeightField() {
                 float weight = _weightField(i, j, k);
                 if (weight > 0.0) {
                     float v = _field(i, j, k) / weight;
-                    _field.set(i, j, k, v);
+                    setScalarFieldValue(i, j, k, v);
                 }
             }
         }
@@ -124,7 +125,7 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    _field.add(i, j, k, (float)weight);
+                    addScalarFieldValue(i, j, k, weight);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
@@ -169,7 +170,7 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    _field.add(i, j, k, (float)(weight*scale));
+                    addScalarFieldValue(i, j, k, weight*scale);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
@@ -200,7 +201,7 @@ void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, 
 
                 gpos = Grid3d::GridIndexToPosition(i, j, k, _dx);
                 if (bbox.isPointInside(gpos)) {
-                    _field.add(i, j, k, (float)(_surfaceThreshold + eps));
+                    addScalarFieldValue(i, j, k, _surfaceThreshold + eps);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)(_surfaceThreshold + eps));
@@ -247,7 +248,7 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
 
                 if (distsq < rsq) {
                     weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    _field.add(i, j, k, (float)weight);
+                    addScalarFieldValue(i, j, k, weight);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
@@ -290,7 +291,7 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
                 if (distsq < rsq) {
 
                     weight = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-                    _field.add(i, j, k, (float)weight*scale);
+                    addScalarFieldValue(i, j, k, weight*scale);
 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)weight);
@@ -401,6 +402,29 @@ double ImplicitSurfaceScalarField::getRawScalarFieldValue(int i, int j, int k) {
     return _field(i, j, k);
 }
 
+void ImplicitSurfaceScalarField::getSetScalarFieldValues(Array3d<bool> &isVertexSet) {
+    assert(isVertexSet.width == _isVertexSet.width && 
+           isVertexSet.height == _isVertexSet.height && 
+           isVertexSet.depth == _isVertexSet.depth);
+
+    for (int k = 0; k < isVertexSet.depth; k++) {
+        for (int j = 0; j < isVertexSet.height; j++) {
+            for (int i = 0; i < isVertexSet.width; i++) {
+                isVertexSet.set(i, j, k, _isVertexSet(i, j, k));
+            }
+        }
+    }
+}
+
+bool ImplicitSurfaceScalarField::isScalarFieldValueSet(GridIndex g) {
+    return isScalarFieldValueSet(g.i, g.j, g.k);
+}
+
+bool ImplicitSurfaceScalarField::isScalarFieldValueSet(int i, int j, int k) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    return _isVertexSet(i, j, k);
+}
+
 bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
     assert(_isCenterFieldEnabled);
     assert(_centerField.isIndexInRange(i, j, k));
@@ -411,23 +435,35 @@ bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
 void ImplicitSurfaceScalarField::setScalarFieldValue(int i, int j, int k, double value) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.set(i, j, k, value);
+    _isVertexSet.set(i, j, k, true);
 }
 
 void ImplicitSurfaceScalarField::setScalarFieldValue(GridIndex g, double value) {
     setScalarFieldValue(g.i, g.j, g.k, value);
 }
 
-void ImplicitSurfaceScalarField::setCellFieldValues(int i, int j, int k, double value) {
+void ImplicitSurfaceScalarField::addScalarFieldValue(int i, int j, int k, double value) {
+    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    _field.add(i, j, k, value);
+    _isVertexSet.set(i, j, k, true);
+}
+
+void ImplicitSurfaceScalarField::addScalarFieldValue(GridIndex g, double value) {
+    addScalarFieldValue(g.i, g.j, g.k, value);
+}
+
+void ImplicitSurfaceScalarField::addCellFieldValues(int i, int j, int k, double value) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _field.width-1, _field.height-1, _field.depth-1));
     GridIndex vertices[8];
     Grid3d::getGridIndexVertices(i, j, k, vertices);
     for (int i = 0; i < 8; i++) {
         _field.set(vertices[i], value);
+        _isVertexSet.set(i, j, k, true);
     }
 }
 
-void ImplicitSurfaceScalarField::setCellFieldValues(GridIndex g, double value) {
-    setCellFieldValues(g.i, g.j, g.k, value);
+void ImplicitSurfaceScalarField::addCellFieldValues(GridIndex g, double value) {
+    addCellFieldValues(g.i, g.j, g.k, value);
 }
 
 double ImplicitSurfaceScalarField::tricubicInterpolation(vmath::vec3 p) {

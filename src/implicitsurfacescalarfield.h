@@ -65,6 +65,9 @@ public:
     void getScalarField(Array3d<float> &field);
     double getScalarFieldValue(GridIndex g);
     double getScalarFieldValue(int i, int j, int k);
+    void getSetScalarFieldValues(Array3d<bool> &field);
+    bool isScalarFieldValueSet(GridIndex g);
+    bool isScalarFieldValueSet(int i, int j, int k);
     double getRawScalarFieldValue(GridIndex g);
     double getRawScalarFieldValue(int i, int j, int k);
     bool isCellInsideSurface(int i, int j, int k);
@@ -75,6 +78,10 @@ public:
     void setScalarFieldValue(GridIndex g, double value);
     void setCellFieldValues(int i, int j, int k, double value);
     void setCellFieldValues(GridIndex g, double value);
+    void addScalarFieldValue(int i, int j, int k, double value);
+    void addScalarFieldValue(GridIndex g, double value);
+    void addCellFieldValues(int i, int j, int k, double value);
+    void addCellFieldValues(GridIndex g, double value);
     double tricubicInterpolation(vmath::vec3 p);
     void setOffset(vmath::vec3 offset);
     bool isPointInside(vmath::vec3 p);
@@ -105,6 +112,7 @@ private:
     Array3d<float> _centerField;
     Array3d<bool> _isVertexSolid;
     Array3d<float> _weightField;
+    Array3d<bool> _isVertexSet;
 
     bool _isCenterFieldEnabled = false;
     bool _isWeightFieldEnabled = false;
