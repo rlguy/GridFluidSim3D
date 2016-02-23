@@ -321,7 +321,9 @@ private:
     static void *_startAdvectVelocityFieldUThread(void *threadarg);
     static void *_startAdvectVelocityFieldVThread(void *threadarg);
     static void *_startAdvectVelocityFieldWThread(void *threadarg);
-    void _computeVelocityScalarField(Array3d<float> &field, int dir);
+    void _computeVelocityScalarField(Array3d<float> &field, 
+                                     Array3d<bool> &isValueSet, 
+                                     int dir);
 
     // Add gravity to fluid velocities
     void _applyBodyForcesToVelocityField(double dt);

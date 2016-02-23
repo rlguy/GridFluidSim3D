@@ -1481,6 +1481,7 @@ void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
 ********************************************************************************/
 
 void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field, 
+                                                  Array3d<bool> &isValueSet,
                                                   int dir) {
     int U = 0; int V = 1; int W = 2;
 
@@ -1510,21 +1511,22 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     grid.applyWeightField();
 
     grid.getScalarField(field);
+    grid.getSetScalarFieldValues(isValueSet);
 }
 
 void FluidSimulation::_advectVelocityFieldU() {
     _MACVelocity.clearU();
 
     Array3d<float> ugrid = Array3d<float>(_isize + 1, _jsize, _ksize, 0.0f);
-    _computeVelocityScalarField(ugrid, 0);
+    Array3d<bool> isValueSet = Array3d<bool>(_isize + 1, _jsize, _ksize, false);
+    _computeVelocityScalarField(ugrid, isValueSet, 0);
 
     GridIndexVector extrapolationIndices(_isize + 1, _jsize, _ksize);
-    double eps = 10e-9;
     for (int k = 0; k < ugrid.depth; k++) {
         for (int j = 0; j < ugrid.height; j++) {
             for (int i = 0; i < ugrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidU(i, j, k)) {
-                    if (fabs(ugrid(i, j, k)) < eps) {
+                    if (!isValueSet(i, j, k)) {
                         extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setU(i, j, k, ugrid(i, j, k));
@@ -1561,15 +1563,15 @@ void FluidSimulation::_advectVelocityFieldV() {
     _MACVelocity.clearV();
 
     Array3d<float> vgrid = Array3d<float>(_isize, _jsize + 1, _ksize, 0.0f);
-    _computeVelocityScalarField(vgrid, 1);
+    Array3d<bool> isValueSet = Array3d<bool>(_isize, _jsize + 1, _ksize, false);
+    _computeVelocityScalarField(vgrid, isValueSet, 1);
     
     GridIndexVector extrapolationIndices(_isize, _jsize + 1, _ksize);
-    double eps = 10e-9;
     for (int k = 0; k < vgrid.depth; k++) {
         for (int j = 0; j < vgrid.height; j++) {
             for (int i = 0; i < vgrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidV(i, j, k)) {
-                    if (fabs(vgrid(i, j, k)) < eps) {
+                    if (!isValueSet(i, j, k)) {
                         extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setV(i, j, k, vgrid(i, j, k));
@@ -1590,7 +1592,7 @@ void FluidSimulation::_advectVelocityFieldV() {
         weight = 0.0;
         for (int idx = 0; idx < 26; idx++) {
             n = nb[idx];
-            if (vgrid.isIndexInRange(n) && fabs(vgrid(n)) > 0.0) {
+            if (vgrid.isIndexInRange(n) && isValueSet(n)) {
                 avg += vgrid(n);
                 weight += 1.0;
             }
@@ -1606,15 +1608,15 @@ void FluidSimulation::_advectVelocityFieldW() {
     _MACVelocity.clearW();
 
     Array3d<float> wgrid = Array3d<float>(_isize, _jsize, _ksize + 1, 0.0f);
-    _computeVelocityScalarField(wgrid, 2);
+    Array3d<bool> isValueSet = Array3d<bool>(_isize, _jsize, _ksize + 1, 0.0f);
+    _computeVelocityScalarField(wgrid, isValueSet, 2);
     
     GridIndexVector extrapolationIndices(_isize, _jsize, _ksize + 1);
-    double eps = 10e-9;
     for (int k = 0; k < wgrid.depth; k++) {
         for (int j = 0; j < wgrid.height; j++) {
             for (int i = 0; i < wgrid.width; i++) {
                 if (_materialGrid.isFaceBorderingFluidW(i, j, k)) {
-                    if (fabs(wgrid(i, j, k)) < eps) {
+                    if (!isValueSet(i, j, k)) {
                         extrapolationIndices.push_back(i, j, k);
                     } else {
                         _MACVelocity.setW(i, j, k, wgrid(i, j, k));
@@ -1635,7 +1637,7 @@ void FluidSimulation::_advectVelocityFieldW() {
         weight = 0.0;
         for (int idx = 0; idx < 26; idx++) {
             n = nb[idx];
-            if (wgrid.isIndexInRange(n) && fabs(wgrid(n)) > 0.0) {
+            if (wgrid.isIndexInRange(n) && isValueSet(n)) {
                 avg += wgrid(n);
                 weight += 1.0;
             }
