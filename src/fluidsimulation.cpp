@@ -1287,13 +1287,64 @@ void FluidSimulation::_writeBrickColorListToFile(TriangleMesh &mesh,
     delete[] storage;
 }
 
+void FluidSimulation::_writeBrickTextureToFile(TriangleMesh &mesh, 
+                                               std::string filename) {
+
+    int bisize, bjsize, bksize;
+    _fluidBrickGrid.getBrickGridDimensions(&bisize, &bjsize, &bksize);
+
+    double bx = _fluidBrickGrid.getBrickAABB().width;
+    double by = _fluidBrickGrid.getBrickAABB().height;
+    double bz = _fluidBrickGrid.getBrickAABB().depth;
+
+    Array3d<unsigned char> colorGrid(bisize, bjsize, bksize, (char)0);
+
+    vmath::vec3 p, c;
+    for (unsigned int i = 0; i < mesh.vertices.size(); i++) {
+        p = mesh.vertices[i];
+        c = mesh.vertexcolors[i];
+
+        int bi = (int)(p.x / bx);
+        int bj = (int)(p.y / by);
+        int bk = (int)(p.z / bz);
+
+        int coloridx = (int)(c.x*255);
+        colorGrid.set(bi, bj, bk, (unsigned char)coloridx);
+    }
+    
+    int binsize = sizeof(unsigned char)*bisize*bjsize*bksize;
+    unsigned char *storage = new unsigned char[binsize];
+
+    int offset = 0;
+    for (int k = 0; k < colorGrid.depth; k++) {
+        for (int j = 0; j < colorGrid.height; j++) {
+            for (int i = 0; i < colorGrid.width; i++) {
+                storage[offset] = colorGrid(i, j, k);
+                offset++;
+            }
+        }
+    }
+    
+    std::ofstream erasefile;
+    erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
+    erasefile.close();
+
+    std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+    file.write((char*)storage, binsize);
+    file.close();
+
+    delete[] storage;
+}
+
 void FluidSimulation::_writeBrickMaterialToFile(std::string brickfile,
-                                                std::string colorfile) {
+                                                std::string colorfile,
+                                                std::string texturefile) {
     TriangleMesh brickmesh;
     _fluidBrickGrid.getBrickMesh(_levelset, brickmesh);
 
     brickmesh.writeMeshToPLY(brickfile);
     _writeBrickColorListToFile(brickmesh, colorfile);
+    _writeBrickTextureToFile(brickmesh, texturefile);
 }
 
 std::string FluidSimulation::_numberToString(int number) {
@@ -1337,7 +1388,8 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &isomesh,
         currentBrickMeshFrame.insert(currentBrickMeshFrame.begin(), 6 - currentBrickMeshFrame.size(), '0');
 
         _writeBrickMaterialToFile("bakefiles/brick" + currentBrickMeshFrame + ".ply", 
-                                  "bakefiles/brickcolor" + currentBrickMeshFrame + ".data");
+                                  "bakefiles/brickcolor" + currentBrickMeshFrame + ".data",
+                                  "bakefiles/bricktexture" + currentBrickMeshFrame + ".data");
         _currentBrickMeshFrame++;
     }
 }

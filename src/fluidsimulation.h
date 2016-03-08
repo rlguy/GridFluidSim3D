@@ -305,7 +305,10 @@ private:
                                      std::string sprayfile);
     void _writeDiffuseMaterialToFile(std::string diffusefile);
     void _writeBrickColorListToFile(TriangleMesh &mesh, std::string filename);
-    void _writeBrickMaterialToFile(std::string brickfile, std::string colorfile);
+    void _writeBrickTextureToFile(TriangleMesh &mesh, std::string filename);
+    void _writeBrickMaterialToFile(std::string brickfile, 
+                                   std::string colorfile, 
+                                   std::string texturefile);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
     bool _isVertexNearSolid(vmath::vec3 v, double eps);
