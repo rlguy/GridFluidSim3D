@@ -38,6 +38,16 @@ void FluidBrickGrid::getGridDimensions(int *i, int *j, int *k) {
     *k = _ksize;
 }
 
+void FluidBrickGrid::getBrickGridDimensions(int *i, int *j, int *k) {
+    *i = _brickGrid.width;
+    *j = _brickGrid.height;
+    *k = _brickGrid.depth;
+}
+
+AABB FluidBrickGrid::getBrickAABB() {
+    return _brick;
+}
+
 void FluidBrickGrid::setBrickDimensions(double width, double height, double depth) {
     _brick = AABB(vmath::vec3(), width, height, depth);
     _initializeBrickGrid();
@@ -382,9 +392,9 @@ float FluidBrickGrid::_getBrickIntensity(int i, int j, int k) {
     double avg = 0.0;
     double count = 0.0;
     double eps = 0.001;
-    for (int k = gmin.k; k < gmax.k; k++) {
-        for (int j = gmin.j; j < gmax.j; j++) {
-            for (int i = gmin.i; i < gmax.i; i++) {
+    for (int k = gmin.k; k <= gmax.k; k++) {
+        for (int j = gmin.j; j <= gmax.j; j++) {
+            for (int i = gmin.i; i <= gmax.i; i++) {
                 double val = (double)_densityGrid(i, j, k).currentDensity;
                 if (val > eps) {
                     avg += val;

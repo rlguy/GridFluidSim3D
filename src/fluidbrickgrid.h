@@ -50,6 +50,8 @@ public:
     ~FluidBrickGrid();
 
     void getGridDimensions(int *i, int *j, int *k);
+    void getBrickGridDimensions(int *i, int *j, int *k);
+    AABB getBrickAABB();
     void setBrickDimensions(double width, double height, double depth);
     void setBrickDimensions(AABB brick);
     Array3d<float> getDensityGrid();
