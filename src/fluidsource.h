@@ -61,6 +61,8 @@ public:
                                             double dx);
     virtual AABB getAABB();
 
+    virtual bool containsPoint(vmath::vec3 p);
+
 protected:
     int T_INFLOW = 0;
     int T_OUTFLOW = 1;

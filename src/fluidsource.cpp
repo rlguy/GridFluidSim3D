@@ -113,6 +113,10 @@ AABB FluidSource::getAABB() {
     return AABB();
 }
 
+bool FluidSource::containsPoint(vmath::vec3 p) {
+  return false;
+}
+
 int FluidSource::getID() {
     return id;
 }

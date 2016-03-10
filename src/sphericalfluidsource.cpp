@@ -173,3 +173,9 @@ AABB SphericalFluidSource::getAABB() {
     vmath::vec3 p = position - vmath::vec3(_radius, _radius, _radius);
     return AABB(p, d, d, d);
 }
+
+bool SphericalFluidSource::containsPoint(vmath::vec3 p) {
+    vmath::vec3 v = p - getPosition();
+    double lensq = vmath::lengthsq(v);
+    return lensq < _radius*_radius;
+}

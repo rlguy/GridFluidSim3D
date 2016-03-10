@@ -45,6 +45,7 @@ public:
     virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid, double dx);
     virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid, double dx);
     virtual AABB getAABB();
+    virtual bool containsPoint(vmath::vec3 p);
 
 private:
 

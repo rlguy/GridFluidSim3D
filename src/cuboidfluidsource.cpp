@@ -205,3 +205,7 @@ void CuboidFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
 AABB CuboidFluidSource::getAABB() {
     return _bbox;
 }
+
+bool CuboidFluidSource::containsPoint(vmath::vec3 p) {
+    return _bbox.isPointInside(p);
+}
