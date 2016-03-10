@@ -75,23 +75,35 @@ vmath::vec3 FluidSource::getVelocity() {
 }
 
 void FluidSource::setAsInFlow() {
-    sourceType = T_INFLOW;
+    sourceType = FluidSourceType::inflow;
 }
 
 void FluidSource::setAsOutFlow() {
-    sourceType = T_OUTFLOW;
+    sourceType = FluidSourceType::outflow;
 }
 
-int FluidSource::getSourceType() {
+FluidSourceType FluidSource::getSourceType() {
     return sourceType;
 }
 
+bool FluidSource::isInflow() {
+    return sourceType == FluidSourceType::inflow;
+}
+
+bool FluidSource::isOutflow() {
+    return sourceType == FluidSourceType::outflow;
+}
+
 void FluidSource::activate() {
-    isActive = true;
+    isRunning = true;
 }
 
 void FluidSource::deactivate() {
-    isActive = false;
+    isRunning = false;
+}
+
+bool FluidSource::isActive() {
+    return isRunning;
 }
 
 GridIndexVector FluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,

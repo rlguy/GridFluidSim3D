@@ -31,6 +31,11 @@ freely, subject to the following restrictions:
 #include "fluidmaterialgrid.h"
 #include "gridindexvector.h"
 
+enum class FluidSourceType : char { 
+    inflow   = 0x00, 
+    outflow = 0x01
+};
+
 class FluidSource
 {
 public:
@@ -47,9 +52,12 @@ public:
     vmath::vec3 getVelocity();
     void setAsInFlow();
     void setAsOutFlow();
-    int getSourceType();
+    FluidSourceType getSourceType();
+    bool isInflow();
+    bool isOutflow();
     void activate();
     void deactivate();
+    bool isActive();
     int getID();
     void setID(int identifier);
 
@@ -64,18 +72,13 @@ public:
     virtual bool containsPoint(vmath::vec3 p);
 
 protected:
-    int T_INFLOW = 0;
-    int T_OUTFLOW = 1;
-    int M_AIR = 0;
-    int M_FLUID = 1;
-    int M_SOLID = 2;
 
     vmath::vec3 position;
     vmath::vec3 velocity;
     vmath::vec3 direction;
 
-    bool isActive = true;
-    int sourceType = T_INFLOW;
+    bool isRunning = true;
+    FluidSourceType sourceType = FluidSourceType::inflow;
     int id = 0;
 
 };

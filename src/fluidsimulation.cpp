@@ -1097,7 +1097,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
 }
 
 void FluidSimulation::_updateFluidSource(FluidSource *source) {
-    if (source->getSourceType() == T_INFLOW) {
+    if (source->isInflow()) {
         GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
         vmath::vec3 velocity = source->getVelocity();
         if (newCells.size() > 0) {
@@ -1109,7 +1109,7 @@ void FluidSimulation::_updateFluidSource(FluidSource *source) {
         if (newParticles.size() > 0) {
             _addNewFluidParticles(newParticles, velocity);
         }
-    } else if (source->getSourceType() == T_OUTFLOW) {
+    } else if (source->isOutflow()) {
         GridIndexVector cells = source->getFluidCells(_materialGrid, _dx);
 
         if (cells.size() > 0) {

@@ -103,11 +103,11 @@ void CuboidFluidSource::expand(double value) {
 
 GridIndexVector CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                               double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
-    if (sourceType == T_OUTFLOW) {
+    if (isOutflow()) {
         return GridIndexVector();
     }
 
@@ -133,7 +133,7 @@ GridIndexVector CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialG
 
 GridIndexVector CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                         double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
@@ -159,11 +159,11 @@ GridIndexVector CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid
 
 GridIndexVector CuboidFluidSource::getCells(FluidMaterialGrid &materialGrid,
                                                    double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
-    if (sourceType == T_OUTFLOW) {
+    if (isOutflow()) {
         return GridIndexVector();
     }
 

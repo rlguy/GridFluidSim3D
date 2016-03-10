@@ -228,8 +228,6 @@ private:
     };
 
     // Type constants
-    int T_INFLOW = 0;
-    int T_OUTFLOW = 1;
     int DP_BUBBLE = 0;
     int DP_FOAM = 1;
     int DP_SPRAY = 2;

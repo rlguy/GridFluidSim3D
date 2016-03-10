@@ -60,11 +60,11 @@ void SphericalFluidSource::expand(double val) {
 
 GridIndexVector SphericalFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
                                                        double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
-    if (sourceType == T_OUTFLOW) {
+    if (isOutflow()) {
         return GridIndexVector();
     }
 
@@ -89,7 +89,7 @@ GridIndexVector SphericalFluidSource::getNewFluidCells(FluidMaterialGrid &materi
 
 GridIndexVector SphericalFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
                                                            double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
@@ -114,11 +114,11 @@ GridIndexVector SphericalFluidSource::getFluidCells(FluidMaterialGrid &materialG
 
 GridIndexVector SphericalFluidSource::getCells(FluidMaterialGrid &materialGrid,
                                                    double dx) {
-    if (!isActive) {
+    if (!isActive()) {
         return GridIndexVector();
     }
 
-    if (sourceType == T_OUTFLOW) {
+    if (isOutflow()) {
         return GridIndexVector();
     }
 
