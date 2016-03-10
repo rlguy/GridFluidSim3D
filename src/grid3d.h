@@ -108,6 +108,30 @@ namespace Grid3d {
         return vmath::vec3((float)g.i*dx + hw, (float)g.j*dx + hw, (float)g.k*dx + hw);
     }
 
+    inline vmath::vec3 FaceIndexToPositionU(int i, int j, int k, double dx) {
+        return vmath::vec3((float)i*dx, ((float)j + 0.5)*dx, ((float)k + 0.5)*dx);
+    }
+
+    inline vmath::vec3 FaceIndexToPositionU(GridIndex g, double dx) {
+        return vmath::vec3((float)g.i*dx, ((float)g.j + 0.5)*dx, ((float)g.k + 0.5)*dx);
+    }
+
+    inline vmath::vec3 FaceIndexToPositionV(int i, int j, int k, double dx) {
+        return vmath::vec3(((float)i + 0.5)*dx, (float)j*dx, ((float)k + 0.5)*dx);
+    }
+
+    inline vmath::vec3 FaceIndexToPositionV(GridIndex g, double dx) {
+        return vmath::vec3(((float)g.i + 0.5)*dx, (float)g.j*dx, ((float)g.k + 0.5)*dx);
+    }
+
+    inline vmath::vec3 FaceIndexToPositionW(int i, int j, int k, double dx) {
+        return vmath::vec3(((float)i + 0.5)*dx, ((float)j + 0.5)*dx, (float)k*dx);
+    }
+
+    inline vmath::vec3 FaceIndexToPositionW(GridIndex g, double dx) {
+        return vmath::vec3(((float)g.i + 0.5)*dx, ((float)g.j + 0.5)*dx, (float)g.k*dx);
+    }
+
     inline bool isPositionInGrid(double x, double y, double z, double dx, int i, int j, int k) {
         return x >= 0 && y >= 0 && z >= 0 && x < dx*i && y < dx*j && z < dx*k;
     }
