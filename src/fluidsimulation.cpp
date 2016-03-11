@@ -1532,6 +1532,43 @@ void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
     ADVECT FLUID VELOCITIES
 ********************************************************************************/
 
+void FluidSimulation::_applyFluidSourceToVelocityField(FluidSource *source,
+                                                       int dir,
+                                                       Array3d<bool> &isValueSet,
+                                                       Array3d<float> &field) {
+    int U = 0; int V = 1; int W = 2;
+
+    vmath::vec3 (*getFacePosition)(int, int, int, double);
+    if (dir == U) {
+        getFacePosition = &Grid3d::FaceIndexToPositionU;
+    } else if (dir == V) {
+        getFacePosition = &Grid3d::FaceIndexToPositionV;
+    } else if (dir == W) {
+        getFacePosition = &Grid3d::FaceIndexToPositionW;
+    } else {
+        return;
+    }
+
+    double speed = source->getVelocity()[dir];
+    vmath::vec3 p;
+    for (int k = 0; k < field.depth; k++) {
+        for (int j = 0; j < field.height; j++) {
+            for (int i = 0; i < field.width; i++) {
+
+                if (!isValueSet(i, j, k)) {
+                    continue;
+                }
+
+                p = getFacePosition(i, j, k, _dx);
+                if (source->containsPoint(p)) {
+                    field.set(i, j, k, speed);
+                }
+            }
+        }
+    }
+
+}
+
 void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field, 
                                                   Array3d<bool> &isValueSet,
                                                   int dir) {
@@ -1564,6 +1601,14 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
 
     grid.getScalarField(field);
     grid.getSetScalarFieldValues(isValueSet);
+
+    FluidSource *source;
+    for (unsigned int i = 0; i < _fluidSources.size(); i++) {
+        source = _fluidSources[i];
+        if (source->isInflow() && source->isActive()) {
+            _applyFluidSourceToVelocityField(source, dir, isValueSet, field);
+        }
+    }
 }
 
 void FluidSimulation::_advectVelocityFieldU() {

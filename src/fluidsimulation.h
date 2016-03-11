@@ -325,6 +325,10 @@ private:
     void _computeVelocityScalarField(Array3d<float> &field, 
                                      Array3d<bool> &isValueSet, 
                                      int dir);
+    void _applyFluidSourceToVelocityField(FluidSource *source,
+                                          int dir,
+                                          Array3d<bool> &isValueSet,
+                                          Array3d<float> &field);
 
     // Add gravity to fluid velocities
     void _applyBodyForcesToVelocityField(double dt);
