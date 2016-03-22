@@ -387,9 +387,9 @@ void FluidSimulation::addSolidCell(GridIndex g) {
     addSolidCell(g.i, g.j, g.k);
 }
 
-void FluidSimulation::addSolidCells(std::vector<vmath::vec3> indices) {
+void FluidSimulation::addSolidCells(std::vector<GridIndex> indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
-        addSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
+        addSolidCell(indices[i]);
     }
 }
 

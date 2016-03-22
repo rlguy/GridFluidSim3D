@@ -144,7 +144,7 @@ public:
 
     void addSolidCell(int i, int j, int k);
     void addSolidCell(GridIndex g);
-    void addSolidCells(std::vector<vmath::vec3> indices);
+    void addSolidCells(std::vector<GridIndex> indices);
     void removeSolidCell(int i, int j, int k);
     void removeSolidCells(std::vector<vmath::vec3> indices);
     std::vector<vmath::vec3> getSolidCells();
