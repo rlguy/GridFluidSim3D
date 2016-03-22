@@ -128,8 +128,9 @@ public:
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
-    void setBodyForce(double fx, double fy, double fz);
-    void setBodyForce(vmath::vec3 f);
+    void addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3));
+    void resetBodyForces();
+
     void addImplicitFluidPoint(double x, double y, double z, double r);
     void addImplicitFluidPoint(vmath::vec3 p, double radius);
     void addFluidCuboid(double x, double y, double z, double w, double h, double d);
@@ -334,6 +335,10 @@ private:
 
     // Add gravity to fluid velocities
     void _applyBodyForcesToVelocityField(double dt);
+    void _applyConstantBodyForces(double dt);
+    void _applyVariableBodyForces(double dt);
+    void _applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
+                                 double dt);
 
     // Extrapolate fluid velocities into surrounding air and solids so
     // that velocities can be computed when marker particles move to cells
@@ -378,9 +383,11 @@ private:
     void _updateDiffuseParticleLifetimes(double dt);
     void _advanceDiffuseParticles(double dt);
     void _getNextBubbleDiffuseParticle(DiffuseParticle &dp,
-                                       DiffuseParticle &nextdp,double dt);
+                                       DiffuseParticle &nextdp,
+                                       vmath::vec3 bodyForce, double dt);
     void _getNextSprayDiffuseParticle(DiffuseParticle &dp,
-                                      DiffuseParticle &nextdp,double dt);
+                                      DiffuseParticle &nextdp,
+                                      vmath::vec3 bodyForce, double dt);
     void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                      DiffuseParticle &nextdp,double dt);
     void _removeDiffuseParticles();
@@ -546,7 +553,10 @@ private:
     double _brickDepth = 1.0;
     int _currentBrickMeshFrame = 0;
 
-    vmath::vec3 _bodyForce;
+    std::vector<vmath::vec3> _constantBodyForces;
+
+    typedef vmath::vec3 (*FieldFunction)(vmath::vec3);
+    std::vector<FieldFunction> _variableBodyForces;
 
     MACVelocityField _MACVelocity;
     FluidMaterialGrid _materialGrid;

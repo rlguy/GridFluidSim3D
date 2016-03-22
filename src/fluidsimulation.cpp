@@ -266,15 +266,16 @@ void FluidSimulation::addBodyForce(double fx, double fy, double fz) {
 }
 
 void FluidSimulation::addBodyForce(vmath::vec3 f) {
-    _bodyForce += f;
+    _constantBodyForces.push_back(f);
 }
 
-void FluidSimulation::setBodyForce(double fx, double fy, double fz) { 
-    setBodyForce(vmath::vec3(fx, fy, fz)); 
+void FluidSimulation::addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3)) {
+    _variableBodyForces.push_back(fieldFunction);
 }
 
-void FluidSimulation::setBodyForce(vmath::vec3 f) {
-    _bodyForce = f;
+void FluidSimulation::resetBodyForces() {
+    _constantBodyForces.clear();
+    _variableBodyForces.clear();
 }
 
 void FluidSimulation::addImplicitFluidPoint(double x, double y, double z, double r) {
@@ -1791,42 +1792,106 @@ void FluidSimulation::_advectVelocityField() {
     APPLY BODY FORCES
 ********************************************************************************/
 
-void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
-    if (fabs(_bodyForce.x) > 0.0) {
+void FluidSimulation::_applyConstantBodyForces(double dt) {
+
+    vmath::vec3 bodyForce;
+    for (unsigned int i = 0; i < _constantBodyForces.size(); i++) {
+        bodyForce += _constantBodyForces[i];
+    }
+
+    if (fabs(bodyForce.x) > 0.0) {
         for (int k = 0; k < _ksize; k++) {
             for (int j = 0; j < _jsize; j++) {
                 for (int i = 0; i < _isize + 1; i++) {
                     if (_materialGrid.isFaceBorderingFluidU(i, j, k)) {
-                        _MACVelocity.addU(i, j, k, _bodyForce.x * dt);
+                        _MACVelocity.addU(i, j, k, bodyForce.x * dt);
                     }
                 }
             }
         }
     }
 
-    if (fabs(_bodyForce.y) > 0.0) {
+    if (fabs(bodyForce.y) > 0.0) {
         for (int k = 0; k < _ksize; k++) {
             for (int j = 0; j < _jsize + 1; j++) {
                 for (int i = 0; i < _isize; i++) {
                     if (_materialGrid.isFaceBorderingFluidV(i, j, k)) {
-                        _MACVelocity.addV(i, j, k, _bodyForce.y * dt);
+                        _MACVelocity.addV(i, j, k, bodyForce.y * dt);
                     }
                 }
             }
         }
     }
 
-    if (fabs(_bodyForce.z) > 0.0) {
+    if (fabs(bodyForce.z) > 0.0) {
         for (int k = 0; k < _ksize + 1; k++) {
             for (int j = 0; j < _jsize; j++) {
                 for (int i = 0; i < _isize; i++) {
                     if (_materialGrid.isFaceBorderingFluidW(i, j, k)) {
-                        _MACVelocity.addW(i, j, k, _bodyForce.z * dt);
+                        _MACVelocity.addW(i, j, k, bodyForce.z * dt);
                     }
                 }
             }
         }
     }
+}
+
+void FluidSimulation::_applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
+                                              double dt) {
+
+    vmath::vec3 p;
+    vmath::vec3 bodyForce;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize + 1; i++) {
+                if (_materialGrid.isFaceBorderingFluidU(i, j, k)) {
+                    p = Grid3d::FaceIndexToPositionU(i, j, k, _dx);
+                    bodyForce = fieldFunction(p);
+                    _MACVelocity.addU(i, j, k, bodyForce.x * dt);
+                }
+            }
+        }
+    }
+
+
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize + 1; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (_materialGrid.isFaceBorderingFluidV(i, j, k)) {
+                    p = Grid3d::FaceIndexToPositionV(i, j, k, _dx);
+                    bodyForce = fieldFunction(p);
+                    _MACVelocity.addV(i, j, k, bodyForce.y * dt);
+                }
+            }
+        }
+    }
+
+
+    for (int k = 0; k < _ksize + 1; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                if (_materialGrid.isFaceBorderingFluidW(i, j, k)) {
+                    Grid3d::FaceIndexToPositionU(i, j, k, _dx);
+                    bodyForce = fieldFunction(p);
+                    _MACVelocity.addW(i, j, k, bodyForce.z * dt);
+                }
+            }
+        }
+    }
+
+}
+
+void FluidSimulation::_applyVariableBodyForces(double dt) {
+    vmath::vec3 (*fieldFunction)(vmath::vec3);
+    for (unsigned int i = 0; i < _variableBodyForces.size(); i++) {
+        fieldFunction = _variableBodyForces[i];
+        _applyVariableBodyForce(fieldFunction, dt);
+    }
+}
+
+void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
+    _applyConstantBodyForces(dt);
+    _applyVariableBodyForces(dt);
 }
 
 
@@ -2386,10 +2451,11 @@ void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
 
 void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
                                                     DiffuseParticle &nextdp,
+                                                    vmath::vec3 bodyForce,
                                                     double dt) {
     vmath::vec3 vmac = _getVelocityAtPosition(dp.position);
     vmath::vec3 vbub = dp.velocity;
-    vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient*_bodyForce;
+    vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient*bodyForce;
     vmath::vec3 dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
 
     nextdp.velocity = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
@@ -2398,10 +2464,11 @@ void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
 
 void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
                                                    DiffuseParticle &nextdp,
+                                                   vmath::vec3 bodyForce,
                                                    double dt) {
     float drag = -(float)_sprayDragCoefficient*vmath::dot(dp.velocity, dp.velocity);
 
-    vmath::vec3 accforce = _bodyForce;
+    vmath::vec3 accforce = bodyForce;
     if (fabs(drag) > 0.0) {
         accforce += drag*vmath::normalize(dp.velocity);
     }
@@ -2419,15 +2486,21 @@ void FluidSimulation::_getNextFoamDiffuseParticle(DiffuseParticle &dp,
 }
 
 void FluidSimulation::_advanceDiffuseParticles(double dt) {
+
+    vmath::vec3 bodyForce;
+    for (unsigned int i = 0; i < _constantBodyForces.size(); i++) {
+        bodyForce += _constantBodyForces[i];
+    }
+
     DiffuseParticle dp, nextdp;
     GridIndex g;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
 
         if (dp.type == DP_SPRAY) {
-            _getNextSprayDiffuseParticle(dp, nextdp, dt);
+            _getNextSprayDiffuseParticle(dp, nextdp, bodyForce, dt);
         } else if (dp.type == DP_BUBBLE) {
-            _getNextBubbleDiffuseParticle(dp, nextdp, dt);
+            _getNextBubbleDiffuseParticle(dp, nextdp, bodyForce, dt);
         } else {
             _getNextFoamDiffuseParticle(dp, nextdp, dt);
         }
