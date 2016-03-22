@@ -123,6 +123,8 @@ public:
     void disableBrickOutput();
     void enableSaveState();
     void disableSaveState();
+    void enableAdvectionThreading();
+    void disableAdvectionThreading();
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
@@ -480,6 +482,7 @@ private:
     double _density = 20.0;
     int _numAdvanceMarkerParticleThreads = 8;
     int _numUpdateMarkerParticleVelocityThreads = 8;
+    bool _isAdvectionThreadingEnabled = true;
     MACVelocityField _savedVelocityField;
 
     double _surfaceReconstructionSmoothingValue = 0.5;
