@@ -196,23 +196,6 @@ private:
                                    turbulencePotential(t) {}
     };    
 
-    struct CellFace {
-        vmath::vec3 normal;
-        double minx, maxx;
-        double miny, maxy;
-        double minz, maxz;
-
-        CellFace() : minx(0.0), maxx(0.0),
-                     miny(0.0), maxy(0.0),
-                     minz(0.0), maxz(0.0) {}
-
-        CellFace(vmath::vec3 n, vmath::vec3 minp, vmath::vec3 maxp) :
-                     normal(n), 
-                     minx(minp.x), maxx(maxp.x),
-                     miny(minp.y), maxy(maxp.y),
-                     minz(minp.z), maxz(maxp.z) {}
-    };
-
     struct FluidPoint {
         vmath::vec3 position;
         double radius = 0.0;
@@ -401,6 +384,7 @@ private:
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx);
     static void *_startAdvanceRangeOfMarkerParticlesThread(void *threadarg);
+    vmath::vec3 _resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1);
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
@@ -439,18 +423,6 @@ private:
         }
         items.shrink_to_fit();
     }
-
-    // Methods for finding collisions between marker particles and solid cell
-    // boundaries. Also used for advecting fluid when particle enters a solid.
-    std::vector<CellFace> _getNeighbourSolidCellFaces(int i, int j, int k);
-    bool _isPointOnCellFace(vmath::vec3 p, CellFace f, double eps);
-    bool _isPointOnSolidBoundary(vmath::vec3 p, CellFace *f, double eps);
-    CellFace _getCellFace(int i, int j, int k, vmath::vec3 normal);
-    void _getCellFaces(int i, int j, int k, CellFace[6]);
-    bool _getVectorFaceIntersection(vmath::vec3 p0, vmath::vec3 normal, CellFace f, vmath::vec3 *intersect);
-    vmath::vec3 _calculateSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 *normal);
-    std::vector<CellFace> _getSolidCellFaceCollisionCandidates(int i, int j, int k, vmath::vec3 dir);
-    bool _findFaceCollision(vmath::vec3 p0, vmath::vec3 p1, CellFace *face, vmath::vec3 *intersection);
     
     // Runge-Kutta integrators used in advection and advancing marker particles
     vmath::vec3 _RK2(vmath::vec3 p0, vmath::vec3 v0, double dt);

@@ -2508,28 +2508,11 @@ void FluidSimulation::_advanceDiffuseParticles(double dt) {
         g = Grid3d::positionToGridIndex(nextdp.position, _dx);
 
         if (_materialGrid.isCellSolid(g)) {
-            vmath::vec3 norm;
-            vmath::vec3 coll = _calculateSolidCellCollision(dp.position, 
-                                                          nextdp.position, &norm);
-
-            // jog p back a bit from cell face
-            nextdp.position = coll + (float)(0.01*_dx)*norm;
-
-            vmath::vec3 v = nextdp.velocity;
-            if (fabs(norm.x) == 1.0) {
-                nextdp.velocity = vmath::vec3(0.0, v.y, v.z);
-            } else if (fabs(norm.y) == 1.0) {
-                nextdp.velocity = vmath::vec3(v.x, 0.0, v.z);
-            } else if (fabs(norm.z) == 1.0) {
-                nextdp.velocity = vmath::vec3(v.x, v.y, 0.0);
-            }
+            nextdp.position = _resolveParticleSolidCellCollision(dp.position, nextdp.position);
         }
 
-        g = Grid3d::positionToGridIndex(nextdp.position, _dx);
-        if (!_materialGrid.isCellSolid(g)) {
-            _diffuseParticles[i].position = nextdp.position;
-            _diffuseParticles[i].velocity = nextdp.velocity;
-        } 
+        _diffuseParticles[i].position = nextdp.position;
+        _diffuseParticles[i].velocity = nextdp.velocity;
     }
 }
 
@@ -2681,264 +2664,40 @@ vmath::vec3 FluidSimulation::_RK4(vmath::vec3 p0, vmath::vec3 v0, double dt) {
     return p1;
 }
 
-bool FluidSimulation::_isPointOnCellFace(vmath::vec3 p, CellFace f, double eps) {
-
-    if (fabs(fabs(f.normal.x) - 1.0) < eps) {
-        return fabs(p.x - f.minx) < eps &&
-               p.y >= f.miny && p.y < f.maxy && p.z >= f.minz && p.z < f.maxz;
-    }
-    else if (fabs(fabs(f.normal.y) - 1.0) < eps) {
-        return fabs(p.y - f.miny) < eps &&
-               p.x >= f.minx && p.x < f.maxx && p.z >= f.minz && p.z < f.maxz;
-    }
-    else if (fabs(fabs(f.normal.z) - 1.0) < eps) {
-        return fabs(p.z - f.minz) < eps &&
-               p.x >= f.minx && p.x < f.maxx && p.y >= f.miny && p.y < f.maxy;
-    }
-
-    return false;
-}
-
-FluidSimulation::CellFace FluidSimulation::_getCellFace(int i, int j, int k, 
-                                                        vmath::vec3 normal) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1) {
     
-    double eps = 10e-4;
-    vmath::vec3 trans;
-    if (fabs(fabs(normal.x) - 1.0) < eps) {
-        trans = (float)(0.5 * _dx) * vmath::vec3(0.0, 1.0, 1.0);
-    }
-    else if (fabs(fabs(normal.y) - 1.0) < eps) {
-        trans = (float)(0.5 * _dx) * vmath::vec3(1.0, 0.0, 1.0);
-    }
-    else if (fabs(fabs(normal.z) - 1.0) < eps) {
-        trans = (float)(0.5 * _dx) * vmath::vec3(1.0, 1.0, 0.0);
-    }
+    GridIndex g1 = Grid3d::positionToGridIndex(p0, _dx);
+    GridIndex g2 = Grid3d::positionToGridIndex(p1, _dx);
+    assert(!_materialGrid.isCellSolid(g1));
+    assert(_materialGrid.isCellSolid(g2));
 
-    vmath::vec3 c = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    vmath::vec3 minp = c + (float)(0.5*_dx)*normal - trans;
-    vmath::vec3 maxp = c + (float)(0.5*_dx)*normal + trans;
-
-    return CellFace(normal, minp, maxp);
-}
-
-void FluidSimulation::_getCellFaces(int i, int j, int k, CellFace faces[6]) {
-    faces[0] = _getCellFace(i, j, k, vmath::vec3(-1.0,  0.0,  0.0));
-    faces[1] = _getCellFace(i, j, k, vmath::vec3( 1.0,  0.0,  0.0));
-    faces[2] = _getCellFace(i, j, k, vmath::vec3( 0.0, -1.0,  0.0));
-    faces[3] = _getCellFace(i, j, k, vmath::vec3( 0.0,  1.0,  0.0));
-    faces[4] = _getCellFace(i, j, k, vmath::vec3( 0.0,  0.0, -1.0));
-    faces[5] = _getCellFace(i, j, k, vmath::vec3( 0.0,  0.0,  1.0));
-}
-
-std::vector<FluidSimulation::CellFace> FluidSimulation::
-             _getNeighbourSolidCellFaces(int i, int j, int k) {
-
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
-
-    std::vector<CellFace> faces;
-    vmath::vec3 normals[6] = { vmath::vec3(-1.0, 0.0, 0.0), vmath::vec3(1.0, 0.0, 0.0),
-                             vmath::vec3(0.0, -1.0, 0.0), vmath::vec3(0.0, 1.0, 0.0), 
-                             vmath::vec3(0.0, 0.0, -1.0), vmath::vec3(0.0, 0.0, 1.0) };
-    GridIndex nc[26];
-    Grid3d::getNeighbourGridIndices26(i, j, k, nc);
-    for (int idx = 0; idx < 26; idx++) {
-        GridIndex c = nc[idx];
-        if (Grid3d::isGridIndexInRange(c, _isize, _jsize, _ksize) && 
-                _materialGrid.isCellSolid(c)) {
-            for (int normidx = 0; normidx < 6; normidx++) {
-                faces.push_back(_getCellFace(c.i, c.j, c.k, normals[normidx]));
-            }
-        }
-    }
-
-    return faces;
-}
-
-bool FluidSimulation::_getVectorFaceIntersection(vmath::vec3 p0, vmath::vec3 vnorm, CellFace f, 
-                                                 vmath::vec3 *intersect) {
-
-    vmath::vec3 planep = vmath::vec3(f.minx, f.miny, f.minz);
-    Collision::lineIntersectsPlane(p0, vnorm, planep, f.normal, intersect);
-
-    double eps = 10e-9;
-    if (_isPointOnCellFace(*intersect, f, eps)) {
-        return true;
-    }
-
-    return false;
-}
-
-// Check if p lies on a cell face which borders a fluid cell and a solid cell. 
-// if so, *f will store the face with normal pointing away from solid
-bool FluidSimulation::_isPointOnSolidBoundary(vmath::vec3 p, CellFace *f, double eps) {
-    int i, j, k;
-    Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
-
-    int U = 0; int V = 1; int W = 2;
-    int side = -1;
-    int dir = 0;
-    CellFace faces[6];
-    _getCellFaces(i, j, k, faces);
-    for (int idx = 0; idx < 6; idx++) {
-        if (_isPointOnCellFace(p, faces[idx], eps)) {
-            vmath::vec3 n = faces[idx].normal;
-
-            int fi = -1;
-            int fj = -1;
-            int fk = -1;
-            if      (n.x == -1.0) { fi = i;     fj = j;     fk = k;     side = U; dir = -1; }
-            else if (n.x == 1.0)  { fi = i + 1; fj = j;     fk = k;     side = U; dir =  1; }
-            else if (n.y == -1.0) { fi = i;     fj = j;     fk = k;     side = V; dir = -1; }
-            else if (n.y == 1.0)  { fi = i;     fj = j + 1; fk = k;     side = V; dir =  1; }
-            else if (n.z == -1.0) { fi = i;     fj = j;     fk = k;     side = W; dir = -1; }
-            else if (n.z == 1.0)  { fi = i;     fj = j;     fk = k + 1; side = W; dir =  1; }
-
-            bool isCellSolid = _materialGrid.isCellSolid(i, j, k);
-            if      (side == U && _materialGrid.isFaceBorderingSolidU(fi, fj, fk)) {
-                if (dir == -1) {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(-1.0, 0.0, 0.0)) :
-                                       _getCellFace(i - 1, j, k, vmath::vec3(1.0, 0.0, 0.0));
-                }
-                else {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(1.0, 0.0, 0.0)) :
-                                       _getCellFace(i + 1, j, k, vmath::vec3(-1.0, 0.0, 0.0));
-                }
-                return true;
-            }
-            else if (side == V && _materialGrid.isFaceBorderingSolidV(fi, fj, fk)) {
-                if (dir == -1) {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(0.0, -1.0, 0.0)) :
-                                       _getCellFace(i, j - 1, k, vmath::vec3(0.0, 1.0, 0.0));
-                }
-                else {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(0.0, 1.0, 0.0)) :
-                                       _getCellFace(i, j + 1, k, vmath::vec3(0.0, -1.0, 0.0));
-                }
-                return true;
-            }
-            else if (side == W && _materialGrid.isFaceBorderingSolidW(fi, fj, fk)) {
-                if (dir == -1) {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(0.0, 0.0, -1.0)) :
-                                       _getCellFace(i, j, k - 1, vmath::vec3(0.0, 0.0, 1.0));
-                }
-                else {
-                    *f = isCellSolid ? _getCellFace(i, j, k, vmath::vec3(0.0, 0.0, 1.0)) :
-                                       _getCellFace(i, j, k + 1, vmath::vec3(0.0, 0.0, -1.0));
-                }
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-std::vector<FluidSimulation::CellFace> FluidSimulation::
-        _getSolidCellFaceCollisionCandidates(int i, int j, int k, vmath::vec3 dir) {
-    std::vector<CellFace> faces;
-
-    std::vector<CellFace> allfaces = _getNeighbourSolidCellFaces(i, j, k);
-    for (unsigned int idx = 0; idx < allfaces.size(); idx++) {
-        // must be obtuse angle for a collision
-        if (vmath::dot(allfaces[idx].normal, dir) < 0) {
-            faces.push_back(allfaces[idx]);
-        }
-    }
-
-    return faces;
-}
-
-bool FluidSimulation::_findFaceCollision(vmath::vec3 p0, vmath::vec3 p1, CellFace *face, vmath::vec3 *intersection) {
-    int i, j, k;
-    Grid3d::positionToGridIndex(p0, _dx, &i, &j, &k);
-    vmath::vec3 vnorm = vmath::normalize(p1 - p0);
-    std::vector<CellFace> faces = _getSolidCellFaceCollisionCandidates(i, j, k, vnorm);
-
-    vmath::vec3 closestIntersection;
-    CellFace closestFace;
-    double mindistsq = std::numeric_limits<double>::infinity();
-    bool isCollisionFound = false;
-    for (unsigned int idx = 0; idx < faces.size(); idx++) {
-        CellFace f = faces[idx];
-
-        vmath::vec3 intersect;
-        bool isIntersecting = _getVectorFaceIntersection(p0, vnorm, f, &intersect);
-
-        if (!isIntersecting) {
-            continue;
-        }
-
-        vmath::vec3 trans = intersect - p0;
-        double distsq = vmath::dot(trans, trans);
-        if (distsq < mindistsq) {
-            mindistsq = distsq;
-            closestIntersection = intersect;
-            closestFace = f;
-            isCollisionFound = true;
-        }
-    }
-
-    if (isCollisionFound) {
-        *face = closestFace;
-        *intersection = closestIntersection;
-    }
-
-    return isCollisionFound;
-}
-
-vmath::vec3 FluidSimulation::_calculateSolidCellCollision(vmath::vec3 p0, 
-                                                        vmath::vec3 p1, 
-                                                        vmath::vec3 *normal) {
-    vmath::vec3 orig = p0;
-
-    int fi, fj, fk, si, sj, sk;
-    Grid3d::positionToGridIndex(p0, _dx, &fi, &fj, &fk);
-    Grid3d::positionToGridIndex(p1, _dx, &si, &sj, &sk);
-    assert(!_materialGrid.isCellSolid(fi, fj, fk));
-    assert(_materialGrid.isCellSolid(si, sj, sk));
-
-    // p0 and p1 may not be located in neighbouring cells. Find
-    // the neighbouring cell and a point in the cell just before collision 
-    // with solid wall. Keep stepping back from p1 until solid collision neighbours
-    // are found.
-    vmath::vec3 vnorm = vmath::normalize(p1 - p0);
-    int numSteps = 1;
-    while (!Grid3d::isGridIndicesNeighbours(fi, fj, fk, si, sj, sk)) {
-        vmath::vec3 newp = p1 - (float)(_dx - 10e-6)*vnorm;
-        int newi, newj, newk;
-        Grid3d::positionToGridIndex(newp, _dx, &newi, &newj, &newk);
-
-        if (_materialGrid.isCellSolid(newi, newj, newk)) {
-            p1 = newp;
-            si = newi; sj = newj; sk = newk;
-        }
-        else {
-            p0 = newp;
-            fi = newi, fj = newj, fk = newk;
-        }
-
-        numSteps++;
-        
-        if (numSteps > 100) {
-            *normal = vmath::vec3();
-            return orig;
-        }
-
-        assert(!(fi == si && fj == sj && fk == sk));
-    }
-
-    CellFace collisionFace;
-    vmath::vec3 collisionPoint;
-    bool isCollisionFound = _findFaceCollision(p0, p1, &collisionFace, &collisionPoint);
-
-    if (isCollisionFound) {
-        *normal = collisionFace.normal;
-        return collisionPoint;
-    } else {
-        *normal = vmath::vec3();
+    GridIndex voxel;
+    bool foundVoxel = Collision::getLineSegmentVoxelIntersection(p0, p1, _dx,
+                                                                 _materialGrid, 
+                                                                 &voxel);
+    if (!foundVoxel) {
         return p0;
     }
+
+    vmath::vec3 raynorm = vmath::normalize(p1 - p0);
+    vmath::vec3 vpos = Grid3d::GridIndexToPosition(voxel, _dx);
+    AABB bbox(vpos, _dx, _dx, _dx);
+
+    vmath::vec3 cpoint;
+    bool foundCollision = Collision::rayIntersectsAABB(p0, raynorm, bbox, &cpoint);
+
+    if (!foundCollision) {
+        return p0;
+    }
+
+    vmath::vec3 resolvedPosition = cpoint - (float)(0.05*_dx)*raynorm;
+
+    GridIndex gr = Grid3d::positionToGridIndex(resolvedPosition, _dx);
+    if (_materialGrid.isCellSolid(gr)) {
+        return p0;
+    }
+    
+    return resolvedPosition;
 }
 
 void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx) {
@@ -2947,31 +2706,19 @@ void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx) {
     MarkerParticle mp;
     vmath::vec3 p;
     vmath::vec3 vi;
+    GridIndex g;
     for (int idx = startIdx; idx <= endIdx; idx++) {
         mp = _markerParticles[idx];
 
         vi = _getVelocityAtPosition(mp.position);
         p = _RK4(mp.position, vi, _currentDeltaTime);
 
-        if (!Grid3d::isPositionInGrid(p.x, p.y, p.z, _dx, _isize, _jsize, _ksize)) {
-            continue;
+        g = Grid3d::positionToGridIndex(p, _dx);
+        if (_materialGrid.isCellSolid(g)) {
+            p = _resolveParticleSolidCellCollision(mp.position, p);
         }
 
-        int i, j, k;
-        Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
-
-        vmath::vec3 norm;
-        if (_materialGrid.isCellSolid(i, j, k)) {
-            vmath::vec3 coll = _calculateSolidCellCollision(mp.position, p, &norm);
-
-            // jog p back a bit from cell face
-            p = coll + (float)(0.01*_dx)*norm;
-        }
-
-        Grid3d::positionToGridIndex(p, _dx, &i, &j, &k);
-        if (!_materialGrid.isCellSolid(i, j, k)) {
-            _markerParticles[idx].position = p;
-        }
+        _markerParticles[idx].position = p;
     }
 }
 
@@ -2983,13 +2730,6 @@ void FluidSimulation::_shuffleMarkerParticleOrder() {
         _markerParticles[i] = _markerParticles[j];
         _markerParticles[j] = mi;
     }
-}
-
-bool compareByMarkerParticlePosition(const MarkerParticle &p1, const MarkerParticle &p2) {
-    if (p1.position.x != p2.position.x) { return p1.position.x < p2.position.x; }
-    if (p1.position.y != p2.position.y) { return p1.position.y < p2.position.y; }
-    if (p1.position.z != p2.position.z) { return p1.position.z < p2.position.z; }
-    return false;
 }
 
 void FluidSimulation::_removeMarkerParticles() {
