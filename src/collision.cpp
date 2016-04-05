@@ -290,3 +290,158 @@ vmath::vec3 Collision::getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::
 
     return vmath::normalize(vmath::cross(v1, v2));
 }
+
+/*  
+    - Finds first solid voxel intersected from point p0 to p1
+      inside mgrid
+    - Returns true if intersection is found
+    - Voxel intersected is stored in *voxel
+
+    method adapted from:
+    http://stackoverflow.com/a/16507714
+*/
+bool Collision::getLineSegmentVoxelIntersection(vmath::vec3 p0, 
+                                                vmath::vec3 p1,
+                                                double dx,
+                                                FluidMaterialGrid &grid,
+                                                GridIndex *voxel) {
+    double invdx = 1.0 / dx;
+    p0 *= invdx;
+    p1 *= invdx;
+
+    int gx0idx = (int)floor(p0.x);
+    int gy0idx = (int)floor(p0.y);
+    int gz0idx = (int)floor(p0.z);
+
+    int gx1idx = (int)floor(p1.x);
+    int gy1idx = (int)floor(p1.y);
+    int gz1idx = (int)floor(p1.z);
+
+    int sx = gx1idx > gx0idx ? 1 : gx1idx < gx0idx ? -1 : 0;
+    int sy = gy1idx > gy0idx ? 1 : gy1idx < gy0idx ? -1 : 0;
+    int sz = gz1idx > gz0idx ? 1 : gz1idx < gz0idx ? -1 : 0;
+
+    int gx = gx0idx;
+    int gy = gy0idx;
+    int gz = gz0idx;
+
+    //Planes for each axis that we will next cross
+    double gxp = gx0idx + (gx1idx > gx0idx ? 1 : 0);
+    double gyp = gy0idx + (gy1idx > gy0idx ? 1 : 0);
+    double gzp = gz0idx + (gz1idx > gz0idx ? 1 : 0);
+
+    //Only used for multiplying up the error margins
+    double vx = p1.x == p0.x ? 1 : p1.x - p0.x;
+    double vy = p1.y == p0.y ? 1 : p1.y - p0.y;
+    double vz = p1.z == p0.z ? 1 : p1.z - p0.z;
+
+    //Error is normalized to vx * vy * vz so we only have to multiply up
+    double vxvy = vx * vy;
+    double vxvz = vx * vz;
+    double vyvz = vy * vz;
+
+    //Error from the next plane accumulators, scaled up by vx*vy*vz
+    double errx = (gxp - p0.x) * vyvz;
+    double erry = (gyp - p0.y) * vxvz;
+    double errz = (gzp - p0.z) * vxvy;
+
+    double derrx = sx * vyvz;
+    double derry = sy * vxvz;
+    double derrz = sz * vxvy;
+
+    int gw = grid.width;
+    int gh = grid.height;
+    int gd = grid.depth;
+
+    int maxiter = 1e6;
+    int itercount = 0;
+    while (true) {
+        if (Grid3d::isGridIndexInRange(gx, gy, gz, gw, gh, gd)) {
+            if (grid.isCellSolid(gx, gy, gz)) {
+                (*voxel).i = gx;
+                (*voxel).j = gy;
+                (*voxel).k = gz;
+                return true;
+            }
+        }
+
+        if (gx == gx1idx && gy == gy1idx && gz == gz1idx) {
+            break;
+        }
+
+        //Which plane do we cross first?
+        double xr = fabs(errx);
+        double yr = fabs(erry);
+        double zr = fabs(errz);
+
+        if (sx != 0 && (sy == 0 || xr < yr) && (sz == 0 || xr < zr)) {
+            gx += sx;
+            errx += derrx;
+        } else if (sy != 0 && (sz == 0 || yr < zr)) {
+            gy += sy;
+            erry += derry;
+        } else if (sz != 0) {
+            gz += sz;
+            errz += derrz;
+        }
+
+        itercount++;
+        assert(itercount < maxiter);
+    }
+
+    return false;
+}
+
+/*  
+    - Finds intersection between ray with origin p0 and direction dir
+      and AABB b
+    - Returns true if intersection is found
+    - Point of collision is stored in *collision
+
+    method adapted from:
+    https://tavianator.com/fast-branchless-raybounding-box-intersections-part-2-nans/
+*/
+bool Collision::rayIntersectsAABB(vmath::vec3 p0, vmath::vec3 dir,
+                                  AABB &b, vmath::vec3 *collision) {
+
+    vmath::vec3 bmin = b.getMinPoint();
+    vmath::vec3 bmax = b.getMaxPoint();
+
+    double eps = 1e-10;
+    if (fabs(dir.x) < eps) {
+        dir.x = dir.x < 0 ? -eps : eps;
+    }
+    if (fabs(dir.y) < eps) {
+        dir.y = dir.y < 0 ? -eps : eps;
+    }
+    if (fabs(dir.x) < eps) {
+        dir.z = dir.z < 0 ? -eps : eps;
+    }
+
+    vmath::vec3 dirinv = vmath::vec3(1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z);
+
+    double t1 = (bmin.x - p0.x) * dirinv.x;
+    double t2 = (bmax.x - p0.x) * dirinv.x;
+ 
+    double tmin = fmin(t1, t2);
+    double tmax = fmax(t1, t2);
+
+    t1 = (bmin.y - p0.y) * dirinv.y;
+    t2 = (bmax.y - p0.y) * dirinv.y;
+ 
+    tmin = fmax(tmin, fmin(t1, t2));
+    tmax = fmin(tmax, fmax(t1, t2));
+
+    t1 = (bmin.z - p0.z) * dirinv.z;
+    t2 = (bmax.z - p0.z) * dirinv.z;
+ 
+    tmin = fmax(tmin, fmin(t1, t2));
+    tmax = fmin(tmax, fmax(t1, t2));
+ 
+    if (tmax > fmax(tmin, 0.0)) {
+        *collision = p0 + tmin*dir;
+        return true;
+    }
+
+    return false;
+}

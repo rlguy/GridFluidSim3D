@@ -23,6 +23,9 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include "vmath.h"
+#include "grid3d.h"
+#include "fluidmaterialgrid.h"
+#include "aabb.h"
 
 namespace Collision {
 
@@ -73,6 +76,14 @@ namespace Collision {
     extern vmath::vec3 getTriangleCentroid(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2);
     extern vmath::vec3 getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2);
 
+    extern bool getLineSegmentVoxelIntersection(vmath::vec3 p0, 
+                                                vmath::vec3 p1,
+                                                double dx,
+                                                FluidMaterialGrid &grid,
+                                                GridIndex *voxel);
+
+    extern bool rayIntersectsAABB(vmath::vec3 p0, vmath::vec3 dir,
+                                  AABB &bbox, vmath::vec3 *collision);
 }
 
 #endif
