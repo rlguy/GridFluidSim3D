@@ -790,6 +790,7 @@ void FluidSimulation::_initializeFluidMaterial() {
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
     _initializeFluidMaterial();
+    _initializeParticleAdvector();
 
     _isSimulationInitialized = true;
 }
@@ -973,6 +974,10 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 
     _isFluidInSimulation = _fluidCellIndices.size() > 0;
     _isSimulationInitialized = true;
+}
+
+void FluidSimulation::_initializeParticleAdvector() {
+    assert(_particleAdvector.initialize());
 }
 
 /********************************************************************************
@@ -2590,42 +2595,40 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
 ********************************************************************************/
 
 void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx) {
-    MarkerParticle p;
-    vmath::vec3 vPIC, vFLIP;
-    vmath::vec3 vnew, vold, dv;
-    for (int i = startIdx; i <= endIdx; i++) {
-        p = _markerParticles[i];
+    int size = endIdx - startIdx + 1;
+    std::vector<vmath::vec3> positions, vnew, vold;
+    positions.reserve(size);
+    vnew.reserve(size);
+    vold.reserve(size);
 
-        if (_ratioPICFLIP > 0.0) {
-            vPIC = _MACVelocity.evaluateVelocityAtPosition(p.position);
-        }
-        if (_ratioPICFLIP < 1.0) {
-            vnew = _ratioPICFLIP < 1.0 ? vPIC : _MACVelocity.evaluateVelocityAtPosition(p.position);
-            vold = _savedVelocityField.evaluateVelocityAtPosition(p.position);
-            dv = vnew - vold;
-            vFLIP = p.velocity + dv;
-        }
-        
-        _markerParticles[i].velocity = (float)_ratioPICFLIP * vPIC + (float)(1 - _ratioPICFLIP) * vFLIP;
+    for (int i = startIdx; i <= endIdx; i++) {
+        positions.push_back(_markerParticles[i].position);
+    }
+
+    _particleAdvector.tricubicInterpolate(positions, &_MACVelocity, vnew);
+    _particleAdvector.tricubicInterpolate(positions, &_savedVelocityField, vold);
+
+    vmath::vec3 vPIC, vFLIP, v;
+    MarkerParticle mp;
+    for (unsigned int i = 0; i < positions.size(); i++) {
+        mp = _markerParticles[startIdx + i];
+
+        vPIC = vnew[i];
+        vFLIP = mp.velocity + vnew[i] - vold[i];
+
+        v = (float)_ratioPICFLIP * vPIC + (float)(1 - _ratioPICFLIP) * vFLIP;
+        _markerParticles[startIdx + i].velocity = v;
     }
 }
 
-void *FluidSimulation::_startUpdateRangeOfMarkerParticleVelocitiesThread(void *threadarg) {
-    Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
-    int start = params->startIndex;
-    int end = params->endIndex;
-    ((FluidSimulation *)(params->obj))->_updateRangeOfMarkerParticleVelocities(start, end);
-
-    return nullptr;
-}
-
 void FluidSimulation::_updateMarkerParticleVelocities() {
-    int numElements = (int)_markerParticles.size();
+    int n = _maxParticlesPerVelocityUpdate;
+    for (int startidx = 0; startidx < (int)_markerParticles.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        endidx = fmin(endidx, _markerParticles.size() - 1);
 
-    Threading::splitIndexRangeWorkIntoThreads(numElements,
-                                              _numUpdateMarkerParticleVelocityThreads, 
-                                              (void *)this, 
-                                              _startUpdateRangeOfMarkerParticleVelocitiesThread);
+        _updateRangeOfMarkerParticleVelocities(startidx, endidx);
+    }
 }
 
 /********************************************************************************
@@ -2700,25 +2703,33 @@ vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, 
     return resolvedPosition;
 }
 
-void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx) {
+void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, 
+                                                     double dt) {
     assert(startIdx <= endIdx);
 
+    std::vector<vmath::vec3> positions;
+    positions.reserve(endIdx - startIdx + 1);
+    for (int i = startIdx; i <= endIdx; i++) {
+        positions.push_back(_markerParticles[i].position);
+    }
+
+    std::vector<vmath::vec3> output;
+    _particleAdvector.advectParticlesRK4(positions, &_MACVelocity, dt, 
+                                         output);
+
     MarkerParticle mp;
-    vmath::vec3 p;
-    vmath::vec3 vi;
+    vmath::vec3 nextp;
     GridIndex g;
-    for (int idx = startIdx; idx <= endIdx; idx++) {
-        mp = _markerParticles[idx];
+    for (unsigned int i = 0; i < output.size(); i++) {
+        mp = _markerParticles[startIdx + i];
+        nextp = output[i];
 
-        vi = _getVelocityAtPosition(mp.position);
-        p = _RK4(mp.position, vi, _currentDeltaTime);
-
-        g = Grid3d::positionToGridIndex(p, _dx);
+        g = Grid3d::positionToGridIndex(nextp, _dx);
         if (_materialGrid.isCellSolid(g)) {
-            p = _resolveParticleSolidCellCollision(mp.position, p);
+            nextp = _resolveParticleSolidCellCollision(mp.position, nextp);
         }
 
-        _markerParticles[idx].position = p;
+        _markerParticles[startIdx + i].position = nextp;
     }
 }
 
@@ -2766,22 +2777,15 @@ void FluidSimulation::_removeMarkerParticles() {
     _removeItemsFromVector(_markerParticles, isRemoved);
 }
 
-void *FluidSimulation::_startAdvanceRangeOfMarkerParticlesThread(void *threadarg) {
-    Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
-    int start = params->startIndex;
-    int end = params->endIndex;
-    ((FluidSimulation *)(params->obj))->_advanceRangeOfMarkerParticles(start, end);
-
-    return nullptr;
-}
-
 void FluidSimulation::_advanceMarkerParticles(double dt) {
-    int numElements = (int)_markerParticles.size();
 
-    Threading::splitIndexRangeWorkIntoThreads(numElements, 
-                                              _numAdvanceMarkerParticleThreads, 
-                                              (void *)this, 
-                                              _startAdvanceRangeOfMarkerParticlesThread);
+    int n = _maxParticlesPerAdvection;
+    for (int startidx = 0; startidx < (int)_markerParticles.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        endidx = fmin(endidx, _markerParticles.size() - 1);
+
+        _advanceRangeOfMarkerParticles(startidx, endidx, dt);
+    }
 
     _removeMarkerParticles();
 }

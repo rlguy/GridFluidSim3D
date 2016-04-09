@@ -49,6 +49,7 @@ freely, subject to the following restrictions:
 #include "threading.h"
 #include "gridindexkeymap.h"
 #include "pressuresolver.h"
+#include "particleadvector.h"
 #include "fluidmaterialgrid.h"
 #include "gridindexvector.h"
 #include "fragmentedvector.h"
@@ -243,6 +244,7 @@ private:
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
     void _initializeDiffuseParticleTypes();
+    void _initializeParticleAdvector();
 
     // Simulation step
     double _calculateNextTimeStep();
@@ -378,12 +380,10 @@ private:
     // Transfer grid velocity to marker particles
     void _updateMarkerParticleVelocities();
     void _updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx);
-    static void *_startUpdateRangeOfMarkerParticleVelocitiesThread(void *threadarg);
 
     // Move marker particles through the velocity field
     void _advanceMarkerParticles(double dt);
-    void _advanceRangeOfMarkerParticles(int startIdx, int endIdx);
-    static void *_startAdvanceRangeOfMarkerParticlesThread(void *threadarg);
+    void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
     vmath::vec3 _resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1);
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
@@ -459,8 +459,8 @@ private:
                                               // integration can travel
 
     double _density = 20.0;
-    int _numAdvanceMarkerParticleThreads = 8;
-    int _numUpdateMarkerParticleVelocityThreads = 8;
+    int _maxParticlesPerAdvection = 10e6;
+    int _maxParticlesPerVelocityUpdate = 10e6;
     bool _isAdvectionThreadingEnabled = true;
     MACVelocityField _savedVelocityField;
 
@@ -549,8 +549,9 @@ private:
     FragmentedVector<DiffuseParticle> _diffuseParticles;
 
     Array3d<Brick> _brickGrid;
-
     FluidBrickGrid _fluidBrickGrid;
+
+    ParticleAdvector _particleAdvector;
 
 };
 
