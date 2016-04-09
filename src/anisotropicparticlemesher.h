@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 #ifndef ANISOTROPICPARTICLEMESHER_H
 #define ANISOTROPICPARTICLEMESHER_H
 
-#include <pthread.h>
 #include <stdio.h>
 #include <iostream>
 
@@ -33,8 +32,6 @@ freely, subject to the following restrictions:
 #include "implicitsurfacescalarfield.h"
 #include "polygonizer3d.h"
 #include "stopwatch.h"
-#include "threading.h"
-#include "producerconsumerstack.h"
 #include "vmath.h"
 #include "fluidmaterialgrid.h"
 #include "fragmentedvector.h"
@@ -137,7 +134,6 @@ private:
     void _updateSurfaceParticleComponentIDs();
     void _smoothSurfaceParticlePositions();
     void _computeSmoothedNearSurfaceParticlePositions();
-    static void *_startSmoothRangeOfSurfaceParticlePositionsThread(void *threadarg);
     void _smoothRangeOfSurfaceParticlePositions(int startidx, int endidx);
     vmath::vec3 _getSmoothedParticlePosition(GridPointReference ref,
                                            double radius,
@@ -179,17 +175,17 @@ private:
     void _initializeScalarField(FluidMaterialGrid &materialGrid);
     void _initializeSliceScalarField(int startidx, int endidx, 
                                      FluidMaterialGrid &materialGrid);
-    void _initializeProducerConsumerStacks();
-    void _initializeSliceProducerConsumerStacks(int startidx, int endidx);
     void _addAnisotropicParticlesToScalarField();
+    void _addAnisotropicParticlesToSliceScalarField(int startidx, int endidx);
+    void _computeRangeOfAnisotropicParticles(int startidx, int endidx, 
+                                             std::vector<AnisotropicParticle> &particles);
+    void _computeRangeOfSliceAnisotropicParticles(int refstartidx, int refendidx, 
+                                                  int slicestartidx, int sliceendidx,
+                                                  std::vector<AnisotropicParticle> &particles);
     void _addAnisotropicParticleToScalarField(AnisotropicParticle &aniso);
     void _addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, LevelSet &levelset);
     AnisotropicParticle _computeAnisotropicParticle(GridPointReference ref);
-    static void *_startAnisotropicParticleProducerThread(void *q);
-    static void *_startAnisotropicParticleConsumerThread(void *q);
     void _getUnprocessedParticlesFromStack(int num, std::vector<GridPointReference> &refs);
-    void _anisotropicParticleProducerThread();
-    void _anisotropicParticleConsumerThread();
     vmath::mat3 _computeCovarianceMatrix(GridPointReference ref, double radius,
                                        std::vector<GridPointReference> &neighbours);
     void _covarianceMatrixToSVD(vmath::mat3 &covariance, SVD &svd);
@@ -211,7 +207,6 @@ private:
     double _connectedComponentRadiusFactor = 2.5;   // in number of _particleRadius
     int _minComponentParticleCount = 5;
     double _smoothingConstant = 0.95;               // in range [0.0,1.0]
-    int _numThreads = 8;
 
     int _minAnisotropicParticleNeighbourThreshold = 6;
     double _maxEigenvalueRatio = 5.5;
@@ -231,12 +226,9 @@ private:
     FragmentedVector<vmath::vec3> _smoothedPositions;
 
     ImplicitSurfaceScalarField _scalarField;
-    Threading::Mutex _anisotropicParticleStackMutex;
-    FragmentedVector<GridPointReference> _unprocessedAnisotropicParticleStack;
-    ProducerConsumerStack<AnisotropicParticle> _processedAnisotropicParticleStack;
-    int _numAnisotropicParticles = 0;
-    int _producerStackSize = 1000;
-    int _consumerStackSize = 10000;
+
+    int _anisotropicParticleChunkSize = 1000000;  // Max number of particles to add to scalar
+                                                  // field at once.
 
     int _subdivisionLevel = 1;
     int _numPolygonizationSlices = 1;

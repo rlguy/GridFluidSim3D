@@ -102,7 +102,6 @@ void AnisotropicParticleMesher::_clear() {
 
 void AnisotropicParticleMesher::_initializeSurfaceParticles(FragmentedVector<vmath::vec3> &particles, 
                                                             LevelSet &levelset) {
-
     vmath::vec3 p;
     for (unsigned int i = 0; i < particles.size(); i++) {
         p = particles[i];
@@ -155,7 +154,6 @@ AnisotropicParticleMesher::ParticleLocation AnisotropicParticleMesher::_getParti
 
 }
 
-
 void AnisotropicParticleMesher::_updateNearFarSurfaceParticleReferences(LevelSet &levelset) {
     SurfaceParticle sp;
     ParticleLocation type;
@@ -170,6 +168,7 @@ void AnisotropicParticleMesher::_updateNearFarSurfaceParticleReferences(LevelSet
         }
     }
 }
+
 
 void AnisotropicParticleMesher::_updateSurfaceParticleComponentIDs() {
     double r = _particleRadius*_connectedComponentRadiusFactor;
@@ -205,15 +204,6 @@ void AnisotropicParticleMesher::_smoothSurfaceParticlePositions() {
     _smoothedPositions.shrink_to_fit();
 }
 
-void *AnisotropicParticleMesher::_startSmoothRangeOfSurfaceParticlePositionsThread(void *threadarg) {
-    Threading::IndexRangeThreadParams *params = (Threading::IndexRangeThreadParams *)threadarg;
-    int start = params->startIndex;
-    int end = params->endIndex;
-    ((AnisotropicParticleMesher *)(params->obj))->_smoothRangeOfSurfaceParticlePositions(start, end);
-
-    return nullptr;
-}
-
 void AnisotropicParticleMesher::_computeSmoothedNearSurfaceParticlePositions() {
     
     double supportRadius = _supportRadiusFactor*_particleRadius;
@@ -222,9 +212,7 @@ void AnisotropicParticleMesher::_computeSmoothedNearSurfaceParticlePositions() {
     int numElements = _nearSurfaceParticleRefs.size();
     _smoothedPositions = FragmentedVector<vmath::vec3>(numElements);
     
-    Threading::splitIndexRangeWorkIntoThreads(
-                numElements, _numThreads, (void *)this, 
-                AnisotropicParticleMesher::_startSmoothRangeOfSurfaceParticlePositionsThread);
+    _smoothRangeOfSurfaceParticlePositions(0, _nearSurfaceParticleRefs.size() - 1);
 }
 
 void AnisotropicParticleMesher::_smoothRangeOfSurfaceParticlePositions(int startidx, int endidx) {
@@ -510,8 +498,6 @@ void AnisotropicParticleMesher::_computeScalarField(FluidMaterialGrid &materialG
                                                     FragmentedVector<vmath::vec3> &particles,
                                                     LevelSet &levelset) {
     _initializeScalarField(materialGrid);
-    _initializeProducerConsumerStacks();
-
     _addAnisotropicParticlesToScalarField();
     _addIsotropicParticlesToScalarField(particles, levelset);
 }
@@ -532,9 +518,7 @@ void AnisotropicParticleMesher::_computeSliceScalarField(int startidx, int endid
                                                          LevelSet &levelset,
                                                          FluidMaterialGrid &materialGrid) {
     _initializeSliceScalarField(startidx, endidx, materialGrid);
-    _initializeSliceProducerConsumerStacks(startidx, endidx);
-
-    _addAnisotropicParticlesToScalarField();
+    _addAnisotropicParticlesToSliceScalarField(startidx, endidx);
 
     FragmentedVector<vmath::vec3> sliceParticles;
     _getSliceParticles(startidx, endidx, particles, sliceParticles);
@@ -592,28 +576,25 @@ void AnisotropicParticleMesher::_initializeSliceScalarField(int startidx, int en
     _scalarField.setOffset(fieldOffset);
 }
 
-
-void AnisotropicParticleMesher::_initializeProducerConsumerStacks() {
-    _unprocessedAnisotropicParticleStack.clear();
-
+void AnisotropicParticleMesher::_computeRangeOfAnisotropicParticles(int startidx, int endidx, 
+                                                                    std::vector<AnisotropicParticle> &particles) {
     GridPointReference ref;
-    for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
+    for (int i = startidx; i <= endidx; i++) {
         ref = _nearSurfaceParticleRefs[i];
+
         if (_surfaceParticles[ref.id].componentID != -1) {
-            _unprocessedAnisotropicParticleStack.push_back(ref);
+            particles.push_back(_computeAnisotropicParticle(ref));
         }
     }
-
-    _processedAnisotropicParticleStack = ProducerConsumerStack<AnisotropicParticle>(_consumerStackSize);
-    _numAnisotropicParticles = _unprocessedAnisotropicParticleStack.size();
 }
 
-void AnisotropicParticleMesher::_initializeSliceProducerConsumerStacks(int startidx, int endidx) {
-    _unprocessedAnisotropicParticleStack.clear();
+void AnisotropicParticleMesher::_computeRangeOfSliceAnisotropicParticles(int refstartidx, int refendidx, 
+                                                                         int slicestartidx, int sliceendidx,
+                                                                         std::vector<AnisotropicParticle> &particles) {
+    AABB bbox = _getSliceAABB(slicestartidx, sliceendidx);
 
-    AABB bbox = _getSliceAABB(startidx, endidx);
     GridPointReference ref;
-    for (unsigned int i = 0; i < _nearSurfaceParticleRefs.size(); i++) {
+    for (int i = refstartidx; i <= refendidx; i++) {
         ref = _nearSurfaceParticleRefs[i];
 
         if (_surfaceParticles[ref.id].componentID == -1) {
@@ -621,43 +602,55 @@ void AnisotropicParticleMesher::_initializeSliceProducerConsumerStacks(int start
         }
 
         if (bbox.isPointInside(_surfaceParticles[ref.id].position)) {
-            _unprocessedAnisotropicParticleStack.push_back(ref);
+            particles.push_back(_computeAnisotropicParticle(ref));
         }
     }
-
-    _processedAnisotropicParticleStack = ProducerConsumerStack<AnisotropicParticle>(_consumerStackSize);
-    _numAnisotropicParticles = _unprocessedAnisotropicParticleStack.size();
 }
 
 void AnisotropicParticleMesher::_addAnisotropicParticlesToScalarField() {
-    if (_unprocessedAnisotropicParticleStack.size() == 0) {
-        return;
-    }
-
+    
     double r = _particleRadius*_anisotropicParticleScale;
     _scalarField.setPointRadius(r);
 
-    std::vector<pthread_t> producers(_numThreads);
-    pthread_t consumer;
+    int n = _anisotropicParticleChunkSize;
+    std::vector<AnisotropicParticle> particles;
+    particles.reserve(n);
 
-    pthread_attr_t attr = Threading::createJoinableThreadAttribute();
+    for (int startidx = 0; startidx < (int)_nearSurfaceParticleRefs.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        endidx = fmin(endidx, _nearSurfaceParticleRefs.size() - 1);
 
-    Threading::createThread(&consumer, 
-                            &attr, 
-                            AnisotropicParticleMesher::_startAnisotropicParticleConsumerThread, 
-                            (void *)this);
+        particles.clear();
+        _computeRangeOfAnisotropicParticles(startidx, endidx, particles);
 
-    for (int i = 0; i < _numThreads; i++) {
-        Threading::createThread(&producers[i], 
-                                &attr, 
-                                AnisotropicParticleMesher::_startAnisotropicParticleProducerThread, 
-                                (void *)this);
+        for (unsigned int pidx = 0; pidx < particles.size(); pidx++) {
+            _addAnisotropicParticleToScalarField(particles[pidx]);
+        }
     }
+}
 
-    Threading::destroyThreadAttribute(&attr);
+void AnisotropicParticleMesher::_addAnisotropicParticlesToSliceScalarField(int slicestartidx,
+                                                                           int sliceendidx) {
+    
+    double r = _particleRadius*_anisotropicParticleScale;
+    _scalarField.setPointRadius(r);
 
-    Threading::joinThreads(producers);
-    Threading::joinThread(consumer);
+    int n = _anisotropicParticleChunkSize;
+    std::vector<AnisotropicParticle> particles;
+    particles.reserve(n);
+
+    for (int refstartidx = 0; refstartidx < (int)_nearSurfaceParticleRefs.size(); refstartidx += n) {
+        int refendidx = refstartidx + n - 1;
+        refendidx = fmin(refendidx, _nearSurfaceParticleRefs.size() - 1);
+
+        particles.clear();
+        _computeRangeOfSliceAnisotropicParticles(refstartidx, refendidx, 
+                                                 slicestartidx, sliceendidx, particles);
+
+        for (unsigned int pidx = 0; pidx < particles.size(); pidx++) {
+            _addAnisotropicParticleToScalarField(particles[pidx]);
+        }
+    }
 }
 
 void AnisotropicParticleMesher::_addAnisotropicParticleToScalarField(AnisotropicParticle &aniso) {
@@ -665,6 +658,7 @@ void AnisotropicParticleMesher::_addAnisotropicParticleToScalarField(Anisotropic
     vmath::mat3 G = aniso.anisotropy;
     double scale = _anisotropicParticleFieldScale;
     _scalarField.addEllipsoidValue(p, G, scale);
+
 }
 
 void AnisotropicParticleMesher::_addIsotropicParticlesToScalarField(FragmentedVector<vmath::vec3> &particles, 
@@ -693,84 +687,6 @@ AnisotropicParticleMesher::AnisotropicParticle AnisotropicParticleMesher::_compu
 
     vmath::vec3 p = _surfaceParticles[ref.id].position;
     return AnisotropicParticle(p, G);
-}
-
-void *AnisotropicParticleMesher::_startAnisotropicParticleProducerThread(void *q) {
-    AnisotropicParticleMesher *obj;
-    obj = (AnisotropicParticleMesher *) q;
-    obj->_anisotropicParticleProducerThread();
-
-    return nullptr;
-}
-
-void *AnisotropicParticleMesher::_startAnisotropicParticleConsumerThread(void *q) {
-    AnisotropicParticleMesher *obj;
-    obj = (AnisotropicParticleMesher *) q;
-    obj->_anisotropicParticleConsumerThread();
-
-    return nullptr;
-}
-
-void AnisotropicParticleMesher::_anisotropicParticleProducerThread() {
-
-    int chunksize = _producerStackSize;
-
-    _anisotropicParticleStackMutex.lock();
-    bool isEmpty = _unprocessedAnisotropicParticleStack.empty();
-    _anisotropicParticleStackMutex.unlock();
-
-    std::vector<GridPointReference> refs;
-    std::vector<AnisotropicParticle> anisotropicParticles;
-    while (!isEmpty) {
-
-        refs.clear();
-        anisotropicParticles.clear();
-
-        _getUnprocessedParticlesFromStack(chunksize, refs);
-
-        _anisotropicParticleStackMutex.lock();
-        isEmpty = _unprocessedAnisotropicParticleStack.empty();
-        _anisotropicParticleStackMutex.unlock();
-
-        for (unsigned int i = 0; i < refs.size(); i++) {
-            anisotropicParticles.push_back(_computeAnisotropicParticle(refs[i]));
-        }
-
-        if (anisotropicParticles.empty()) {
-            break;
-        }
-
-        _processedAnisotropicParticleStack.pushAll(anisotropicParticles);
-    }
-}
-
-void AnisotropicParticleMesher::_getUnprocessedParticlesFromStack(int chunksize, 
-                                                                  std::vector<GridPointReference> &refs) {
-    _anisotropicParticleStackMutex.lock();
-
-    int stackSize = (int)_unprocessedAnisotropicParticleStack.size();
-    int n = chunksize <= stackSize ? chunksize : stackSize;
-    for (int i = 0; i < n; i++) {
-        refs.push_back(_unprocessedAnisotropicParticleStack.back());
-        _unprocessedAnisotropicParticleStack.pop_back();
-    }
-
-    _anisotropicParticleStackMutex.unlock();
-}
-
-void AnisotropicParticleMesher::_anisotropicParticleConsumerThread() {
-    std::vector<AnisotropicParticle> anisoParticles;
-
-    int itemsProcessed = 0;
-    while (itemsProcessed < _numAnisotropicParticles) {
-        anisoParticles.clear();
-        _processedAnisotropicParticleStack.popAll(anisoParticles);
-
-        for (unsigned int i = 0; i < anisoParticles.size(); i++) {
-            _addAnisotropicParticleToScalarField(anisoParticles[i]);
-            itemsProcessed++;
-        }
-    }
 }
 
 vmath::mat3 AnisotropicParticleMesher::_computeCovarianceMatrix(GridPointReference ref, double radius,
