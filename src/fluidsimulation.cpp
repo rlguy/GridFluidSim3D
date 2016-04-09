@@ -253,14 +253,6 @@ void FluidSimulation::disableSaveState() {
     _isSaveStateEnabled = false;
 }
 
-void FluidSimulation::enableAdvectionThreading() {
-    _isAdvectionThreadingEnabled = true;
-}
-
-void FluidSimulation::disableAdvectionThreading() {
-    _isAdvectionThreadingEnabled = false;
-}
-
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
     addBodyForce(vmath::vec3(fx, fy, fz)); 
 }
@@ -1760,37 +1752,10 @@ void FluidSimulation::_advectVelocityFieldW() {
     }
 }
 
-void *FluidSimulation::_startAdvectVelocityFieldUThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_advectVelocityFieldU();
-    return nullptr;
-}
-
-void *FluidSimulation::_startAdvectVelocityFieldVThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_advectVelocityFieldV();
-    return nullptr;
-}
-
-void *FluidSimulation::_startAdvectVelocityFieldWThread(void *threadarg) {
-    ((FluidSimulation *)(threadarg))->_advectVelocityFieldW();
-    return nullptr;
-}
-
 void FluidSimulation::_advectVelocityField() {
-    if (_isAdvectionThreadingEnabled) {
-        pthread_attr_t attr = Threading::createJoinableThreadAttribute();
-
-        std::vector<pthread_t> threads(3);
-        Threading::createThread(&threads[0], &attr, _startAdvectVelocityFieldUThread, (void *)this);
-        Threading::createThread(&threads[1], &attr, _startAdvectVelocityFieldVThread, (void *)this);
-        Threading::createThread(&threads[2], &attr, _startAdvectVelocityFieldWThread, (void *)this);
-        Threading::destroyThreadAttribute(&attr);
-
-        Threading::joinThreads(threads);
-    } else {
-        _advectVelocityFieldU();
-        _advectVelocityFieldV();
-        _advectVelocityFieldW();
-    }
+    _advectVelocityFieldU();
+    _advectVelocityFieldV();
+    _advectVelocityFieldW();
 }
 
 /********************************************************************************

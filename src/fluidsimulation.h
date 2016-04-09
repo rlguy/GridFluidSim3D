@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 #ifndef FLUIDSIMULATION_H
 #define FLUIDSIMULATION_H
 
-#include <pthread.h>
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -46,7 +45,6 @@ freely, subject to the following restrictions:
 #include "spatialpointgrid.h"
 #include "isotropicparticlemesher.h"
 #include "anisotropicparticlemesher.h"
-#include "threading.h"
 #include "gridindexkeymap.h"
 #include "pressuresolver.h"
 #include "particleadvector.h"
@@ -124,8 +122,6 @@ public:
     void disableBrickOutput();
     void enableSaveState();
     void disableSaveState();
-    void enableAdvectionThreading();
-    void disableAdvectionThreading();
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
@@ -307,9 +303,6 @@ private:
     void _advectVelocityFieldU();
     void _advectVelocityFieldV();
     void _advectVelocityFieldW();
-    static void *_startAdvectVelocityFieldUThread(void *threadarg);
-    static void *_startAdvectVelocityFieldVThread(void *threadarg);
-    static void *_startAdvectVelocityFieldWThread(void *threadarg);
     void _computeVelocityScalarField(Array3d<float> &field, 
                                      Array3d<bool> &isValueSet, 
                                      int dir);
@@ -461,7 +454,6 @@ private:
     double _density = 20.0;
     int _maxParticlesPerAdvection = 10e6;
     int _maxParticlesPerVelocityUpdate = 10e6;
-    bool _isAdvectionThreadingEnabled = true;
     MACVelocityField _savedVelocityField;
 
     double _surfaceReconstructionSmoothingValue = 0.5;
