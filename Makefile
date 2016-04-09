@@ -1,11 +1,8 @@
-PTHREADINCLUDE=
-PTHREADLIB=
-
-OPENCLINCLUDE=
-OPENCLLIB=
+OPENCLINCLUDE=-I"C:\Program Files (x86)\Intel\OpenCL SDK\include"
+OPENCLLIB="C:\Program Files (x86)\Intel\OpenCL SDK\lib\x86\OpenCL.lib"
 
 OPTIMIZE=-O3
-CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) $(OPENCLINCLUDE) -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) $(OPENCLINCLUDE) -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=$(PTHREADLIB) $(OPENCLLIB) -lstdc++
 
@@ -37,7 +34,6 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \
 		$(SOURCEPATH)/sphericalfluidsource.cpp \
 		$(SOURCEPATH)/stopwatch.cpp \
-		$(SOURCEPATH)/threading.cpp \
 		$(SOURCEPATH)/trianglemesh.cpp \
 		$(SOURCEPATH)/turbulencefield.cpp \
 		$(SOURCEPATH)/vmath.cpp
