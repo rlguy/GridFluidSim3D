@@ -1,10 +1,13 @@
 PTHREADINCLUDE=
 PTHREADLIB=
 
+OPENCLINCLUDE=
+OPENCLLIB=
+
 OPTIMIZE=-O3
-CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) -pthread $(PTHREADINCLUDE) $(OPENCLINCLUDE) -std=c++11 -Wall
 LDFLAGS=
-LDLIBS=$(PTHREADLIB) -lstdc++
+LDLIBS=$(PTHREADLIB) $(OPENCLLIB) -lstdc++
 
 .PHONY: all clean
 
@@ -28,6 +31,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/logfile.cpp \
 		$(SOURCEPATH)/macvelocityfield.cpp \
 		$(SOURCEPATH)/main.cpp \
+		$(SOURCEPATH)/particleadvector.cpp \
 		$(SOURCEPATH)/polygonizer3d.cpp \
 		$(SOURCEPATH)/pressuresolver.cpp \
 		$(SOURCEPATH)/spatialpointgrid.cpp \
