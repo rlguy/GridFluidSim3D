@@ -48,6 +48,8 @@ public:
 
     vmath::vec3 getMinPoint();
     vmath::vec3 getMaxPoint();
+    vmath::vec3 getNearestPointInsideAABB(vmath::vec3 p, double eps);
+    vmath::vec3 getNearestPointInsideAABB(vmath::vec3 p);
 
     vmath::vec3 position;
     double width = 0.0;

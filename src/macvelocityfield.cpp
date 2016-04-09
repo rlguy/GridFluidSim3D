@@ -72,6 +72,18 @@ void MACVelocityField::clear() {
     clearW();
 }
 
+Array3d<float>* MACVelocityField::getArray3dU() {
+    return &_u;
+}
+
+Array3d<float>* MACVelocityField::getArray3dV() {
+    return &_v;
+}
+
+Array3d<float>* MACVelocityField::getArray3dW() {
+    return &_w;
+}
+
 float* MACVelocityField::getRawArrayU() {
     return _u.getRawArray();
 }

@@ -63,6 +63,10 @@ public:
     void addV(int i, int j, int k, double val);
     void addW(int i, int j, int k, double val);
 
+    Array3d<float>* getArray3dU();
+    Array3d<float>* getArray3dV();
+    Array3d<float>* getArray3dW();
+
     float* getRawArrayU();
     float* getRawArrayV();
     float* getRawArrayW();

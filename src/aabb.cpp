@@ -480,3 +480,26 @@ vmath::vec3 AABB::getMinPoint() {
 vmath::vec3 AABB::getMaxPoint() {
     return position + vmath::vec3(width, height, depth);
 }
+
+vmath::vec3 AABB::getNearestPointInsideAABB(vmath::vec3 p) {
+    return getNearestPointInsideAABB(p, 1e-6);
+}
+
+vmath::vec3 AABB::getNearestPointInsideAABB(vmath::vec3 p, double eps) {
+    if (isPointInside(p)) {
+        return p;
+    }
+
+    vmath::vec3 min = getMinPoint();
+    vmath::vec3 max = getMaxPoint();
+
+    p.x = fmax(p.x, min.x);
+    p.y = fmax(p.y, min.y);
+    p.z = fmax(p.z, min.z);
+
+    p.x = fmin(p.x, max.x - eps);
+    p.y = fmin(p.y, max.y - eps);
+    p.z = fmin(p.z, max.z - eps);
+
+    return p;
+}
