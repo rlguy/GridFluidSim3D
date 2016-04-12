@@ -369,18 +369,6 @@ private:
     int _getNumSprayParticles();
     int _getNumBubbleParticles();
     int _getNumFoamParticles();
-
-    /*
-    void _getNextBubbleDiffuseParticle(DiffuseParticle &dp,
-                                       DiffuseParticle &nextdp,
-                                       vmath::vec3 bodyForce, double dt);
-    void _getNextSprayDiffuseParticle(DiffuseParticle &dp,
-                                      DiffuseParticle &nextdp,
-                                      vmath::vec3 bodyForce, double dt);
-    void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
-                                     DiffuseParticle &nextdp,double dt);
-                                     */
-
     void _removeDiffuseParticles();
 
     // Transfer grid velocity to marker particles
@@ -393,7 +381,6 @@ private:
     vmath::vec3 _resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1);
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
-    void _sortMarkerParticlesByGridIndex();
 
     template<class T>
     void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
@@ -496,13 +483,6 @@ private:
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
     int _maxDiffuseParticlesPerCell = 250;
-
-    double _minBrickNeighbourRatio = 0.10;
-    double _maxBrickNeighbourRatio = 0.50;
-    double _brickNeighbourIntensityInfluenceRatio = 0.5;
-    double _maxBrickIntensityVelocity = 10.0;
-    double _maxBrickIntensityAcceleration = 10.0;
-    int _maxInactiveBrickFrames = 0;
 
     double _ratioPICFLIP = 0.05f;
     int _maxMarkerParticlesPerCell = 35;
