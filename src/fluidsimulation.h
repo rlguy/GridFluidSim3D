@@ -313,6 +313,7 @@ private:
 
     // Add gravity to fluid velocities
     void _applyBodyForcesToVelocityField(double dt);
+    vmath::vec3 _getConstantBodyForce();
     void _applyConstantBodyForces(double dt);
     void _applyVariableBodyForces(double dt);
     void _applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
@@ -341,25 +342,35 @@ private:
     void _updateDiffuseMaterial(double dt);
     void _sortMarkerParticlePositions(std::vector<vmath::vec3> &surface, 
                                       std::vector<vmath::vec3> &inside);
-    double _getVelocityUpperBoundByPercentile(double pct);
-    void _getMinMaxMarkerParticleSpeeds(double *min, double *max);
     void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
     void _getSurfaceDiffuseParticleEmitters(std::vector<vmath::vec3> &surface, 
                                             std::vector<DiffuseParticleEmitter> &emitters);
     void _getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
                                            std::vector<DiffuseParticleEmitter> &emitters);
-    double _getWavecrestPotential(vmath::vec3 p, vmath::vec3 *velocity);
+    double _getWavecrestPotential(vmath::vec3 p, vmath::vec3 v);
     double _getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield);
     double _getEnergyPotential(vmath::vec3 velocity);
     void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
-    void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt);
+    void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
+                               double dt,
+                               std::vector<DiffuseParticle> &particles);
     int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
                                        double dt);
+    void _computeNewDiffuseParticleVelocities(std::vector<DiffuseParticle> &particles);
     void _updateDiffuseParticleTypes();
     int _getDiffuseParticleType(DiffuseParticle &p);
     void _updateDiffuseParticleLifetimes(double dt);
     void _advanceDiffuseParticles(double dt);
+    void _advanceSprayParticles(double dt);
+    void _advanceBubbleParticles(double dt);
+    void _advanceFoamParticles(double dt);
+    void _getDiffuseParticleTypeCounts(int *numspray, int *numbubble, int *numfoam);
+    int _getNumSprayParticles();
+    int _getNumBubbleParticles();
+    int _getNumFoamParticles();
+
+    /*
     void _getNextBubbleDiffuseParticle(DiffuseParticle &dp,
                                        DiffuseParticle &nextdp,
                                        vmath::vec3 bodyForce, double dt);
@@ -368,6 +379,8 @@ private:
                                       vmath::vec3 bodyForce, double dt);
     void _getNextFoamDiffuseParticle(DiffuseParticle &dp,
                                      DiffuseParticle &nextdp,double dt);
+                                     */
+
     void _removeDiffuseParticles();
 
     // Transfer grid velocity to marker particles
@@ -488,9 +501,7 @@ private:
     double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
     double _bubbleBouyancyCoefficient = 4.0;
     double _bubbleDragCoefficient = 1.0;
-    double _sprayDragCoefficient = 0.15;
     int _maxDiffuseParticlesPerCell = 250;
-    double _markerParticleVelocityUpperBoundPercentile = 0.999;
 
     double _minBrickNeighbourRatio = 0.10;
     double _maxBrickNeighbourRatio = 0.50;

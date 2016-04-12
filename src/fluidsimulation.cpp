@@ -1762,12 +1762,18 @@ void FluidSimulation::_advectVelocityField() {
     APPLY BODY FORCES
 ********************************************************************************/
 
+vmath::vec3 FluidSimulation::_getConstantBodyForce() {
+    vmath::vec3 bf;
+    for (unsigned int i = 0; i < _constantBodyForces.size(); i++) {
+        bf += _constantBodyForces[i];
+    }
+
+    return bf;
+}
+
 void FluidSimulation::_applyConstantBodyForces(double dt) {
 
-    vmath::vec3 bodyForce;
-    for (unsigned int i = 0; i < _constantBodyForces.size(); i++) {
-        bodyForce += _constantBodyForces[i];
-    }
+    vmath::vec3 bodyForce = _getConstantBodyForce();
 
     if (fabs(bodyForce.x) > 0.0) {
         for (int k = 0; k < _ksize; k++) {
@@ -2075,97 +2081,11 @@ void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid) {
     UPDATE DIFFUSE MATERIAL PARTICLES
 ********************************************************************************/
 
-void FluidSimulation::_getMinMaxMarkerParticleSpeeds(double *min, double *max) {
-    vmath::vec3 v;
-    double sq;
-    double minsq = std::numeric_limits<double>::infinity();
-    double maxsq = 0.0;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        v = _markerParticles[i].velocity;
-        sq = vmath::dot(v, v);
-
-        if (sq < minsq) {
-            minsq = sq;
-        } else if (sq > maxsq) {
-            maxsq = sq;
-        }
-    }
-
-    *min = sqrt(minsq);
-    *max = sqrt(maxsq);
-}
-
-double FluidSimulation::_getVelocityUpperBoundByPercentile(double pct) {
-    if (pct > 1.0) {
-        pct /= 100;
-    }
-
-    assert(pct >= 0.0 && pct <= 1.0);
-
-    
-    int nbins = 1000000;
-    std::vector<int> particleCounts = std::vector<int>(nbins, 0);
-
-    double minspeed, maxspeed;
-    _getMinMaxMarkerParticleSpeeds(&minspeed, &maxspeed);
-
-    if (minspeed == maxspeed) {
-        return maxspeed;
-    }
-
-    double binsize = (maxspeed - minspeed) / (double)nbins;
-    vmath::vec3 v;
-    double s;
-    int binidx;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        v = _markerParticles[i].velocity;
-        s = vmath::length(v);
-
-        binidx = (int)floor(((s - minspeed) / (maxspeed - minspeed)) * (double)nbins);
-        if (binidx >= nbins) {
-            binidx = nbins - 1;
-        } else if (binidx < 0) {
-            binidx = 0;
-        }
-
-        particleCounts[binidx]++;
-    }
-
-    int maxcount = (int)floor(pct*_markerParticles.size());
-    int count = 0;
-    double percentilespeed;
-    for (int i = 0; i < nbins; i++) {
-        percentilespeed = minspeed + (double)i*binsize;
-        count += particleCounts[i];
-        if (count >= maxcount) {
-            break;
-        }
-    }
-
-    return percentilespeed;
-}
-
 void FluidSimulation::_sortMarkerParticlePositions(std::vector<vmath::vec3> &surface, 
                                                    std::vector<vmath::vec3> &inside) {
-
-    // Speeds above max percentile of marker particle speeds are considered too fast to
-    // generate diffuse particles. Generating diffuse particles with high speeds could cause
-    // diffuse simulation to explode.
-    double maxspeedsq = _getVelocityUpperBoundByPercentile(
-                            _markerParticleVelocityUpperBoundPercentile);
-
-    maxspeedsq *= maxspeedsq;
-
     vmath::vec3 p;
-    double speedsq;
     double width = _diffuseSurfaceNarrowBandSize * _dx;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-
-        speedsq = vmath::dot(_markerParticles[i].velocity, _markerParticles[i].velocity);
-        if (speedsq > maxspeedsq) {
-            continue;
-        }
-
         p = _markerParticles[i].position;
         if (_levelset.getDistance(p) < width) {
             surface.push_back(p);
@@ -2176,18 +2096,17 @@ void FluidSimulation::_sortMarkerParticlePositions(std::vector<vmath::vec3> &sur
 
 }
 
-double FluidSimulation::_getWavecrestPotential(vmath::vec3 p, vmath::vec3 *v) {
+double FluidSimulation::_getWavecrestPotential(vmath::vec3 p, vmath::vec3 v) {
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
     if (!_materialGrid.isCellAir(g) && !_materialGrid.isCellNeighbouringAir(g)) {
         return 0.0;
     }
 
-    *v = _getVelocityAtPosition(p);
     vmath::vec3 normal;
     double k = _levelset.getSurfaceCurvature(p, &normal);
 
-    if (vmath::dot(vmath::normalize(*v), normal) < 0.6) {
+    if (vmath::dot(vmath::normalize(v), normal) < 0.6) {
         return 0.0;
     }
 
@@ -2225,18 +2144,22 @@ double FluidSimulation::_getEnergyPotential(vmath::vec3 velocity) {
 void FluidSimulation::_getSurfaceDiffuseParticleEmitters(
                             std::vector<vmath::vec3> &surface, 
                             std::vector<DiffuseParticleEmitter> &emitters) {
-    vmath::vec3 p;
+    
+    std::vector<vmath::vec3> velocities;
+    _particleAdvector.tricubicInterpolate(surface, &_MACVelocity, velocities);
+
+    vmath::vec3 p, v;
     for (unsigned int i = 0; i < surface.size(); i++) {
         p = surface[i];
+        v = velocities[i];
 
-        vmath::vec3 velocity;
-        double Iwc = _getWavecrestPotential(p, &velocity);
+        double Iwc = _getWavecrestPotential(p, v);
         double It = 0.0;
 
         if (Iwc > 0.0 || It > 0.0) {
-            double Ie = _getEnergyPotential(velocity);
+            double Ie = _getEnergyPotential(v);
             if (Ie > 0.0) {
-                emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, Iwc, It));
+                emitters.push_back(DiffuseParticleEmitter(p, v, Ie, Iwc, It));
             }
         }
     }
@@ -2245,16 +2168,20 @@ void FluidSimulation::_getSurfaceDiffuseParticleEmitters(
 void FluidSimulation::_getInsideDiffuseParticleEmitters(
                             std::vector<vmath::vec3> &inside, 
                             std::vector<DiffuseParticleEmitter> &emitters) {
-    vmath::vec3 p;
+    
+    std::vector<vmath::vec3> velocities;
+    _particleAdvector.tricubicInterpolate(inside, &_MACVelocity, velocities);
+
+    vmath::vec3 p, v;
     for (unsigned int i = 0; i < inside.size(); i++) {
         p = inside[i];
+        v = velocities[i];
         double It = _getTurbulencePotential(p, _turbulenceField);
 
         if (It > 0.0) {
-            vmath::vec3 velocity = _getVelocityAtPosition(p);
-            double Ie = _getEnergyPotential(velocity);
+            double Ie = _getEnergyPotential(v);
             if (Ie > 0.0) {
-                emitters.push_back(DiffuseParticleEmitter(p, velocity, Ie, 0.0, It));
+                emitters.push_back(DiffuseParticleEmitter(p, v, Ie, 0.0, It));
             }
         }
     }
@@ -2296,7 +2223,9 @@ int FluidSimulation::_getNumberOfEmissionParticles(DiffuseParticleEmitter &emitt
     return (int)(n + 0.5);
 }
 
-void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, double dt) {
+void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
+                                            double dt,
+                                            std::vector<DiffuseParticle> &particles) {
     int n = _getNumberOfEmissionParticles(emitter, dt);
 
     if (_diffuseParticles.size() + n >= _maxNumDiffuseParticles) {
@@ -2322,7 +2251,8 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
     vmath::vec3 e2 = vmath::normalize(vmath::cross(axis, e1)) * (float)particleRadius;
 
     float Xr, Xt, Xh, r, theta, h, sinval, cosval, lifetime;
-    vmath::vec3 p, v;
+    vmath::vec3 p;
+    vmath::vec3 v(0.0, 0.0, 0.0); // velocities will computed in bulk by ParticleAdvector
     GridIndex g;
     for (int i = 0; i < n; i++) {
         Xr = (float)(rand()) / (float)RAND_MAX;
@@ -2342,21 +2272,43 @@ void FluidSimulation::_emitDiffuseParticles(DiffuseParticleEmitter &emitter, dou
             continue;
         }
 
-        v = _getVelocityAtPosition(p);
         lifetime = (float)(emitter.energyPotential*_maxDiffuseParticleLifetime);
         lifetime = _randomDouble(0.5*lifetime, lifetime);
-        _diffuseParticles.push_back(DiffuseParticle(p, v, lifetime));
+        particles.push_back(DiffuseParticle(p, v, lifetime));
     }
 }
 
 void FluidSimulation::_emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters,
                                             double dt) {
+
+    std::vector<DiffuseParticle> newdps;
     for (unsigned int i = 0; i < emitters.size(); i++) {
         if (_diffuseParticles.size() >= _maxNumDiffuseParticles) {
             return;
         }
 
-        _emitDiffuseParticles(emitters[i], dt);
+        _emitDiffuseParticles(emitters[i], dt, newdps);
+    }
+
+    _computeNewDiffuseParticleVelocities(newdps);
+
+    _diffuseParticles.reserve(_diffuseParticles.size() + newdps.size());
+    for (unsigned int i = 0; i < newdps.size(); i++) {
+        _diffuseParticles.push_back(newdps[i]);
+    }
+}
+
+void FluidSimulation::_computeNewDiffuseParticleVelocities(std::vector<DiffuseParticle> &particles) {
+    std::vector<vmath::vec3> data;
+    data.reserve(particles.size());
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        data.push_back(particles[i].position);
+    }
+
+    _particleAdvector.tricubicInterpolate(data, &_MACVelocity);
+
+    for (unsigned int i = 0; i < particles.size(); i++) {
+        particles[i].velocity = data[i];
     }
 }
 
@@ -2419,71 +2371,187 @@ void FluidSimulation::_updateDiffuseParticleLifetimes(double dt) {
     }
 }
 
-void FluidSimulation::_getNextBubbleDiffuseParticle(DiffuseParticle &dp,
-                                                    DiffuseParticle &nextdp,
-                                                    vmath::vec3 bodyForce,
-                                                    double dt) {
-    vmath::vec3 vmac = _getVelocityAtPosition(dp.position);
-    vmath::vec3 vbub = dp.velocity;
-    vmath::vec3 bouyancyVelocity = (float)-_bubbleBouyancyCoefficient*bodyForce;
-    vmath::vec3 dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
-
-    nextdp.velocity = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
-    nextdp.position = dp.position + nextdp.velocity*(float)dt;
-}
-
-void FluidSimulation::_getNextSprayDiffuseParticle(DiffuseParticle &dp,
-                                                   DiffuseParticle &nextdp,
-                                                   vmath::vec3 bodyForce,
-                                                   double dt) {
-    float drag = -(float)_sprayDragCoefficient*vmath::dot(dp.velocity, dp.velocity);
-
-    vmath::vec3 accforce = bodyForce;
-    if (fabs(drag) > 0.0) {
-        accforce += drag*vmath::normalize(dp.velocity);
+void FluidSimulation::_getDiffuseParticleTypeCounts(int *numspray, 
+                                                    int *numbubble, 
+                                                    int *numfoam) {
+    int spray = 0;
+    int bubble = 0;
+    int foam = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        int type = _diffuseParticles[i].type;
+        if (type == DP_SPRAY) {
+            spray++;
+        } else if (type == DP_BUBBLE) {
+            bubble++;
+        } else if (type == DP_FOAM) {
+            foam++;
+        }
     }
 
-    nextdp.velocity = dp.velocity + accforce*(float)dt;
-    nextdp.position = dp.position + nextdp.velocity*(float)dt;
+    *numspray = spray;
+    *numbubble = bubble;
+    *numfoam = foam;
 }
 
-void FluidSimulation::_getNextFoamDiffuseParticle(DiffuseParticle &dp,
-                                                  DiffuseParticle &nextdp,
-                                                  double dt) {
-    vmath::vec3 v0 = _getVelocityAtPosition(dp.position);
-    nextdp.velocity = v0;
-    nextdp.position = _RK2(dp.position, v0, dt);
-}
-
-void FluidSimulation::_advanceDiffuseParticles(double dt) {
-
-    vmath::vec3 bodyForce;
-    for (unsigned int i = 0; i < _constantBodyForces.size(); i++) {
-        bodyForce += _constantBodyForces[i];
+int FluidSimulation::_getNumSprayParticles() {
+    int spraycount = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DP_SPRAY) {
+            spraycount++;
+        }
     }
 
-    DiffuseParticle dp, nextdp;
+    return spraycount;
+}
+
+int FluidSimulation::_getNumBubbleParticles() {
+    int bubblecount = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DP_BUBBLE) {
+            bubblecount++;
+        }
+    }
+
+    return bubblecount;
+}
+
+int FluidSimulation::_getNumFoamParticles() {
+    int foamcount = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DP_FOAM) {
+            foamcount++;
+        }
+    }
+
+    return foamcount;
+}
+
+void FluidSimulation::_advanceSprayParticles(double dt) {
+    vmath::vec3 bodyForce = _getConstantBodyForce();
+
+    DiffuseParticle dp;
+    vmath::vec3 nextv, nextp;
     GridIndex g;
     for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
         dp = _diffuseParticles[i];
 
-        if (dp.type == DP_SPRAY) {
-            _getNextSprayDiffuseParticle(dp, nextdp, bodyForce, dt);
-        } else if (dp.type == DP_BUBBLE) {
-            _getNextBubbleDiffuseParticle(dp, nextdp, bodyForce, dt);
-        } else {
-            _getNextFoamDiffuseParticle(dp, nextdp, dt);
+        if (dp.type != DP_SPRAY) {
+            continue;
         }
 
-        g = Grid3d::positionToGridIndex(nextdp.position, _dx);
-
+        nextv = dp.velocity + bodyForce * (float)dt;
+        nextp = dp.position + nextv * (float)dt;
+        
+        g = Grid3d::positionToGridIndex(nextp, _dx);
         if (_materialGrid.isCellSolid(g)) {
-            nextdp.position = _resolveParticleSolidCellCollision(dp.position, nextdp.position);
+            nextp = _resolveParticleSolidCellCollision(dp.position, nextp);
         }
 
-        _diffuseParticles[i].position = nextdp.position;
-        _diffuseParticles[i].velocity = nextdp.velocity;
+        _diffuseParticles[i].position = nextp;
+        _diffuseParticles[i].velocity = nextv;
     }
+}
+
+void FluidSimulation::_advanceBubbleParticles(double dt) {
+
+    int bubblecount = _getNumBubbleParticles();
+    if (bubblecount == 0) {
+        return;
+    }
+
+    std::vector<vmath::vec3> data;
+    data.reserve(bubblecount);
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DP_BUBBLE) {
+            data.push_back(_diffuseParticles[i].position);
+        }
+    }
+
+    _particleAdvector.tricubicInterpolate(data, &_MACVelocity);
+
+    vmath::vec3 bodyForce = _getConstantBodyForce();
+
+    DiffuseParticle dp;
+    vmath::vec3 vmac, vbub, bouyancyVelocity, dragVelocity;
+    vmath::vec3 nextv, nextp;
+    GridIndex g;
+    int dataidx = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        dp = _diffuseParticles[i];
+        
+        if (dp.type != DP_BUBBLE) {
+            continue;
+        }
+
+        vmac = data[dataidx];
+        vbub = dp.velocity;
+        bouyancyVelocity = (float)-_bubbleBouyancyCoefficient * bodyForce;
+        dragVelocity = (float)_bubbleDragCoefficient*(vmac - vbub) / (float)dt;
+
+        nextv = dp.velocity + (float)dt*(bouyancyVelocity + dragVelocity);
+        nextp = dp.position + nextv * (float)dt;
+
+        g = Grid3d::positionToGridIndex(nextp, _dx);
+        if (_materialGrid.isCellSolid(g)) {
+            nextp = _resolveParticleSolidCellCollision(dp.position, nextp);
+        }
+
+        _diffuseParticles[i].position = nextp;
+        _diffuseParticles[i].velocity = nextv;
+
+        dataidx++;
+    }
+}
+
+void FluidSimulation::_advanceFoamParticles(double dt) {
+
+    int foamcount = _getNumFoamParticles();
+    if (foamcount == 0) {
+        return;
+    }
+
+    std::vector<vmath::vec3> positions;
+    positions.reserve(foamcount);
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        if (_diffuseParticles[i].type == DP_FOAM) {
+            positions.push_back(_diffuseParticles[i].position);
+        }
+    }
+
+    std::vector<vmath::vec3> nextpositions;
+    _particleAdvector.advectParticlesRK2(positions, 
+                                         &_MACVelocity,
+                                         dt,
+                                         nextpositions);
+
+    DiffuseParticle dp;
+    vmath::vec3 nextp;
+    GridIndex g;
+    int sprayidx = 0;
+    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
+        dp = _diffuseParticles[i];
+        
+        if (dp.type != DP_FOAM) {
+            continue;
+        }
+
+        nextp = nextpositions[sprayidx];
+
+        g = Grid3d::positionToGridIndex(nextp, _dx);
+        if (_materialGrid.isCellSolid(g)) {
+            nextp = _resolveParticleSolidCellCollision(dp.position, nextp);
+        }
+
+        _diffuseParticles[i].position = nextp;
+
+        sprayidx++;
+    }
+}
+
+void FluidSimulation::_advanceDiffuseParticles(double dt) {
+    _advanceSprayParticles(dt);
+    _advanceBubbleParticles(dt);
+    _advanceFoamParticles(dt);
 }
 
 void FluidSimulation::_removeDiffuseParticles() {
@@ -2535,19 +2603,8 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
     _advanceDiffuseParticles(dt);
     _removeDiffuseParticles();
 
-    int spraycount = 0;
-    int bubblecount = 0;
-    int foamcount = 0;
-    for (unsigned int i = 0; i < _diffuseParticles.size(); i++) {
-        int type = _diffuseParticles[i].type;
-        if (type == DP_SPRAY) {
-            spraycount++;
-        } else if (type == DP_BUBBLE) {
-            bubblecount++;
-        } else if (type == DP_FOAM) {
-            foamcount++;
-        }
-    }
+    int spraycount, bubblecount, foamcount;
+    _getDiffuseParticleTypeCounts(&spraycount, &bubblecount, &foamcount);
 
     _logfile.log("Num Diffuse Particles: ", (int)_diffuseParticles.size(), 1);
     _logfile.log("NUM SPRAY:  ", spraycount, 2);
