@@ -2657,38 +2657,6 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
     ADVANCE MARKER PARTICLES
 ********************************************************************************/
 
-vmath::vec3 FluidSimulation::_getVelocityAtPosition(vmath::vec3 p) {
-    return _MACVelocity.evaluateVelocityAtPosition(p);
-}
-
-vmath::vec3 FluidSimulation::_RK2(vmath::vec3 p0, vmath::vec3 v0, double dt) {
-    vmath::vec3 k1 = v0;
-    vmath::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
-    vmath::vec3 p1 = p0 + (float)dt*k2;
-
-    return p1;
-}
-
-vmath::vec3 FluidSimulation::_RK3(vmath::vec3 p0, vmath::vec3 v0, double dt) {
-    vmath::vec3 k1 = v0;
-    vmath::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
-    vmath::vec3 k3 = _getVelocityAtPosition(p0 + (float)(0.75*dt)*k2);
-    vmath::vec3 p1 = p0 + (float)(dt/9.0f)*(2.0f*k1 + 3.0f*k2 + 4.0f*k3);
-
-    return p1;
-}
-
-vmath::vec3 FluidSimulation::_RK4(vmath::vec3 p0, vmath::vec3 v0, double dt) {
-    vmath::vec3 k1 = v0;
-    vmath::vec3 k2 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
-    vmath::vec3 k3 = _getVelocityAtPosition(p0 + (float)(0.5*dt)*k2);
-    vmath::vec3 k4 = _getVelocityAtPosition(p0 + (float)dt*k3);
-    
-    vmath::vec3 p1 = p0 + (float)(dt/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
-
-    return p1;
-}
-
 vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1) {
     
     GridIndex g1 = Grid3d::positionToGridIndex(p0, _dx);

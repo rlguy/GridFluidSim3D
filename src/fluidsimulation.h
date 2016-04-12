@@ -394,7 +394,6 @@ private:
     void _removeMarkerParticles();
     void _shuffleMarkerParticleOrder();
     void _sortMarkerParticlesByGridIndex();
-    vmath::vec3 _getVelocityAtPosition(vmath::vec3 p);
 
     template<class T>
     void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
@@ -429,11 +428,6 @@ private:
         }
         items.shrink_to_fit();
     }
-    
-    // Runge-Kutta integrators used in advection and advancing marker particles
-    vmath::vec3 _RK2(vmath::vec3 p0, vmath::vec3 v0, double dt);
-    vmath::vec3 _RK3(vmath::vec3 p0, vmath::vec3 v0, double dt);
-    vmath::vec3 _RK4(vmath::vec3 p0, vmath::vec3 v0, double dt);
 
     inline double _randomDouble(double min, double max) {
         return min + (double)rand() / ((double)RAND_MAX / (max - min));
