@@ -85,13 +85,13 @@ AABB CuboidFluidSource::getBoundingBox() {
 void CuboidFluidSource::setCenter(vmath::vec3 pos) {
     vmath::vec3 c = getCenter();
     translate(pos - c);
-    _bbox.position = pos;
+    _bbox.position = getPosition();
 }
 
 vmath::vec3 CuboidFluidSource::getCenter() {
     return vmath::vec3(position.x + 0.5*_bbox.width, 
-                     position.y + 0.5*_bbox.width, 
-                     position.z + 0.5*_bbox.width);
+                       position.y + 0.5*_bbox.height, 
+                       position.z + 0.5*_bbox.depth);
 }
 
 void CuboidFluidSource::expand(double value) {
