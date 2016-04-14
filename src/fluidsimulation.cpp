@@ -1258,20 +1258,19 @@ void FluidSimulation::_updateLevelSetSignedDistance() {
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
                                                   std::string foamfile,
                                                   std::string sprayfile) {
-    double eps = 1e-1;
     TriangleMesh bubbleMesh;
     TriangleMesh foamMesh;
     TriangleMesh sprayMesh;
+
+    bubbleMesh.vertices.reserve(_diffuseMaterial.getNumBubbleParticles());
+    foamMesh.vertices.reserve(_diffuseMaterial.getNumFoamParticles());
+    sprayMesh.vertices.reserve(_diffuseMaterial.getNumSprayParticles());
 
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
 
     DiffuseParticle dp;
     for (unsigned int i = 0; i < dps->size(); i++) {
         dp = dps->at(i);
-
-        if (_isVertexNearSolid(dp.position, eps)) {
-            continue;
-        }
 
         if (dp.type == DiffuseParticleType::bubble && _isBubbleDiffuseMaterialEnabled) {
             bubbleMesh.vertices.push_back(dp.position);
@@ -1294,18 +1293,14 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
 }
 
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
-
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
 
-    double eps = 1e-1;
     TriangleMesh diffuseMesh;
+    diffuseMesh.vertices.reserve(dps->size());
+
     DiffuseParticle dp;
     for (unsigned int i = 0; i < dps->size(); i++) {
         dp = dps->at(i);
-
-        if (_isVertexNearSolid(dp.position, eps)) {
-            continue;
-        }
 
         if (dp.type == DiffuseParticleType::bubble && _isBubbleDiffuseMaterialEnabled) {
             diffuseMesh.vertices.push_back(dp.position);
@@ -1315,6 +1310,7 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
             diffuseMesh.vertices.push_back(dp.position);
         }
     }
+
     diffuseMesh.writeMeshToPLY(diffusefile);
 }
 
