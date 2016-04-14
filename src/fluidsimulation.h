@@ -41,6 +41,7 @@ freely, subject to the following restrictions:
 #include "sphericalfluidsource.h"
 #include "cuboidfluidsource.h"
 #include "turbulencefield.h"
+#include "diffuseparticlesimulation.h"
 #include "fluidbrickgrid.h"
 #include "spatialpointgrid.h"
 #include "isotropicparticlemesher.h"
@@ -54,22 +55,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 
 #include "markerparticle.h"
-
-struct DiffuseParticle {
-    vmath::vec3 position;
-    vmath::vec3 velocity;
-    float lifetime;
-    int type;
-
-    DiffuseParticle() : lifetime(0.0),
-                        type(-1) {}
-
-    DiffuseParticle(vmath::vec3 p, vmath::vec3 v, float time) : 
-                        position(p),
-                        velocity(v),
-                        lifetime(time),
-                        type(-1) {}
-};
+#include "diffuseparticle.h"
 
 class FluidSimulation
 {
@@ -166,6 +152,8 @@ public:
     std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
     std::vector<float> getDiffuseParticleLifetimes();
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
+    std::vector<char> getDiffuseParticleTypes();
+    std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
     Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
     LevelSet* getLevelSet();
@@ -239,7 +227,6 @@ private:
     void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
-    void _initializeDiffuseParticleTypes();
     void _initializeParticleAdvector();
 
     // Simulation step
@@ -340,36 +327,6 @@ private:
 
     // Update diffuse material (spray, foam, bubbles)
     void _updateDiffuseMaterial(double dt);
-    void _sortMarkerParticlePositions(std::vector<vmath::vec3> &surface, 
-                                      std::vector<vmath::vec3> &inside);
-    void _getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
-    void _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters);
-    void _getSurfaceDiffuseParticleEmitters(std::vector<vmath::vec3> &surface, 
-                                            std::vector<DiffuseParticleEmitter> &emitters);
-    void _getInsideDiffuseParticleEmitters(std::vector<vmath::vec3> &inside, 
-                                           std::vector<DiffuseParticleEmitter> &emitters);
-    double _getWavecrestPotential(vmath::vec3 p, vmath::vec3 v);
-    double _getTurbulencePotential(vmath::vec3 p, TurbulenceField &tfield);
-    double _getEnergyPotential(vmath::vec3 velocity);
-    void _emitDiffuseParticles(std::vector<DiffuseParticleEmitter> &emitters, double dt);
-    void _emitDiffuseParticles(DiffuseParticleEmitter &emitter, 
-                               double dt,
-                               std::vector<DiffuseParticle> &particles);
-    int _getNumberOfEmissionParticles(DiffuseParticleEmitter &emitter,
-                                       double dt);
-    void _computeNewDiffuseParticleVelocities(std::vector<DiffuseParticle> &particles);
-    void _updateDiffuseParticleTypes();
-    int _getDiffuseParticleType(DiffuseParticle &p);
-    void _updateDiffuseParticleLifetimes(double dt);
-    void _advanceDiffuseParticles(double dt);
-    void _advanceSprayParticles(double dt);
-    void _advanceBubbleParticles(double dt);
-    void _advanceFoamParticles(double dt);
-    void _getDiffuseParticleTypeCounts(int *numspray, int *numbubble, int *numfoam);
-    int _getNumSprayParticles();
-    int _getNumBubbleParticles();
-    int _getNumFoamParticles();
-    void _removeDiffuseParticles();
 
     // Transfer grid velocity to marker particles
     void _updateMarkerParticleVelocities();
@@ -416,6 +373,24 @@ private:
         items.shrink_to_fit();
     }
 
+    template<class T>
+    void _removeItemsFromVector(FragmentedVector<T> *items, std::vector<bool> &isRemoved) {
+        assert(items->size() == isRemoved.size());
+
+        int currentidx = 0;
+        for (unsigned int i = 0; i < items->size(); i++) {
+            if (!isRemoved[i]) {
+                (*items)[currentidx] = (*items)[i];
+                currentidx++;
+            }
+        }
+
+        for (int i = 0; i < items->size() - currentidx; i++) {
+            items->pop_back();
+        }
+        items->shrink_to_fit();
+    }
+
     inline double _randomDouble(double min, double max) {
         return min + (double)rand() / ((double)RAND_MAX / (max - min));
     }
@@ -431,7 +406,6 @@ private:
     bool _isLastTimeStepForFrame = false;
     double _simulationTime = 0;
     double _realTime = 0;
-    bool _isDiffuseParticleTypesInitialized = true;
     int _loadStateReadChunkSize = 50000;
 
     int _isize = 0;
@@ -462,27 +436,6 @@ private:
     double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
     int _outputFluidSurfacePolygonizerChunkSize = 128*128*64;
     double _outputFluidSurfacePolygonizerChunkPad = 3.0; // in # of cells
-
-    double _diffuseSurfaceNarrowBandSize = 0.25; // size in # of cells
-    double _minWavecrestCurvature = 0.20;
-    double _maxWavecrestCurvature = 1.0;
-    double _minParticleEnergy = 0.0;
-    double _maxParticleEnergy = 60.0;
-    double _minTurbulence = 100.0;
-    double _maxTurbulence = 200.0;
-    double _wavecrestEmissionRate = 175;
-    double _turbulenceEmissionRate = 175;
-    unsigned int _maxNumDiffuseParticles = 6e6;
-    double _maxDiffuseParticleLifetime = 2.8;
-    double _sprayParticleLifetimeModifier = 2.0;
-    double _sprayParticleMaxDistanceLifetimeModifier = 15.0;
-    double _bubbleParticleLifetimeModifier = 0.333;
-    double _foamParticleLifetimeModifier = 1.0;
-    double _maxFoamToSurfaceDistance = 2.0;   // in number of grid cells
-    double _maxSprayToSurfaceDistance = 12.0;  // in number of grid cells
-    double _bubbleBouyancyCoefficient = 4.0;
-    double _bubbleDragCoefficient = 1.0;
-    int _maxDiffuseParticlesPerCell = 250;
 
     double _ratioPICFLIP = 0.05f;
     int _maxMarkerParticlesPerCell = 35;
@@ -515,6 +468,7 @@ private:
     LogFile _logfile;
     TriangleMesh _surfaceMesh;
     LevelSet _levelset;
+    DiffuseParticleSimulation _diffuseMaterial;
     
     std::vector<FluidPoint> _fluidPoints;
     std::vector<FluidCuboid> _fluidCuboids;
@@ -522,8 +476,6 @@ private:
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
     int _uniqueFluidSourceID = 0;
-    TurbulenceField _turbulenceField;
-    FragmentedVector<DiffuseParticle> _diffuseParticles;
 
     Array3d<Brick> _brickGrid;
     FluidBrickGrid _fluidBrickGrid;
