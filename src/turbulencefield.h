@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 #include "interpolation.h"
 #include "macvelocityfield.h"
 #include "gridindexvector.h"
+#include "fluidmaterialgrid.h"
 #include "vmath.h"
 
 class TurbulenceField
@@ -37,6 +38,9 @@ public:
 
     void calculateTurbulenceField(MACVelocityField *vfield,
                                   GridIndexVector &fluidCells);
+    void calculateTurbulenceField(MACVelocityField *vfield,
+                                  FluidMaterialGrid &mgrid);
+
     void destroyTurbulenceField();
     double evaluateTurbulenceAtPosition(vmath::vec3 p);
 

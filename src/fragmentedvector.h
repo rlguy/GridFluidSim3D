@@ -148,6 +148,14 @@ public:
 		return _nodes[nodeIdx][itemIdx];
 	}
 
+	const T at(int i) const {
+		return (*this)[i];
+	}
+
+	T& at(int i) {
+		return (*this)[i];
+	}
+
 	void sort() {
 		sort(_defaultCompare);
 	}

@@ -77,6 +77,23 @@ double TurbulenceField::_calculateTurbulenceAtGridCell(int i, int j, int k,
 }
 
 void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
+                                               FluidMaterialGrid &mgrid) {
+
+    GridIndexVector fluidcells(mgrid.width, mgrid.height, mgrid.depth);
+    for (int k = 0; k < mgrid.depth; k++) {
+        for (int j = 0; j < mgrid.height; j++) {
+            for (int i = 0; i < mgrid.width; i++) {
+                if (mgrid.isCellFluid(i, j, k)) {
+                    fluidcells.push_back(i, j, k);
+                }
+            }
+        }
+    }
+
+    calculateTurbulenceField(vfield, fluidcells);
+}
+
+void TurbulenceField::calculateTurbulenceField(MACVelocityField *vfield,
                                                GridIndexVector &fluidCells) {
     _field.fill(0.0);
 

@@ -13,6 +13,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/anisotropicparticlemesher.cpp \
 		$(SOURCEPATH)/collision.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
+		$(SOURCEPATH)/diffuseparticlesimulation.cpp \
 		$(SOURCEPATH)/fluidbrickgrid.cpp \
 		$(SOURCEPATH)/fluidmaterialgrid.cpp \
 		$(SOURCEPATH)/fluidsimulation.cpp \
