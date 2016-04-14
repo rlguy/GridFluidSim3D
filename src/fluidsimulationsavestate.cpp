@@ -85,6 +85,9 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     // floats: diffuse particle lifetimes
     _writeBinaryDiffuseParticleLifetimes(_fluidsim, &state);
 
+    // chars: diffuse particle types
+    _writeBinaryDiffuseParticleTypes(_fluidsim, &state);
+
     // ints: solid cell indicies in form [i1, j1, k1, i2, j2, k2, ...]
     _writeBinarySolidCellIndices(_fluidsim, &state);
 
@@ -117,14 +120,15 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
     _dpPositionOffset = _mpVelocityOffset + _numMarkerParticles*(3*sizeof(float));
     _dpVelocityOffset = _dpPositionOffset + _numDiffuseParticles*(3*sizeof(float));
     _dpLifetimeOffset = _dpVelocityOffset + _numDiffuseParticles*(3*sizeof(float));
-    _solidCellOffset = _dpLifetimeOffset + _numDiffuseParticles*sizeof(float);
+    _dpTypeOffset = _dpLifetimeOffset + _numDiffuseParticles*(sizeof(float));
+    _solidCellOffset = _dpTypeOffset + _numDiffuseParticles*sizeof(char);
     unsigned int endoff = _solidCellOffset + _numSolidCells*(3*sizeof(int));
 
     _loadState.seekg (0, _loadState.end);
-    _oefOffset = _loadState.tellg();
+    _eofOffset = _loadState.tellg();
     _loadState.seekg (0, _loadState.beg);
 
-    if (endoff != _oefOffset) {
+    if (endoff != _eofOffset) {
         return false;
     }
 
@@ -193,6 +197,10 @@ std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes() {
     return getDiffuseParticleLifetimes(0, _numDiffuseParticles - 1);
 }
 
+std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes() {
+    return getDiffuseParticleTypes(0, _numDiffuseParticles - 1);
+}
+
 std::vector<GridIndex> FluidSimulationSaveState::getSolidCells() {
     return getSolidCells(0, _numSolidCells - 1);
 }
@@ -213,7 +221,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
     std::vector<vmath::vec3> positions;
     positions.reserve(n);
 
-    _readParticleVectors(positions, n, &_loadState);
+    bool success = _readParticleVectors(positions, n, &_loadState);
+    assert(success);
 
     return positions;
 }
@@ -234,7 +243,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities(
     std::vector<vmath::vec3> velocities;
     velocities.reserve(n);
 
-    _readParticleVectors(velocities, n, &_loadState);
+    bool success = _readParticleVectors(velocities, n, &_loadState);
+    assert(success);
 
     return velocities;
 }
@@ -255,7 +265,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions(
     std::vector<vmath::vec3> positions;
     positions.reserve(n);
 
-    _readParticleVectors(positions, n, &_loadState);
+    bool success = _readParticleVectors(positions, n, &_loadState);
+    assert(success);
 
     return positions;
 }
@@ -276,7 +287,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities(
     std::vector<vmath::vec3> velocities;
     velocities.reserve(n);
 
-    _readParticleVectors(velocities, n, &_loadState);
+    bool success = _readParticleVectors(velocities, n, &_loadState);
+    assert(success);
 
     return velocities;
 }
@@ -298,9 +310,34 @@ std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes(
     std::vector<float> lifetimes;
     lifetimes.reserve(n);
 
-    _readParticleLifetimes(lifetimes, n, &_loadState);
+    bool success = _readParticleLifetimes(lifetimes, n, &_loadState);
+    assert(success);
 
     return lifetimes;
+}
+
+std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes(
+                                                        int startidx, int endidx) {
+
+    if (startidx > endidx) {
+        return std::vector<char>();
+    }
+
+    assert(_isLoadStateInitialized);
+    assert(startidx <= endidx);
+    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+
+    unsigned int foffset = _dpTypeOffset + startidx*sizeof(char);
+    _setLoadStateFileOffset(foffset);
+
+    int n = endidx - startidx + 1;
+    std::vector<char> types;
+    types.reserve(n);
+
+    bool success = _readParticleTypes(types, n, &_loadState);
+    assert(success);
+
+    return types;
 }
 
 std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
@@ -319,7 +356,8 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
     std::vector<GridIndex> cells;
     cells.reserve(n);
 
-    _readSolidCells(cells, n, &_loadState);
+    bool success = _readSolidCells(cells, n, &_loadState);
+    assert(success);
 
     return cells;
 }
@@ -363,7 +401,7 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulat
             endidx = n - 1;
         }
 
-        std::vector<vmath::vec3> mvs = _fluidsim->getMarkerParticleVelocities(startidx, endidx);
+        mvs = _fluidsim->getMarkerParticleVelocities(startidx, endidx);
         _writeBinaryVector3f(mvs, state);
 
         numWritten += chunksize;
@@ -384,7 +422,7 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticlePositions(FluidSimulat
             endidx = n - 1;
         }
 
-        std::vector<vmath::vec3> dps = _fluidsim->getDiffuseParticlePositions(startidx, endidx);
+        dps = _fluidsim->getDiffuseParticlePositions(startidx, endidx);
         _writeBinaryVector3f(dps, state);
 
         numWritten += chunksize;
@@ -405,7 +443,7 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticleVelocities(FluidSimula
             endidx = n - 1;
         }
 
-        std::vector<vmath::vec3> dvs = _fluidsim->getDiffuseParticleVelocities(startidx, endidx);
+        dvs = _fluidsim->getDiffuseParticleVelocities(startidx, endidx);
         _writeBinaryVector3f(dvs, state);
 
         numWritten += chunksize;
@@ -426,8 +464,29 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticleLifetimes(FluidSimulat
             endidx = n - 1;
         }
 
-        std::vector<float> dfs = _fluidsim->getDiffuseParticleLifetimes(startidx, endidx);
+        dfs = _fluidsim->getDiffuseParticleLifetimes(startidx, endidx);
         _writeBinaryVectorf(dfs, state);
+
+        numWritten += chunksize;
+    }
+}
+
+void FluidSimulationSaveState::_writeBinaryDiffuseParticleTypes(FluidSimulation *_fluidsim,
+                                                                std::ofstream *state) {
+    int n = _fluidsim->getNumDiffuseParticles();
+    int chunksize = _writeChunkSize;
+    int numWritten = 0;
+
+    std::vector<char> dts;
+    while (numWritten < n) {
+        int startidx = numWritten;
+        int endidx = numWritten + chunksize - 1;
+        if (endidx >= n) {
+            endidx = n - 1;
+        }
+
+        dts = _fluidsim->getDiffuseParticleTypes(startidx, endidx);
+        _writeBinaryVectorc(dts, state);
 
         numWritten += chunksize;
     }
@@ -495,6 +554,11 @@ void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<vmath::vec3> &ve
 void FluidSimulationSaveState::_writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state) {
     int binsize = floats.size() * sizeof(float);
     state->write((char *)&floats[0], binsize);
+}
+
+void FluidSimulationSaveState::_writeBinaryVectorc(std::vector<char> &chars, std::ofstream *state) {
+    int binsize = chars.size() * sizeof(char);
+    state->write((char *)&chars[0], binsize);
 }
 
 void FluidSimulationSaveState::_writeBinaryVectorGridIndex(std::vector<GridIndex> &indices, 
@@ -583,6 +647,29 @@ bool FluidSimulationSaveState::_readParticleLifetimes(std::vector<float> &pls,
 
     float *lifetimes = (float *)bin;
     pls.assign(lifetimes, lifetimes + numParticles);
+    delete[] bin;
+
+    return true;
+}
+
+bool FluidSimulationSaveState::_readParticleTypes(std::vector<char> &types, 
+                                                  int numParticles,
+                                                  std::ifstream *state) {
+    int binsize = numParticles*sizeof(char);
+    char *bin = new char[binsize];
+
+    state->read(bin, binsize);
+    _currentOffset = _loadState.tellg();
+
+    if (!state->good()) {
+        delete[] bin;
+        return false;
+    }
+
+    for (int i = 0; i < numParticles; i++) {
+        types.push_back(bin[i]);
+    }
+
     delete[] bin;
 
     return true;

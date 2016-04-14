@@ -51,12 +51,14 @@ public:
     std::vector<vmath::vec3> getDiffuseParticlePositions();
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<float> getDiffuseParticleLifetimes();
+    std::vector<char> getDiffuseParticleTypes();
     std::vector<GridIndex> getSolidCells();
     std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
     std::vector<vmath::vec3> getMarkerParticleVelocities(int startidx, int endidx);
     std::vector<vmath::vec3> getDiffuseParticlePositions(int startidx, int endidx);
     std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
+    std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
     std::vector<GridIndex> getSolidCells(int startidx, int endidx);
     bool isLoadStateInitialized();
 
@@ -69,16 +71,19 @@ private:
     void _writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
                                               std::ofstream *state);
     void _writeBinaryDiffuseParticlePositions(FluidSimulation *_fluidsim,
-                                             std::ofstream *state);
-    void _writeBinaryDiffuseParticleVelocities(FluidSimulation *_fluidsim,
                                               std::ofstream *state);
+    void _writeBinaryDiffuseParticleVelocities(FluidSimulation *_fluidsim,
+                                               std::ofstream *state);
     void _writeBinaryDiffuseParticleLifetimes(FluidSimulation *_fluidsim,
-                                             std::ofstream *state);
+                                              std::ofstream *state);
+    void _writeBinaryDiffuseParticleTypes(FluidSimulation *_fluidsim,
+                                          std::ofstream *state);
     int _getNumSolidCells(FluidSimulation *sim);
     void _writeBinarySolidCellIndices(FluidSimulation *sim, std::ofstream *state);
 
     void _writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state);
     void _writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state);
+    void _writeBinaryVectorc(std::vector<char> &chars, std::ofstream *state);
     void _writeBinaryVectorGridIndex(std::vector<GridIndex> &floats, 
                                      std::ofstream *state);
 
@@ -91,6 +96,9 @@ private:
     bool _readParticleLifetimes(std::vector<float> &lifetimes, 
                                 int numParticles,
                                 std::ifstream *state);
+    bool _readParticleTypes(std::vector<char> &types, 
+                            int numParticles,
+                            std::ifstream *state);
     bool _readSolidCells(std::vector<GridIndex> &indices, 
                          int numIndices,
                         std::ifstream *state);
@@ -117,8 +125,9 @@ private:
     unsigned int _dpPositionOffset = 0;
     unsigned int _dpVelocityOffset = 0;
     unsigned int _dpLifetimeOffset = 0;
+    unsigned int _dpTypeOffset = 0;
     unsigned int _solidCellOffset = 0;
-    unsigned int _oefOffset = 0;
+    unsigned int _eofOffset = 0;
     unsigned int _currentOffset = 0;
 
 };
