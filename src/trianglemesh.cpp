@@ -37,6 +37,7 @@ void TriangleMesh::clear() {
     vertices.clear();
     normals.clear();
     triangles.clear();
+    vertexcolors.clear();
     _vertexTriangles.clear();
 }
 
@@ -121,6 +122,33 @@ bool TriangleMesh::loadOBJ(std::string filename, vmath::vec3 offset, double scal
         normals.insert(normals.end(), normals.begin(), normals.end());
     } else {
         updateVertexNormals();
+    }
+
+    return true;
+}
+
+bool TriangleMesh::loadPLY(std::string PLYFilename) {
+    clear();
+
+    std::ifstream file(PLYFilename.c_str(), std::ios::in | std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    std::string header;
+    bool success = _getPLYHeader(&file, &header);
+    if (!success) {
+        return false;
+    }
+
+    success = _loadPLYVertexData(&file, header);
+    if (!success) {
+        return false;
+    }
+
+    success = _loadPLYTriangleData(&file, header);
+    if (!success) {
+        return false;
     }
 
     return true;
@@ -504,6 +532,197 @@ bool TriangleMesh::isNeighbours(Triangle t1, Triangle t2) {
     }
 
     return false;
+}
+
+bool TriangleMesh::_getPLYHeader(std::ifstream *file, std::string *header) {
+    file->seekg(0, std::ios_base::beg);
+
+    int maxHeaderSize = 2048;
+    char headerBufferChars[2048];
+    file->read(headerBufferChars, maxHeaderSize);
+    std::string headerBufferString(headerBufferChars, 2048);
+
+    std::string endHeaderString("end_header\n");
+
+    std::size_t match = headerBufferString.find(endHeaderString);
+    if (match == std::string::npos) {
+        return false;
+    }
+
+    *header = headerBufferString.substr(0, match + endHeaderString.size());
+
+    return true;
+}
+
+bool TriangleMesh::_getElementNumberInPlyHeader(std::string &header, 
+                                                std::string &element, int *n) {
+    std::size_t match = header.find(element);
+    if (match == std::string::npos) {
+        return false;
+    }
+
+    int startidx = match + element.size();
+    int endidx = 0;
+    bool numberFound = false;
+
+    for (unsigned int i = startidx; i < header.size(); i++) {
+        if (header[i] == '\n') {
+            endidx = i - 1;
+            numberFound = true;
+            break;
+        }
+    }
+
+    if (!numberFound) {
+        return false;
+    }
+
+    std::string numberString = header.substr(startidx, endidx - startidx + 1);
+    std::istringstream ss(numberString);
+    ss >> *n;
+
+    if (ss.fail()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool TriangleMesh::_getNumVerticesInPLYHeader(std::string &header, int *n) {
+    std::string vertexString("element vertex ");
+    bool success = _getElementNumberInPlyHeader(header, vertexString, n);
+
+    return success;
+}
+
+bool TriangleMesh::_getNumFacesInPLYHeader(std::string &header, int *n) {
+    std::string faceString("element face ");
+    bool success = _getElementNumberInPlyHeader(header, faceString, n);
+
+    return success;
+}
+
+bool TriangleMesh::_isVertexColorsEnabledInPLYHeader(std::string &header) {
+    std::string colorString("property uchar red\nproperty uchar green\nproperty uchar blue\n");
+    std::size_t match = header.find(colorString);
+    return match != std::string::npos;
+}
+
+bool TriangleMesh::_loadPLYVertexData(std::ifstream *file, std::string &header) {
+    int numVertices;
+    bool success = _getNumVerticesInPLYHeader(header, &numVertices);
+    if (!success) {
+        return false;
+    }
+
+    if (numVertices == 0) {
+        return true;
+    }
+
+    bool isColorEnabled = _isVertexColorsEnabledInPLYHeader(header);
+
+    int vertexSize = 3*sizeof(float);
+    if (isColorEnabled) {
+        vertexSize = 3*sizeof(float) + 3*sizeof(char);
+    }
+
+    int vertexDataSize = numVertices*vertexSize;
+    int vertexDataOffset = header.size();
+
+    file->seekg(vertexDataOffset, std::ios_base::beg);
+    char *vertexData = new char[vertexDataSize];
+    if (!file->read(vertexData, vertexDataSize)) {
+        return false;
+    }
+
+    vertices.reserve(numVertices);
+    if (isColorEnabled) {
+        vertexcolors.reserve(numVertices);
+
+        vmath::vec3 p;
+        int offset = 0;
+        for (int i = 0; i < numVertices; i++) {
+            memcpy(&p, vertexData + offset, 3*sizeof(float));
+            offset += 3*sizeof(float);
+
+            unsigned char r = vertexData[offset + 0];
+            unsigned char g = vertexData[offset + 1];
+            unsigned char b = vertexData[offset + 2];
+            offset += 3*sizeof(char);
+
+            vertices.push_back(p);
+            vertexcolors.push_back(vmath::vec3(r / 255.0, g / 255.0, b / 255.0));
+        }
+    } else {
+        vertices.assign((vmath::vec3*)vertexData, (vmath::vec3*)vertexData + numVertices);
+    }
+    delete[] vertexData;
+
+    return true;
+}
+
+bool TriangleMesh::_loadPLYTriangleData(std::ifstream *file, std::string &header) {
+    int numVertices;
+    bool success = _getNumVerticesInPLYHeader(header, &numVertices);
+    if (!success) {
+        return false;
+    }
+
+    bool isColorEnabled = _isVertexColorsEnabledInPLYHeader(header);
+
+    int vertexSize = 3*sizeof(float);
+    if (isColorEnabled) {
+        vertexSize = 3*sizeof(float) + 3*sizeof(char);
+    }
+
+    int vertexDataSize = numVertices*vertexSize;
+    int vertexDataOffset = header.size();
+
+    int numFaces;
+    success = _getNumFacesInPLYHeader(header, &numFaces);
+    if (!success) {
+        return false;
+    }
+
+    if (numFaces == 0) {
+        return true;
+    }
+
+    int faceSize = sizeof(char) + 3*sizeof(int);
+    int faceDataSize = numFaces*faceSize;
+    int faceDataOffset = vertexDataOffset + vertexDataSize;
+
+    file->seekg(faceDataOffset, std::ios_base::beg);
+    char *faceData = new char[faceDataSize];
+    if (!file->read(faceData, faceDataSize)) {
+        return false;
+    }
+
+    int offset = 0;
+    Triangle t;
+    triangles.reserve(numFaces);
+    for (int i = 0; i < numFaces; i++) {
+        unsigned int faceverts = faceData[offset];
+        offset += sizeof(char);
+
+        if (faceverts != 0x03) {
+            return false;
+        }
+
+        memcpy(&(t.tri), faceData + offset, 3*sizeof(int));
+        offset += 3*sizeof(int);
+
+        if (t.tri[0] < 0 || t.tri[0] >= numVertices || 
+            t.tri[1] < 0 || t.tri[1] >= numVertices || 
+            t.tri[2] < 0 || t.tri[2] >= numVertices) {
+            return false;
+        }
+        triangles.push_back(t);
+    }
+
+    delete[] faceData;
+
+    return true;
 }
 
 void TriangleMesh::_updateVertexTriangles() {

@@ -55,6 +55,8 @@ public:
     }
     bool loadOBJ(std::string OBJFilename, vmath::vec3 offset, double scale);
 
+    bool loadPLY(std::string PLYFilename);
+
     int numVertices();
     int numFaces();
     int numTriangles() { return numFaces(); }
@@ -103,6 +105,15 @@ public:
     std::vector<Triangle> triangles;
 
 private:
+    bool _getPLYHeader(std::ifstream *file, std::string *header);
+    bool _getElementNumberInPlyHeader(std::string &header, 
+                                      std::string &element, int *n);
+    bool _getNumVerticesInPLYHeader(std::string &header, int *n);
+    bool _getNumFacesInPLYHeader(std::string &header, int *n);
+    bool _isVertexColorsEnabledInPLYHeader(std::string &header);
+    bool _loadPLYVertexData(std::ifstream *file, std::string &header);
+    bool _loadPLYTriangleData(std::ifstream *file, std::string &header);
+
     void _updateVertexTriangles();
     bool _trianglesEqual(Triangle &t1, Triangle &t2);
     bool _isOnTriangleEdge(double u, double v);
