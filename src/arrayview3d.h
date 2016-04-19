@@ -282,6 +282,16 @@ public:
         return _isIndexInView(g);
     }
 
+    bool isIndexInParent(int i, int j, int k) {
+        GridIndex pidx = _viewToParentIndex(i, j, k);
+        return _parent->isIndexInRange(pidx);
+    }
+
+    bool isIndexInParent(GridIndex g) {
+        GridIndex pidx = _viewToParentIndex(g);
+        return _parent->isIndexInRange(pidx);
+    }
+
     int width = 0;
     int height = 0;
     int depth = 0;

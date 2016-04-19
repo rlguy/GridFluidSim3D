@@ -84,6 +84,8 @@ namespace Collision {
 
     extern bool rayIntersectsAABB(vmath::vec3 p0, vmath::vec3 dir,
                                   AABB &bbox, vmath::vec3 *collision);
+
+    extern bool sphereIntersectsAABB(vmath::vec3 p, double r, AABB bbox);
 }
 
 #endif

@@ -445,3 +445,17 @@ bool Collision::rayIntersectsAABB(vmath::vec3 p0, vmath::vec3 dir,
 
     return false;
 }
+
+// method adapted from:
+// http://blog.nuclex-games.com/tutorials/collision-detection/static-sphere-vs-aabb/
+bool Collision::sphereIntersectsAABB(vmath::vec3 p, double r, AABB bbox) {
+  
+    vmath::vec3 bmin = bbox.position;
+    vmath::vec3 bmax = bbox.getMaxPoint();
+
+    vmath::vec3 closestPointOnAABB(fmin(fmax(p.x, bmin.x), bmax.x),
+                                   fmin(fmax(p.y, bmin.y), bmax.y),
+                                   fmin(fmax(p.z, bmin.z), bmax.z));
+
+    return (closestPointOnAABB - p).lengthsq() < r * r;
+}

@@ -11,6 +11,7 @@ LDLIBS=$(PTHREADLIB) $(OPENCLLIB) -lstdc++
 SOURCEPATH=src
 SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/anisotropicparticlemesher.cpp \
+		$(SOURCEPATH)/clscalarfield.cpp \
 		$(SOURCEPATH)/collision.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
 		$(SOURCEPATH)/diffuseparticlesimulation.cpp \
