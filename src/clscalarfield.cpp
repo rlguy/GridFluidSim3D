@@ -46,7 +46,7 @@ bool CLScalarField::initialize() {
         return false;
     }
     
-    err = _initializeCLKernel();
+    err = _initializeCLKernels();
     if (err != CL_SUCCESS) {
         return false;
     }
@@ -60,11 +60,11 @@ bool CLScalarField::initialize() {
     return true;
 }
 
-void CLScalarField::computeScalarField(std::vector<vmath::vec3> &points, 
-                                       double radius,
-                                       vmath::vec3 offset,
-                                       double dx,
-                                       Array3d<float> *field) {
+void CLScalarField::addPoints(std::vector<vmath::vec3> &points, 
+                              double radius,
+                              vmath::vec3 offset,
+                              double dx,
+                              Array3d<float> *field) {
     assert(_isInitialized);
 
     _isize = field->width;
@@ -79,15 +79,92 @@ void CLScalarField::computeScalarField(std::vector<vmath::vec3> &points,
         field->setOutOfRangeValue(0.0);
     }
 
-    int ichunks = ceil((double)_isize / (double)_chunkWidth);
-    int jchunks = ceil((double)_jsize / (double)_chunkHeight);
-    int kchunks = ceil((double)_ksize / (double)_chunkDepth);
+    std::vector<PointValue> pointValues;
+    _initializePointValues(points, pointValues);
 
-    Array3d<WorkGroup> workGroupGrid(ichunks, jchunks, kchunks);
-    _initializeWorkGroupGrid(points, field, workGroupGrid);
+    GridIndex workGroupDims = _getWorkGroupGridDimensions();
+    Array3d<WorkGroup> workGroupGrid(workGroupDims.i, workGroupDims.j, workGroupDims.k);
+
+    _initializeWorkGroupGrid(pointValues, field, workGroupGrid);
 
     std::vector<WorkChunk> workChunkQueue;
     _initializeWorkChunks(workGroupGrid, workChunkQueue);
+
+    int maxChunks = _getMaxChunksPerPointValueComputation();
+    
+    std::vector<WorkChunk> chunks;
+    while (!workChunkQueue.empty()) {
+        _updateWorkGroupMinimumValues(workGroupGrid);
+
+        chunks.clear();
+
+        _getNextWorkChunksToProcess(workChunkQueue, 
+                                    workGroupGrid, 
+                                    chunks, 
+                                    maxChunks);
+
+        _computePointScalarField(chunks, workGroupGrid);
+    }
+
+    if (!isOutOfRangeValueSet) {
+        field->setOutOfRangeValue();
+    }
+    
+}
+
+void CLScalarField::addPoints(std::vector<vmath::vec3> &points, 
+                              double radius,
+                              vmath::vec3 offset,
+                              double dx,
+                              ImplicitSurfaceScalarField &isfield) {
+
+    Array3d<float> *field = isfield.getPointerToScalarField();
+    addPoints(points, radius, offset, dx, field);
+}
+
+void CLScalarField::addPoints(std::vector<vmath::vec3> &points,
+                              ImplicitSurfaceScalarField &isfield) {
+
+    double r = isfield.getPointRadius();
+    vmath::vec3 offset = isfield.getOffset();
+    double dx = isfield.getCellSize();
+    Array3d<float> *field = isfield.getPointerToScalarField();
+    addPoints(points, r, offset, dx, field);
+}
+
+void CLScalarField::addPointValues(std::vector<vmath::vec3> &points, 
+                                   std::vector<float> &values,
+                                   double radius,
+                                   vmath::vec3 offset,
+                                   double dx,
+                                   Array3d<float> *field) {
+    
+    assert(_isInitialized);
+    assert(points.size() == values.size());
+
+    _isize = field->width;
+    _jsize = field->height;
+    _ksize = field->depth;
+    _dx = dx;
+    _radius = radius;
+    _offset = offset;
+
+    bool isOutOfRangeValueSet = field->isOutOfRangeValueSet();
+    if (!isOutOfRangeValueSet) {
+        field->setOutOfRangeValue(0.0);
+    }
+
+    std::vector<PointValue> pointValues;
+    _initializePointValues(points, values, pointValues);
+
+    GridIndex workGroupDims = _getWorkGroupGridDimensions();
+    Array3d<WorkGroup> workGroupGrid(workGroupDims.i, workGroupDims.j, workGroupDims.k);
+    _initializeWorkGroupGrid(pointValues, field, workGroupGrid);
+    
+    std::vector<WorkChunk> workChunkQueue;
+    _initializeWorkChunks(workGroupGrid, workChunkQueue);
+
+    int maxChunks = _getMaxChunksPerPointValueComputation();
 
     std::vector<WorkChunk> chunks;
     while (!workChunkQueue.empty()) {
@@ -97,13 +174,35 @@ void CLScalarField::computeScalarField(std::vector<vmath::vec3> &points,
         _getNextWorkChunksToProcess(workChunkQueue, 
                                     workGroupGrid, 
                                     chunks, 
-                                    _maxChunksPerComputation);
-        _computeScalarField(chunks, workGroupGrid);
+                                    maxChunks);
+        _computePointValueScalarField(chunks, workGroupGrid);
     }
 
     if (!isOutOfRangeValueSet) {
         field->setOutOfRangeValue();
     }
+}
+
+void CLScalarField::addPointValues(std::vector<vmath::vec3> &points, 
+                                   std::vector<float> &values,
+                                   double radius,
+                                   vmath::vec3 offset,
+                                   double dx,
+                                   ImplicitSurfaceScalarField &isfield) {
+
+    Array3d<float> *field = isfield.getPointerToScalarField();
+    addPointValues(points, values, radius, offset, dx, field);
+}
+
+void CLScalarField::addPointValues(std::vector<vmath::vec3> &points, 
+                                   std::vector<float> &values,
+                                   ImplicitSurfaceScalarField &isfield) {
+
+    double r = isfield.getPointRadius();
+    vmath::vec3 offset = isfield.getOffset();
+    double dx = isfield.getCellSize();
+    Array3d<float> *field = isfield.getPointerToScalarField();
+    addPointValues(points, values, r, offset, dx, field);
 }
 
 void CLScalarField::setMaxScalarFieldValueThreshold(float val) {
@@ -344,8 +443,8 @@ CLScalarField::CLDeviceInfo CLScalarField::_initializeDeviceInfo(cl::Device &dev
     return info;
 }
 
-cl_int CLScalarField::_initializeCLKernel() {
-    std::string prog = _getProgramString("src/kernels/scalarfieldpoints.cl");
+cl_int CLScalarField::_initializeCLKernels() {
+    std::string prog = _getProgramString("src/kernels/scalarfield.cl");
 
     cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
     cl::Program program(_CLContext, source);
@@ -361,8 +460,13 @@ cl_int CLScalarField::_initializeCLKernel() {
     if (err != CL_SUCCESS) {
         return err;
     }
+    _CLKernelPoints = kernel;
 
-    _CLKernel = kernel;
+    kernel = cl::Kernel(program, "compute_scalar_field_point_values", &err);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+    _CLKernelPointValues = kernel;
 
     return CL_SUCCESS;
 }
@@ -388,7 +492,34 @@ cl_int CLScalarField::_initializeCLCommandQueue() {
     return CL_SUCCESS;
 }
 
-void CLScalarField::_initializeWorkGroupGrid(std::vector<vmath::vec3> &points,
+void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
+                                           std::vector<PointValue> &pvs) {
+    pvs.reserve(points.size());
+    float defaultValue = 0.0;
+    for (unsigned int i = 0; i < points.size(); i++) {
+        pvs.push_back(PointValue(points[i], defaultValue));
+    }
+}
+
+void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
+                                           std::vector<float> &values,
+                                           std::vector<PointValue> &pvs) {
+    assert(points.size() == values.size());
+
+    pvs.reserve(points.size());
+    for (unsigned int i = 0; i < points.size(); i++) {
+        pvs.push_back(PointValue(points[i], values[i]));
+    }
+}
+
+GridIndex CLScalarField::_getWorkGroupGridDimensions() {
+    int igrid = ceil((double)_isize / (double)_chunkWidth);
+    int jgrid = ceil((double)_jsize / (double)_chunkHeight);
+    int kgrid = ceil((double)_ksize / (double)_chunkDepth);
+    return GridIndex(igrid, jgrid, kgrid);
+}
+
+void CLScalarField::_initializeWorkGroupGrid(std::vector<PointValue> &points,
                                              Array3d<float> *scalarField,
                                              Array3d<WorkGroup> &grid) {
     GridIndex chunkOffset, indexOffset;
@@ -432,7 +563,7 @@ void CLScalarField::_initializeWorkGroupGrid(std::vector<vmath::vec3> &points,
     _insertParticlesIntoWorkGroupGrid(points, grid);
 }
 
-void CLScalarField::_getWorkGroupParticleCounts(std::vector<vmath::vec3> &points,
+void CLScalarField::_getWorkGroupParticleCounts(std::vector<PointValue> &points,
                                                 Array3d<int> &countGrid) {
     double chunkdx = _chunkWidth * _dx;
     double chunkdy = _chunkHeight * _dx;
@@ -452,7 +583,7 @@ void CLScalarField::_getWorkGroupParticleCounts(std::vector<vmath::vec3> &points
     vmath::vec3 p, minp, maxp;
     int mini, minj, mink, maxi, maxj, maxk;
     for (unsigned int i = 0; i < points.size(); i++) {
-        p = points[i] - _offset;
+        p = points[i].position - _offset;
 
         int ci = floor(p.x * invchunkdx);
         int cj = floor(p.y * invchunkdy);
@@ -488,7 +619,7 @@ void CLScalarField::_getWorkGroupParticleCounts(std::vector<vmath::vec3> &points
     }
 }
 
-void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<vmath::vec3> &points,
+void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<PointValue> &points,
                                                       Array3d<WorkGroup> &grid) {
 
     double chunkdx = _chunkWidth * _dx;
@@ -506,11 +637,13 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<vmath::vec3> &
 
     AABB pbbox(vmath::vec3(), 2 * _radius, 2 * _radius, 2 * _radius);
 
+    PointValue pv;
     vmath::vec3 p, minp, maxp;
     int mini, minj, mink, maxi, maxj, maxk;
     WorkGroup *group;
     for (unsigned int i = 0; i < points.size(); i++) {
-        p = points[i] - _offset;
+        pv = points[i];
+        p = pv.position - _offset;
 
         int ci = floor(p.x * invchunkdx);
         int cj = floor(p.y * invchunkdy);
@@ -523,7 +656,7 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<vmath::vec3> &
         if (cbbox.isPointInside(p) && Grid3d::isGridIndexInRange(ci, cj, ck, gmax)) {
             // sphere is contained within one grid cell
             group = grid.getPointer(ci, cj, ck);
-            group->particles.push_back(p);
+            group->particles.push_back(pv);
             continue;
         }
 
@@ -541,12 +674,13 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<vmath::vec3> &
             for (int cj = minj; cj <= maxj; cj++) {
                 for (int ci = mini; ci <= maxi; ci++) {
                     group = grid.getPointer(ci, cj, ck);
-                    group->particles.push_back(p);
+                    group->particles.push_back(pv);
                 }
             }
         }
     }
 }
+
 
 bool CLScalarField::_compareWorkChunkByNumParticles(const WorkChunk &c1, const WorkChunk &c2) {
     return c1.particlesEnd - c1.particlesBegin < c2.particlesEnd - c2.particlesBegin;
@@ -616,8 +750,12 @@ void CLScalarField::_getNextWorkChunksToProcess(std::vector<WorkChunk> &queue,
     }
 }
 
-int CLScalarField::_getChunkPositionDataSize() {
+int CLScalarField::_getChunkPointDataSize() {
     return 3*_maxParticlesPerChunk*sizeof(float);
+}
+
+int CLScalarField::_getChunkPointValueDataSize() {
+    return 4*_maxParticlesPerChunk*sizeof(float);
 }
 
 int CLScalarField::_getChunkScalarFieldDataSize() {
@@ -628,17 +766,23 @@ int CLScalarField::_getChunkOffsetDataSize() {
     return 3*sizeof(int);
 }
 
-int CLScalarField::_getChunkTotalDataSize() {
-    return _getChunkPositionDataSize() + 
+int CLScalarField::_getPointChunkTotalDataSize() {
+    return _getChunkPointDataSize() + 
            _getChunkScalarFieldDataSize() + 
            _getChunkOffsetDataSize();
 }
 
-int CLScalarField::_getMaxChunksPerComputation() {
-    int positionSize = _getChunkPositionDataSize();
+int CLScalarField::_getPointValueChunkTotalDataSize() {
+    return _getChunkPointValueDataSize() + 
+           _getChunkScalarFieldDataSize() + 
+           _getChunkOffsetDataSize();
+}
+
+int CLScalarField::_getMaxChunksPerPointComputation() {
+    int positionSize = _getChunkPointDataSize();
     int fieldSize = _getChunkScalarFieldDataSize();
     int offsetSize = _getChunkOffsetDataSize();
-    int totalSize = _getChunkTotalDataSize();
+    int totalSize = _getPointChunkTotalDataSize();
 
     int maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
     int maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
@@ -659,25 +803,44 @@ int CLScalarField::_getMaxChunksPerComputation() {
     return fmin(hardwareLimit, softwareLimit);
 }
 
-void CLScalarField::_computeScalarField(std::vector<WorkChunk> &chunks,
-                                        Array3d<WorkGroup> &workGroupGrid) {
+int CLScalarField::_getMaxChunksPerPointValueComputation() {
+    int positionSize = _getChunkPointValueDataSize();
+    int fieldSize = _getChunkScalarFieldDataSize();
+    int offsetSize = _getChunkOffsetDataSize();
+    int totalSize = _getPointValueChunkTotalDataSize();
+
+    int maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
+    int maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
+
+    int numPositionAllocItems = floor((double)maxAlloc / (double)positionSize);
+    int numFieldAllocItems = floor((double)maxAlloc / (double)fieldSize);
+    int numOffsetAllocItems = floor((double)maxAlloc / (double)offsetSize);
+
+    int allocLimitCount = fmin(fmin(numPositionAllocItems, 
+                                    numFieldAllocItems),
+                                    numOffsetAllocItems);
+
+    int globalMemLimitCount = floor((double)maxGlobalMem / (double)totalSize);
+
+    int hardwareLimit = fmin(allocLimitCount, globalMemLimitCount);
+    int softwareLimit = _maxChunksPerComputation;
+
+    return fmin(hardwareLimit, softwareLimit);
+}
+
+void CLScalarField::_computePointScalarField(std::vector<WorkChunk> &chunks,
+                                             Array3d<WorkGroup> &workGroupGrid) {
     
-    int numParticles = 0;
-    for (unsigned int i = 0; i < chunks.size(); i++) {
-        int n = chunks[i].particlesEnd - chunks[i].particlesBegin;
-        if (n > numParticles) {
-            numParticles = n;
-        }
-    }
+    int numParticles = _getMaxNumParticlesInChunk(chunks);
 
     DataBuffer buffer;
-    _initializeDataBuffer(chunks, workGroupGrid, numParticles, buffer);
-    _setCLKernelArgs(buffer, numParticles, _dx);
+    _initializePointComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
+    _setPointComputationCLKernelArgs(buffer, numParticles, _dx);
 
     int numWorkItems = chunks.size() * _workGroupSize;
 
     cl::Event event;
-    cl_int err = _CLQueue.enqueueNDRangeKernel(_CLKernel, 
+    cl_int err = _CLQueue.enqueueNDRangeKernel(_CLKernelPoints, 
                                                cl::NullRange, 
                                                cl::NDRange(numWorkItems), 
                                                cl::NDRange(_workGroupSize), 
@@ -694,26 +857,85 @@ void CLScalarField::_computeScalarField(std::vector<WorkChunk> &chunks,
                                      (void*)&(buffer.scalarFieldDataH[0]));
     _checkError(err, "CommandQueue::enqueueReadBuffer()");
 
-    _setOutputScalarFieldData(buffer.scalarFieldDataH, chunks, workGroupGrid);
+    _setPointComputationOutputScalarFieldData(buffer.scalarFieldDataH, chunks, workGroupGrid);
 }
 
-void CLScalarField::_initializeDataBuffer(std::vector<WorkChunk> &chunks,
-                                          Array3d<WorkGroup> &workGroupGrid,
-                                          int numParticles,
-                                          DataBuffer &buffer) {
-    _getHostPositionDataBuffer(chunks, workGroupGrid, numParticles, buffer.positionDataH);
+void CLScalarField::_computePointValueScalarField(std::vector<WorkChunk> &chunks,
+                                                  Array3d<WorkGroup> &workGroupGrid) {
+    
+    
+    int numParticles = _getMaxNumParticlesInChunk(chunks);
+
+    DataBuffer buffer;
+    _initializePointValueComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
+
+    _setPointValueComputationCLKernelArgs(buffer, numParticles, _dx);
+
+    int numWorkItems = chunks.size() * _workGroupSize;
+
+    cl::Event event;
+    cl_int err = _CLQueue.enqueueNDRangeKernel(_CLKernelPointValues, 
+                                               cl::NullRange, 
+                                               cl::NDRange(numWorkItems), 
+                                               cl::NDRange(_workGroupSize), 
+                                               NULL, 
+                                               &event);    
+    _checkError(err, "CommandQueue::enqueueNDRangeKernel()");
+
+    event.wait();
+
+    int dataSize = chunks.size() * _getChunkScalarFieldDataSize();
+    err = _CLQueue.enqueueReadBuffer(buffer.scalarFieldDataCL, 
+                                     CL_TRUE, 0, 
+                                     dataSize, 
+                                     (void*)&(buffer.scalarFieldDataH[0]));
+    _checkError(err, "CommandQueue::enqueueReadBuffer()");
+
+    _setPointValueComputationOutputScalarFieldData(buffer.scalarFieldDataH, chunks, workGroupGrid);
+}
+
+int CLScalarField::_getMaxNumParticlesInChunk(std::vector<WorkChunk> &chunks) {
+    int maxParticles = 0;
+    for (unsigned int i = 0; i < chunks.size(); i++) {
+        int n = chunks[i].particlesEnd - chunks[i].particlesBegin;
+        if (n > maxParticles) {
+            maxParticles = n;
+        }
+    }
+
+    return maxParticles;
+}
+
+void CLScalarField::_initializePointComputationDataBuffer(std::vector<WorkChunk> &chunks,
+                                                          Array3d<WorkGroup> &workGroupGrid,
+                                                          int numParticles,
+                                                          DataBuffer &buffer) {
+    _getHostPointDataBuffer(chunks, workGroupGrid, numParticles, buffer.pointDataH);
     _getHostScalarFieldDataBuffer(chunks, workGroupGrid, buffer.scalarFieldDataH);
     _getHostChunkOffsetDataBuffer(chunks, buffer.offsetDataH);
+    _initializeCLDataBuffers(buffer);
+}
 
-    size_t positionDataBytes = buffer.positionDataH.size() * sizeof(vmath::vec3);
-    size_t scalarFieldDataBytes = buffer.scalarFieldDataH.size()*sizeof(float);
-    size_t offsetDataBytes = buffer.offsetDataH.size()*sizeof(GridIndex);
+void CLScalarField::_initializePointValueComputationDataBuffer(std::vector<WorkChunk> &chunks,
+                                                               Array3d<WorkGroup> &workGroupGrid,
+                                                               int numParticles,
+                                                               DataBuffer &buffer) {
+    _getHostPointValueDataBuffer(chunks, workGroupGrid, numParticles, buffer.pointDataH);
+    _getHostScalarFieldDataBuffer(chunks, workGroupGrid, buffer.scalarFieldDataH);
+    _getHostChunkOffsetDataBuffer(chunks, buffer.offsetDataH);
+    _initializeCLDataBuffers(buffer);
+}
+
+void CLScalarField::_initializeCLDataBuffers(DataBuffer &buffer) {
+    size_t pointDataBytes = buffer.pointDataH.size() * sizeof(float);
+    size_t scalarFieldDataBytes = buffer.scalarFieldDataH.size() * sizeof(float);
+    size_t offsetDataBytes = buffer.offsetDataH.size() * sizeof(GridIndex);
 
     cl_int err;
     buffer.positionDataCL = cl::Buffer(_CLContext, 
                                        CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, 
-                                       positionDataBytes, 
-                                       (void*)&(buffer.positionDataH[0]), 
+                                       pointDataBytes, 
+                                       (void*)&(buffer.pointDataH[0]), 
                                        (cl_int*)&err);
     _checkError(err, "Creating position data buffer");
 
@@ -732,11 +954,11 @@ void CLScalarField::_initializeDataBuffer(std::vector<WorkChunk> &chunks,
     _checkError(err, "Creating chunk offset data buffer");
 }
 
-void CLScalarField::_getHostPositionDataBuffer(std::vector<WorkChunk> &chunks,
-                                                Array3d<WorkGroup> &grid,
-                                                int numParticles,
-                                                std::vector<vmath::vec3> &buffer) {
-    int numElements = chunks.size() * numParticles;
+void CLScalarField::_getHostPointDataBuffer(std::vector<WorkChunk> &chunks,
+                                            Array3d<WorkGroup> &grid,
+                                            int numParticles,
+                                            std::vector<float> &buffer) {
+    int numElements = chunks.size() * 3 * numParticles;
     buffer.reserve(numElements);
 
     // Dummy position that is far away enough from the scalar field that it
@@ -746,15 +968,72 @@ void CLScalarField::_getHostPositionDataBuffer(std::vector<WorkChunk> &chunks,
                               grid.depth * _chunkDepth * _dx + 2 * _radius);
     WorkChunk c;
     vmath::vec3 p;
+    std::vector<PointValue>::iterator beg;
+    std::vector<PointValue>::iterator end;
     for (unsigned int i = 0; i < chunks.size(); i++) {
         c = chunks[i];
 
         int numPoints = c.particlesEnd - c.particlesBegin;
         int numPad = numParticles - numPoints;
 
-        buffer.insert(buffer.end(), c.particlesBegin, c.particlesEnd);
+        beg = c.particlesBegin;
+        end = c.particlesEnd;
+        for (std::vector<PointValue>::iterator it = beg; it != end; ++it) {
+            p = (*it).position;
+            buffer.push_back(p.x);
+            buffer.push_back(p.y);
+            buffer.push_back(p.z);
+        }
+
         for (int i = 0; i < numPad; i++) {
-            buffer.push_back(outOfRangePos);
+            buffer.push_back(outOfRangePos.x);
+            buffer.push_back(outOfRangePos.y);
+            buffer.push_back(outOfRangePos.z);
+        }
+    }
+}
+
+void CLScalarField::_getHostPointValueDataBuffer(std::vector<WorkChunk> &chunks,
+                                                 Array3d<WorkGroup> &grid,
+                                                 int numParticles,
+                                                 std::vector<float> &buffer) {
+    int numElements = chunks.size() * 4 * numParticles;
+    buffer.reserve(numElements);
+
+    // Dummy position that is far away enough from the scalar field that it
+    // will not affect any scalar field values
+    vmath::vec3 outOfRangePos(grid.width * _chunkWidth * _dx + 2 * _radius,
+                              grid.height * _chunkHeight * _dx + 2 * _radius,
+                              grid.depth * _chunkDepth * _dx + 2 * _radius);
+    float outOfRangeValue = 0.0f;
+
+    WorkChunk c;
+    vmath::vec3 p;
+    float v;
+    std::vector<PointValue>::iterator beg;
+    std::vector<PointValue>::iterator end;
+    for (unsigned int i = 0; i < chunks.size(); i++) {
+        c = chunks[i];
+
+        int numPoints = c.particlesEnd - c.particlesBegin;
+        int numPad = numParticles - numPoints;
+
+        beg = c.particlesBegin;
+        end = c.particlesEnd;
+        for (std::vector<PointValue>::iterator it = beg; it != end; ++it) {
+            p = (*it).position;
+            v = (*it).value;
+            buffer.push_back(p.x);
+            buffer.push_back(p.y);
+            buffer.push_back(p.z);
+            buffer.push_back(v);
+        }
+
+        for (int i = 0; i < numPad; i++) {
+            buffer.push_back(outOfRangePos.x);
+            buffer.push_back(outOfRangePos.y);
+            buffer.push_back(outOfRangePos.z);
+            buffer.push_back(outOfRangeValue);
         }
     }
 }
@@ -777,36 +1056,67 @@ void CLScalarField::_getHostChunkOffsetDataBuffer(std::vector<WorkChunk> &chunks
     }
 }
 
-void CLScalarField::_setCLKernelArgs(DataBuffer &buffer, int numParticles, double dx) {
+void CLScalarField::_setPointComputationCLKernelArgs(DataBuffer &buffer, 
+                                                     int numParticles, 
+                                                     double dx) {
     
-    cl_int err = _CLKernel.setArg(0, buffer.positionDataCL);
+    cl_int err = _CLKernelPoints.setArg(0, buffer.positionDataCL);
     _checkError(err, "Kernel::setArg() - position data");
 
-    err = _CLKernel.setArg(1, buffer.scalarFieldDataCL);
+    err = _CLKernelPoints.setArg(1, buffer.scalarFieldDataCL);
     _checkError(err, "Kernel::setArg() - scalar field data");
 
-    err = _CLKernel.setArg(2, buffer.offsetDataCL);
+    err = _CLKernelPoints.setArg(2, buffer.offsetDataCL);
     _checkError(err, "Kernel::setArg() - chunk offset data");
 
-    int localPositionDataBytes = _getChunkPositionDataSize();
-    assert((unsigned int)localPositionDataBytes <= _deviceInfo.cl_device_local_mem_size);
+    int localPointDataBytes = numParticles * 3 * sizeof(float);
+    assert((unsigned int)localPointDataBytes <= _deviceInfo.cl_device_local_mem_size);
 
-    err = _CLKernel.setArg(3, cl::__local(localPositionDataBytes));
+    err = _CLKernelPoints.setArg(3, cl::__local(localPointDataBytes));
     _checkError(err, "Kernel::setArg() - local position data");
 
-    err = _CLKernel.setArg(4, numParticles);
+    err = _CLKernelPoints.setArg(4, numParticles);
     _checkError(err, "Kernel::setArg() - num particles");
 
-    err = _CLKernel.setArg(5, (float)_radius);
+    err = _CLKernelPoints.setArg(5, (float)_radius);
     _checkError(err, "Kernel::setArg() - radius");
 
-    err = _CLKernel.setArg(6, (float)dx);
+    err = _CLKernelPoints.setArg(6, (float)dx);
+    _checkError(err, "Kernel::setArg() - dx");
+    
+}
+
+void CLScalarField::_setPointValueComputationCLKernelArgs(DataBuffer &buffer, 
+                                                          int numParticles, 
+                                                          double dx) {
+    cl_int err = _CLKernelPointValues.setArg(0, buffer.positionDataCL);
+    _checkError(err, "Kernel::setArg() - position data");
+
+    err = _CLKernelPointValues.setArg(1, buffer.scalarFieldDataCL);
+    _checkError(err, "Kernel::setArg() - scalar field data");
+
+    err = _CLKernelPointValues.setArg(2, buffer.offsetDataCL);
+    _checkError(err, "Kernel::setArg() - chunk offset data");
+
+    int localPointDataBytes = numParticles * 4 * sizeof(float);
+    assert((unsigned int)localPointDataBytes <= _deviceInfo.cl_device_local_mem_size);
+
+    err = _CLKernelPointValues.setArg(3, cl::__local(localPointDataBytes));
+    _checkError(err, "Kernel::setArg() - local position data");
+
+    err = _CLKernelPointValues.setArg(4, numParticles);
+    _checkError(err, "Kernel::setArg() - num particles");
+
+    err = _CLKernelPointValues.setArg(5, (float)_radius);
+    _checkError(err, "Kernel::setArg() - radius");
+
+    err = _CLKernelPointValues.setArg(6, (float)dx);
     _checkError(err, "Kernel::setArg() - dx");
 }
 
-void CLScalarField::_setOutputScalarFieldData(std::vector<float> &buffer, 
-                                             std::vector<WorkChunk> &chunks,
-                                             Array3d<WorkGroup> &workGroupGrid) {
+void CLScalarField::_setPointComputationOutputScalarFieldData(std::vector<float> &buffer, 
+                                                              std::vector<WorkChunk> &chunks,
+                                                              Array3d<WorkGroup> &workGroupGrid) {
     GridIndex cg;
     ArrayView3d<float> fieldview;
     int bufferidx = 0;
@@ -823,6 +1133,12 @@ void CLScalarField::_setOutputScalarFieldData(std::vector<float> &buffer,
             }
         }
     }
+}
+
+void CLScalarField::_setPointValueComputationOutputScalarFieldData(std::vector<float> &buffer, 
+                                                                   std::vector<WorkChunk> &chunks,
+                                                                   Array3d<WorkGroup> &workGroupGrid) {
+    _setPointComputationOutputScalarFieldData(buffer, chunks, workGroupGrid);
 }
 
 void CLScalarField::_updateWorkGroupMinimumValues(Array3d<WorkGroup> &grid) {

@@ -46,6 +46,10 @@ void ImplicitSurfaceScalarField::setPointRadius(double r) {
     _coef3 = (22.0 / 9.0)*(1.0 / (r*r));
 }
 
+double ImplicitSurfaceScalarField::getPointRadius() {
+    return _radius;
+}
+
 void ImplicitSurfaceScalarField::enableCellCenterValues() {
     if (_isCenterFieldEnabled) {
         return;
@@ -523,6 +527,14 @@ bool ImplicitSurfaceScalarField::isPointInside(vmath::vec3 p) {
 
 void ImplicitSurfaceScalarField::setOffset(vmath::vec3 offset) {
     _gridOffset = offset;
+}
+
+vmath::vec3 ImplicitSurfaceScalarField::getOffset() {
+    return _gridOffset;
+}
+
+Array3d<float>* ImplicitSurfaceScalarField::getPointerToScalarField() {
+    return &_field;
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

@@ -43,6 +43,7 @@ public:
 
     void clear();
     void setPointRadius(double r);
+    double getPointRadius();
     void enableCellCenterValues();
     void enableWeightField();
     void applyWeightField();
@@ -84,7 +85,10 @@ public:
     void addCellFieldValues(GridIndex g, double value);
     double tricubicInterpolation(vmath::vec3 p);
     void setOffset(vmath::vec3 offset);
+    vmath::vec3 getOffset();
     bool isPointInside(vmath::vec3 p);
+
+    Array3d<float>* getPointerToScalarField();
 
 private:
 
