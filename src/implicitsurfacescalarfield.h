@@ -44,6 +44,12 @@ public:
     void clear();
     void setPointRadius(double r);
     double getPointRadius();
+    void setSurfaceThreshold(double t);
+    double getSurfaceThreshold();
+    void setMaxScalarFieldThreshold(double t);
+    void setMaxScalarFieldThreshold();
+    double getMaxScalarFieldThreshold();
+    bool isMaxScalarFieldThresholdSet();
     void enableCellCenterValues();
     void enableWeightField();
     bool isWeightFieldEnabled();
@@ -57,10 +63,6 @@ public:
     void addEllipsoid(vmath::vec3 p, vmath::mat3 G);
     void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double r, double value);
     void addEllipsoidValue(vmath::vec3 p, vmath::mat3 G, double value);
-    void setSurfaceThreshold(double t) { _surfaceThreshold = t; }
-    void setMaxFieldThreshold(double t) { _maxFieldThreshold = t; }
-    double getSurfaceThreshold() { return _surfaceThreshold; }
-    double getMaxFieldThreshold() { return _maxFieldThreshold; }
     void setMaterialGrid(FluidMaterialGrid &matGrid);
     void setMaterialGrid(GridIndexVector &solidCells);
     void setSolidCells(GridIndexVector &solidCells);
@@ -112,7 +114,8 @@ private:
     double _coef3 = 0.0;
 
     double _surfaceThreshold = 0.5;
-    double _maxFieldThreshold = 1.0;
+    double _maxScalarFieldThreshold = 0.0;
+    bool _isMaxScalarFieldThresholdSet = false;
 
     Array3d<float> _field;
     Array3d<float> _centerField;

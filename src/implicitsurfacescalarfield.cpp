@@ -50,6 +50,31 @@ double ImplicitSurfaceScalarField::getPointRadius() {
     return _radius;
 }
 
+void ImplicitSurfaceScalarField::setSurfaceThreshold(double t) { 
+    _surfaceThreshold = t; 
+}
+
+double ImplicitSurfaceScalarField::getSurfaceThreshold() { 
+    return _surfaceThreshold; 
+}
+
+void ImplicitSurfaceScalarField::setMaxScalarFieldThreshold(double t) { 
+    _isMaxScalarFieldThresholdSet = true;
+    _maxScalarFieldThreshold = t; 
+}
+
+void ImplicitSurfaceScalarField::setMaxScalarFieldThreshold() { 
+    _isMaxScalarFieldThresholdSet = false;
+}
+
+double ImplicitSurfaceScalarField::getMaxScalarFieldThreshold() { 
+    return _maxScalarFieldThreshold; 
+}
+
+bool ImplicitSurfaceScalarField::isMaxScalarFieldThresholdSet() {
+    return _isMaxScalarFieldThresholdSet;
+}
+
 void ImplicitSurfaceScalarField::enableCellCenterValues() {
     if (_isCenterFieldEnabled) {
         return;
@@ -124,7 +149,7 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
 
-                if (_field(i, j, k) > _maxFieldThreshold) {
+                if (_isMaxScalarFieldThresholdSet && _field(i, j, k) > _maxScalarFieldThreshold) {
                     continue;
                 }
 
@@ -169,7 +194,7 @@ void ImplicitSurfaceScalarField::addPointValue(vmath::vec3 p, double scale) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
 
-                if (_field(i, j, k) > _maxFieldThreshold) {
+                if (_isMaxScalarFieldThresholdSet && _field(i, j, k) > _maxScalarFieldThreshold) {
                     continue;
                 }
 
@@ -203,7 +228,7 @@ void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, 
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
 
-                if (_field(i, j, k) > _maxFieldThreshold) {
+                if (_isMaxScalarFieldThresholdSet && _field(i, j, k) > _maxScalarFieldThreshold) {
                     continue;
                 }
 
@@ -244,7 +269,7 @@ void ImplicitSurfaceScalarField::addEllipsoid(vmath::vec3 p, vmath::mat3 G) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
 
-                if (_field(i, j, k) > _maxFieldThreshold) {
+                if (_isMaxScalarFieldThresholdSet && _field(i, j, k) > _maxScalarFieldThreshold) {
                     continue;
                 }
 
@@ -286,7 +311,7 @@ void ImplicitSurfaceScalarField::addEllipsoidValue(vmath::vec3 p, vmath::mat3 G,
     for (int k = gmin.k; k <= gmax.k; k++) {
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
-                if (_field(i, j, k) > _maxFieldThreshold) {
+                if (_isMaxScalarFieldThresholdSet && _field(i, j, k) > _maxScalarFieldThreshold) {
                     continue;
                 }
 
