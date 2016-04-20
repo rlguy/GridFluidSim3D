@@ -69,6 +69,10 @@ void ImplicitSurfaceScalarField::enableWeightField() {
     _isWeightFieldEnabled = true;
 }
 
+bool ImplicitSurfaceScalarField::isWeightFieldEnabled() {
+    return _isWeightFieldEnabled;
+}
+
 void ImplicitSurfaceScalarField::applyWeightField() {
     if (!_isWeightFieldEnabled) {
         return;
@@ -535,6 +539,11 @@ vmath::vec3 ImplicitSurfaceScalarField::getOffset() {
 
 Array3d<float>* ImplicitSurfaceScalarField::getPointerToScalarField() {
     return &_field;
+}
+
+Array3d<float>* ImplicitSurfaceScalarField::getPointerToWeightField() {
+    assert(_isWeightFieldEnabled);
+    return &_weightField;
 }
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {

@@ -46,6 +46,7 @@ public:
     double getPointRadius();
     void enableCellCenterValues();
     void enableWeightField();
+    bool isWeightFieldEnabled();
     void applyWeightField();
     void addPoint(vmath::vec3 pos, double radius);
     void addPoint(vmath::vec3 pos);
@@ -89,6 +90,7 @@ public:
     bool isPointInside(vmath::vec3 p);
 
     Array3d<float>* getPointerToScalarField();
+    Array3d<float>* getPointerToWeightField();
 
 private:
 

@@ -68,6 +68,13 @@ public:
                         double radius,
                         vmath::vec3 offset,
                         double dx,
+                        Array3d<float> *scalarfield,
+                        Array3d<float> *weightfield);
+    void addPointValues(std::vector<vmath::vec3> &points, 
+                        std::vector<float> &values,
+                        double radius,
+                        vmath::vec3 offset,
+                        double dx,
                         ImplicitSurfaceScalarField &field);
     void addPointValues(std::vector<vmath::vec3> &points, 
                         std::vector<float> &values,
@@ -123,6 +130,7 @@ private:
         std::vector<PointValue> particles;
 
         ArrayView3d<float> fieldview;
+        ArrayView3d<float> weightfieldview;
 
         GridIndex chunkOffset;
         GridIndex indexOffset;
@@ -154,8 +162,19 @@ private:
                                 std::vector<PointValue> &pvs);
     GridIndex _getWorkGroupGridDimensions();
     void _initializeWorkGroupGrid(std::vector<PointValue> &points,
-                                  Array3d<float> *scalarField,
+                                  Array3d<float> *scalarfield,
                                   Array3d<WorkGroup> &grid);
+    void _initializeWorkGroupGrid(std::vector<PointValue> &points,
+                                  Array3d<float> *scalarfield,
+                                  Array3d<float> *weightfield,
+                                  Array3d<WorkGroup> &grid);
+    void _initializeWorkGroupParameters(Array3d<WorkGroup> &grid,
+                                        Array3d<float> *scalarfield);
+    void _initializeWorkGroupParameters(Array3d<WorkGroup> &grid,
+                                        Array3d<float> *scalarfield,
+                                        Array3d<float> *weightfield);
+    void _reserveWorkGroupGridParticleMemory(Array3d<WorkGroup> &grid,
+                                             Array3d<int> &countGrid);
     void _getWorkGroupParticleCounts(std::vector<PointValue> &points,
                                      Array3d<int> &countGrid);
     void _insertParticlesIntoWorkGroupGrid(std::vector<PointValue> &points,
@@ -174,16 +193,19 @@ private:
     int _getChunkPointDataSize();
     int _getChunkPointValueDataSize();
     int _getChunkScalarFieldDataSize();
+    int _getChunkScalarWeightFieldDataSize();
     int _getChunkOffsetDataSize();
-    int _getPointChunkTotalDataSize();
-    int _getPointValueChunkTotalDataSize();
     int _getMaxChunksPerPointComputation();
     int _getMaxChunksPerPointValueComputation();
+    int _getMaxChunksPerWeightPointValueComputation();
+    int _getMaxChunkLimit(int pointDataSize, int fieldDataSize, int offsetDataSize);
 
     void _computePointScalarField(std::vector<WorkChunk> &chunks,
                                   Array3d<WorkGroup> &workGroupGrid);
     void _computePointValueScalarField(std::vector<WorkChunk> &chunks,
                                        Array3d<WorkGroup> &workGroupGrid);
+    void _computePointValueScalarWeightField(std::vector<WorkChunk> &chunks,
+                                             Array3d<WorkGroup> &workGroupGrid);
     int _getMaxNumParticlesInChunk(std::vector<WorkChunk> &chunks);
     void _initializePointComputationDataBuffer(std::vector<WorkChunk> &chunks,
                                                Array3d<WorkGroup> &workGroupGrid,
@@ -193,6 +215,10 @@ private:
                                                     Array3d<WorkGroup> &workGroupGrid,
                                                     int numParticles,
                                                     DataBuffer &buffer);
+    void _initializeWeightPointValueComputationDataBuffer(std::vector<WorkChunk> &chunks,
+                                                          Array3d<WorkGroup> &workGroupGrid,
+                                                          int numParticles,
+                                                          DataBuffer &buffer);
     void _getHostPointDataBuffer(std::vector<WorkChunk> &chunks,
                                  Array3d<WorkGroup> &grid,
                                  int numParticles,
@@ -204,15 +230,30 @@ private:
     void _getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks,
                                        Array3d<WorkGroup> &grid,
                                        std::vector<float> &buffer);
+    void _getHostScalarWeightFieldDataBuffer(std::vector<WorkChunk> &chunks,
+                                             Array3d<WorkGroup> &grid,
+                                             std::vector<float> &buffer);
     void _getHostChunkOffsetDataBuffer(std::vector<WorkChunk> &chunks,
                                        std::vector<GridIndex> &buffer);
     void _initializeCLDataBuffers(DataBuffer &buffer);
     void _setPointComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
     void _setPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
-    void _setPointComputationOutputScalarFieldData(std::vector<float> &buffer, 
-                                                   std::vector<WorkChunk> &chunks,
-                                                   Array3d<WorkGroup> &workGroupGrid);
-    void _setPointValueComputationOutputScalarFieldData(std::vector<float> &buffer, 
+    void _setWeightPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
+    void _setKernelArgs(cl::Kernel &kernel, 
+                        DataBuffer &buffer, 
+                        int localDataBytes,
+                        int numParticles, 
+                        double radius, 
+                        double dx);
+    void _launchKernel(cl::Kernel &kernel, int numWorkItems, int workGroupSize);
+    void _readCLBuffer(cl::Buffer &sourceCL, std::vector<float> &destH, int dataSize);
+    void _setPointComputationOutputFieldData(std::vector<float> &buffer, 
+                                             std::vector<WorkChunk> &chunks,
+                                             Array3d<WorkGroup> &workGroupGrid);
+    void _setPointValueComputationOutputFieldData(std::vector<float> &buffer, 
+                                                  std::vector<WorkChunk> &chunks,
+                                                  Array3d<WorkGroup> &workGroupGrid);
+    void _setWeightPointValueComputationOutputFieldData(std::vector<float> &buffer, 
                                                         std::vector<WorkChunk> &chunks,
                                                         Array3d<WorkGroup> &workGroupGrid);
     void _updateWorkGroupMinimumValues(Array3d<WorkGroup> &grid);
@@ -228,6 +269,7 @@ private:
     cl::Device _CLDevice;
     cl::Kernel _CLKernelPoints;
     cl::Kernel _CLKernelPointValues;
+    cl::Kernel _CLKernelWeightPointValues;
     cl::CommandQueue _CLQueue;
 
     int _isize = 0;

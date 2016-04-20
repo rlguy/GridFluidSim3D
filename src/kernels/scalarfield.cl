@@ -196,3 +196,70 @@ __kernel void compute_scalar_field_point_values(__global float *point_values,
     int fieldidx = gid * num_cells + lid;
     field_data[fieldidx] += sum;
 }
+
+__kernel void compute_scalar_weight_field_point_values(__global float *point_values,
+                                                       __global float *field_data,
+                                                       __global int *chunk_offsets,
+                                                       __local  float *local_point_values,
+                                                       int num_points,
+                                                       float radius,
+                                                       float dx) {
+    size_t tid = get_global_id(0);
+    size_t lid = get_local_id(0);
+    size_t gid = get_group_id(0);
+
+    int local_size = get_local_size(0);
+    int chunk_width = (int)floor(cbrt((float)local_size));
+    int num_cells = chunk_width * chunk_width * chunk_width;
+
+    int local_data_size = 4 * num_points;
+    load_local_memory(chunk_width, local_data_size, point_values, local_point_values);
+
+    if (lid >= num_cells) {
+        return;
+    }
+
+    int3 cell_index = flat_to_3d_index(lid, chunk_width, chunk_width);
+    float3 cell_center = (float3)(((float)cell_index.x + 0.5f) * dx,
+                                  ((float)cell_index.y + 0.5f) * dx,
+                                  ((float)cell_index.z + 0.5f) * dx);
+
+    int3 chunk_index = (int3)(chunk_offsets[3*gid + 0],
+                              chunk_offsets[3*gid + 1],
+                              chunk_offsets[3*gid + 2]);
+    float3 position_offset = (float3)(chunk_index.x * chunk_width * dx,
+                                      chunk_index.y * chunk_width * dx,
+                                      chunk_index.z * chunk_width * dx);
+
+    struct KernelCoefficients coefs = calculate_kernel_coefficients(radius);
+
+    float scalarsum = 0.0f;
+    float weightsum = 0.0f;
+    float3 p;
+    float rsq;
+    float maxrsq = radius * radius;
+    float value;
+    float weight;
+    float3 vect;
+    for (int i = 0; i < local_data_size; i += 4) {
+        p.x   = local_point_values[i + 0];
+        p.y   = local_point_values[i + 1];
+        p.z   = local_point_values[i + 2];
+        value = local_point_values[i + 3];
+
+        p -= position_offset;
+        vect = p - cell_center;
+        rsq = vect.x*vect.x + vect.y*vect.y + vect.z*vect.z;
+
+        if (rsq < maxrsq) {
+            weight = evaluate_kernel(rsq, &coefs);
+            scalarsum += value * weight;
+            weightsum += weight;
+        }
+    }
+
+    int scalarfieldidx = gid * num_cells + lid;
+    int weightfieldidx = get_num_groups(0) * num_cells + scalarfieldidx;
+    field_data[scalarfieldidx] += scalarsum;
+    field_data[weightfieldidx] += weightsum;
+}
