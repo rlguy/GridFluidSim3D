@@ -749,8 +749,8 @@ void CLScalarField::_getWorkGroupParticleCounts(std::vector<PointValue> &points,
         minj = fmax(floor(minp.y * invchunkdy), 0);
         mink = fmax(floor(minp.z * invchunkdz), 0);
         maxi = fmin(floor(maxp.x * invchunkdx), gmax.i - 1);
-        maxj = fmin(floor(maxp.y * invchunkdx), gmax.j - 1);
-        maxk = fmin(floor(maxp.z * invchunkdx), gmax.k - 1);
+        maxj = fmin(floor(maxp.y * invchunkdy), gmax.j - 1);
+        maxk = fmin(floor(maxp.z * invchunkdz), gmax.k - 1);
 
         for (int ck = mink; ck <= maxk; ck++) {
             for (int cj = minj; cj <= maxj; cj++) {
@@ -796,7 +796,7 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<PointValue> &p
         double cz = (double)ck * chunkdz;
 
         cbbox.position = vmath::vec3(cx + _radius, cy + _radius, cz + _radius);
-        if (cbbox.isPointInside(p) && Grid3d::isGridIndexInRange(ci, cj, ck, gmax)) {
+        if (false && cbbox.isPointInside(p) && Grid3d::isGridIndexInRange(ci, cj, ck, gmax)) {
             // sphere is contained within one grid cell
             group = grid.getPointer(ci, cj, ck);
             group->particles.push_back(pv);
@@ -810,8 +810,8 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<PointValue> &p
         minj = fmax(floor(minp.y * invchunkdy), 0);
         mink = fmax(floor(minp.z * invchunkdz), 0);
         maxi = fmin(floor(maxp.x * invchunkdx), gmax.i - 1);
-        maxj = fmin(floor(maxp.y * invchunkdx), gmax.j - 1);
-        maxk = fmin(floor(maxp.z * invchunkdx), gmax.k - 1);
+        maxj = fmin(floor(maxp.y * invchunkdy), gmax.j - 1);
+        maxk = fmin(floor(maxp.z * invchunkdz), gmax.k - 1);
 
         for (int ck = mink; ck <= maxk; ck++) {
             for (int cj = minj; cj <= maxj; cj++) {
