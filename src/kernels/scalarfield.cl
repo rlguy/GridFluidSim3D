@@ -133,7 +133,7 @@ __kernel void compute_scalar_field_points(__global float *particles,
     }
 
     int fieldidx = gid * num_cells + lid;
-    field_data[fieldidx] += sum;
+    field_data[fieldidx] = sum;
 }
 
 __kernel void compute_scalar_field_point_values(__global float *point_values,
@@ -194,7 +194,7 @@ __kernel void compute_scalar_field_point_values(__global float *point_values,
     }
 
     int fieldidx = gid * num_cells + lid;
-    field_data[fieldidx] += sum;
+    field_data[fieldidx] = sum;
 }
 
 __kernel void compute_scalar_weight_field_point_values(__global float *point_values,
@@ -260,6 +260,6 @@ __kernel void compute_scalar_weight_field_point_values(__global float *point_val
 
     int scalarfieldidx = gid * num_cells + lid;
     int weightfieldidx = get_num_groups(0) * num_cells + scalarfieldidx;
-    field_data[scalarfieldidx] += scalarsum;
-    field_data[weightfieldidx] += weightsum;
+    field_data[scalarfieldidx] = scalarsum;
+    field_data[weightfieldidx] = weightsum;
 }
