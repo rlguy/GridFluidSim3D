@@ -573,12 +573,23 @@ cl_int CLScalarField::_initializeCLCommandQueue() {
     return CL_SUCCESS;
 }
 
+/*  
+    The scalarfield.cl kernels calculate field values at cell centers. We want
+    values to be calculated at minimal cell corners to match the convention of
+    the ImplicitSurfaceScalarField class. To do this, <0.5dx, 0.5dx, 0.5dx> is
+    subtracted from the offset that the user sets.
+*/ 
+vmath::vec3 CLScalarField::_getInternalOffset() {
+    return _offset - vmath::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
+}
+
 void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
                                            std::vector<PointValue> &pvs) {
     pvs.reserve(points.size());
     float defaultValue = 0.0;
+    vmath::vec3 offset = _getInternalOffset();
     for (unsigned int i = 0; i < points.size(); i++) {
-        pvs.push_back(PointValue(points[i] - _offset, defaultValue));
+        pvs.push_back(PointValue(points[i] - offset, defaultValue));
     }
 }
 
@@ -587,9 +598,10 @@ void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
                                            std::vector<PointValue> &pvs) {
     assert(points.size() == values.size());
 
+    vmath::vec3 offset = _getInternalOffset();
     pvs.reserve(points.size());
     for (unsigned int i = 0; i < points.size(); i++) {
-        pvs.push_back(PointValue(points[i] - _offset, values[i]));
+        pvs.push_back(PointValue(points[i] - offset, values[i]));
     }
 }
 

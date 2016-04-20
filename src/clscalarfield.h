@@ -155,6 +155,7 @@ private:
     std::string _getProgramString(std::string filename);
     cl_int _initializeCLCommandQueue();
 
+    vmath::vec3 _getInternalOffset();
     void _initializePointValues(std::vector<vmath::vec3> &points,
                                 std::vector<PointValue> &pvs);
     void _initializePointValues(std::vector<vmath::vec3> &points,
@@ -277,7 +278,9 @@ private:
     int _ksize = 0;
     double _dx = 0.0;
     double _radius = 0.0;
-    vmath::vec3 _offset;
+    vmath::vec3 _offset;    // this offset value should not be used
+                            // for internal calculations. Use 
+                            // _getInternalOffset() for correct value.
 
     int _workGroupSize = 0;
     int _chunkWidth = 0;
