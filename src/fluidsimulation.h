@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "grid3d.h"
 #include "implicitsurfacescalarfield.h"
+#include "clscalarfield.h"
 #include "polygonizer3d.h"
 #include "trianglemesh.h"
 #include "logfile.h"
@@ -227,7 +228,7 @@ private:
     void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
-    void _initializeParticleAdvector();
+    void _initializeCLObjects();
 
     // Simulation step
     double _calculateNextTimeStep();
@@ -416,8 +417,7 @@ private:
     double _CFLConditionNumber = 5.0;
     double _minTimeStep = 1.0 / 1200.0;
     double _maxTimeStep = 1.0 / 15.0;
-    double _maxAdvectionDistanceFactor = 2.5; // max number of cells an advection
-                                              // integration can travel
+    int _maxParticlesPerAdvectionComputation = 5e6;
 
     double _density = 20.0;
     int _maxParticlesPerAdvection = 10e6;
@@ -438,7 +438,7 @@ private:
     double _outputFluidSurfacePolygonizerChunkPad = 3.0; // in # of cells
 
     double _ratioPICFLIP = 0.05f;
-    int _maxMarkerParticlesPerCell = 35;
+    int _maxMarkerParticlesPerCell = 100;
 
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
@@ -481,6 +481,7 @@ private:
     FluidBrickGrid _fluidBrickGrid;
 
     ParticleAdvector _particleAdvector;
+    CLScalarField _scalarFieldAccelerator;
 
 };
 

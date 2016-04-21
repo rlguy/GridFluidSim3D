@@ -814,7 +814,7 @@ void FluidSimulation::_initializeFluidMaterial() {
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
     _initializeFluidMaterial();
-    _initializeParticleAdvector();
+    _initializeCLObjects();
 
     _isSimulationInitialized = true;
 }
@@ -1006,14 +1006,15 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _initializeDiffuseParticlesFromSaveState(state);
     _initializeFluidMaterialParticlesFromSaveState();
 
-    _initializeParticleAdvector();
+    _initializeCLObjects();
 
     _isFluidInSimulation = _fluidCellIndices.size() > 0;
     _isSimulationInitialized = true;
 }
 
-void FluidSimulation::_initializeParticleAdvector() {
+void FluidSimulation::_initializeCLObjects() {
     assert(_particleAdvector.initialize());
+    assert(_scalarFieldAccelerator.initialize());
 }
 
 /********************************************************************************
@@ -1627,7 +1628,6 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     ImplicitSurfaceScalarField grid = ImplicitSurfaceScalarField(field.width,
                                                                  field.height,
                                                                  field.depth, _dx);
-
     grid.enableWeightField();
     grid.setPointRadius(_dx); 
 
@@ -1641,16 +1641,46 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     } else {
         return;
     }
+    grid.setOffset(offset);
 
-    MarkerParticle p;
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        p = _markerParticles[i];
-        grid.addPointValue(p.position - offset, p.velocity[dir]);
+    int n = _maxParticlesPerAdvectionComputation;
+    std::vector<vmath::vec3> positions;
+    std::vector<float> values;
+    positions.reserve(fmin(n, _markerParticles.size()));
+    values.reserve(fmin(n, _markerParticles.size()));
+
+    for (int startidx = 0; startidx < (int)_markerParticles.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        if (endidx >= (int)_markerParticles.size()) {
+            endidx = _markerParticles.size() - 1;
+        }
+
+        positions.clear();
+        values.clear();
+        for (int i = startidx; i <= endidx; i++) {
+            positions.push_back(_markerParticles[i].position);
+            values.push_back(_markerParticles[i].velocity[dir]);
+        }
+
+        _scalarFieldAccelerator.addPointValues(positions, values, grid);
     }
     grid.applyWeightField();
 
-    grid.getScalarField(field);
-    grid.getSetScalarFieldValues(isValueSet);
+    Array3d<float> *scalarfield = grid.getPointerToScalarField();
+    Array3d<float> *weightfield = grid.getPointerToWeightField();
+
+    double eps = 1e-9;
+    for (int k = 0; k < field.depth; k++) {
+        for (int j = 0; j < field.height; j++) {
+            for (int i = 0; i < field.width; i++) {
+                field.set(i, j, k, scalarfield->get(i, j, k));
+
+                if (weightfield->get(i, j, k) > eps) {
+                    isValueSet.set(i, j, k, true);
+                }
+            }
+        }
+    }
 
     FluidSource *source;
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
