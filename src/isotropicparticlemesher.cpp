@@ -64,6 +64,15 @@ TriangleMesh IsotropicParticleMesher::meshParticles(FragmentedVector<MarkerParti
 	return _polygonizeSlices(particles, materialGrid);
 }
 
+void IsotropicParticleMesher::setScalarFieldAccelerator(CLScalarField *accelerator) {
+	_scalarFieldAccelerator = accelerator;
+	_isScalarFieldAcceleratorSet = true;
+}
+
+void IsotropicParticleMesher::setScalarFieldAccelerator() {
+	_isScalarFieldAcceleratorSet = false;
+}
+
 TriangleMesh IsotropicParticleMesher::_polygonizeAll(FragmentedVector<MarkerParticle> &particles, 
 	                                                 FluidMaterialGrid &materialGrid) {
 	int subd = _subdivisionLevel;
@@ -80,10 +89,7 @@ TriangleMesh IsotropicParticleMesher::_polygonizeAll(FragmentedVector<MarkerPart
 	materialGrid.setSubdivisionLevel(origsubd);
 
 	field.setPointRadius(_particleRadius);
-
-    for (unsigned int i = 0; i < particles.size(); i++) {
-        field.addPoint(particles[i].position);
-    }
+	_addPointsToScalarField(particles, field);
 
     Polygonizer3d polygonizer(&field);
     polygonizer.polygonizeSurface();
@@ -181,10 +187,7 @@ void IsotropicParticleMesher::_computeSliceScalarField(int startidx, int endidx,
 	field.setOffset(fieldOffset);
 	field.setPointRadius(_particleRadius);
 
-	for (unsigned int i = 0; i < sliceParticles.size(); i++) {
-        field.addPoint(sliceParticles[i]);
-    }
-
+    _addPointsToScalarField(sliceParticles, field);
     _updateScalarFieldSeam(startidx, endidx, field);
 }
 
@@ -260,6 +263,91 @@ AABB IsotropicParticleMesher::_getSliceAABB(int startidx, int endidx) {
 	bbox.expand(2.0*_particleRadius);
 
 	return bbox;
+}
+
+void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
+	                                                  ImplicitSurfaceScalarField &field) {
+	
+	if (_isScalarFieldAcceleratorSet) {
+		_addPointsToScalarFieldAccelerator(points, field);
+	} else {
+		for (unsigned int i = 0; i < points.size(); i++) {
+	        field.addPoint(points[i]);
+	    }
+	}
+}
+
+void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
+	                                                  ImplicitSurfaceScalarField &field) {
+	if (_isScalarFieldAcceleratorSet) {
+		_addPointsToScalarFieldAccelerator(points, field);
+	} else {
+		for (unsigned int i = 0; i < points.size(); i++) {
+	        field.addPoint(points[i].position);
+	    }
+	}
+}
+
+void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
+	                                                             ImplicitSurfaceScalarField &field) {
+	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
+	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
+	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
+
+	int n = _maxParticlesPerScalarFieldAddition;
+	std::vector<vmath::vec3> positions;
+    positions.reserve(fmin(n, points.size()));
+
+    for (int startidx = 0; startidx < (int)points.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        if (endidx >= (int)points.size()) {
+            endidx = points.size() - 1;
+        }
+
+        positions.clear();
+        for (int i = startidx; i <= endidx; i++) {
+            positions.push_back(points[i]);
+        }
+
+        _scalarFieldAccelerator->addPoints(positions, field);
+    }
+
+    if (!isThresholdSet) {
+    	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold();
+    } else {
+    	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(origThreshold);
+    }
+}
+
+void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
+                                                                 ImplicitSurfaceScalarField &field) {
+	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
+	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
+	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
+
+	int n = _maxParticlesPerScalarFieldAddition;
+	std::vector<vmath::vec3> positions;
+    positions.reserve(fmin(n, points.size()));
+
+    for (int startidx = 0; startidx < (int)points.size(); startidx += n) {
+        int endidx = startidx + n - 1;
+        if (endidx >= (int)points.size()) {
+            endidx = points.size() - 1;
+        }
+
+        positions.clear();
+        for (int i = startidx; i <= endidx; i++) {
+            positions.push_back(points[i].position);
+        }
+
+        _scalarFieldAccelerator->addPoints(positions, field);
+    }
+
+    if (!isThresholdSet) {
+    	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold();
+    } else {
+    	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(origThreshold);
+    }
 }
 
 void IsotropicParticleMesher::_updateScalarFieldSeam(int startidx, int endidx,

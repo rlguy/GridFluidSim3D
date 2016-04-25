@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include "fluidmaterialgrid.h"
 #include "trianglemesh.h"
 #include "implicitsurfacescalarfield.h"
+#include "clscalarfield.h"
 #include "polygonizer3d.h"
 #include "aabb.h"
 #include "vmath.h"
@@ -47,6 +48,9 @@ public:
 	TriangleMesh meshParticles(FragmentedVector<MarkerParticle> &particles, 
 		                       FluidMaterialGrid &materialGrid,
 		                       double particleRadius);
+
+	void setScalarFieldAccelerator(CLScalarField *accelerator);
+	void setScalarFieldAccelerator();
 
 private:
 
@@ -71,6 +75,14 @@ private:
 		                       FluidMaterialGrid &materialGrid,
 		                       FluidMaterialGrid &sliceMaterialGrid);
 	AABB _getSliceAABB(int startidx, int endidx);
+	void _addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
+	                             ImplicitSurfaceScalarField &field);
+	void _addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
+	                             ImplicitSurfaceScalarField &field);
+	void _addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
+	                                        ImplicitSurfaceScalarField &field);
+	void _addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
+	                                        ImplicitSurfaceScalarField &field);
 	void _updateScalarFieldSeam(int startidx, int endidx, ImplicitSurfaceScalarField &field);
 	void _applyScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field);
 	void _saveScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field);
@@ -85,8 +97,14 @@ private:
 	int _numPolygonizationSlices = 1;
 
 	double _particleRadius = 0.0;
+	double _maxScalarFieldValueThreshold = 1.0;
 
 	Array3d<float> _scalarFieldSeamData;
+
+	int _maxParticlesPerScalarFieldAddition = 5e6;
+	bool _isScalarFieldAcceleratorSet = false;
+	CLScalarField *_scalarFieldAccelerator;
+
 
 };
 

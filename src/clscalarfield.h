@@ -82,6 +82,8 @@ public:
 
     void setMaxScalarFieldValueThreshold(float val);
     void setMaxScalarFieldValueThreshold();
+    bool isMaxScalarFieldValueThresholdSet();
+    double getMaxScalarFieldValueThreshold();
 
     void setDevicePreference(std::string devtype);
     void setDevicePreferenceGPU();

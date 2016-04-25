@@ -289,6 +289,14 @@ void CLScalarField::setMaxScalarFieldValueThreshold() {
     _isMaxScalarFieldValueThresholdSet = false;
 }
 
+bool CLScalarField::isMaxScalarFieldValueThresholdSet() {
+    return _isMaxScalarFieldValueThresholdSet;
+}
+
+double CLScalarField::getMaxScalarFieldValueThreshold() {
+    return _maxScalarFieldValueThreshold;
+}
+
 void CLScalarField::setDevicePreference(std::string devtype) {
     std::transform(devtype.begin(), devtype.end(), devtype.begin(), ::tolower);
 
