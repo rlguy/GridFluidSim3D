@@ -39,7 +39,7 @@ public:
 
 private:
     bool _isStarted = false;
-    float _tbegin, _tend;
+    double _tbegin, _tend;
     double _timeRunning = 0.0;
 };
 
