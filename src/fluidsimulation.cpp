@@ -1233,6 +1233,8 @@ TriangleMesh FluidSimulation::_polygonizeSurface() {
     IsotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
 
     double r = _markerParticleRadius*_markerParticleScale;
+    mesher.setScalarFieldAccelerator(&_scalarFieldAccelerator);
+    
     return mesher.meshParticles(_markerParticles, _materialGrid, r);
 }
 
@@ -1522,6 +1524,7 @@ TriangleMesh FluidSimulation::_polygonizeIsotropicOutputSurface() {
     double r = _markerParticleRadius*_markerParticleScale;
 
     IsotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
+    mesher.setScalarFieldAccelerator(&_scalarFieldAccelerator);
     mesher.setSubdivisionLevel(_outputFluidSurfaceSubdivisionLevel);
     mesher.setNumPolygonizationSlices(slices);
 
