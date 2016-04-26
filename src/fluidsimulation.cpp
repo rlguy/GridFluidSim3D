@@ -1924,7 +1924,7 @@ void FluidSimulation::_applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
                 if (_materialGrid.isFaceBorderingFluidW(i, j, k)) {
-                    Grid3d::FaceIndexToPositionU(i, j, k, _dx);
+                    p = Grid3d::FaceIndexToPositionW(i, j, k, _dx);
                     bodyForce = fieldFunction(p);
                     _MACVelocity.addW(i, j, k, bodyForce.z * dt);
                 }
