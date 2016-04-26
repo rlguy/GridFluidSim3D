@@ -197,14 +197,14 @@ private:
     double _evaluateKernel(SurfaceParticle &pi, SurfaceParticle &pj);
 
     double _particleRadius = 0.0;
-    double _anisotropicParticleScale = 3.0;
+    double _anisotropicParticleScale = 4.0;
     double _anisotropicParticleFieldScale = 1.0;
     double _isotropicParticleScale = 3.5;
     double _kernelRadius = 0.0;
     double _invKernelRadius = 1.0;
 
-    double _supportRadiusFactor = 3.0;              // in number of _particleRadius
-    double _connectedComponentRadiusFactor = 2.5;   // in number of _particleRadius
+    double _supportRadiusFactor = 6.0;              // in number of _particleRadius
+    double _connectedComponentRadiusFactor = 3.0;   // in number of _particleRadius
     int _minComponentParticleCount = 5;
     double _smoothingConstant = 0.95;               // in range [0.0,1.0]
 
@@ -217,7 +217,7 @@ private:
     double _dx = 0;
 
     int _maxParticlesPerCell = 16;
-    double _maxParticleToSurfaceDepth = 1.0; // in number of cells
+    double _maxParticleToSurfaceDepth = 2.0; // in number of cells
 
     SpatialPointGrid _pointGrid;
     FragmentedVector<SurfaceParticle> _surfaceParticles;
