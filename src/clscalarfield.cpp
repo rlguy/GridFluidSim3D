@@ -624,7 +624,7 @@ void CLScalarField::_initializeWorkGroupGrid(std::vector<PointValue> &points,
                                              Array3d<float> *scalarfield,
                                              Array3d<WorkGroup> &grid) {
     _initializeWorkGroupParameters(grid, scalarfield);
-    Array3d<int> countGrid(grid.width, grid.height, grid.width, 0);
+    Array3d<int> countGrid(grid.width, grid.height, grid.depth, 0);
     //_getWorkGroupParticleCounts(points, countGrid);       // Uses less memory at the cost
                                                             // of speed if uncommented
     _reserveWorkGroupGridParticleMemory(grid, countGrid);
@@ -636,7 +636,7 @@ void CLScalarField::_initializeWorkGroupGrid(std::vector<PointValue> &points,
                                              Array3d<float> *weightfield,
                                              Array3d<WorkGroup> &grid) {
     _initializeWorkGroupParameters(grid, scalarfield, weightfield);
-    Array3d<int> countGrid(grid.width, grid.height, grid.width, 0);
+    Array3d<int> countGrid(grid.width, grid.height, grid.depth, 0);
     //_getWorkGroupParticleCounts(points, countGrid);       // Uses less memory at the cost
                                                             // of speed if uncommented
     _reserveWorkGroupGridParticleMemory(grid, countGrid);
