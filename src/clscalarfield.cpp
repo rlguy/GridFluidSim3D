@@ -863,7 +863,7 @@ void CLScalarField::_getWorkChunksFromWorkGroup(WorkGroup *group,
     int size = group->particles.size();
     int chunksize = _maxParticlesPerChunk;
 
-    for (int i = 0; i <= size; i += chunksize) {
+    for (int i = 0; i < size; i += chunksize) {
         WorkChunk c;
         c.workGroupIndex = groupidx;
 
