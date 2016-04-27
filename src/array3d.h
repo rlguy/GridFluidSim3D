@@ -43,6 +43,11 @@ struct GridIndex {
                j != other.j ||
                k != other.k;
     }
+
+    int& operator[](unsigned int idx) {
+        assert(idx <= 2);
+        return (&i)[idx];
+    }
 };
 
 struct GridIndexHasher {
