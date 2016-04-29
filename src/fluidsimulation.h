@@ -241,22 +241,12 @@ private:
     void _updateFluidCells();
     void _updateAddedFluidCellQueue();
     void _updateFluidSources();
-    void _updateFluidSource(FluidSource *source);
+    void _updateInflowFluidSource(FluidSource *source);
     void _addNewFluidCells(GridIndexVector &cells, vmath::vec3 velocity);
     void _addNewFluidParticles(std::vector<vmath::vec3> &particles, vmath::vec3 velocity);
     void _getNewFluidParticles(FluidSource *source, std::vector<vmath::vec3> &particles);
-    void _removeMarkerParticlesFromCells(GridIndexVector &cells);
-    void _removeDiffuseParticlesFromCells(GridIndexVector &cells);
-    inline bool _isIndexInList(GridIndex g, GridIndexVector &list) {
-        GridIndex c;
-        for (unsigned int idx = 0; idx < list.size(); idx++) {
-            c = list[idx];
-            if (g.i == c.i && g.j == c.j && g.k == c.k) {
-                return true;
-            }
-        }
-        return false;
-    }
+    void _removeMarkerParticlesFromCells(Array3d<bool> &isRemovalCell);
+    void _removeDiffuseParticlesFromCells(Array3d<bool> &isRemovalCell);
 
     // Convert marker particles to fluid surface
     void _reconstructFluidSurface();

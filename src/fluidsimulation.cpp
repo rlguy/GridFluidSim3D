@@ -1027,7 +1027,7 @@ int FluidSimulation::_getUniqueFluidSourceID() {
     return id;
 }
 
-void FluidSimulation::_removeMarkerParticlesFromCells(GridIndexVector &cells) {
+void FluidSimulation::_removeMarkerParticlesFromCells(Array3d<bool> &isRemovalCell) {
     std::vector<bool> isRemoved;
     isRemoved.reserve(_markerParticles.size());
 
@@ -1036,13 +1036,13 @@ void FluidSimulation::_removeMarkerParticlesFromCells(GridIndexVector &cells) {
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        isRemoved.push_back(_isIndexInList(g, cells));
+        isRemoved.push_back(isRemovalCell(g));
     }
 
     _removeItemsFromVector(_markerParticles, isRemoved);
 }
 
-void FluidSimulation::_removeDiffuseParticlesFromCells(GridIndexVector &cells) {
+void FluidSimulation::_removeDiffuseParticlesFromCells(Array3d<bool> &isRemovalCell) {
     std::vector<bool> isRemoved;
     isRemoved.reserve(getNumDiffuseParticles());
 
@@ -1053,7 +1053,7 @@ void FluidSimulation::_removeDiffuseParticlesFromCells(GridIndexVector &cells) {
     for (unsigned int i = 0; i < diffuseParticles->size(); i++) {
         p = diffuseParticles->at(i);
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        isRemoved.push_back(_isIndexInList(g, cells));
+        isRemoved.push_back(isRemovalCell(g));
     }
 
     _removeItemsFromVector(diffuseParticles, isRemoved);
@@ -1149,32 +1149,46 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
     }
 }
 
-void FluidSimulation::_updateFluidSource(FluidSource *source) {
-    if (source->isInflow()) {
-        GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
-        vmath::vec3 velocity = source->getVelocity();
-        if (newCells.size() > 0) {
-            _addNewFluidCells(newCells, velocity);
-        }
+void FluidSimulation::_updateInflowFluidSource(FluidSource *source) {
+    assert(source->isInflow());
 
-        std::vector<vmath::vec3> newParticles;
-        _getNewFluidParticles(source, newParticles);
-        if (newParticles.size() > 0) {
-            _addNewFluidParticles(newParticles, velocity);
-        }
-    } else if (source->isOutflow()) {
-        GridIndexVector cells = source->getFluidCells(_materialGrid, _dx);
+    GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
+    vmath::vec3 velocity = source->getVelocity();
+    if (newCells.size() > 0) {
+        _addNewFluidCells(newCells, velocity);
+    }
 
-        if (cells.size() > 0) {
-            _removeMarkerParticlesFromCells(cells);
-            _removeDiffuseParticlesFromCells(cells);
-        }
+    std::vector<vmath::vec3> newParticles;
+    _getNewFluidParticles(source, newParticles);
+    if (newParticles.size() > 0) {
+        _addNewFluidParticles(newParticles, velocity);
     }
 }
 
 void FluidSimulation::_updateFluidSources() {
+
+    Array3d<bool> isOutflowCell(_isize, _jsize, _ksize, false);
+    bool isOutflowCellInSimulation = false;
+
+    FluidSource *source;
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        _updateFluidSource(_fluidSources[i]);
+        source = _fluidSources[i];
+
+        if (source->isInflow()) {
+            _updateInflowFluidSource(_fluidSources[i]);
+        } else if (source->isOutflow()) {
+            GridIndexVector cells = source->getFluidCells(_materialGrid, _dx);
+
+            for (unsigned int cidx = 0; cidx < cells.size(); cidx++) {
+                isOutflowCell.set(cells[cidx], true);
+                isOutflowCellInSimulation = true;
+            }
+        }
+    }
+
+    if (isOutflowCellInSimulation) {
+        _removeMarkerParticlesFromCells(isOutflowCell);
+        _removeDiffuseParticlesFromCells(isOutflowCell);
     }
 }
 
