@@ -324,9 +324,14 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
     int chunki = _dataChunkWidth;
     int chunkj = _dataChunkHeight;
     int chunkk = _dataChunkDepth;
-    int chunkgridi = ceil((double)_isize / (double)(chunki));
-    int chunkgridj = ceil((double)_jsize / (double)(chunkj));
-    int chunkgridk = ceil((double)_ksize / (double)(chunkk));
+
+    // There's a bug where interpolations are not always accurate at the
+    // maximum boundaries of the velocity field. I'm not sure what causes
+    // this bug, but padding the grid with an extra chunk seems to solve this
+    // issue.
+    int chunkgridi = ceil((double)_isize / (double)(chunki)) + 1;
+    int chunkgridj = ceil((double)_jsize / (double)(chunkj)) + 1;
+    int chunkgridk = ceil((double)_ksize / (double)(chunkk)) + 1;
 
     Array3d<ParticleChunk> particleGrid(chunkgridi, chunkgridj, chunkgridk);
 
