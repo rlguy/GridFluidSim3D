@@ -40,7 +40,7 @@ FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
 
 FluidSimulation::~FluidSimulation() {
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        delete[] _fluidSources[i];
+        delete _fluidSources[i];
     }
 }
 
