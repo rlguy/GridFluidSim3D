@@ -946,8 +946,8 @@ int CLScalarField::_getMaxChunksPerWeightPointValueComputation() {
 }
 
 int CLScalarField::_getMaxChunkLimit(int pointDataSize, int fieldDataSize, int offsetDataSize) {
-    int maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
-    int maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
+    unsigned long int maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
+    unsigned long int maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
 
     int numPositionAllocItems = floor((double)maxAlloc / (double)pointDataSize);
     int numFieldAllocItems = floor((double)maxAlloc / (double)fieldDataSize);
