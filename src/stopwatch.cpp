@@ -28,9 +28,9 @@ void StopWatch::start() {
     #ifdef __linux__ 
         struct timeval tp;
         gettimeofday(&tp, nullptr);
-        _tbegin = (float)tp.tv_sec + (float)tp.tv_usec / 1000000.0;
+        _tbegin = (double)tp.tv_sec + (double)tp.tv_usec / 1000000.0;
     #elif _WIN32
-        _tbegin = (float)GetTickCount() / 1000.0;
+        _tbegin = (double)GetTickCount() / 1000.0;
     #else
     #endif
     
