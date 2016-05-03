@@ -48,19 +48,10 @@ FluidSimulation::~FluidSimulation() {
     PUBLIC
 ********************************************************************************/
 
-void FluidSimulation::run() {
+void FluidSimulation::initialize() {
     if (!_isSimulationInitialized) {
         _initializeSimulation();
     }
-    _isSimulationRunning = true;
-}
-
-void FluidSimulation::pause() {
-    if (!_isSimulationInitialized) {
-        return;
-    }
-
-    _isSimulationRunning = !_isSimulationRunning;
 }
 
 void FluidSimulation::saveState() {
@@ -2546,7 +2537,7 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::update(double dt) {
-    if (!_isSimulationRunning || !_isSimulationInitialized) {
+    if (!_isSimulationInitialized) {
         return;
     }
     _isCurrentFrameFinished = false;

@@ -66,8 +66,7 @@ public:
     FluidSimulation(FluidSimulationSaveState &state);
     ~FluidSimulation();
 
-    void run();
-    void pause();
+    void initialize();
     void update(double dt);
     void saveState();
     void saveState(std::string filename);

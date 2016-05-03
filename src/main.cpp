@@ -18,7 +18,7 @@ int main(int argc, char* args[]) {
     fluidsim.addImplicitFluidPoint(x/2, y/2, z/2, 7.0);
     
     fluidsim.addBodyForce(0.0, -25.0, 0.0);
-    fluidsim.run();
+    fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
     while (true) {
