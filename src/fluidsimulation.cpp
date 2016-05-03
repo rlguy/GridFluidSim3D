@@ -582,10 +582,6 @@ void FluidSimulation::getDiffuseParticles(std::vector<DiffuseParticle> &particle
     }
 }
 
-Array3d<float> FluidSimulation::getDensityGrid() {
-    return _fluidBrickGrid.getDensityGrid();
-}
-
 MACVelocityField* FluidSimulation::getVelocityField() { 
     return &_MACVelocity; 
 }
@@ -593,10 +589,6 @@ MACVelocityField* FluidSimulation::getVelocityField() {
 LevelSet* FluidSimulation::getLevelSet() { 
     return &_levelset; 
 };
-
-TriangleMesh* FluidSimulation::getFluidSurfaceTriangles() {
-    return &_surfaceMesh;
-}
 
 /********************************************************************************
     INITIALIZATION
@@ -992,7 +984,6 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 
     _initializeCLObjects();
 
-    _isFluidInSimulation = _fluidCellIndices.size() > 0;
     _isSimulationInitialized = true;
 }
 

@@ -154,10 +154,8 @@ public:
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
     std::vector<char> getDiffuseParticleTypes();
     std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
-    Array3d<float> getDensityGrid();
     MACVelocityField* getVelocityField();
     LevelSet* getLevelSet();
-    TriangleMesh* getFluidSurfaceTriangles();
 
 private:
 
@@ -368,21 +366,13 @@ private:
     }
 
     template<class T>
+    void _removeItemsFromVector(std::vector<T> *items, std::vector<bool> &isRemoved) {
+        _removeItemsFromVector(*items, isRemoved);
+    }
+
+    template<class T>
     void _removeItemsFromVector(FragmentedVector<T> *items, std::vector<bool> &isRemoved) {
-        assert(items->size() == isRemoved.size());
-
-        int currentidx = 0;
-        for (unsigned int i = 0; i < items->size(); i++) {
-            if (!isRemoved[i]) {
-                (*items)[currentidx] = (*items)[i];
-                currentidx++;
-            }
-        }
-
-        for (int i = 0; i < items->size() - currentidx; i++) {
-            items->pop_back();
-        }
-        items->shrink_to_fit();
+        _removeItemsFromVector(*items, isRemoved);
     }
 
     inline double _randomDouble(double min, double max) {
@@ -390,8 +380,6 @@ private:
     }
 
     bool _isSimulationInitialized = false;
-    bool _isSimulationRunning = false;
-    bool _isFluidInSimulation = false;
     int _currentFrame = 0;
     int _currentTimeStep = 0;
     double _currentDeltaTime = 0.0;
@@ -425,10 +413,6 @@ private:
 
     int _outputFluidSurfaceSubdivisionLevel = 1;
     int _numSurfaceReconstructionPolygonizerSlices = 1;
-    double _outputFluidSurfaceCellNarrowBandSize = 0.5;
-    double _outputFluidSurfaceParticleNarrowBandSize = 1.0;
-    int _outputFluidSurfacePolygonizerChunkSize = 128*128*64;
-    double _outputFluidSurfacePolygonizerChunkPad = 3.0; // in # of cells
 
     double _ratioPICFLIP = 0.05f;
     int _maxMarkerParticlesPerCell = 100;
