@@ -140,6 +140,7 @@ public:
     void addFluidCells(GridIndexVector &indices);
 
     unsigned int getNumMarkerParticles();
+    void getMarkerParticles(std::vector<MarkerParticle> &mps);
     std::vector<vmath::vec3> getMarkerParticlePositions();
     std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
     std::vector<vmath::vec3> getMarkerParticleVelocities();

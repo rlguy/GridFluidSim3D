@@ -449,6 +449,13 @@ unsigned int FluidSimulation::getNumMarkerParticles() {
     return _markerParticles.size();
 }
 
+void FluidSimulation::getMarkerParticles(std::vector<MarkerParticle> &mps) {
+    mps.reserve(_markerParticles.size());
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        mps.push_back(_markerParticles[i]);
+    }
+}
+
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
     return getMarkerParticlePositions(0, _markerParticles.size() - 1);
 }
