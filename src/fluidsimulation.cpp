@@ -275,6 +275,10 @@ void FluidSimulation::addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2) {
     addFluidCuboid(minp, width, height, depth);
 }
 
+void FluidSimulation::addFluidCuboid(AABB bbox) {
+    addFluidCuboid(bbox.position, bbox.width, bbox.height, bbox.depth);
+}
+
 void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d) {
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
 }

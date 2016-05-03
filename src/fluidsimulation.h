@@ -116,8 +116,9 @@ public:
     void addImplicitFluidPoint(double x, double y, double z, double r);
     void addImplicitFluidPoint(vmath::vec3 p, double radius);
     void addFluidCuboid(double x, double y, double z, double w, double h, double d);
-    void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
     void addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2);
+    void addFluidCuboid(AABB bbox);
+    void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
 
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r);
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r, 
