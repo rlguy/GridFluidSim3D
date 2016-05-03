@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
 
 struct Brick {
     float intensity = 0.0f;
-    double isActive = false;
+    bool isActive = false;
 
     Brick() : intensity(0.0f),
                 isActive(false) {}
