@@ -200,12 +200,6 @@ void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
     _isDiffuseMaterialFilesSeparated = false;
 }
 
-void FluidSimulation::enableBrickOutput() {
-    AABB brick = AABB(vmath::vec3(), _brickWidth, _brickHeight, _brickDepth);
-    _fluidBrickGrid = FluidBrickGrid(_isize, _jsize, _ksize, _dx, brick);
-    _isBrickOutputEnabled = true;
-}
-
 void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
     assert(width > 0.0 && height > 0.0 && depth > 0.0);
     _brickWidth = width;
@@ -222,6 +216,10 @@ void FluidSimulation::enableBrickOutput(double width, double height, double dept
     _fluidBrickGrid.setBrickDimensions(brick);
 
     _isBrickOutputEnabled = true;
+}
+
+void FluidSimulation::enableBrickOutput(AABB brickbbox) {
+    enableBrickOutput(brickbbox.width, brickbbox.height, brickbbox.depth);
 }
 
 void FluidSimulation::disableBrickOutput() {

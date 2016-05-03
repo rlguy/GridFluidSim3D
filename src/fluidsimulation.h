@@ -102,8 +102,8 @@ public:
     void outputDiffuseMaterialAsSeparateFiles();
     void outputDiffuseMaterialAsSingleFile();
     void disableDiffuseMaterialOutput();
-    void enableBrickOutput();
     void enableBrickOutput(double width, double height, double depth);
+    void enableBrickOutput(AABB brickbbox);
     void disableBrickOutput();
     void enableAutosave();
     void disableAutosave();
