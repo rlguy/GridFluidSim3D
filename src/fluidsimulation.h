@@ -68,7 +68,6 @@ public:
 
     void initialize();
     void update(double dt);
-    void saveState();
     void saveState(std::string filename);
     int getCurrentFrame();
     bool isCurrentFrameFinished();
@@ -106,8 +105,8 @@ public:
     void enableBrickOutput();
     void enableBrickOutput(double width, double height, double depth);
     void disableBrickOutput();
-    void enableSaveState();
-    void disableSaveState();
+    void enableAutosave();
+    void disableAutosave();
 
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
@@ -232,6 +231,7 @@ private:
     // Simulation step
     double _calculateNextTimeStep();
     double _getMaximumMarkerParticleSpeed();
+    void _autosave();
     void _stepFluid(double dt);
 
     // Find fluid cells. Fluid cells must contain at
@@ -438,7 +438,7 @@ private:
     bool _isFoamDiffuseMaterialEnabled = false;
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
-    bool _isSaveStateEnabled = true;
+    bool _isAutosaveEnabled = true;
     double _brickWidth = 1.0;
     double _brickHeight = 1.0;
     double _brickDepth = 1.0;

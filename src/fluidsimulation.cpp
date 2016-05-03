@@ -54,15 +54,7 @@ void FluidSimulation::initialize() {
     }
 }
 
-void FluidSimulation::saveState() {
-    saveState("savestates/autosave.state");
-}
-
 void FluidSimulation::saveState(std::string filename) {
-    if (!_isSaveStateEnabled) {
-        return;
-    }
-
     FluidSimulationSaveState state;
     state.saveState(filename, this);
 }
@@ -236,12 +228,12 @@ void FluidSimulation::disableBrickOutput() {
     _isBrickOutputEnabled = false;
 }
 
-void FluidSimulation::enableSaveState() {
-    _isSaveStateEnabled = true;
+void FluidSimulation::enableAutosave() {
+    _isAutosaveEnabled = true;
 }
 
-void FluidSimulation::disableSaveState() {
-    _isSaveStateEnabled = false;
+void FluidSimulation::disableAutosave() {
+    _isAutosaveEnabled = false;
 }
 
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
@@ -2536,6 +2528,10 @@ double FluidSimulation::_calculateNextTimeStep() {
     return timeStep;
 }
 
+void FluidSimulation::_autosave() {
+    saveState("savestates/autosave.state");
+}
+
 void FluidSimulation::update(double dt) {
     if (!_isSimulationInitialized) {
         return;
@@ -2544,7 +2540,9 @@ void FluidSimulation::update(double dt) {
 
     _frameTimeStep = dt;
 
-    saveState();
+    if (_isAutosaveEnabled) {
+        _autosave();
+    }
 
     _currentTimeStep = 0;
     double timeleft = dt;
