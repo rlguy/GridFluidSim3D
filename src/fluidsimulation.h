@@ -130,14 +130,14 @@ public:
 
     void addSolidCell(int i, int j, int k);
     void addSolidCell(GridIndex g);
-    void addSolidCells(std::vector<GridIndex> indices);
+    void addSolidCells(std::vector<GridIndex> &indices);
     void removeSolidCell(int i, int j, int k);
-    void removeSolidCells(std::vector<vmath::vec3> indices);
-    std::vector<vmath::vec3> getSolidCells();
+    void removeSolidCells(std::vector<vmath::vec3> &indices);
+    std::vector<GridIndex> getSolidCells();
     std::vector<vmath::vec3> getSolidCellPositions();
     void addFluidCell(int i, int j, int k);
     void addFluidCell(GridIndex g);
-    void addFluidCells(GridIndexVector indices);
+    void addFluidCells(GridIndexVector &indices);
 
     unsigned int getNumMarkerParticles();
     std::vector<vmath::vec3> getMarkerParticlePositions();
@@ -239,6 +239,9 @@ private:
     // least 1 marker particle
     int _getUniqueFluidSourceID();
     void _updateFluidCells();
+    void _removeParticlesInSolidCells();
+    void _removeMarkerParticlesInSolidCells();
+    void _removeDiffuseParticlesInSolidCells();
     void _updateAddedFluidCellQueue();
     void _updateFluidSources();
     void _updateInflowFluidSource(FluidSource *source);

@@ -364,7 +364,6 @@ void FluidSimulation::removeFluidSources() {
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
-    if (_isSimulationInitialized) { return; }
     assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
     _materialGrid.setSolid(i, j, k);
 }
@@ -373,7 +372,7 @@ void FluidSimulation::addSolidCell(GridIndex g) {
     addSolidCell(g.i, g.j, g.k);
 }
 
-void FluidSimulation::addSolidCells(std::vector<GridIndex> indices) {
+void FluidSimulation::addSolidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         addSolidCell(indices[i]);
     }
@@ -392,19 +391,19 @@ void FluidSimulation::removeSolidCell(int i, int j, int k) {
     }
 }
 
-void FluidSimulation::removeSolidCells(std::vector<vmath::vec3> indices) {
+void FluidSimulation::removeSolidCells(std::vector<vmath::vec3> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         removeSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
     }
 }
 
-std::vector<vmath::vec3> FluidSimulation::getSolidCells() {
-    std::vector<vmath::vec3> indices;
+std::vector<GridIndex> FluidSimulation::getSolidCells() {
+    std::vector<GridIndex> indices;
     for (int k = 1; k < _materialGrid.depth - 1; k++) {
         for (int j = 1; j < _materialGrid.height - 1; j++) {
             for (int i = 1; i < _materialGrid.width - 1; i++) {
                 if (_materialGrid.isCellSolid(i, j, k)) {
-                    indices.push_back(vmath::vec3(i, j, k));
+                    indices.push_back(GridIndex(i, j, k));
                 }
             }
         }
@@ -419,7 +418,7 @@ std::vector<vmath::vec3> FluidSimulation::getSolidCellPositions() {
         for (int j = 1; j < _materialGrid.height - 1; j++) {
             for (int i = 1; i < _materialGrid.width - 1; i++) {
                 if (_materialGrid.isCellSolid(i, j, k)) {
-                    indices.push_back(Grid3d::GridIndexToCellCenter(i, j, k, _dx));
+                    indices.push_back(Grid3d::GridIndexToPosition(i, j, k, _dx));
                 }
             }
         }
@@ -440,7 +439,7 @@ void FluidSimulation::addFluidCell(GridIndex g) {
     addFluidCell(g.i, g.j, g.k);
 }
 
-void FluidSimulation::addFluidCells(GridIndexVector indices) {
+void FluidSimulation::addFluidCells(GridIndexVector &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         addFluidCell(indices[i]);
     }
@@ -1184,7 +1183,63 @@ void FluidSimulation::_updateAddedFluidCellQueue() {
     _addedFluidCellQueue.shrink_to_fit();
 }
 
+void FluidSimulation::_removeMarkerParticlesInSolidCells() {
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_markerParticles.size());
+
+    bool isParticlesInSolidCell = false;
+    MarkerParticle p;
+    GridIndex g;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+
+        bool isInSolidCell = _materialGrid.isCellSolid(g);
+        if (isInSolidCell) {
+            isParticlesInSolidCell = true;
+        }
+
+        isRemoved.push_back(isInSolidCell);
+    }
+
+    if (isParticlesInSolidCell) {
+        _removeItemsFromVector(_markerParticles, isRemoved);
+    }
+}
+
+void FluidSimulation::_removeDiffuseParticlesInSolidCells() {
+    FragmentedVector<DiffuseParticle> *diffuseParticles = _diffuseMaterial.getDiffuseParticles();
+
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(diffuseParticles->size());
+
+    bool isParticlesInSolidCell = false;
+    DiffuseParticle p;
+    GridIndex g;
+    for (unsigned int i = 0; i < diffuseParticles->size(); i++) {
+        p = diffuseParticles->at(i);
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+
+        bool isInSolidCell = _materialGrid.isCellSolid(g);
+        if (isInSolidCell) {
+            isParticlesInSolidCell = true;
+        }
+
+        isRemoved.push_back(_materialGrid.isCellSolid(g));
+    }
+
+    if (isParticlesInSolidCell) {
+        _removeItemsFromVector(diffuseParticles, isRemoved);
+    }
+}
+
+void FluidSimulation::_removeParticlesInSolidCells() {
+    _removeMarkerParticlesInSolidCells();
+    _removeDiffuseParticlesInSolidCells();
+}
+
 void FluidSimulation::_updateFluidCells() {
+    _removeParticlesInSolidCells();
     _updateAddedFluidCellQueue();
     _updateFluidSources();
 
