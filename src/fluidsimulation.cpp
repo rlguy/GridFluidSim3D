@@ -98,29 +98,60 @@ double FluidSimulation::getDensity() {
 }
 
 void FluidSimulation::setDensity(double p) { 
-    assert(p > 0); _density = p; 
+    if (p <= 0.0) {
+        _printError("ERROR: density must be greater than 0\n");
+        std::cerr << "density: " << p << std::endl;
+    }
+    assert(p > 0); 
+    _density = p; 
 }
 
 Material FluidSimulation::getMaterial(int i, int j, int k) { 
+    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
+    if (!isInRange) {
+        _printError("ERROR: material index out of range\n");
+        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    }
+    assert(isInRange);
+
     return _materialGrid(i, j, k); 
 }
 
 void FluidSimulation::setMarkerParticleScale(double s) { 
+     if (s < 0.0) {
+        _printError("ERROR: marker particle scale must be greater than or equal to 0\n");
+        std::cerr << "scale: " << s << std::endl;
+    }
+
+    assert(s >= 0); 
     _markerParticleScale = s; 
 }
 
 
-void FluidSimulation::setSurfaceSubdivisionLevel(unsigned int n) {
+void FluidSimulation::setSurfaceSubdivisionLevel(int n) {
+    if (n < 1) {
+        _printError("ERROR: subdivision level must be greater than or equal to 1\n");
+        std::cerr << "Subdivision level: " << n << std::endl;
+    }
     assert(n >= 1);
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
 void FluidSimulation::setNumSurfaceReconstructionPolygonizerSlices(int n) {
+    if (n < 1) {
+        _printError("ERROR: number of polygonizer slices must be greater than or equal to 1\n");
+        std::cerr << "polygonizer slices: : " << n << std::endl;
+    }
     assert(n >= 1);
     _numSurfaceReconstructionPolygonizerSlices = n;
 }
 
-void FluidSimulation::setMinimumPolyhedronTriangleCount(unsigned int n) {
+void FluidSimulation::setMinimumPolyhedronTriangleCount(int n) {
+    if (n < 1) {
+        _printError("ERROR: minimum polyhedron triangle count must be greater than or equal to 0\n");
+        std::cerr << "triangle count: " << n << std::endl;
+    }
+    assert(n >= 0);
     _minimumSurfacePolyhedronTriangleCount = n;
 }
 
@@ -201,7 +232,12 @@ void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
 }
 
 void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
+    if (!(width > 0.0 && height > 0.0 && depth > 0.0)) {
+        _printError("ERROR: brick dimensions must be greater than 0");
+        std::cerr << "width: " << width << " height: " << height << " depth: " << depth << std::endl;
+    }
     assert(width > 0.0 && height > 0.0 && depth > 0.0);
+
     _brickWidth = width;
     _brickHeight = height;
     _brickDepth = depth;
@@ -256,6 +292,12 @@ void FluidSimulation::addImplicitFluidPoint(double x, double y, double z, double
 }
 
 void FluidSimulation::addImplicitFluidPoint(vmath::vec3 p, double r) {
+    if (r < 0.0) {
+        _printError("ERROR: Implicit fluid point radius must be greater than or equal to 0");
+        std::cerr << "radius: " << r << std::endl;
+    }
+    assert(r >= 0.0);
+
     _fluidPoints.push_back(FluidPoint(p, r));
 }
 
@@ -280,21 +322,28 @@ void FluidSimulation::addFluidCuboid(AABB bbox) {
 }
 
 void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d) {
+    if (!(w >= 0.0 && h >= 0.0 && d >= 0.0)) {
+        _printError("ERROR: Fluid cuboid dimensions must be greater than or equal to 0");
+        std::cerr << "width: " << w << " height: " << h << " depth: " << d << std::endl;
+    }
+    assert(w >= 0.0 && h >= 0.0 && d >= 0.0);
+
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
 }
 
 
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r) {
-    SphericalFluidSource *source = new SphericalFluidSource(pos, r);
-    source->setID(_getUniqueFluidSourceID());
-
-    _fluidSources.push_back(source);
-    _sphericalFluidSources.push_back(source);
-    return source;
+    return addSphericalFluidSource(pos, r, vmath::vec3());
 }
 
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r, 
-                                             vmath::vec3 velocity) {
+                                                               vmath::vec3 velocity) {
+    if (r < 0.0) {
+        _printError("ERROR: Spherical fluid source radius must be greater than or equal to 0");
+        std::cerr << "radius: " << r << std::endl;
+    }
+    assert(r >= 0.0);
+
     SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
     source->setID(_getUniqueFluidSourceID());
 
@@ -304,15 +353,19 @@ SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, 
 }
 
 CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
-    CuboidFluidSource *source = new CuboidFluidSource(bbox);
-    source->setID(_getUniqueFluidSourceID());
-
-    _fluidSources.push_back(source);
-    _cuboidFluidSources.push_back(source);
-    return source;
+    return addCuboidFluidSource(bbox, vmath::vec3());
 }
 
 CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, vmath::vec3 velocity) {
+    bool isValidDimensions = bbox.width >= 0.0 && bbox.height >= 0.0 && bbox.depth >= 0.0;
+    if (!isValidDimensions) {
+        _printError("ERROR: Cuboid fluid source dimensions must be greater than or equal to 0");
+        std::cerr << "width: " << bbox.width << 
+                     " height: " << bbox.height << 
+                     " depth: " << bbox.depth << std::endl;
+    }
+    assert(isValidDimensions);
+
     CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
     source->setID(_getUniqueFluidSourceID());
 
@@ -325,13 +378,17 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
     bool isFound = false;
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
         if (source->getID() == _fluidSources[i]->getID()) {
-            delete (_fluidSources[i]);
+            delete _fluidSources[i];
             _fluidSources.erase(_fluidSources.begin() + i);
             isFound = true;
             break;
         }
     }
 
+    if (!isFound) {
+        _printError("ERROR: could not find fluid source to remove");
+        std::cerr << "Fluid source: " << source << std::endl;
+    }
     assert(isFound);
 
     isFound = false;
@@ -356,7 +413,7 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
 
 void FluidSimulation::removeFluidSources() {
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        delete (_fluidSources[i]);
+        delete _fluidSources[i];
     }
     _fluidSources.clear();
     _sphericalFluidSources.clear();
@@ -364,7 +421,13 @@ void FluidSimulation::removeFluidSources() {
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
+    if (!isInRange) {
+        _printError("ERROR: Solid cell index out of range\n");
+        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    }
+    assert(isInRange);
+
     _materialGrid.setSolid(i, j, k);
 }
 
@@ -379,7 +442,12 @@ void FluidSimulation::addSolidCells(std::vector<GridIndex> &indices) {
 }
 
 void FluidSimulation::removeSolidCell(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
+    if (!isInRange) {
+        _printError("ERROR: Solid cell index out of range\n");
+        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    }
+    assert(isInRange);
 
     // Cannot remove border cells
     if (Grid3d::isGridIndexOnBorder(i, j, k, _isize, _jsize, _ksize)) { 
@@ -391,9 +459,9 @@ void FluidSimulation::removeSolidCell(int i, int j, int k) {
     }
 }
 
-void FluidSimulation::removeSolidCells(std::vector<vmath::vec3> &indices) {
+void FluidSimulation::removeSolidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
-        removeSolidCell((int)indices[i].x, (int)indices[i].y, (int)indices[i].z);
+        removeSolidCell(indices[i].i, indices[i].j, indices[i].k);
     }
 }
 
@@ -428,7 +496,12 @@ std::vector<vmath::vec3> FluidSimulation::getSolidCellPositions() {
 }
 
 void FluidSimulation::addFluidCell(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
+    if (!isInRange) {
+        _printError("ERROR: Fluid cell index out of range\n");
+        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    }
+    assert(isInRange);
 
     if (_materialGrid.isCellAir(i, j, k)) {
         _addedFluidCellQueue.push_back(i, j, k);
@@ -2587,10 +2660,22 @@ void FluidSimulation::_autosave() {
     saveState("savestates/autosave.state");
 }
 
+void FluidSimulation::_printError(std::string msg) {
+    std::cerr << msg;
+}
+
 void FluidSimulation::update(double dt) {
     if (!_isSimulationInitialized) {
-        return;
+        _printError("ERROR: FluidSimulation must be initialized before update\n");
+        assert(_isSimulationInitialized);
     }
+
+    if (dt < 0.0) {
+        _printError("ERROR: Delta time must be greater than or equal to 0\n");
+        std::cerr << "Delta time: " << dt << std::endl;
+        assert(dt >= 0.0);
+    }
+
     _isCurrentFrameFinished = false;
 
     _frameTimeStep = dt;

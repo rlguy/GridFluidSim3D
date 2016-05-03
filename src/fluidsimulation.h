@@ -82,9 +82,9 @@ public:
     void setDensity(double p);
     Material getMaterial(int i, int j, int k);
     void setMarkerParticleScale(double s);
-    void setSurfaceSubdivisionLevel(unsigned int n);
+    void setSurfaceSubdivisionLevel(int n);
     void setNumSurfaceReconstructionPolygonizerSlices(int n);
-    void setMinimumPolyhedronTriangleCount(unsigned int n);
+    void setMinimumPolyhedronTriangleCount(int n);
 
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
@@ -132,7 +132,7 @@ public:
     void addSolidCell(GridIndex g);
     void addSolidCells(std::vector<GridIndex> &indices);
     void removeSolidCell(int i, int j, int k);
-    void removeSolidCells(std::vector<vmath::vec3> &indices);
+    void removeSolidCells(std::vector<GridIndex> &indices);
     std::vector<GridIndex> getSolidCells();
     std::vector<vmath::vec3> getSolidCellPositions();
     void addFluidCell(int i, int j, int k);
@@ -232,6 +232,7 @@ private:
     double _calculateNextTimeStep();
     double _getMaximumMarkerParticleSpeed();
     void _autosave();
+    void _printError(std::string msg);
     void _stepFluid(double dt);
 
     // Find fluid cells. Fluid cells must contain at
