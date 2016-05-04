@@ -787,8 +787,16 @@ void FluidSimulation::_getInitialFluidCellsFromScalarField(ImplicitSurfaceScalar
     _surfaceMesh = polygonizer.getTriangleMesh();
     _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
 
+    GridIndexVector insideCells(_isize, _jsize, _ksize);
+    _surfaceMesh.getCellsInsideMesh(insideCells);
+
     fluidCells.clear();
-    _surfaceMesh.getCellsInsideMesh(fluidCells);
+    fluidCells.reserve(insideCells.size());
+    for (unsigned int i = 0; i < insideCells.size(); i++) {
+        if (!_materialGrid.isCellSolid(insideCells[i])) {
+            fluidCells.push_back(insideCells[i]);
+        }
+    }
 }
 
 
