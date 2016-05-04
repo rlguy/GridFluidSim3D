@@ -96,7 +96,6 @@ public:
 private:
 
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
-    double _evaluateTrilinearFieldFunction(vmath::vec3 v);
 
     int _isize = 0;
     int _jsize = 0;
