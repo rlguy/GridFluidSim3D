@@ -50,7 +50,6 @@ public:
     void setMaxScalarFieldThreshold();
     double getMaxScalarFieldThreshold();
     bool isMaxScalarFieldThresholdSet();
-    void enableCellCenterValues();
     void enableWeightField();
     bool isWeightFieldEnabled();
     void applyWeightField();
@@ -99,9 +98,6 @@ private:
     double _evaluateTricubicFieldFunctionForRadiusSquared(double rsq);
     double _evaluateTrilinearFieldFunction(vmath::vec3 v);
 
-    void _calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k);
-    void _calculateCenterCellValueForCuboid(AABB &bbox, int i, int j, int k);
-
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
@@ -118,12 +114,10 @@ private:
     bool _isMaxScalarFieldThresholdSet = false;
 
     Array3d<float> _field;
-    Array3d<float> _centerField;
     Array3d<bool> _isVertexSolid;
     Array3d<float> _weightField;
     Array3d<bool> _isVertexSet;
 
-    bool _isCenterFieldEnabled = false;
     bool _isWeightFieldEnabled = false;
 
     vmath::vec3 _gridOffset;

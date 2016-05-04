@@ -35,7 +35,6 @@ ImplicitSurfaceScalarField::~ImplicitSurfaceScalarField() {
 
 void ImplicitSurfaceScalarField::clear() {
     _field.fill(0.0);
-    _centerField.fill(0.0);
 }
 
 void ImplicitSurfaceScalarField::setPointRadius(double r) {
@@ -73,16 +72,6 @@ double ImplicitSurfaceScalarField::getMaxScalarFieldThreshold() {
 
 bool ImplicitSurfaceScalarField::isMaxScalarFieldThresholdSet() {
     return _isMaxScalarFieldThresholdSet;
-}
-
-void ImplicitSurfaceScalarField::enableCellCenterValues() {
-    if (_isCenterFieldEnabled) {
-        return;
-    }
-
-    _centerField = Array3d<float>(_isize-1, _jsize-1, _ksize-1, 0.0f);
-
-    _isCenterFieldEnabled = true;
 }
 
 void ImplicitSurfaceScalarField::enableWeightField() {
@@ -164,10 +153,6 @@ void ImplicitSurfaceScalarField::addPoint(vmath::vec3 p) {
                         _weightField.add(i, j, k, (float)weight);
                     }
                 }
-
-                if (_isCenterFieldEnabled) {
-                    _calculateCenterCellValueForPoint(p, i, j, k);
-                }
             }
         }
     }
@@ -239,10 +224,6 @@ void ImplicitSurfaceScalarField::addCuboid(vmath::vec3 pos, double w, double h, 
                     if (_isWeightFieldEnabled) {
                         _weightField.add(i, j, k, (float)(_surfaceThreshold + eps));
                     }
-                }
-
-                if (_isCenterFieldEnabled) {
-                    _calculateCenterCellValueForCuboid(bbox, i, j, k);
                 }
             }
         }
@@ -458,13 +439,6 @@ bool ImplicitSurfaceScalarField::isScalarFieldValueSet(int i, int j, int k) {
     return _isVertexSet(i, j, k);
 }
 
-bool ImplicitSurfaceScalarField::isCellInsideSurface(int i, int j, int k) {
-    assert(_isCenterFieldEnabled);
-    assert(_centerField.isIndexInRange(i, j, k));
-
-    return _centerField(i, j, k) > _surfaceThreshold;
-}
-
 void ImplicitSurfaceScalarField::setScalarFieldValue(int i, int j, int k, double value) {
     assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.set(i, j, k, value);
@@ -573,30 +547,4 @@ Array3d<float>* ImplicitSurfaceScalarField::getPointerToWeightField() {
 
 double ImplicitSurfaceScalarField::_evaluateTricubicFieldFunctionForRadiusSquared(double rsq) {
     return 1.0 - _coef1*rsq*rsq*rsq + _coef2*rsq*rsq - _coef3*rsq;
-}
-
-void ImplicitSurfaceScalarField::_calculateCenterCellValueForPoint(vmath::vec3 p, int i, int j, int k) {
-    if ( i == _isize - 1 || j == _jsize - 1 || k == _ksize - 1 ) {
-        return;
-    }
-
-    vmath::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    vmath::vec3 v = gpos - p;
-    double distsq = vmath::dot(v, v);
-    if (distsq < _radius*_radius) {
-        double val = _evaluateTricubicFieldFunctionForRadiusSquared(distsq);
-        _centerField.add(i, j, k, (float)val);
-    }
-}
-
-void ImplicitSurfaceScalarField::_calculateCenterCellValueForCuboid(AABB &bbox, int i, int j, int k) {
-    if ( i == _isize - 1 || j == _jsize - 1 || k == _ksize - 1 ) {
-        return;
-    }
-
-    vmath::vec3 gpos = Grid3d::GridIndexToCellCenter(i, j, k, _dx);
-    if (bbox.isPointInside(gpos)) {
-        double eps = 10e-6;
-        _centerField.add(i, j, k, (float)(_surfaceThreshold + eps));
-    }
 }
