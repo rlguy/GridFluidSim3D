@@ -117,6 +117,10 @@ Material FluidSimulation::getMaterial(int i, int j, int k) {
     return _materialGrid(i, j, k); 
 }
 
+Material FluidSimulation::getMaterial(GridIndex g) { 
+    return getMaterial(g.i, g.j, g.k); 
+}
+
 void FluidSimulation::setMarkerParticleScale(double s) { 
      if (s < 0.0) {
         _printError("ERROR: marker particle scale must be greater than or equal to 0\n");
@@ -125,6 +129,10 @@ void FluidSimulation::setMarkerParticleScale(double s) {
 
     assert(s >= 0); 
     _markerParticleScale = s; 
+}
+
+double FluidSimulation::getMarkerParticleScale() {
+    return _markerParticleScale;
 }
 
 
@@ -233,7 +241,7 @@ void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
 
 void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
     if (!(width > 0.0 && height > 0.0 && depth > 0.0)) {
-        _printError("ERROR: brick dimensions must be greater than 0");
+        _printError("ERROR: brick dimensions must be greater than 0\n");
         std::cerr << "width: " << width << " height: " << height << " depth: " << depth << std::endl;
     }
     assert(width > 0.0 && height > 0.0 && depth > 0.0);
@@ -293,10 +301,14 @@ void FluidSimulation::addImplicitFluidPoint(double x, double y, double z, double
 
 void FluidSimulation::addImplicitFluidPoint(vmath::vec3 p, double r) {
     if (r < 0.0) {
-        _printError("ERROR: Implicit fluid point radius must be greater than or equal to 0");
+        _printError("ERROR: Implicit fluid point radius must be greater than or equal to 0\n");
         std::cerr << "radius: " << r << std::endl;
     }
     assert(r >= 0.0);
+
+    if (_isSimulationInitialized) {
+        _printError("ERROR: Implicit fluid point must be added before before simulation is initialized\n");
+    }
 
     _fluidPoints.push_back(FluidPoint(p, r));
 }
@@ -323,10 +335,14 @@ void FluidSimulation::addFluidCuboid(AABB bbox) {
 
 void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d) {
     if (!(w >= 0.0 && h >= 0.0 && d >= 0.0)) {
-        _printError("ERROR: Fluid cuboid dimensions must be greater than or equal to 0");
+        _printError("ERROR: Fluid cuboid dimensions must be greater than or equal to 0\n");
         std::cerr << "width: " << w << " height: " << h << " depth: " << d << std::endl;
     }
     assert(w >= 0.0 && h >= 0.0 && d >= 0.0);
+
+    if (_isSimulationInitialized) {
+        _printError("ERROR: Fluid cuboid must be added before simulation is initialized\n");
+    }
 
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
 }

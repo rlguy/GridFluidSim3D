@@ -62,100 +62,472 @@ class FluidSimulation
 {
 public:
     FluidSimulation();
+
+    /*
+        Constructs a FluidSimulation object with grid dimensions
+        of width isize, height jsize, depth ksize, with each grid cell
+        having width dx.
+    */
     FluidSimulation(int isize, int jsize, int ksize, double dx);
+
+    /*
+        Constructs a FluidSimulation object from a saved state.
+
+        Example usage:
+
+            std::string filename = "savestates/autosave.state";
+            FluidSimulationSaveState state;
+            assert(state.loadState(filename));
+            FluidSimulation fluidsim(state);
+    */
     FluidSimulation(FluidSimulationSaveState &state);
+
     ~FluidSimulation();
 
+    /*
+        Initializes the fluid simulation.
+
+        Must be called before running update() method.
+
+        Calls to addImplicitFluidPoint() and addFluidCuboid() must
+        be made before this method is run.
+    */
     void initialize();
+
+    /*
+        Advance the fluid simulation for a single frame time of dt seconds.
+    */
     void update(double dt);
+
+    /*
+        Save the current state of the simulation as a file.
+    */
     void saveState(std::string filename);
+
+    /*
+        Returns current frame of the simulation. Frame numbering starts
+        at zero.
+    */
     int getCurrentFrame();
+
+    /*
+        Returns false only when the update() method is being executed. May be
+        used if executing the update() method in seperate thread.
+    */
     bool isCurrentFrameFinished();
 
+    /* 
+        returns the width of a simulation grid cell
+    */
     double getCellSize();
+
+    /*
+        Retrieves the simulation grid dimensions.
+            i   ->   width
+            j   ->   height
+            k   ->   depth
+    */
     void getGridDimensions(int *i, int *j, int *k);
-    void getSimulationDimensions(double *w, double *h, double *d);
+
+    /*  
+        Retrieves the physical simulation dimensions. Values are equivalent
+        to multiplying the grid dimension by the grid cell size.
+    */
+    void getSimulationDimensions(double *width, double *height, double *depth);
     double getSimulationWidth();
     double getSimulationHeight();
     double getSimulationDepth();
+
+    /*
+        Density of the fluid. 
+        Must be greater than zero. 
+        Fluid density currently has no effect on the simulation.
+    */
     double getDensity();
     void setDensity(double p);
+
+    /*
+        Returns the material type stored in a grid cell.
+        Material type can be Material::fluid, Material::solid, or Material::air
+    */
     Material getMaterial(int i, int j, int k);
+    Material getMaterial(GridIndex g);
+
+    /*
+        Marker particle scale determines how large a particle is when
+        converting a set of particles to a triangle mesh. 
+
+        A marker particle with a scale of 1.0 will have the radius of a 
+        sphere that has a volume 1/8th of the volume of a grid cell.
+    */
     void setMarkerParticleScale(double s);
+    double getMarkerParticleScale();
+
+    /*
+        The surface subdivision level determines how many times the
+        simulation grid is divided when converting marker particles
+        to a triangle mesh
+
+        For example, a simulation with dimensions 256 x 128 x 80 and
+        a subdivision level of 2 will polygonize the surface on a grid
+        with dimensions 512 x 256 x 160. With a subdivision of level 3,
+        the polygonization grid will have dimensions 768 x 384 x 240.
+
+        A higher subdivision level will produce a higher quality surface at
+        the cost of longer simulation times and greater memory usage.
+    */
     void setSurfaceSubdivisionLevel(int n);
+
+    /*
+        How many slices the polygonizer will section the surface reconstruction
+        grid into when computing the triangle mesh. The polygonizer will compute
+        the triangle mesh one slice at a time before combining them into a
+        single triangle mesh.
+
+        A higher subdivision level may require a very large amount of memory to
+        store the polygonization grid data. Setting the number of slices will 
+        reduce the memory required at the cost of speed.
+    */
     void setNumSurfaceReconstructionPolygonizerSlices(int n);
+
+    /*
+        Will ensure that the output triangle mesh only contains polyhedrons
+        that contain a minimum number of triangles. Removing polyhedrons with
+        a low triangle count will reduce the triangle mesh size when saved to 
+        disk.
+    */
     void setMinimumPolyhedronTriangleCount(int n);
 
+    /*
+        Enable/disable the simulation from saving polygonized triangle meshes 
+        to disk. 
+
+        Enabled by default.
+    */
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
+
+    /*
+        Enable/disable the simulation from saving isotropic reconstructed triangle 
+        meshes to disk.
+
+        Isotropic surface reconstruction creates a triangle mesh from a set of
+        spheres each with a uniform radius.
+
+        Enabled by default.
+    */
     void enableIsotropicSurfaceReconstruction();
     void disableIsotropicSurfaceReconstruction();
+
+    /*
+        Enable/disable the simulation from saving anisotropic reconstructed triangle 
+        meshes to disk.
+
+        Anisotropic surface reconstruction creates a triangle mesh from a set of
+        ellipsoids (3d ovals). This method preserves sharp features of the fluid
+        by converting a set of particles to ellipsoids that better match a smooth
+        fluid surface. This method of surface reconstruction is much slower than
+        the isotropic method.
+
+        Disabled by default.
+    */
     void enableAnisotropicSurfaceReconstruction();
     void disableAnisotropicSurfaceReconstruction();
+
+    /*
+        Enable/disable the simulation from simulating diffuse 
+        material (spray/bubble/foam particles), and saving diffuse mesh data to disk.
+
+        Diffuse material mesh data consists of triangle meshes containing only vertices.
+
+        Disabled by default.
+    */
     void enableDiffuseMaterialOutput();
-    void enableBubbleDiffuseMaterial();
-    void enableSprayDiffuseMaterial();
-    void enableFoamDiffuseMaterial();
-    void disableBubbleDiffuseMaterial();
-    void disableSprayDiffuseMaterial();
-    void disableFoamDiffuseMaterial();
-    void outputDiffuseMaterialAsSeparateFiles();
-    void outputDiffuseMaterialAsSingleFile();
     void disableDiffuseMaterialOutput();
+
+    /*
+        Enable/disable the simulation from saving diffuse bubble mesh data to disk.
+
+        Enabled by default if diffuse material output is enabled
+    */
+    void enableBubbleDiffuseMaterial();
+    void disableBubbleDiffuseMaterial();
+
+    /*
+        Enable/disable the simulation from saving diffuse spray mesh data to disk.
+
+        Enabled by default if diffuse material output is enabled
+    */
+    void enableSprayDiffuseMaterial();
+    void disableSprayDiffuseMaterial();
+
+    /*
+        Enable/disable the simulation from saving diffuse foam mesh data to disk.
+
+        Enabled by default if diffuse material output is enabled
+    */
+    void enableFoamDiffuseMaterial();
+    void disableFoamDiffuseMaterial();
+
+    /*
+        Save diffuse material to disk as a single file per frame.
+
+        Enabled by default.
+    */
+    void outputDiffuseMaterialAsSingleFile();
+
+    /*
+        Save diffuse material to disk as a multiple files per frame. Files
+        will be separated by diffuse particle type (spray, bubble, foam).
+
+        Disabled by default.
+    */
+    void outputDiffuseMaterialAsSeparateFiles();
+
+    /*
+        Enable/disable the simulation from simulating the fluid as a set of
+        'LEGO' bricks and saving brick data to disk.
+
+        When enabling brick output, the width, heigh, and depth dimension of the
+        brick must be specified.
+
+        Disabled by default.
+    */
     void enableBrickOutput(double width, double height, double depth);
     void enableBrickOutput(AABB brickbbox);
     void disableBrickOutput();
+
+    /*
+        Enable/disable autosaving the state of the simulation at the start
+        of each frame.
+
+        Enabled by default.
+    */
     void enableAutosave();
     void disableAutosave();
 
+    /*
+        Add a constant force such as gravity to the simulation.
+    */
     void addBodyForce(double fx, double fy, double fz);
     void addBodyForce(vmath::vec3 f);
+
+    /*
+        Add a variable body force field function to the simulation. 
+        The force field function takes a 3d vector position as a parameter
+        and returns a 3d vector force.
+
+        Example field function:
+
+            vmath::vec3 forceField(vmath::vec3 p) {
+                vmath::vec3 forceVector(0.0, -9.8, 0.0);
+
+                if (p.x < 4.0) {
+                    forceVector.y = -forceVector.y;
+                }
+                
+                return forceVector
+            }
+    */
     void addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3));
+
+    /*
+        Remove all added body forces.
+    */
     void resetBodyForces();
 
+    /*
+        Add an implicit point of fluid to the simulation. 
+
+        An implicit fluid point is represented as a field of scalar values on 
+        the simulation grid. The strength of the field values are 1 at the point center 
+        and falls off at a cubic rate towards 0 as distance from the center 
+        increases. When the simulation is initialized, fluid particles will be created
+        in regions where the scalar field values are greater than 0.5.
+
+        Calls to these methods must be executed before calling initialize().
+    */
     void addImplicitFluidPoint(double x, double y, double z, double r);
     void addImplicitFluidPoint(vmath::vec3 p, double radius);
+    
+    /*
+        Add a cuboid of fluid to the simulation.
+
+        Calls to these methods must be executed before calling initialize().
+    */
     void addFluidCuboid(double x, double y, double z, double w, double h, double d);
     void addFluidCuboid(vmath::vec3 p1, vmath::vec3 p2);
     void addFluidCuboid(AABB bbox);
     void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
 
+    /*
+        Add a spherical shaped fluid source with position pos, radius r, and an optional 
+        emission velocity to the simulation and return a pointer to the source object.
+
+        A fluid source can be either of type inflow (emit fluid) or outflow (remove fluid) 
+        and type can be set using source->setAsInFlow() and source->setAsOutFlow() 
+        respectively.
+
+        Fluid sources are of type inflow by default.
+    */
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r);
     SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r, 
                                                   vmath::vec3 velocity);
+
+    /*
+        Add a cuboid shaped fluid source matching the position and dimensions of bbox 
+        to the simulation and return a pointer to the source object.
+
+        An axis aligned bounding box object can be initialized in the following manner:
+
+            AABB bbox(vmath::vec3(x, y, z), width, height, depth);
+
+        where x, y, z are the position coordinates of the minimal point of the AABB
+        and width, height, depth are the dimensions according to the x,y,z directions.
+
+        A fluid source can be either of type inflow (emit fluid) or outflow (remove fluid) 
+        and type can be set using source->setAsInFlow() and source->setAsOutFlow() 
+        respectively.
+
+        Fluid sources are of type inflow by default.
+    */
     CuboidFluidSource *addCuboidFluidSource(AABB bbox);
     CuboidFluidSource *addCuboidFluidSource(AABB bbox, vmath::vec3 velocity);
+
+    /*
+        Remove a fluid source from the simulation. The pointer will become invalid
+        after this method executes.
+    */
     void removeFluidSource(FluidSource *source);
+
+    /*
+        Remove all fluid sources from the simulation.
+    */
     void removeFluidSources();
 
+    /*
+        Add solid cells to the simulation grid. If a solid cell is added
+        to a region containing fluid particles, those fluid particles will
+        be removed from the simulation.
+    */
     void addSolidCell(int i, int j, int k);
     void addSolidCell(GridIndex g);
     void addSolidCells(std::vector<GridIndex> &indices);
+
+    /*
+        Remove solid cells from the simulation grid. When a solid cell is
+        removed, the material will be replaced by air.
+
+        The bordering cells of the simulation grid are permanently set as
+        solid cells and will not be removed.
+    */
     void removeSolidCell(int i, int j, int k);
     void removeSolidCells(std::vector<GridIndex> &indices);
+
+    /*
+        Returns a vector containing the indices of all solid cells.
+    */
     std::vector<GridIndex> getSolidCells();
+
+    /*
+        Returns a vector containing the position of the minimal grid cell
+        corner of all solid cells.
+    */
     std::vector<vmath::vec3> getSolidCellPositions();
+
+    /*
+        Add fluid cells to the simulation grid. Fluid cells will only be
+        added if the current cell material is of type air.
+    */
     void addFluidCell(int i, int j, int k);
     void addFluidCell(GridIndex g);
     void addFluidCells(GridIndexVector &indices);
 
+    /*
+        Returns the number of marker particles in the simulation. Marker particles
+        track where the fluid is and carry velocity data.
+    */
     unsigned int getNumMarkerParticles();
+
+    /*
+        Returns a vector of all marker particles in the simulation.
+    */
     void getMarkerParticles(std::vector<MarkerParticle> &mps);
+
+    /*
+        Returns a vector of marker particle positions. If range indices
+        are specified, the vector will contain positions ranging from 
+        start index startidx and ending at endidx inclusively.
+    */
     std::vector<vmath::vec3> getMarkerParticlePositions();
     std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
+
+    /*
+        Returns a vector of marker particle velocities. If range indices
+        are specified, the vector will contain velocities ranging from 
+        start index startidx and ending at endidx inclusively.
+    */
     std::vector<vmath::vec3> getMarkerParticleVelocities();
     std::vector<vmath::vec3> getMarkerParticleVelocities(int startidx, int endidx);
+
+    /*
+        Returns the number of diffuse particles in the simulation. Diffuse particles
+        have a position, velocity, lifetime value, and can be of type bubble, spray,
+        or foam.
+    */
     unsigned int getNumDiffuseParticles();
+
+    /*
+        Returns a vector of all diffuse particles in the simulation.
+    */
     void getDiffuseParticles(std::vector<DiffuseParticle> &dps);
+
+    /*
+        Returns a vector of diffuse particle positions. If range indices
+        are specified, the vector will contain positions ranging from 
+        start index startidx and ending at endidx inclusively.
+    */
     std::vector<vmath::vec3> getDiffuseParticlePositions();
     std::vector<vmath::vec3> getDiffuseParticlePositions(int startidx, int endidx);
+
+    /*
+        Returns a vector of diffuse particle velocities. If range indices
+        are specified, the vector will contain velocities ranging from 
+        start index startidx and ending at endidx inclusively.
+    */
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
+
+    /*
+        Returns a vector of diffuse particle lifetimes. If range indices
+        are specified, the vector will contain remaining lifetimes (in seconds) 
+        ranging from start index startidx and ending at endidx inclusively.
+    */
     std::vector<float> getDiffuseParticleLifetimes();
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
+
+    /*
+        Returns a vector of diffuse particle types. If range indices
+        are specified, the vector will contain types ranging from 
+        start index startidx and ending at endidx inclusively.
+
+        Char value and corresponding diffuse particle type:
+
+            0x00    Bubble
+            0x01    Foam
+            0x02    Spray
+    */
     std::vector<char> getDiffuseParticleTypes();
     std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
+
+    /*
+        Returns a pointer to the MACVelocityField data structure.
+    */
     MACVelocityField* getVelocityField();
+
+    /*
+        Returns a pointer to the LevelSet data structure.
+    */
     LevelSet* getLevelSet();
 
 private:
