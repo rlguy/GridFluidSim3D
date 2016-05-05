@@ -16,6 +16,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/cuboidfluidsource.cpp \
 		$(SOURCEPATH)/diffuseparticlesimulation.cpp \
 		$(SOURCEPATH)/fluidbrickgrid.cpp \
+		$(SOURCEPATH)/fluidbrickgridsavestate.cpp \
 		$(SOURCEPATH)/fluidmaterialgrid.cpp \
 		$(SOURCEPATH)/fluidsimulation.cpp \
 		$(SOURCEPATH)/fluidsimulationsavestate.cpp \

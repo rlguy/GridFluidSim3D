@@ -27,6 +27,11 @@ FluidBrickGrid::FluidBrickGrid(int isize, int jsize, int ksize, double dx, AABB 
                                     _brick(brick),
                                     _densityGrid(isize, jsize, ksize) {
     _initializeBrickGrid();
+    _numUpdates = 0;
+}
+
+FluidBrickGrid::FluidBrickGrid(FluidBrickGridSaveState &state) {
+    _initializeFromSaveState(state);
 }
 
 FluidBrickGrid::~FluidBrickGrid() {
@@ -36,6 +41,10 @@ void FluidBrickGrid::getGridDimensions(int *i, int *j, int *k) {
     *i = _isize;
     *j = _jsize;
     *k = _ksize;
+}
+
+double FluidBrickGrid::getCellSize() {
+    return _dx;
 }
 
 void FluidBrickGrid::getBrickGridDimensions(int *i, int *j, int *k) {
@@ -49,11 +58,21 @@ AABB FluidBrickGrid::getBrickAABB() {
 }
 
 void FluidBrickGrid::setBrickDimensions(double width, double height, double depth) {
-    _brick = AABB(vmath::vec3(), width, height, depth);
-    _initializeBrickGrid();
+    setBrickDimensions(AABB(vmath::vec3(), width, height, depth));
 }
 
 void FluidBrickGrid::setBrickDimensions(AABB brick) {
+    double eps = 10e-9;
+    if (fabs(brick.width - _brick.width) > eps || 
+        fabs(brick.height - _brick.height) > eps || 
+        fabs(brick.depth - _brick.depth) > eps) {
+
+        // If brick dimensions differ from last dimensions, the class
+        // will be unable to use previous data and must start updates
+        // back at 0.
+        _numUpdates = 0;
+    }
+
     _brick = brick;
     _initializeBrickGrid();
 }
@@ -105,6 +124,56 @@ bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
 
 bool FluidBrickGrid::isBrickMeshReady() {
     return _isCurrentBrickGridReady;
+}
+
+void FluidBrickGrid::saveState(std::string filename) {
+    FluidBrickGridSaveState state;
+    state.saveState(filename, this);
+}
+
+int FluidBrickGrid::getBrickGridQueueSize() {
+    return _brickGridQueueSize;
+}
+
+int FluidBrickGrid::getNumUpdates() {
+    return _numUpdates;
+}
+
+void FluidBrickGrid::getDensityGridCurrentDensityValues(Array3d<float> &grid) {
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                float val = _densityGrid(i, j, k).currentDensity;
+                grid.set(i, j, k, val);
+            }
+        }
+    }
+}
+
+void FluidBrickGrid::getDensityGridTargetDensityValues(Array3d<float> &grid) {
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                float val = _densityGrid(i, j, k).targetDensity;
+                grid.set(i, j, k, val);
+            }
+        }
+    }
+}
+
+void FluidBrickGrid::getDensityGridVelocityValues(Array3d<float> &grid) {
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                float val = _densityGrid(i, j, k).intensityVelocity;
+                grid.set(i, j, k, val);
+            }
+        }
+    }
+}
+
+Array3d<Brick>* FluidBrickGrid::getPointerToBrickGridQueue() {
+    return _brickGridQueue;
 }
 
 void FluidBrickGrid::_getNewBrickLocations(Array3d<Brick> &b1, Array3d<Brick> &b2, 
@@ -295,6 +364,92 @@ void FluidBrickGrid::update(LevelSet &levelset, std::vector<vmath::vec3> &partic
     _numUpdates++;
 }
 
+void FluidBrickGrid::_initializeFromSaveState(FluidBrickGridSaveState &state) {
+    assert(state.isLoadStateInitialized());
+
+    state.getGridDimensions(&_isize, &_jsize, &_ksize);
+    _dx = state.getCellSize();
+    _brick = state.getBrickAABB();
+    _brickGridQueueSize = state.getBrickGridQueueSize();
+    _numUpdates = state.getNumUpdates();
+
+    _initializeDensityGridFromSaveState(state);
+    _initializeBrickGridFromSaveState(state);
+    _initializeBrickGridQueueFromSaveState(state);
+}
+
+void FluidBrickGrid::_initializeDensityGridFromSaveState(FluidBrickGridSaveState &state) {
+    _densityGrid = Array3d<DensityNode>(_isize, _jsize, _ksize);
+
+    Array3d<float> tempgrid(_isize, _jsize, _ksize);
+    state.getCurrentDensityGrid(tempgrid);
+
+    DensityNode *node;
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                node = _densityGrid.getPointer(i, j, k);
+                node->currentDensity = tempgrid(i, j, k);
+            }
+        }
+    }
+
+    state.getTargetDensityGrid(tempgrid);
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                node = _densityGrid.getPointer(i, j, k);
+                node->targetDensity = tempgrid(i, j, k);
+            }
+        }
+    }
+
+    state.getVelocityDensityGrid(tempgrid);
+    for (int k = 0; k < _ksize; k++) {
+        for (int j = 0; j < _jsize; j++) {
+            for (int i = 0; i < _isize; i++) {
+                node = _densityGrid.getPointer(i, j, k);
+                node->targetDensity = tempgrid(i, j, k);
+            }
+        }
+    }
+}
+
+void FluidBrickGrid::_initializeBrickGridFromSaveState(FluidBrickGridSaveState &state) {
+    int bi, bj, bk;
+    state.getBrickGridDimensions(&bi, &bj, &bk);
+    _brickGrid = Array3d<Brick>(bi, bj, bk);
+}
+
+void FluidBrickGrid::_initializeBrickGridQueueFromSaveState(
+                                                FluidBrickGridSaveState &state) {
+    
+    int bi, bj, bk;
+    state.getBrickGridDimensions(&bi, &bj, &bk);
+
+    for (int idx = 0; idx < _brickGridQueueSize; idx++) {
+        _brickGridQueue[idx] = Array3d<Brick>(bi, bj, bk);
+    }
+
+    Array3d<bool> activityGrid(bi, bj, bk);
+    Array3d<float> intensityGrid(bi, bj, bk);
+    Brick *b;
+    for (int idx = 0; idx < _brickGridQueueSize; idx++) {
+        state.getBrickActivityGrid(activityGrid, idx);
+        state.getBrickIntensityGrid(intensityGrid, idx);
+
+        for (int k = 0; k < bk; k++) {
+            for (int j = 0; j < bj; j++) {
+                for (int i = 0; i < bi; i++) {
+                    b = _brickGridQueue[idx].getPointer(i, j, k);
+                    b->isActive = activityGrid(i, j, k); 
+                    b->intensity = intensityGrid(i, j, k);
+                }
+            }
+        }
+    }
+}
+
 void FluidBrickGrid::_initializeBrickGrid() {
     assert(_brick.width > 0.0);
     assert(_brick.height > 0.0);
@@ -308,7 +463,6 @@ void FluidBrickGrid::_initializeBrickGrid() {
     int bk = (int)ceil(depth / _brick.depth);
 
     _brickGrid = Array3d<Brick>(bi, bj, bk);
-    _numUpdates = 0;
 }
 
 void FluidBrickGrid::_updateDensityGrid(std::vector<vmath::vec3> &particles, double dt) {

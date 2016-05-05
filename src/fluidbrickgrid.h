@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "array3d.h"
 #include "aabb.h"
@@ -30,26 +31,19 @@ freely, subject to the following restrictions:
 #include "trianglemesh.h"
 #include "vmath.h"
 #include "gridindexvector.h"
-
-struct Brick {
-    float intensity = 0.0f;
-    bool isActive = false;
-
-    Brick() : intensity(0.0f),
-                isActive(false) {}
-
-    Brick(float i) : intensity(i),
-                        isActive(false) {}
-};
+#include "fluidbrickgridsavestate.h"
+#include "brick.h"
 
 class FluidBrickGrid
 {
 public:
     FluidBrickGrid();
     FluidBrickGrid(int isize, int jsize, int ksize, double dx, AABB brick);
+    FluidBrickGrid(FluidBrickGridSaveState &state);
     ~FluidBrickGrid();
 
     void getGridDimensions(int *i, int *j, int *k);
+    double getCellSize();
     void getBrickGridDimensions(int *i, int *j, int *k);
     AABB getBrickAABB();
     void setBrickDimensions(double width, double height, double depth);
@@ -58,6 +52,13 @@ public:
     bool getBrickMesh(LevelSet &levelset, TriangleMesh &mesh);
     bool isBrickMeshReady();
     void update(LevelSet &levelset, std::vector<vmath::vec3> &markerParticles, double dt);
+    void saveState(std::string filename);
+    int getBrickGridQueueSize();
+    int getNumUpdates();
+    void getDensityGridCurrentDensityValues(Array3d<float> &grid);
+    void getDensityGridTargetDensityValues(Array3d<float> &grid);
+    void getDensityGridVelocityValues(Array3d<float> &grid);
+    Array3d<Brick>* getPointerToBrickGridQueue();
 
 private:
 
@@ -68,7 +69,10 @@ private:
     };
 
     
-
+    void _initializeFromSaveState(FluidBrickGridSaveState &state);
+    void _initializeDensityGridFromSaveState(FluidBrickGridSaveState &state);
+    void _initializeBrickGridFromSaveState(FluidBrickGridSaveState &state);
+    void _initializeBrickGridQueueFromSaveState(FluidBrickGridSaveState &state);
     void _initializeBrickGrid();
     void _updateDensityGrid(std::vector<vmath::vec3> &particles, double dt);
     void _updateTargetDensities(std::vector<vmath::vec3> &particles);
