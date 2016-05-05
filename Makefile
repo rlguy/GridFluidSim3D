@@ -1,10 +1,10 @@
-OPENCLINCLUDE=-I"C:\Program Files (x86)\Intel\OpenCL SDK\include"
-OPENCLLIB="C:\Program Files (x86)\Intel\OpenCL SDK\lib\x86\OpenCL.lib"
+OPENCLINCLUDEPATH=-I"C:\Program Files (x86)\Intel\OpenCL SDK\include"
+OPENCLLIBPATH=-L"C:\Program Files (x86)\Intel\OpenCL SDK\lib\x86"
 
 OPTIMIZE=-O3
-CXXFLAGS=$(OPTIMIZE) $(OPENCLINCLUDE) -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) $(OPENCLINCLUDEPATH) -std=c++11 -Wall
 LDFLAGS=
-LDLIBS=$(PTHREADLIB) $(OPENCLLIB) -lstdc++
+LDLIBS=$(PTHREADLIB) $(OPENCLLIBPATH) -lOpenCL
 
 .PHONY: all clean
 
