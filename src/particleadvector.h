@@ -24,7 +24,12 @@ freely, subject to the following restrictions:
 #ifndef PARTICLEADVECTOR_H
 #define PARTICLEADVECTOR_H
 
-#include <CL/cl.hpp>
+#if defined(__APPLE__) || defined(__MACOSX)
+    #include <OpenCL/cl.hpp>
+#else
+    #include <CL/cl.hpp>
+#endif
+
 #include <vector>
 #include <fstream>
 #include <algorithm>
