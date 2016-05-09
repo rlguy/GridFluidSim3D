@@ -604,12 +604,6 @@ private:
                         bbox(p, w, h, d) {}
     };
 
-    // Type constants
-    int DP_BUBBLE = 0;
-    int DP_FOAM = 1;
-    int DP_SPRAY = 2;
-    int DP_NOTSET = -1;
-
     // Initialization before running simulation
     void _initializeSimulation();
     void _initializeSolidCells();

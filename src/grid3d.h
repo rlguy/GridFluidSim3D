@@ -22,6 +22,8 @@ freely, subject to the following restrictions:
 
 #include <stdio.h>
 #include <iostream>
+#include <cstdlib>
+#include <cmath>
 
 #include "vmath.h"
 #include "array3d.h"
@@ -165,19 +167,19 @@ namespace Grid3d {
     }
 
     inline bool isGridIndicesNeighbours(int i1, int j1, int k1, int i2, int j2, int k2) {
-        return fabs(i1 - i2) <= 1 && fabs(j1 - j2) <= 1 && fabs(k1 - k2) <= 1;
+        return std::abs(i1 - i2) <= 1 && std::abs(j1 - j2) <= 1 && std::abs(k1 - k2) <= 1;
     }
 
     inline bool isGridIndicesNeighbours(GridIndex g1, int i2, int j2, int k2) {
-        return fabs(g1.i - i2) <= 1 && fabs(g1.j - j2) <= 1 && fabs(g1.k - k2) <= 1;
+        return std::abs(g1.i - i2) <= 1 && std::abs(g1.j - j2) <= 1 && std::abs(g1.k - k2) <= 1;
     }
 
     inline bool isGridIndicesNeighbours(int i1, int j1, int k1, GridIndex g2) {
-        return fabs(i1 - g2.i) <= 1 && fabs(j1 - g2.j) <= 1 && fabs(k1 - g2.k) <= 1;
+        return std::abs(i1 - g2.i) <= 1 && std::abs(j1 - g2.j) <= 1 && std::abs(k1 - g2.k) <= 1;
     }
 
     inline bool isGridIndicesNeighbours(GridIndex g1, GridIndex g2) {
-        return fabs(g1.i - g2.i) <= 1 && fabs(g1.j - g2.j) <= 1 && fabs(g1.k - g2.k) <= 1;
+        return std::abs(g1.i - g2.i) <= 1 && std::abs(g1.j - g2.j) <= 1 && std::abs(g1.k - g2.k) <= 1;
     }
 
     inline bool isGridIndexOnBorder(int i, int j, int k, int imax, int jmax, int kmax) {

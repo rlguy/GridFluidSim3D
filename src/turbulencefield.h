@@ -51,7 +51,6 @@ private:
     double _calculateTurbulenceAtGridCell(int i, int j, int k, 
                                           Array3d<vmath::vec3> &vgrid);
 
-    int M_FLUID = 1;
 
     Array3d<float> _field;
 

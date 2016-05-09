@@ -116,10 +116,6 @@ public:
 
 private:
 
-    int M_AIR = 0;
-    int M_FLUID = 1;
-    int M_SOLID = 2;
-
     inline int _GridToVectorIndex(GridIndex g) {
         return _keymap.find(g);
     }

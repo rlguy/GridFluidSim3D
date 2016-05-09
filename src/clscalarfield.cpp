@@ -393,7 +393,7 @@ cl_int CLScalarField::_initializeChunkDimensions() {
     }
 
     if (!isValidSize) {
-        for (unsigned int i = validsizes.size() - 1; i >= 0; i--) {
+        for (int i = (int)validsizes.size() - 1; i >= 0; i--) {
             if (groupsize > validsizes[i]) {
                 groupsize = validsizes[i];
                 break;

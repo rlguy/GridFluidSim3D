@@ -290,8 +290,8 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
     char facestring[10];
     int vertdigits = _numDigitsInInteger(vertices.size());
     int facedigits = _numDigitsInInteger(triangles.size());
-    snprintf(vertstring, 10, "%d", vertices.size());
-    snprintf(facestring, 10, "%d", triangles.size());
+    snprintf(vertstring, 10, "%u", (unsigned int)vertices.size());
+    snprintf(facestring, 10, "%u", (unsigned int)triangles.size());
 
     int offset = 0;
     int headersize;
