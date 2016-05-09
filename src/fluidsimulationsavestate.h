@@ -22,7 +22,10 @@ freely, subject to the following restrictions:
 
 #include <vector>
 #include <fstream>
+#include <stdio.h>
+#include <assert.h>
 
+#include "fluidbrickgridsavestate.h"
 #include "macvelocityfield.h"
 #include "fluidmaterialgrid.h"
 #include "array3d.h"
@@ -60,12 +63,15 @@ public:
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
     std::vector<char> getDiffuseParticleTypes(int startidx, int endidx);
     std::vector<GridIndex> getSolidCells(int startidx, int endidx);
+    bool isFluidBrickGridEnabled();
+    void getFluidBrickGridSaveState(FluidBrickGridSaveState &state);
     bool isLoadStateInitialized();
 
 private:
 
     void _writeInt(int *value, std::ofstream *state);
     void _writeDouble(double *value, std::ofstream *state);
+    void _writeBool(bool *value, std::ofstream *state);
     void _writeBinaryMarkerParticlePositions(FluidSimulation *_fluidsim,
                                              std::ofstream *state);
     void _writeBinaryMarkerParticleVelocities(FluidSimulation *_fluidsim,
@@ -79,7 +85,13 @@ private:
     void _writeBinaryDiffuseParticleTypes(FluidSimulation *_fluidsim,
                                           std::ofstream *state);
     int _getNumSolidCells(FluidSimulation *sim);
-    void _writeBinarySolidCellIndices(FluidSimulation *sim, std::ofstream *state);
+    void _writeBinarySolidCellIndices(FluidSimulation *_fluidsim, 
+                                      std::ofstream *state);
+    void _writeBinaryFluidBrickGrid(FluidSimulation *_fluidsim, 
+                                    std::ofstream *state);
+    void _appendFileToSaveState(std::string filename, std::ofstream *state);
+    std::string _getTemporaryFilename();
+    std::string _getRandomString(int len);
 
     void _writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state);
     void _writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state);
@@ -90,6 +102,7 @@ private:
     void _setLoadStateFileOffset(unsigned int foffset);
     bool _readInt(int *value, std::ifstream *state);
     bool _readDouble(double *value, std::ifstream *state);
+    bool _readBool(bool *value, std::ifstream *state);
     bool _readParticleVectors(std::vector<vmath::vec3> &particles, 
                               int numParticles,
                               std::ifstream *state);
@@ -102,6 +115,8 @@ private:
     bool _readSolidCells(std::vector<GridIndex> &indices, 
                          int numIndices,
                         std::ifstream *state);
+    bool _initializeTempFluidBrickGridFile(unsigned int startoffset,
+                                           unsigned int endoffset);
 
     bool _isLoadStateInitialized = false;
     int _width, _height, _depth;
@@ -109,6 +124,8 @@ private:
     int _writeChunkSize = 50000;
 
     std::ifstream _loadState;
+    bool _isTempFileInUse = false;
+    std::string _tempFilename;
 
     int _isize = 0;
     int _jsize = 0;
@@ -119,6 +136,7 @@ private:
     int _numMarkerParticles = 0;
     int _numDiffuseParticles = 0;
     int _numSolidCells = 0;
+    bool _isFluidBrickGridEnabled = false;
 
     unsigned int _mpPositionOffset = 0;
     unsigned int _mpVelocityOffset = 0;
@@ -127,7 +145,6 @@ private:
     unsigned int _dpLifetimeOffset = 0;
     unsigned int _dpTypeOffset = 0;
     unsigned int _solidCellOffset = 0;
-    unsigned int _eofOffset = 0;
     unsigned int _currentOffset = 0;
 
 };

@@ -25,9 +25,7 @@ FluidBrickGridSaveState::FluidBrickGridSaveState() {
 
 
 FluidBrickGridSaveState::~FluidBrickGridSaveState() {
-    if (_loadState.is_open()) {
-        _loadState.close();
-    }
+    closeState();
 }
 
 void FluidBrickGridSaveState::saveState(std::string filename, FluidBrickGrid *brickgrid) {

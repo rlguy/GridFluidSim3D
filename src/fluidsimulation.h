@@ -206,6 +206,7 @@ public:
     */
     void enableSurfaceMeshOutput();
     void disableSurfaceMeshOutput();
+    bool isSurfaceMeshOutputEnabled();
 
     /*
         Enable/disable the simulation from saving isotropic reconstructed triangle 
@@ -218,6 +219,7 @@ public:
     */
     void enableIsotropicSurfaceReconstruction();
     void disableIsotropicSurfaceReconstruction();
+    bool isIsotropicSurfaceReconstuctionEnabled();
 
     /*
         Enable/disable the simulation from saving anisotropic reconstructed triangle 
@@ -233,6 +235,7 @@ public:
     */
     void enableAnisotropicSurfaceReconstruction();
     void disableAnisotropicSurfaceReconstruction();
+    bool isAnisotropicSurfaceReconstuctionEnabled();
 
     /*
         Enable/disable the simulation from simulating diffuse 
@@ -244,6 +247,7 @@ public:
     */
     void enableDiffuseMaterialOutput();
     void disableDiffuseMaterialOutput();
+    bool isDiffuseMaterialOutputEnabled();
 
     /*
         Enable/disable the simulation from saving diffuse bubble mesh data to disk.
@@ -252,6 +256,7 @@ public:
     */
     void enableBubbleDiffuseMaterial();
     void disableBubbleDiffuseMaterial();
+    bool isBubbleDiffuseMaterialEnabled();
 
     /*
         Enable/disable the simulation from saving diffuse spray mesh data to disk.
@@ -260,6 +265,7 @@ public:
     */
     void enableSprayDiffuseMaterial();
     void disableSprayDiffuseMaterial();
+    bool isSprayDiffuseMaterialEnabled();
 
     /*
         Enable/disable the simulation from saving diffuse foam mesh data to disk.
@@ -268,6 +274,7 @@ public:
     */
     void enableFoamDiffuseMaterial();
     void disableFoamDiffuseMaterial();
+    bool isFoamDiffuseMaterialEnabled();
 
     /*
         Save diffuse material to disk as a single file per frame.
@@ -296,6 +303,22 @@ public:
     void enableBrickOutput(double width, double height, double depth);
     void enableBrickOutput(AABB brickbbox);
     void disableBrickOutput();
+    bool isBrickOutputEnabled();
+
+    /*
+        Returns whether the the FluidBrickGrid is initialized. Will be
+        initialized if enableBrickOutput() has been called. This function
+        can be used to check whether a FluidSimulation loaded from a save
+        state has also loaded and initialized the FluidBrickGrid.
+    */
+    bool isFluidBrickGridInitialized();
+
+    /*
+        Returns dimensions of the brick used in the brick output feature.
+        Dimensions are only valid if isFluidBrickGridInitialized() returns 
+        true;
+    */
+    AABB getBrickAABB();
 
     /*
         Enable/disable autosaving the state of the simulation at the start
@@ -305,6 +328,8 @@ public:
     */
     void enableAutosave();
     void disableAutosave();
+    bool isAutosaveEnabled();
+
 
     /*
         Add a constant force such as gravity to the simulation.
@@ -522,13 +547,23 @@ public:
 
     /*
         Returns a pointer to the MACVelocityField data structure.
+        The MAC velocity field is a staggered velocity field that
+        stores velocity components at the location of face centers.
     */
     MACVelocityField* getVelocityField();
 
     /*
-        Returns a pointer to the LevelSet data structure.
+        Returns a pointer to the LevelSet data structure. The levelset
+        is used for querying distance to the fluid surface at a point.
     */
     LevelSet* getLevelSet();
+
+    /*
+        Returns a pointer to the FluidBrickGrid data structure. The
+        FluidBrickGrid is used for converting the fluid surface into
+        a set of colored cuboids for use in a rendering effect.
+    */
+    FluidBrickGrid* getFluidBrickGrid();
 
 private:
 
@@ -598,6 +633,7 @@ private:
     void _initializeDiffuseParticlesFromSaveState(FluidSimulationSaveState &state);
     void _initializeFluidMaterialParticlesFromSaveState();
     void _initializeSolidCellsFromSaveState(FluidSimulationSaveState &state);
+    void _initializeFluidBrickGridFromSaveState(FluidSimulationSaveState &state);
     void _initializeCLObjects();
 
     // Simulation step
@@ -801,10 +837,8 @@ private:
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
     bool _isAutosaveEnabled = true;
-    double _brickWidth = 1.0;
-    double _brickHeight = 1.0;
-    double _brickDepth = 1.0;
     int _currentBrickMeshFrame = 0;
+    int _brickMeshFrameOffset = -3;
 
     std::vector<vmath::vec3> _constantBodyForces;
 

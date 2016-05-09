@@ -48,7 +48,6 @@ public:
     AABB getBrickAABB();
     void setBrickDimensions(double width, double height, double depth);
     void setBrickDimensions(AABB brick);
-    Array3d<float> getDensityGrid();
     bool getBrickMesh(LevelSet &levelset, TriangleMesh &mesh);
     bool isBrickMeshReady();
     void update(LevelSet &levelset, std::vector<vmath::vec3> &markerParticles, double dt);
@@ -59,6 +58,7 @@ public:
     void getDensityGridTargetDensityValues(Array3d<float> &grid);
     void getDensityGridVelocityValues(Array3d<float> &grid);
     Array3d<Brick>* getPointerToBrickGridQueue();
+    bool isInitialized();
 
 private:
 
@@ -68,12 +68,13 @@ private:
         float intensityVelocity = 0.0f;
     };
 
-    
+    void _initialize();
     void _initializeFromSaveState(FluidBrickGridSaveState &state);
     void _initializeDensityGridFromSaveState(FluidBrickGridSaveState &state);
     void _initializeBrickGridFromSaveState(FluidBrickGridSaveState &state);
     void _initializeBrickGridQueueFromSaveState(FluidBrickGridSaveState &state);
     void _initializeBrickGrid();
+    void _reset();
     void _updateDensityGrid(std::vector<vmath::vec3> &particles, double dt);
     void _updateTargetDensities(std::vector<vmath::vec3> &particles);
     void _updateDensities(double dt);
@@ -119,6 +120,7 @@ private:
     unsigned int _minNumberOfBricksInStructure = 20;
 
     int _numUpdates = 0;
+    bool _isInitialized = false;
 };
 
 #endif

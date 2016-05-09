@@ -24,15 +24,11 @@ freely, subject to the following restrictions:
 FluidSimulationSaveState::FluidSimulationSaveState() {
 }
 
-
 FluidSimulationSaveState::~FluidSimulationSaveState() {
-    if (_loadState.is_open()) {
-        _loadState.close();
-    }
+    closeState();
 }
 
 void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *_fluidsim) {
-
     std::ofstream erasefile;
     erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
     erasefile.close();
@@ -70,6 +66,10 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     int numIndices = _getNumSolidCells(_fluidsim);
     _writeInt(&numIndices, &state);
 
+    // Should a FluidBrickGrid savestate be generated
+    bool isFluidBrickGridEnabled = _fluidsim->isBrickOutputEnabled();
+    _writeBool(&isFluidBrickGridEnabled, &state);
+
     // floats: marker particle positions in form [x1, y1, z1, x2, y2, z2, ...]
     _writeBinaryMarkerParticlePositions(_fluidsim, &state);
 
@@ -91,6 +91,10 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
     // ints: solid cell indicies in form [i1, j1, k1, i2, j2, k2, ...]
     _writeBinarySolidCellIndices(_fluidsim, &state);
 
+    if (isFluidBrickGridEnabled) {
+        _writeBinaryFluidBrickGrid(_fluidsim, &state);
+    }
+
     state.close();
 }
 
@@ -109,7 +113,8 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
                    _readInt(&_currentFrame, &_loadState) &&
                    _readInt(&_numMarkerParticles, &_loadState) &&
                    _readInt(&_numDiffuseParticles, &_loadState) &&
-                   _readInt(&_numSolidCells, &_loadState);
+                   _readInt(&_numSolidCells, &_loadState) &&
+                   _readBool(&_isFluidBrickGridEnabled, &_loadState);
 
     if (!success) {
         return false;
@@ -122,16 +127,18 @@ bool FluidSimulationSaveState::loadState(std::string filename) {
     _dpLifetimeOffset = _dpVelocityOffset + _numDiffuseParticles*(3*sizeof(float));
     _dpTypeOffset = _dpLifetimeOffset + _numDiffuseParticles*(sizeof(float));
     _solidCellOffset = _dpTypeOffset + _numDiffuseParticles*sizeof(char);
-    unsigned int endoff = _solidCellOffset + _numSolidCells*(3*sizeof(int));
 
-    _loadState.seekg (0, _loadState.end);
-    _eofOffset = _loadState.tellg();
-    _loadState.seekg (0, _loadState.beg);
+    if (_isFluidBrickGridEnabled) {
+        unsigned int startoffset = _solidCellOffset + _numSolidCells*(3*sizeof(int));
 
-    if (endoff != _eofOffset) {
-        return false;
+        _loadState.seekg (0, _loadState.end);
+        unsigned int endoffset = _loadState.tellg();
+        _loadState.seekg (startoffset, _loadState.beg);
+
+        _initializeTempFluidBrickGridFile(startoffset, endoffset);
     }
 
+    _loadState.seekg(0, _loadState.beg);
     _currentOffset = _loadState.tellg();
 
     _isLoadStateInitialized = true;
@@ -142,6 +149,11 @@ void FluidSimulationSaveState::closeState() {
     if (_loadState.is_open()) {
         _loadState.close();
         _isLoadStateInitialized = false;
+    }
+
+    if (_isTempFileInUse) {
+        remove(_tempFilename.c_str());
+        _isTempFileInUse = false;
     }
 }
 
@@ -362,6 +374,19 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
     return cells;
 }
 
+bool FluidSimulationSaveState::isFluidBrickGridEnabled() {
+    assert(_isLoadStateInitialized);
+    return _isFluidBrickGridEnabled;
+}
+
+void FluidSimulationSaveState::getFluidBrickGridSaveState(FluidBrickGridSaveState &state) {
+    assert(_isLoadStateInitialized);
+    assert(_isFluidBrickGridEnabled);
+    assert(_isTempFileInUse);
+    assert(state.loadState(_tempFilename));
+    assert(state.isLoadStateInitialized());
+}
+
 bool FluidSimulationSaveState::isLoadStateInitialized() {
     return _isLoadStateInitialized;
 }
@@ -546,6 +571,53 @@ void FluidSimulationSaveState::_writeBinarySolidCellIndices(FluidSimulation *_fl
 
 }
 
+void FluidSimulationSaveState::_writeBinaryFluidBrickGrid(FluidSimulation *_fluidsim, 
+                                                          std::ofstream *state) {
+    assert(_fluidsim->isBrickOutputEnabled());
+    FluidBrickGrid *brickGrid = _fluidsim->getFluidBrickGrid();
+
+    std::string tempfilename = _getTemporaryFilename();
+    FluidBrickGridSaveState brickstate;
+    brickstate.saveState(tempfilename, brickGrid);
+
+    _appendFileToSaveState(tempfilename, state);
+
+    bool error = remove(tempfilename.c_str());
+    assert(!error);
+}
+
+void FluidSimulationSaveState::_appendFileToSaveState(std::string filename, 
+                                                      std::ofstream *state) {
+    std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
+    *state << file.rdbuf();
+    assert(file.good() && state->good());
+}
+
+std::string FluidSimulationSaveState::_getTemporaryFilename() {
+    int filenamelen = 16;
+    std::string tfile = _getRandomString(filenamelen);
+
+    int numtries = 0;
+    while (std::ifstream(tfile)) {
+        tfile = _getRandomString(filenamelen);
+        numtries++;
+        assert(numtries < 100);
+    }
+
+    return tfile;
+}
+
+std::string FluidSimulationSaveState::_getRandomString(int len) {
+    char chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+    std::string str;
+    for (int i = 0; i < len; i++) {
+        str += chars[rand() % (sizeof(chars) - 1)];
+    }
+
+    return str;
+}
+
 void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state) {
     int binsize = 3 * vectors.size() * sizeof(float);
     state->write((char *)&vectors[0], binsize);
@@ -573,6 +645,10 @@ void FluidSimulationSaveState::_writeInt(int *value, std::ofstream *state) {
 
 void FluidSimulationSaveState::_writeDouble(double *value, std::ofstream *state) {
     state->write((char *)value, sizeof(double));
+}
+
+void FluidSimulationSaveState::_writeBool(bool *value, std::ofstream *state) {
+    state->write((char *)value, sizeof(bool));
 }
 
 void FluidSimulationSaveState::_setLoadStateFileOffset(unsigned int foffset) {
@@ -608,6 +684,47 @@ bool FluidSimulationSaveState::_readDouble(double *value, std::ifstream *state) 
     memcpy(value, bin, sizeof(double));
 
     return true;
+}
+
+bool FluidSimulationSaveState::_readBool(bool *value, std::ifstream *state) {
+    char bin[sizeof(bool)];
+    state->read(bin, sizeof(bool));
+    _currentOffset = _loadState.tellg();
+
+    if (!state->good()) {
+        return false;
+    }
+
+    memcpy(value, bin, sizeof(bool));
+
+    return true;
+}
+
+bool FluidSimulationSaveState::_initializeTempFluidBrickGridFile(unsigned int startoffset,
+                                                                 unsigned int endoffset) {
+    _tempFilename = _getTemporaryFilename();
+    std::ofstream tempFile(_tempFilename.c_str(), std::ios::out | std::ios::binary);
+    _isTempFileInUse = true;
+
+    _setLoadStateFileOffset(startoffset);
+    unsigned int filesize = endoffset - startoffset;
+
+    int chunkSize = _writeChunkSize;
+    char *bin = new char[chunkSize];
+    for (unsigned int i = 0; i < filesize; i += chunkSize) {
+        int size = chunkSize;
+        if (i + size > filesize) {
+            size = filesize - i;
+        }
+
+        _loadState.read(bin, size);
+        tempFile.write(bin, size);
+    }
+    delete[] bin;
+
+    _currentOffset = _loadState.tellg();
+
+    return _loadState.good() && tempFile.good();
 }
 
 bool FluidSimulationSaveState::_readParticleVectors(std::vector<vmath::vec3> &vectors, 

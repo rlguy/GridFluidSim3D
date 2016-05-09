@@ -171,6 +171,11 @@ void FluidSimulation::disableSurfaceMeshOutput() {
     _isSurfaceMeshOutputEnabled = false;
 }
 
+bool FluidSimulation::isSurfaceMeshOutputEnabled() {
+    return _isSurfaceMeshOutputEnabled;
+}
+
+
 void FluidSimulation::enableIsotropicSurfaceReconstruction() {
     _isIsotropicSurfaceMeshReconstructionEnabled = true;
 }
@@ -178,6 +183,11 @@ void FluidSimulation::enableIsotropicSurfaceReconstruction() {
 void FluidSimulation::disableIsotropicSurfaceReconstruction() {
     _isIsotropicSurfaceMeshReconstructionEnabled = false;
 }
+
+bool FluidSimulation::isIsotropicSurfaceReconstuctionEnabled() {
+    return _isIsotropicSurfaceMeshReconstructionEnabled;
+}
+
 
 void FluidSimulation::enableAnisotropicSurfaceReconstruction() {
     _isAnisotropicSurfaceMeshReconstructionEnabled = true;
@@ -187,6 +197,9 @@ void FluidSimulation::disableAnisotropicSurfaceReconstruction() {
     _isAnisotropicSurfaceMeshReconstructionEnabled = false;
 }
 
+bool FluidSimulation::isAnisotropicSurfaceReconstuctionEnabled() {
+    return _isAnisotropicSurfaceMeshReconstructionEnabled;
+}
 
 void FluidSimulation::enableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = true;
@@ -200,6 +213,10 @@ void FluidSimulation::disableDiffuseMaterialOutput() {
     _isBubbleDiffuseMaterialEnabled = false;
     _isSprayDiffuseMaterialEnabled = false;
     _isFoamDiffuseMaterialEnabled = false;
+}
+
+bool FluidSimulation::isDiffuseMaterialOutputEnabled() {
+    return _isDiffuseMaterialOutputEnabled;
 }
 
 void FluidSimulation::enableBubbleDiffuseMaterial() {
@@ -229,6 +246,18 @@ void FluidSimulation::disableFoamDiffuseMaterial() {
     _isFoamDiffuseMaterialEnabled = false;
 }
 
+bool FluidSimulation::isBubbleDiffuseMaterialEnabled() {
+    return _isBubbleDiffuseMaterialEnabled;
+}
+
+bool FluidSimulation::isSprayDiffuseMaterialEnabled() {
+    return _isSprayDiffuseMaterialEnabled;
+}
+
+bool FluidSimulation::isFoamDiffuseMaterialEnabled() {
+    return _isFoamDiffuseMaterialEnabled;
+}
+
 void FluidSimulation::outputDiffuseMaterialAsSeparateFiles() {
     _isDiffuseMaterialOutputEnabled = true;
     _isDiffuseMaterialFilesSeparated = true;
@@ -246,11 +275,7 @@ void FluidSimulation::enableBrickOutput(double width, double height, double dept
     }
     assert(width > 0.0 && height > 0.0 && depth > 0.0);
 
-    _brickWidth = width;
-    _brickHeight = height;
-    _brickDepth = depth;
-
-    AABB brick = AABB(vmath::vec3(), _brickWidth, _brickHeight, _brickDepth);
+    AABB brick = AABB(vmath::vec3(), width, height, depth);
 
     int i, j, k;
     _fluidBrickGrid.getGridDimensions(&i, &j, &k);
@@ -270,12 +295,32 @@ void FluidSimulation::disableBrickOutput() {
     _isBrickOutputEnabled = false;
 }
 
+bool FluidSimulation::isBrickOutputEnabled() {
+    return _isBrickOutputEnabled;
+}
+
+bool FluidSimulation::isFluidBrickGridInitialized() {
+    return _fluidBrickGrid.isInitialized();
+}
+
+AABB FluidSimulation::getBrickAABB() {
+    if (!isFluidBrickGridInitialized()) {
+        return AABB();
+    }
+    
+    return _fluidBrickGrid.getBrickAABB();
+}
+
 void FluidSimulation::enableAutosave() {
     _isAutosaveEnabled = true;
 }
 
 void FluidSimulation::disableAutosave() {
     _isAutosaveEnabled = false;
+}
+
+bool FluidSimulation::isAutosaveEnabled() {
+    return _isAutosaveEnabled;
 }
 
 void FluidSimulation::addBodyForce(double fx, double fy, double fz) { 
@@ -686,6 +731,10 @@ LevelSet* FluidSimulation::getLevelSet() {
     return &_levelset; 
 };
 
+FluidBrickGrid* FluidSimulation::getFluidBrickGrid() {
+    return &_fluidBrickGrid;
+};
+
 /********************************************************************************
     INITIALIZATION
 ********************************************************************************/
@@ -1068,11 +1117,17 @@ void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveStat
     }
 }
 
+void FluidSimulation::_initializeFluidBrickGridFromSaveState(FluidSimulationSaveState &state) {
+    FluidBrickGridSaveState brickstate;
+    state.getFluidBrickGridSaveState(brickstate);
+    _fluidBrickGrid = FluidBrickGrid(brickstate);
+}
+
 void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveState &state) {
     state.getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = state.getCellSize();
     _currentFrame = state.getCurrentFrame();
-    _currentBrickMeshFrame = _currentFrame;
+    _currentBrickMeshFrame = fmax(_currentFrame + _brickMeshFrameOffset, 0);
 
     _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
     _materialGrid = FluidMaterialGrid(_isize, _jsize, _ksize);
@@ -1085,6 +1140,10 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _initializeMarkerParticlesFromSaveState(state);
     _initializeDiffuseParticlesFromSaveState(state);
     _initializeFluidMaterialParticlesFromSaveState();
+
+    if (state.isFluidBrickGridEnabled()) {
+        _initializeFluidBrickGridFromSaveState(state);
+    }
 
     _initializeCLObjects();
 
