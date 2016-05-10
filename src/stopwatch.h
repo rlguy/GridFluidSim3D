@@ -20,9 +20,9 @@ freely, subject to the following restrictions:
 #ifndef STOPWATCH_H
 #define STOPWATCH_H
 
-#ifdef __linux__ 
+#if defined(__linux__) || defined(__APPLE__) || defined(__MACOSX)
     #include <sys/time.h>
-#elif _WIN32
+#elif defined(_WIN32)
     #include <Windows.h>
     #include <Winbase.h>
 #else
