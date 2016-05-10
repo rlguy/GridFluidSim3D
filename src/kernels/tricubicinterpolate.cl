@@ -191,9 +191,9 @@ float interpolate_U(float3 pos, float dx, float invdx, __local float *ufield) {
     pos.y -= 0.5*dx;
     pos.z -= 0.5*dx;
 
-    int3 index = (int3)((floor)(pos.x * invdx),
-                        (floor)(pos.y * invdx),
-                        (floor)(pos.z * invdx));
+    int3 index = (int3)(floor(pos.x * invdx),
+                        floor(pos.y * invdx),
+                        floor(pos.z * invdx));
 
     float3 index_offset = (float3)(index.x * dx,
                                    index.y * dx,
@@ -221,9 +221,9 @@ float interpolate_V(float3 pos, float dx, float invdx, __local float *vfield) {
     pos.x -= 0.5*dx;
     pos.z -= 0.5*dx;
 
-    int3 index = (int3)((floor)(pos.x * invdx),
-                        (floor)(pos.y * invdx),
-                        (floor)(pos.z * invdx));
+    int3 index = (int3)(floor(pos.x * invdx),
+                        floor(pos.y * invdx),
+                        floor(pos.z * invdx));
 
     float3 index_offset = (float3)(index.x * dx,
                                    index.y * dx,
@@ -251,9 +251,9 @@ float interpolate_W(float3 pos, float dx, float invdx, __local float *wfield) {
     pos.x -= 0.5*dx;
     pos.y -= 0.5*dx;
 
-    int3 index = (int3)((floor)(pos.x * invdx),
-                        (floor)(pos.y * invdx),
-                        (floor)(pos.z * invdx));
+    int3 index = (int3)(floor(pos.x * invdx),
+                        floor(pos.y * invdx),
+                        floor(pos.z * invdx));
 
     float3 index_offset = (float3)(index.x * dx,
                                    index.y * dx,
