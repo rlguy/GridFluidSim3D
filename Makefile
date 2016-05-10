@@ -1,5 +1,14 @@
-OPENCLINCLUDEPATH=-I"C:\Program Files (x86)\Intel\OpenCL SDK\include"
-OPENCLLIBPATH=-L"C:\Program Files (x86)\Intel\OpenCL SDK\lib\x86"
+# Windows / Linux Makefile
+
+# If OpenCL is not found in your include/library path, you may edit
+# the OPENCLINCLUDEPATH and OPENCLLIBPATH variables to point to the
+# directory of your headers and library files.
+#
+# Example:
+#    OPENCLINCLUDEPATH=-I"C:\Program Files (x86)\Intel\OpenCL SDK\include"
+#    OPENCLLIBPATH=-L"C:\Program Files (x86)\Intel\OpenCL SDK\lib\x86"
+OPENCLINCLUDEPATH=
+OPENCLLIBPATH=
 
 OPTIMIZE=-O3
 CXXFLAGS=$(OPTIMIZE) $(OPENCLINCLUDEPATH) -std=c++11 -Wall

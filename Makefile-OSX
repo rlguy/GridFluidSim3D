@@ -1,3 +1,5 @@
+# OS X Makefile
+
 OPTIMIZE=-O3
 CXXFLAGS=$(OPTIMIZE) -std=c++11 -Wall
 LDFLAGS=
