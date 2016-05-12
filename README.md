@@ -69,6 +69,8 @@ For Xcode >=4.3
 
 You will need the _cl.hpp_ file version that matches the version of OpenCL on your machine. To find out what version of OpenCL you have, locate the _cl.h_ header and look for largest version number listed under the `/* OpenCL Version */` section.
 
+If the OpenCL framework is not found in your compiler's search path, you may edit the Makefile _FRAMEWORKSPATH_ variable to point to the directory that contains your OpenCL framework (See the comment at the top of the [Makefile-OSX](Makefile-OSX) file).
+
 Once you have all the required programs and files, you can build and run the program with the following commands:
 
     make -f Makefile-OSX

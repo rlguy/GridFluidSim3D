@@ -1,7 +1,15 @@
 # OS X Makefile
 
+# If the OpenCL framework is not found in your compiler's search path, you may edit
+# the FRAMEWORKSPATH variable to point to the directory that contains the
+# OpenCL framework.
+#
+# Example:
+#    FRAMEWORKSPATH=-F"/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/System/Library/Frameworks/"
+FRAMEWORKSPATH=
+
 OPTIMIZE=-O3
-CXXFLAGS=$(OPTIMIZE) -std=c++11 -Wall
+CXXFLAGS=$(OPTIMIZE) $(FRAMEWORKSPATH) -std=c++11 -Wall
 LDFLAGS=
 LDLIBS=-framework OpenCL
 
