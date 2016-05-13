@@ -2590,152 +2590,129 @@ void FluidSimulation::_stepFluid(double dt) {
 
     _simulationTime += dt;
 
-    StopWatch timer1 = StopWatch();
-    StopWatch timer2 = StopWatch();
-    StopWatch timer3 = StopWatch();
-    StopWatch timer4 = StopWatch();
-    StopWatch timer5 = StopWatch();
-    StopWatch timer6 = StopWatch();
-    StopWatch timer7 = StopWatch();
-    StopWatch timer8 = StopWatch();
-    StopWatch timer9 = StopWatch();
-    StopWatch timer10 = StopWatch();
-    StopWatch timer11 = StopWatch();
-    StopWatch timer12 = StopWatch();
-    StopWatch timer13 = StopWatch();
-
     _logfile.separator();
     _logfile.timestamp();
     _logfile.newline();
     _logfile.log("Frame: ", _currentFrame, 0);
-    _logfile.log("StepTime: ", dt, 4);
+    _logfile.log("Step time: ", dt, 4);
     _logfile.newline();
 
-    timer1.start();
+    std::vector<StopWatch> timers(13);
+    timers[0].start();
 
-    timer2.start();
+    timers[1].start();
     _updateFluidCells();
-    timer2.stop();
+    timers[1].stop();
 
-    _logfile.log("Update Fluid Cells:          \t", timer2.getTime(), 4);
+    _logfile.log("Update Fluid Cells:          \t", timers[1].getTime(), 4);
     _logfile.log("Num Fluid Cells: \t", (int)_fluidCellIndices.size(), 4, 1);
     _logfile.log("Num Marker Particles: \t", (int)_markerParticles.size(), 4, 1);
 
-    timer3.start();
+    timers[2].start();
     _reconstructInternalFluidSurface();
-    timer3.stop();
+    timers[2].stop();
 
-    _logfile.log("Reconstruct Fluid Surface:  \t", timer3.getTime(), 4);
+    _logfile.log("Reconstruct Fluid Surface:  \t", timers[2].getTime(), 4);
 
-    timer4.start();
+    timers[3].start();
     _updateLevelSetSignedDistanceField();
-    timer4.stop();
+    timers[3].stop();
 
-    _logfile.log("Update Level set:           \t", timer4.getTime(), 4);
+    _logfile.log("Update Level set:           \t", timers[3].getTime(), 4);
 
-    timer5.start();
+    timers[4].start();
     if (_isLastTimeStepForFrame) {
         _reconstructOutputFluidSurface(_frameTimeStep);
     }
-    timer5.stop();
+    timers[4].stop();
 
-    _logfile.log("Reconstruct Output Surface: \t", timer5.getTime(), 4);
+    _logfile.log("Reconstruct Output Surface: \t", timers[4].getTime(), 4);
 
-    timer6.start();
+    timers[5].start();
     _advectVelocityField();
     _savedVelocityField = _MACVelocity;
     _extrapolateFluidVelocities(_savedVelocityField);
-    timer6.stop();
+    timers[5].stop();
 
-    _logfile.log("Advect Velocity Field:       \t", timer6.getTime(), 4);
+    _logfile.log("Advect Velocity Field:       \t", timers[5].getTime(), 4);
 
-    timer7.start();
+    timers[6].start();
     _applyBodyForcesToVelocityField(dt);
-    timer7.stop();
+    timers[6].stop();
 
-    _logfile.log("Apply Body Forces:           \t", timer7.getTime(), 4);
+    _logfile.log("Apply Body Forces:           \t", timers[6].getTime(), 4);
 
     {
-        timer8.start();
+        timers[7].start();
         Array3d<float> pressureGrid = Array3d<float>(_isize, _jsize, _ksize, 0.0f);
         _updatePressureGrid(pressureGrid, dt);
-        timer8.stop();
+        timers[7].stop();
 
-        _logfile.log("Update Pressure Grid:        \t", timer8.getTime(), 4);
+        _logfile.log("Update Pressure Grid:        \t", timers[7].getTime(), 4);
 
-        timer9.start();
+        timers[8].start();
         _applyPressureToVelocityField(pressureGrid, dt);
-        timer9.stop();
+        timers[8].stop();
 
-        _logfile.log("Apply Pressure:              \t", timer9.getTime(), 4);
+        _logfile.log("Apply Pressure:              \t", timers[8].getTime(), 4);
     }
 
-    timer10.start();
+    timers[9].start();
     _extrapolateFluidVelocities(_MACVelocity);
-    timer10.stop();
+    timers[9].stop();
 
-    _logfile.log("Extrapolate Fluid Velocities:\t", timer10.getTime(), 4);
+    _logfile.log("Extrapolate Fluid Velocities:\t", timers[9].getTime(), 4);
 
-    timer11.start();
+    timers[10].start();
     if (_isDiffuseMaterialOutputEnabled) {
         _updateDiffuseMaterial(dt);
     }
-    timer11.stop();
+    timers[10].stop();
 
-    _logfile.log("Update Diffuse Material:     \t", timer11.getTime(), 4);
+    _logfile.log("Update Diffuse Material:     \t", timers[10].getTime(), 4);
 
-    timer12.start();
+    timers[11].start();
     _updateMarkerParticleVelocities();
     _savedVelocityField = MACVelocityField();
     
-    timer12.stop();
+    timers[11].stop();
 
-    _logfile.log("Update PIC/FLIP velocities   \t", timer12.getTime(), 4);
+    _logfile.log("Update PIC/FLIP Velocities:  \t", timers[11].getTime(), 4);
 
-    timer13.start();
+    timers[12].start();
     _advanceMarkerParticles(dt);
-    timer13.stop();
+    timers[12].stop();
 
-    _logfile.log("Advance Marker Particles:    \t", timer13.getTime(), 4);
+    _logfile.log("Advance Marker Particles:    \t", timers[12].getTime(), 4);
 
-    timer1.stop();
+    timers[0].stop();
 
-    double totalTime = floor(timer1.getTime()*1000.0) / 1000.0;
+    double totalTime = floor(timers[0].getTime()*1000.0) / 1000.0;
     _realTime += totalTime;
     _logfile.newline();
-    _logfile.log("Update Time:           \t", totalTime, 3, 1);
-    _logfile.newline();
 
-    double p2 = floor(1000 * timer2.getTime() / totalTime) / 10.0;
-    double p3 = floor(1000 * timer3.getTime() / totalTime) / 10.0;
-    double p4 = floor(1000 * timer4.getTime() / totalTime) / 10.0;
-    double p5 = floor(1000 * timer5.getTime() / totalTime) / 10.0;
-    double p6 = floor(1000 * timer6.getTime() / totalTime) / 10.0;
-    double p7 = floor(1000 * timer7.getTime() / totalTime) / 10.0;
-    double p8 = floor(1000 * timer8.getTime() / totalTime) / 10.0;
-    double p9 = floor(1000 * timer9.getTime() / totalTime) / 10.0;
-    double p10 = floor(1000 * timer10.getTime() / totalTime) / 10.0;
-    double p11 = floor(1000 * timer11.getTime() / totalTime) / 10.0;
-    double p12 = floor(1000 * timer12.getTime() / totalTime) / 10.0;
-    double p13 = floor(1000 * timer13.getTime() / totalTime) / 10.0;
+    std::vector<double> percentages(timers.size(), 0.0);
+    for (unsigned int i = 0; i < timers.size(); i++) {
+        percentages[i] = floor(1000 * timers[i].getTime() / totalTime) / 10.0;
+    }
 
     _logfile.log("---Percentage Breakdown---", "");
-    _logfile.log("Update Fluid Cells:          \t", p2, 3);
-    _logfile.log("Reconstruct Fluid Surface    \t", p3, 3);
-    _logfile.log("Update Level Set:            \t", p4, 3);
-    _logfile.log("Reconstruct Output Surface   \t", p5, 3);
-    _logfile.log("Advect Velocity Field:       \t", p6, 3);
-    _logfile.log("Apply Body Forces:           \t", p7, 3);
-    _logfile.log("Update Pressure Grid:        \t", p8, 3);
-    _logfile.log("Apply Pressure:              \t", p9, 3);
-    _logfile.log("Extrapolate Fluid Velocities:\t", p10, 3);
-    _logfile.log("Update Diffuse Material:     \t", p11, 3);
-    _logfile.log("Update PIC/FLIP Velocity:    \t", p12, 3);
-    _logfile.log("Advance Marker Particles:    \t", p13, 3);
+    _logfile.log("Update Fluid Cells:          \t", percentages[1], 3);
+    _logfile.log("Reconstruct Fluid Surface:   \t", percentages[2], 3);
+    _logfile.log("Update Level Set:            \t", percentages[3], 3);
+    _logfile.log("Reconstruct Output Surface:  \t", percentages[4], 3);
+    _logfile.log("Advect Velocity Field:       \t", percentages[5], 3);
+    _logfile.log("Apply Body Forces:           \t", percentages[6], 3);
+    _logfile.log("Update Pressure Grid:        \t", percentages[7], 3);
+    _logfile.log("Apply Pressure:              \t", percentages[8], 3);
+    _logfile.log("Extrapolate Fluid Velocities:\t", percentages[9], 3);
+    _logfile.log("Update Diffuse Material:     \t", percentages[10], 3);
+    _logfile.log("Update PIC/FLIP Velocities:  \t", percentages[11], 3);
+    _logfile.log("Advance Marker Particles:    \t", percentages[12], 3);
     _logfile.newline();
 
-    _logfile.log("Simulation time: ", _simulationTime, 3);
-    _logfile.log("Real time: ", _realTime, 2);
+    _logfile.log("Update time:   ", totalTime, 3);
+    _logfile.log("Total time:    ", _realTime, 3);
     _logfile.newline();
     _logfile.write();
 }
