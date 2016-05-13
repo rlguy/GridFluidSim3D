@@ -1434,10 +1434,10 @@ void FluidSimulation::_updateFluidCells() {
 }
 
 /********************************************************************************
-    FLUID SURFACE RECONSTRUCTION
+    INTERNAL FLUID SURFACE RECONSTRUCTION
 ********************************************************************************/
 
-TriangleMesh FluidSimulation::_polygonizeSurface() {
+TriangleMesh FluidSimulation::_polygonizeInternalSurface() {
     IsotropicParticleMesher mesher(_isize, _jsize, _ksize, _dx);
 
     double r = _markerParticleRadius*_markerParticleScale;
@@ -1446,8 +1446,22 @@ TriangleMesh FluidSimulation::_polygonizeSurface() {
     return mesher.meshParticles(_markerParticles, _materialGrid, r);
 }
 
-void FluidSimulation::_reconstructFluidSurface() {
-    _surfaceMesh = _polygonizeSurface();
+bool FluidSimulation::_isInternalFluidSurfaceNeeded() {
+    bool isNeeded = _isIsotropicSurfaceMeshReconstructionEnabled && 
+                    _outputFluidSurfaceSubdivisionLevel == 1;
+    isNeeded |= _isAnisotropicSurfaceMeshReconstructionEnabled;
+    isNeeded |= _isBrickOutputEnabled;
+    isNeeded |= _isDiffuseMaterialOutputEnabled;
+
+    return isNeeded;
+}
+
+void FluidSimulation::_reconstructInternalFluidSurface() {
+    if (!_isInternalFluidSurfaceNeeded()) {
+        return;
+    }
+
+    _surfaceMesh = _polygonizeInternalSurface();
     _surfaceMesh.removeMinimumTriangleCountPolyhedra(
                         _minimumSurfacePolyhedronTriangleCount);
 }
@@ -1456,7 +1470,17 @@ void FluidSimulation::_reconstructFluidSurface() {
     UPDATE LEVEL SET
 ********************************************************************************/
 
-void FluidSimulation::_updateLevelSetSignedDistance() {
+bool FluidSimulation::_isLevelSetNeeded() {
+    return _isAnisotropicSurfaceMeshReconstructionEnabled ||
+           _isBrickOutputEnabled ||
+           _isDiffuseMaterialOutputEnabled;
+}
+
+void FluidSimulation::_updateLevelSetSignedDistanceField() {
+    if (!_isLevelSetNeeded()) {
+        return;
+    }
+
     _levelset.setSurfaceMesh(_surfaceMesh);
     int numLayers = 12;
     _levelset.calculateSignedDistanceField(numLayers);
@@ -2598,13 +2622,13 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Num Marker Particles: \t", (int)_markerParticles.size(), 4, 1);
 
     timer3.start();
-    _reconstructFluidSurface();
+    _reconstructInternalFluidSurface();
     timer3.stop();
 
     _logfile.log("Reconstruct Fluid Surface:  \t", timer3.getTime(), 4);
 
     timer4.start();
-    _updateLevelSetSignedDistance();
+    _updateLevelSetSignedDistanceField();
     timer4.stop();
 
     _logfile.log("Update Level set:           \t", timer4.getTime(), 4);

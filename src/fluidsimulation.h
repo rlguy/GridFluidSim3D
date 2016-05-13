@@ -634,11 +634,13 @@ private:
     void _removeDiffuseParticlesFromCells(Array3d<bool> &isRemovalCell);
 
     // Convert marker particles to fluid surface
-    void _reconstructFluidSurface();
-    TriangleMesh _polygonizeSurface();
+    bool _isInternalFluidSurfaceNeeded();
+    void _reconstructInternalFluidSurface();
+    TriangleMesh _polygonizeInternalSurface();
 
     // Update level set surface
-    void _updateLevelSetSignedDistance();
+    bool _isLevelSetNeeded();
+    void _updateLevelSetSignedDistanceField();
 
     // Reconstruct output fluid surface
     void _reconstructOutputFluidSurface(double dt);
