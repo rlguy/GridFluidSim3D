@@ -565,27 +565,7 @@ public:
     */
     FluidBrickGrid* getFluidBrickGrid();
 
-private:
-
-    struct DiffuseParticleEmitter {
-        vmath::vec3 position;
-        vmath::vec3 velocity;
-        double energyPotential;
-        double wavecrestPotential;
-        double turbulencePotential;
-
-        DiffuseParticleEmitter() : energyPotential(0.0),
-                                   wavecrestPotential(0.0),
-                                   turbulencePotential(0.0) {}
-
-        DiffuseParticleEmitter(vmath::vec3 p, vmath::vec3 v, 
-                               double e, double wc, double t) : 
-                                   position(p),
-                                   velocity(v),
-                                   energyPotential(e),
-                                   wavecrestPotential(wc),
-                                   turbulencePotential(t) {}
-    };    
+private:   
 
     struct FluidPoint {
         vmath::vec3 position;
