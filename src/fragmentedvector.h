@@ -302,7 +302,7 @@ private:
 	}
 
 	inline bool _isLastNode(int i) {
-		return i == _nodes.size() - 1;
+		return i == (int)_nodes.size() - 1;
 	}
 
 	inline bool _isCurrentNodeFull() {
