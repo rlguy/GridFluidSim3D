@@ -736,7 +736,7 @@ FluidBrickGrid* FluidSimulation::getFluidBrickGrid() {
 };
 
 /********************************************************************************
-    INITIALIZATION
+    Initializing the Fluid Simulator
 ********************************************************************************/
 void FluidSimulation::_initializeSolidCells() {
     // fill borders with solid cells
@@ -1156,7 +1156,7 @@ void FluidSimulation::_initializeCLObjects() {
 }
 
 /********************************************************************************
-    UPDATE FLUID CELLS
+    1. Update Fluid Material
 ********************************************************************************/
 
 int FluidSimulation::_getUniqueFluidSourceID() {
@@ -1434,7 +1434,7 @@ void FluidSimulation::_updateFluidCells() {
 }
 
 /********************************************************************************
-    INTERNAL FLUID SURFACE RECONSTRUCTION
+    2. Reconstruct Internal Fluid Surface
 ********************************************************************************/
 
 TriangleMesh FluidSimulation::_polygonizeInternalSurface() {
@@ -1467,7 +1467,7 @@ void FluidSimulation::_reconstructInternalFluidSurface() {
 }
 
 /********************************************************************************
-    UPDATE LEVEL SET
+    3. Compute LevelSet Signed Distance Field
 ********************************************************************************/
 
 bool FluidSimulation::_isLevelSetNeeded() {
@@ -1487,7 +1487,7 @@ void FluidSimulation::_updateLevelSetSignedDistanceField() {
 }
 
 /********************************************************************************
-    RECONSTRUCT OUTPUT FLUID SURFACE
+    4.  Reconstruct Output Fluid Surface
 ********************************************************************************/
 
 void FluidSimulation::_writeDiffuseMaterialToFile(std::string bubblefile,
@@ -1815,7 +1815,7 @@ void FluidSimulation::_reconstructOutputFluidSurface(double dt) {
 }
 
 /********************************************************************************
-    ADVECT FLUID VELOCITIES
+    5.  Advect Velocity Field
 ********************************************************************************/
 
 void FluidSimulation::_applyFluidSourceToVelocityField(FluidSource *source,
@@ -2068,7 +2068,7 @@ void FluidSimulation::_advectVelocityField() {
 }
 
 /********************************************************************************
-    APPLY BODY FORCES
+    6. Apply Body Forces
 ********************************************************************************/
 
 vmath::vec3 FluidSimulation::_getConstantBodyForce() {
@@ -2181,7 +2181,7 @@ void FluidSimulation::_applyBodyForcesToVelocityField(double dt) {
 
 
 /********************************************************************************
-    UPDATE PRESSURE GRID
+    7. Pressure Solve
 ********************************************************************************/
 
 void FluidSimulation::_updatePressureGrid(Array3d<float> &pressureGrid, double dt) {
@@ -2206,7 +2206,7 @@ void FluidSimulation::_updatePressureGrid(Array3d<float> &pressureGrid, double d
 }
 
 /********************************************************************************
-    APPLY PRESSURE TO VELOCITY FIELD
+    8. Apply Pressure
 ********************************************************************************/
 
 void FluidSimulation::_applyPressureToFaceU(int i, int j, int k, 
@@ -2378,7 +2378,7 @@ void FluidSimulation::_applyPressureToVelocityField(Array3d<float> &pressureGrid
 }
 
 /********************************************************************************
-    EXTRAPOLATE FLUID VELOCITIES
+    9. Extrapolate Velocity Field
 ********************************************************************************/
 
 void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid) {
@@ -2387,7 +2387,7 @@ void FluidSimulation::_extrapolateFluidVelocities(MACVelocityField &MACGrid) {
 }
 
 /********************************************************************************
-    UPDATE DIFFUSE MATERIAL PARTICLES
+    10. Update Diffuse Particle Simulation
 ********************************************************************************/
 
 void FluidSimulation::_updateDiffuseMaterial(double dt) {
@@ -2415,7 +2415,7 @@ void FluidSimulation::_updateDiffuseMaterial(double dt) {
 }
 
 /********************************************************************************
-    UPDATE MARKER PARTICLE VELOCITIES
+    11. Update MarkerParticle Velocities
 ********************************************************************************/
 
 void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx) {
@@ -2456,7 +2456,7 @@ void FluidSimulation::_updateMarkerParticleVelocities() {
 }
 
 /********************************************************************************
-    ADVANCE MARKER PARTICLES
+    12. Advance MarkerParticles
 ********************************************************************************/
 
 vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1) {
@@ -2536,9 +2536,6 @@ void FluidSimulation::_shuffleMarkerParticleOrder() {
 }
 
 void FluidSimulation::_removeMarkerParticles() {
-    double maxspeed = (_CFLConditionNumber*_dx) / _minTimeStep;
-    double maxspeedsq = maxspeed*maxspeed;
-
     Array3d<int> countGrid = Array3d<int>(_isize, _jsize, _ksize, 0);
     _shuffleMarkerParticleOrder();
 
@@ -2549,13 +2546,6 @@ void FluidSimulation::_removeMarkerParticles() {
     GridIndex g;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         mp = _markerParticles[i];
-
-        double speedsq = vmath::dot(mp.velocity, mp.velocity);
-        if (speedsq > maxspeedsq) {
-            isRemoved.push_back(true);
-            continue;
-        }
-
         g = Grid3d::positionToGridIndex(mp.position, _dx);
         if (countGrid(g) >= _maxMarkerParticlesPerCell) {
             isRemoved.push_back(true);
@@ -2621,7 +2611,7 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update Level set:           \t", timers[3].getTime(), 4);
 
     timers[4].start();
-    if (_isLastTimeStepForFrame) {
+    if (_isFirstTimeStepForFrame) {
         _reconstructOutputFluidSurface(_frameTimeStep);
     }
     timers[4].stop();
@@ -2777,10 +2767,9 @@ void FluidSimulation::update(double dt) {
         }
         timeleft -= timestep;
 
-        double eps = 10e-9;
-        _isLastTimeStepForFrame = fabs(timeleft) < eps;
-
+        _isFirstTimeStepForFrame = _currentTimeStep == 0;
         _currentDeltaTime = timestep;
+
         _stepFluid(timestep);
 
         _currentTimeStep++;

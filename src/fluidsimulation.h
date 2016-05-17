@@ -584,7 +584,37 @@ private:
                         bbox(p, w, h, d) {}
     };
 
-    // Initialization before running simulation
+    /*
+        Initializing the Fluid Simulator
+
+        Before the simulator can begin advancing the state of of the simulation,
+        a call to the initialize() function must be made to initialize the fluid
+        simulator.
+
+        The initialize stage involves setting the solid boundaries of the 
+        simulation domain, adding fluid cells and particles to the simulator,
+        and initializing objects that use the OpenCL library.
+
+        The fluid simulator may be initialized from a FluidSimulationSaveState object.
+        In this case, solid cells, particles, and simulation dimensions are read 
+        from the save state and initialized in this stage.
+
+        The solid boundaries are initialized by setting the border of the
+        FluidMaterialGrid to the solid state. The solid boundary cells must
+        not be changed or removed to ensure that the simulation runs correctly.
+
+        Fluid cells and MarkerParticles are added to the domain according to a scalar
+        field of values. The scalar field is manipulated when a user adds implicit
+        fluid points or fluid cuboids by making calls to the addImplicitFluidPoint()
+        and addFluidCuboid() methods. In the fluid cell/particle initialization stage,
+        The scalar field is converted to a triangle mesh representing the fluid surface,
+        and cells that are inside and lay on the fluid surface are considered to be fluid cells.
+        Each fluid cell is initialized with up to eight MarkerParticles aligned to a 2x2x2
+        subgrid with a random jitter added to their positions.
+
+        The final initialization stage is to initialize objects that use the OpenCL
+        library.
+    */
     void _initializeSimulation();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
@@ -610,15 +640,57 @@ private:
     void _initializeFluidBrickGridFromSaveState(FluidSimulationSaveState &state);
     void _initializeCLObjects();
 
-    // Simulation step
+    /*
+        Advancing the State of the Fluid Simulation
+
+        A call to the update() method advances the simulation state forward
+        by a specified period of time. The _stepFluid() method runs the fluid
+        simulation algorithm to advance the simulation by some period of time. To 
+        advance the simulation, the update() method may need to split the period 
+        of time into multiple timesteps and calls to _stepFluid() in order to 
+        ensure that the simulation runs in a stable manner.
+
+        The timestep value supplied to _stepFluid() is calculated such that no
+        MarkerParticle moves more than some maximum number of gridcells during
+        the time step. The maximum number of cells a MarkerParticle can move is
+        contained in the _CFLConditionNumber variable.
+
+        The Fluid Simulation Algorithm:
+            1.  Update fluid material
+            2.  Reconstruct internal fluid surface
+            3.  Compute levelset signed distance field
+            4.  Reconstruct output fluid surface
+            5.  Advect velocity field
+            6.  Apply body forces
+            7.  Pressure solve
+            8.  Apply pressure
+            9.  Extrapolate velocity field
+            10. Update diffuse particle simulation
+            11. Update MarkerParticle velocities
+            12. Advance MarkerParticles
+    */
     double _calculateNextTimeStep();
     double _getMaximumMarkerParticleSpeed();
     void _autosave();
     void _printError(std::string msg);
     void _stepFluid(double dt);
 
-    // Find fluid cells. Fluid cells must contain at
-    // least 1 marker particle
+    /*
+        1. Update Fluid Material
+
+        This is the first step of the fluid simulation algorithm. At the
+        end of the last time step, the MarkerParticle positions were
+        advanced through the velocity field, and now the fluid cells
+        marked on the FluidMaterialGrid must be updated. A cell is
+        considered to be a fluid cell if it contains at least one
+        MarkerParticle.
+
+        The simulator may contain FluidSource objects that add/remove
+        particles from the simulation. FluidSource objects are updated
+        in this stage. Inflow sources add new MarkerParticles to the
+        domain and outflow sources remove MarkerParticles and 
+        DiffuseParticles from the domain.
+    */
     int _getUniqueFluidSourceID();
     void _updateFluidCells();
     void _removeParticlesInSolidCells();
@@ -633,16 +705,62 @@ private:
     void _removeMarkerParticlesFromCells(Array3d<bool> &isRemovalCell);
     void _removeDiffuseParticlesFromCells(Array3d<bool> &isRemovalCell);
 
-    // Convert marker particles to fluid surface
+    /*
+        2. Reconstruct Internal Fluid Surface
+
+        This step of the fluid simulation algorithm reconstructs the
+        surface of the fluid by converting the MarkerParticles to a
+        triangle mesh. The fluid surface generated in this step is
+        for internal use by the algorithm and may not be computed if
+        it is not needed.
+
+        The surface is meshed using the IsotropicParticleMesher class 
+        on a grid with dimensions the same size as the simulator.
+    */
     bool _isInternalFluidSurfaceNeeded();
     void _reconstructInternalFluidSurface();
     TriangleMesh _polygonizeInternalSurface();
 
-    // Update level set surface
+    /*
+        3. Compute LevelSet Signed Distance Field
+
+        This step of the fluid simulation algorithm computes a signed
+        distance field based on the previously computed internal surface
+        mesh using the LevelSet class. A signed distance field is a 
+        function that returns the distance to a surface given a point 
+        in 3D space.
+
+        The LevelSet signed distance field is used for some output
+        surface reconstruction methods and in the diffuse particle
+        simulation, and will not be computed if it is not needed.
+        Reconstruction of the internal fluid surface is a prerequisite
+        for computing the signed distance field.
+
+        The LevelSet signed distance field uses the convention that a
+        point inside the surface will have a positive distance value 
+        and a point outside the surface will have a negative distance
+        value.
+    */
     bool _isLevelSetNeeded();
     void _updateLevelSetSignedDistanceField();
 
-    // Reconstruct output fluid surface
+    /*
+        4.  Reconstruct Output Fluid Surface
+
+        This step of the fluid simulation algorithm prepares meshes
+        and data to be output to disk. The form of data output is
+        configured by the user and may include isotropic/anisotropic
+        reconstructed surface meshes, 'LEGO' brick meshes and data,
+        and diffuse particle meshes.
+
+        Some forms of output have computation of the internal fluid
+        surface and/or computation of the level set signed distance
+        field as a prerequisite.
+
+        If the update() method requires multiple calls to _stepFluid(),
+        this stage of the algorithm will only be computed on the first
+        call to _stepFluid.
+    */
     void _reconstructOutputFluidSurface(double dt);
     std::string _numberToString(int number);
     void _writeSurfaceMeshToFile(TriangleMesh &isomesh,
@@ -663,7 +781,19 @@ private:
     TriangleMesh _polygonizeAnisotropicOutputSurface();
     void _updateBrickGrid(double dt);
 
-    // Advect fluid velocities
+    /*
+        5.  Advect Velocity Field
+
+        This step of the fluid simulation algorithm initializes the 
+        MACVelocityField for the current timestep. Velocity advection
+        involves evaluating the material derivative Dq/Dt where the quantity
+        q is the velocity. Since the last timestep, the MarkerParticles
+        have been advanced through the velocity field, and since the
+        particles carry velocity information evaluated at a time before 
+        being advanced through the field, the material derivative can be 
+        estimated by transferring the particle velocities onto the 
+        MACVelocityField.
+    */
     void _advectVelocityField();
     void _advectVelocityFieldU();
     void _advectVelocityFieldV();
@@ -676,7 +806,16 @@ private:
                                           Array3d<bool> &isValueSet,
                                           Array3d<float> &field);
 
-    // Add gravity to fluid velocities
+    /*
+        6. Apply Body Forces
+
+        This step of the fluid simulation algorithm adds body forces,
+        such as gravity, to the previously initialized MACVelocityField.
+
+        At the end of this stage, the current state of the MACVelocityField
+        is saved since it is used in a later step to update MarkerParticle
+        velocities.
+    */
     void _applyBodyForcesToVelocityField(double dt);
     vmath::vec3 _getConstantBodyForce();
     void _applyConstantBodyForces(double dt);
@@ -684,16 +823,30 @@ private:
     void _applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
                                  double dt);
 
-    // Extrapolate fluid velocities into surrounding air and solids so
-    // that velocities can be computed when marker particles move to cells
-    // outside of current fluid region
-    void _extrapolateFluidVelocities(MACVelocityField &MACGrid);
+    /*
+        7. Pressure Solve
 
-    // Calculate pressure values to satisfy incompressibility condition
+        This step of the fluid simulation algorithm solves for a pressure
+        grid, such that when applied to the MACVelocityField, results in a
+        divergence-free velocity field. A divergence-free velocity field is
+        required to satisfy the compressibility condition of the incompressible
+        Navier-Stokes equation that this fluid simulator models. The velocity
+        field is divergence-free if for each cell, the sum of all velocities
+        at the cell faces is zero.
+
+        The pressure solver uses the iterative Modified Incomplete Cholesky
+        Conjugate Gradient Level 0 (MICCG(0)) algorithm to solve a sparse
+        linear system for the pressure grid.
+    */
     void _updatePressureGrid(Array3d<float> &pressureGrid, double dt);
 
-    // Alter fluid velocities according to calculated pressures
-    // to create a divercence free velocity field
+    /*
+        8. Apply Pressure
+
+        This step of the fluid simulation algorithm applies the previously
+        computed pressures to the MACVelocityField so that the velocity
+        field is divergence-free.
+    */
     void _applyPressureToVelocityField(Array3d<float> &pressureGrid, double dt);
     void _applyPressureToFaceU(int i, int j, int k, Array3d<float> &pressureGrid,
                                                     MACVelocityField &tempMACVelocity, double dt);
@@ -703,14 +856,67 @@ private:
                                                     MACVelocityField &tempMACVelocity, double dt);
     void _commitTemporaryVelocityFieldValues(MACVelocityField &tempMACVelocity);
 
-    // Update diffuse material (spray, foam, bubbles)
+    /*
+        9. Extrapolate Velocity Field
+
+        This step of the fluid simulation algorithm extrapolates the
+        MACVelocityField values to regions outside of the fluid. The
+        velocity field must be extrapolated because in later steps, when
+        advancing particles through the velocity field, velocity values
+        may need to be sampled at points outside of the fluid. When a
+        velocity is sampled outside of the fluid region, we want the
+        value to be computed as if the sample point is inside the 
+        nearest fluid region.
+    */
+    void _extrapolateFluidVelocities(MACVelocityField &MACGrid);
+
+    /*
+        10. Update Diffuse Particle Simulation
+
+        This step of the fluid simulation algorithm updates the diffuse
+        particle simulation if this feature is enabled. The diffuse particle
+        simulation generates bubble/foam/spray particles in regions where the
+        fluid would likely be aerated. The fluid is likely to be aerated at
+        wavecrests where air mixes with the liquid, and in areas of high
+        turbulence where air can be pulled into the liquid.
+
+        This stage requires that the LevelSet signed distance field be
+        computed as a prerequisite.
+    */
     void _updateDiffuseMaterial(double dt);
 
-    // Transfer grid velocity to marker particles
+    /*
+        11. Update MarkerParticle Velocities
+
+        This step of the fluid simulation algorithm updates the velocity
+        quantity carried by MarkerParticles. This velocity quantity is used
+        in the next time step during the velocity advection stage.
+
+        Velocities are transferred from the grid to the particles by mixing
+        the Particle In Cell (PIC) velocity update method and Fluid Implicit
+        Particle (FLIP) velocity update method. The mix ratio is stored in the 
+        _ratioPICFLIP variable which is a ratio of PIC to FLIP. Velocities are
+        sampled on the grid via tricubic interpolations.
+
+        The MACVelocityField that was saved after applying body forces
+        is used to compute FLIP velocities.
+    */
     void _updateMarkerParticleVelocities();
     void _updateRangeOfMarkerParticleVelocities(int startIdx, int endIdx);
 
-    // Move marker particles through the velocity field
+    /*
+        12. Advance MarkerParticles
+
+        This step of the fluid simulation algorithm is the last step and
+        advances the MarkerParticles through the MACVelocityField for the 
+        current timestep. The Fourth-Order Runge-Kutta method of integration
+        with tricubic interpolated sampling is used to update the MarkerParticle 
+        positions.
+
+        This stage also removes MarkerParticles from the domain so that the number 
+        of particles in a single grid cell does not exceed a maximum stored in the
+        _maxMarkerParticlesPerCell variable.
+    */
     void _advanceMarkerParticles(double dt);
     void _advanceRangeOfMarkerParticles(int startIdx, int endIdx, double dt);
     vmath::vec3 _resolveParticleSolidCellCollision(vmath::vec3 p0, vmath::vec3 p1);
@@ -771,7 +977,7 @@ private:
     double _currentDeltaTime = 0.0;
     double _frameTimeStep = 0.0;
     bool _isCurrentFrameFinished = true;
-    bool _isLastTimeStepForFrame = false;
+    bool _isFirstTimeStepForFrame = false;
     double _simulationTime = 0;
     double _realTime = 0;
     int _loadStateReadChunkSize = 50000;
