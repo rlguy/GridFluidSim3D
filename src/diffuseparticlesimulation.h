@@ -65,6 +65,18 @@ public:
   void addDiffuseParticles(std::vector<DiffuseParticle> &particles);
   void addDiffuseParticles(FragmentedVector<DiffuseParticle> &particles);
 
+  int getMaxNumDiffuseParticles();
+  void setMaxNumDiffuseParticles(int n);
+  double getMaxDiffuseParticleLifetime();
+  void setMaxDiffuseParticleLifetime(double lifetime);
+  double getDiffuseParticleWavecrestEmissionRate();
+  void setDiffuseParticleWavecrestEmissionRate(double r);
+  double getDiffuseParticleTurbulenceEmissionRate();
+  void setDiffuseParticleTurbulenceEmissionRate(double r);
+  void getDiffuseParticleEmissionRates(double *rwc, double *rt);
+  void setDiffuseParticleEmissionRates(double r);
+  void setDiffuseParticleEmissionRates(double rwc, double rt);
+
 private:
 
     struct DiffuseParticleEmitter {

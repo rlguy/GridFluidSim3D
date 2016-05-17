@@ -124,6 +124,59 @@ void DiffuseParticleSimulation::
     }
 }
 
+int DiffuseParticleSimulation::getMaxNumDiffuseParticles() {
+    return _maxNumDiffuseParticles;
+}
+
+void DiffuseParticleSimulation::setMaxNumDiffuseParticles(int n) {
+    assert(n >= 0);
+    _maxNumDiffuseParticles = n;
+}
+
+double DiffuseParticleSimulation::getMaxDiffuseParticleLifetime() {
+    return _maxDiffuseParticleLifetime;
+}
+
+void DiffuseParticleSimulation::setMaxDiffuseParticleLifetime(double lifetime) {
+    assert(lifetime >= 0);
+    _maxDiffuseParticleLifetime = lifetime;
+}
+
+double DiffuseParticleSimulation::getDiffuseParticleWavecrestEmissionRate() {
+    return _wavecrestEmissionRate;
+}
+
+void DiffuseParticleSimulation::setDiffuseParticleWavecrestEmissionRate(double r) {
+    assert(r >= 0);
+    _wavecrestEmissionRate = r;
+}
+
+double DiffuseParticleSimulation::getDiffuseParticleTurbulenceEmissionRate() {
+    return _turbulenceEmissionRate;
+}
+
+void DiffuseParticleSimulation::setDiffuseParticleTurbulenceEmissionRate(double r) {
+    assert(r >= 0);
+    _turbulenceEmissionRate = r;
+}
+
+void DiffuseParticleSimulation::getDiffuseParticleEmissionRates(double *rwc, 
+                                                                  double *rt) {
+    *rwc = _wavecrestEmissionRate;
+    *rt  = _turbulenceEmissionRate;
+}
+
+void DiffuseParticleSimulation::setDiffuseParticleEmissionRates(double r) {
+    setDiffuseParticleWavecrestEmissionRate(r);
+    setDiffuseParticleTurbulenceEmissionRate(r);
+}
+
+void DiffuseParticleSimulation::setDiffuseParticleEmissionRates(double rwc, 
+                                                                double rt) {
+    setDiffuseParticleWavecrestEmissionRate(rwc);
+    setDiffuseParticleTurbulenceEmissionRate(rt);
+}
+
 void DiffuseParticleSimulation::
 		_getDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
 

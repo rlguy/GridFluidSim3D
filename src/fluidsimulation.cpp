@@ -268,6 +268,83 @@ void FluidSimulation::outputDiffuseMaterialAsSingleFile() {
     _isDiffuseMaterialFilesSeparated = false;
 }
 
+int FluidSimulation::getMaxNumDiffuseParticles() {
+    return _diffuseMaterial.getMaxNumDiffuseParticles();
+}
+
+void FluidSimulation::setMaxNumDiffuseParticles(int n) {
+    if (n < 0) {
+        _printError("ERROR: maxNumDiffuseParticles must be greater than or equal to 0\n");
+        std::cerr << "n: " << n << std::endl;
+    }
+    assert(n >= 0);
+    _diffuseMaterial.setMaxNumDiffuseParticles(n);
+}
+
+double FluidSimulation::getMaxDiffuseParticleLifetime() {
+    return _diffuseMaterial.getMaxDiffuseParticleLifetime();
+}   
+
+void FluidSimulation::setMaxDiffuseParticleLifetime(double lifetime) {
+    if (lifetime < 0) {
+        _printError("ERROR: lifetime must be greater than 0\n");
+        std::cerr << "lifetime: " << lifetime << std::endl;
+    }
+    assert(lifetime >= 0);
+    _diffuseMaterial.setMaxDiffuseParticleLifetime(lifetime);
+}
+
+double FluidSimulation::getDiffuseParticleWavecrestEmissionRate() {
+    return _diffuseMaterial.getDiffuseParticleWavecrestEmissionRate();
+}
+
+void FluidSimulation::setDiffuseParticleWavecrestEmissionRate(double r) {
+    if (r < 0) {
+        _printError("ERROR: wavecrest emission rate must be greater than or equal to 0\n");
+        std::cerr << "rate: " << r << std::endl;
+    }
+    assert(r >= 0);
+    _diffuseMaterial.setDiffuseParticleWavecrestEmissionRate(r);
+}
+
+double FluidSimulation::getDiffuseParticleTurbulenceEmissionRate() {
+    return _diffuseMaterial.getDiffuseParticleTurbulenceEmissionRate();
+}
+
+void FluidSimulation::setDiffuseParticleTurbulenceEmissionRate(double r) {
+    if (r < 0) {
+        _printError("ERROR: turbulence emission rate must be greater than or equal to 0\n");
+        std::cerr << "rate: " << r << std::endl;
+    }
+    assert(r >= 0);
+    _diffuseMaterial.setDiffuseParticleTurbulenceEmissionRate(r);
+}
+
+void FluidSimulation::getDiffuseParticleEmissionRates(double *rwc, 
+                                                      double *rt) {
+    _diffuseMaterial.getDiffuseParticleEmissionRates(rwc, rt);
+}
+
+void FluidSimulation::setDiffuseParticleEmissionRates(double r) {
+    if (r < 0) {
+        _printError("ERROR: emission rate must be greater than or equal to 0\n");
+        std::cerr << "rate: " << r << std::endl;
+    }
+    assert(r >= 0);
+    _diffuseMaterial.setDiffuseParticleEmissionRates(r);
+}
+
+void FluidSimulation::setDiffuseParticleEmissionRates(double rwc, 
+                                                      double rt) {
+    if (rwc < 0 || rt < 0) {
+        _printError("ERROR: emission rates must be greater than or equal to 0\n");
+        std::cerr << "wavecrest emission rate: " << rwc << std::endl;
+        std::cerr << "turbulence emission rate: " << rt << std::endl;
+    }
+    assert(rwc >= 0 && rt >= 0);
+    _diffuseMaterial.setDiffuseParticleEmissionRates(rwc, rt);
+}
+
 void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
     if (!(width > 0.0 && height > 0.0 && depth > 0.0)) {
         _printError("ERROR: brick dimensions must be greater than 0\n");
