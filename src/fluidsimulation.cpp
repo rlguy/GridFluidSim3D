@@ -25,12 +25,11 @@ FluidSimulation::FluidSimulation() {
 
 FluidSimulation::FluidSimulation(int isize, int jsize, int ksize, double dx) :
                                 _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx),
-                                _markerParticleRadius(pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0)),
-                                _MACVelocity(_isize, _jsize, _ksize, _dx),
                                 _materialGrid(_isize, _jsize, _ksize),
-                                _fluidCellIndices(_isize, _jsize, _ksize),
                                 _addedFluidCellQueue(_isize, _jsize, _ksize),
-                                _levelset(_isize, _jsize, _ksize, _dx) {
+                                _fluidCellIndices(_isize, _jsize, _ksize),
+                                _levelset(_isize, _jsize, _ksize, _dx),
+                                _MACVelocity(_isize, _jsize, _ksize, _dx) {
 }
 
 FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
@@ -1017,9 +1016,16 @@ void FluidSimulation::_initializeFluidMaterial() {
     _initializeFluidCellIndices();
 }
 
+void FluidSimulation::_initializeMarkerParticleRadius() {
+    double volume = _dx*_dx*_dx / 8.0;
+    double pi = 3.141592653;
+    _markerParticleRadius = pow(3*volume / (4*pi), 1.0/3.0);
+}
+
 void FluidSimulation::_initializeSimulation() {
     _initializeSolidCells();
     _initializeFluidMaterial();
+    _initializeMarkerParticleRadius();
     _initializeCLObjects();
 
     _isSimulationInitialized = true;
@@ -1209,7 +1215,6 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _MACVelocity = MACVelocityField(_isize, _jsize, _ksize, _dx);
     _materialGrid = FluidMaterialGrid(_isize, _jsize, _ksize);
     _levelset = LevelSet(_isize, _jsize, _ksize, _dx);
-    _markerParticleRadius = pow(3*(_dx*_dx*_dx / 8.0) / (4*3.141592653), 1.0/3.0);
     _fluidCellIndices = GridIndexVector(_isize, _jsize, _ksize);
     _addedFluidCellQueue = GridIndexVector(_isize, _jsize, _ksize);
 
@@ -1217,6 +1222,7 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _initializeMarkerParticlesFromSaveState(state);
     _initializeDiffuseParticlesFromSaveState(state);
     _initializeFluidMaterialParticlesFromSaveState();
+    _initializeMarkerParticleRadius();
 
     if (state.isFluidBrickGridEnabled()) {
         _initializeFluidBrickGridFromSaveState(state);
@@ -1271,7 +1277,7 @@ void FluidSimulation::_removeDiffuseParticlesFromCells(Array3d<bool> &isRemovalC
         isRemoved.push_back(isRemovalCell(g));
     }
 
-    _removeItemsFromVector(diffuseParticles, isRemoved);
+    _removeItemsFromVector(*diffuseParticles, isRemoved);
 }
 
 void FluidSimulation::_addNewFluidCells(GridIndexVector &cells, 
@@ -1460,7 +1466,7 @@ void FluidSimulation::_removeDiffuseParticlesInSolidCells() {
     }
 
     if (isParticlesInSolidCell) {
-        _removeItemsFromVector(diffuseParticles, isRemoved);
+        _removeItemsFromVector(*diffuseParticles, isRemoved);
     }
 }
 
@@ -1559,7 +1565,7 @@ void FluidSimulation::_updateLevelSetSignedDistanceField() {
     }
 
     _levelset.setSurfaceMesh(_surfaceMesh);
-    int numLayers = 12;
+    int numLayers = _CFLConditionNumber + 2;
     _levelset.calculateSignedDistanceField(numLayers);
 }
 
@@ -1955,7 +1961,7 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
     }
     grid.setOffset(offset);
 
-    int n = _maxParticlesPerAdvectionComputation;
+    int n = _maxParticlesPerVelocityAdvection;
     std::vector<vmath::vec3> positions;
     std::vector<float> values;
     positions.reserve(fmin(n, _markerParticles.size()));
@@ -2523,7 +2529,7 @@ void FluidSimulation::_updateRangeOfMarkerParticleVelocities(int startIdx, int e
 }
 
 void FluidSimulation::_updateMarkerParticleVelocities() {
-    int n = _maxParticlesPerVelocityUpdate;
+    int n = _maxParticlesPerPICFLIPUpdate;
     for (int startidx = 0; startidx < (int)_markerParticles.size(); startidx += n) {
         int endidx = startidx + n - 1;
         endidx = fmin(endidx, _markerParticles.size() - 1);
@@ -2638,7 +2644,7 @@ void FluidSimulation::_removeMarkerParticles() {
 
 void FluidSimulation::_advanceMarkerParticles(double dt) {
 
-    int n = _maxParticlesPerAdvection;
+    int n = _maxParticlesPerParticleAdvection;
     for (int startidx = 0; startidx < (int)_markerParticles.size(); startidx += n) {
         int endidx = startidx + n - 1;
         endidx = fmin(endidx, _markerParticles.size() - 1);
@@ -2689,7 +2695,7 @@ void FluidSimulation::_stepFluid(double dt) {
 
     timers[4].start();
     if (_isFirstTimeStepForFrame) {
-        _reconstructOutputFluidSurface(_frameTimeStep);
+        _reconstructOutputFluidSurface(_currentFrameTimeStep);
     }
     timers[4].stop();
 
@@ -2801,9 +2807,6 @@ double FluidSimulation::_calculateNextTimeStep() {
     double maxu = _getMaximumMarkerParticleSpeed();
     double timeStep = _CFLConditionNumber*_dx / maxu;
 
-    timeStep = (double)fmax((float)_minTimeStep, (float)timeStep);
-    timeStep = (double)fmin((float)_maxTimeStep, (float)timeStep);
-
     return timeStep;
 }
 
@@ -2829,7 +2832,7 @@ void FluidSimulation::update(double dt) {
 
     _isCurrentFrameFinished = false;
 
-    _frameTimeStep = dt;
+    _currentFrameTimeStep = dt;
 
     if (_isAutosaveEnabled) {
         _autosave();
@@ -2845,7 +2848,6 @@ void FluidSimulation::update(double dt) {
         timeleft -= timestep;
 
         _isFirstTimeStepForFrame = _currentTimeStep == 0;
-        _currentDeltaTime = timestep;
 
         _stepFluid(timestep);
 

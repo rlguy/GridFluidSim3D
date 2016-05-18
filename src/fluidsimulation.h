@@ -674,6 +674,7 @@ private:
     void _initializeMarkerParticles(GridIndexVector &fullFluidCells,
                                     std::vector<vmath::vec3> &partialParticles);
     void _initializeFluidCellIndices();
+    void _initializeMarkerParticleRadius();
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
     void _addMarkerParticle(vmath::vec3 p);
@@ -971,22 +972,6 @@ private:
     void _shuffleMarkerParticleOrder();
 
     template<class T>
-    void _removeItemsFromVector(std::vector<T> &items, std::vector<bool> &isRemoved) {
-        assert(items.size() == isRemoved.size());
-
-        int currentidx = 0;
-        for (unsigned int i = 0; i < items.size(); i++) {
-            if (!isRemoved[i]) {
-                items[currentidx] = items[i];
-                currentidx++;
-            }
-        }
-
-        items.erase(items.begin() + currentidx, items.end());
-        items.shrink_to_fit();
-    }
-
-    template<class T>
     void _removeItemsFromVector(FragmentedVector<T> &items, std::vector<bool> &isRemoved) {
         assert(items.size() == isRemoved.size());
 
@@ -1004,58 +989,51 @@ private:
         items.shrink_to_fit();
     }
 
-    template<class T>
-    void _removeItemsFromVector(std::vector<T> *items, std::vector<bool> &isRemoved) {
-        _removeItemsFromVector(*items, isRemoved);
-    }
-
-    template<class T>
-    void _removeItemsFromVector(FragmentedVector<T> *items, std::vector<bool> &isRemoved) {
-        _removeItemsFromVector(*items, isRemoved);
-    }
-
     inline double _randomDouble(double min, double max) {
         return min + (double)rand() / ((double)RAND_MAX / (max - min));
     }
 
-    bool _isSimulationInitialized = false;
-    int _currentFrame = 0;
-    int _currentTimeStep = 0;
-    double _currentDeltaTime = 0.0;
-    double _frameTimeStep = 0.0;
-    bool _isCurrentFrameFinished = true;
-    bool _isFirstTimeStepForFrame = false;
-    double _simulationTime = 0;
-    double _realTime = 0;
-    int _loadStateReadChunkSize = 50000;
-
+    // Simulator grid dimensions and cell size
     int _isize = 0;
     int _jsize = 0;
     int _ksize = 0;
     double _dx = 0.0;
 
+    // Initialization
+    std::vector<FluidPoint> _fluidPoints;
+    std::vector<FluidCuboid> _fluidCuboids;
+    int _loadStateReadChunkSize = 50000;
+    bool _isSimulationInitialized = false;
+
+    // Update
+    int _currentFrame = 0;
+    int _currentTimeStep = 0;
+    double _currentFrameTimeStep = 0.0;
+    double _simulationTime = 0;
+    double _realTime = 0;
+    bool _isCurrentFrameFinished = true;
+    bool _isFirstTimeStepForFrame = false;
     double _CFLConditionNumber = 5.0;
-    double _minTimeStep = 1.0 / 1200.0;
-    double _maxTimeStep = 1.0 / 15.0;
-    int _maxParticlesPerAdvectionComputation = 5e6;
+    bool _isAutosaveEnabled = true;
+    LogFile _logfile;
 
-    double _density = 20.0;
-    int _maxParticlesPerAdvection = 10e6;
-    int _maxParticlesPerVelocityUpdate = 10e6;
-    MACVelocityField _savedVelocityField;
+    // Update fluid material
+    FluidMaterialGrid _materialGrid;
+    std::vector<FluidSource*> _fluidSources;
+    std::vector<SphericalFluidSource*> _sphericalFluidSources;
+    std::vector<CuboidFluidSource*> _cuboidFluidSources;
+    int _uniqueFluidSourceID = 0;
+    FragmentedVector<MarkerParticle> _markerParticles;
+    GridIndexVector _addedFluidCellQueue;
+    GridIndexVector _fluidCellIndices;
 
-    double _surfaceReconstructionSmoothingValue = 0.5;
-    int _surfaceReconstructionSmoothingIterations = 2;
-    int _minimumSurfacePolyhedronTriangleCount = 0;
-    double _markerParticleRadius;
-    double _markerParticleScale = 3.0;
+    // Reconstruct internal fluid surface
+    TriangleMesh _surfaceMesh;
 
-    int _outputFluidSurfaceSubdivisionLevel = 1;
-    int _numSurfaceReconstructionPolygonizerSlices = 1;
+    // Compute levelset signed distance field
+    LevelSet _levelset;
 
-    double _ratioPICFLIP = 0.05f;
-    int _maxMarkerParticlesPerCell = 100;
-
+    // Reconstruct output fluid surface
     bool _isSurfaceMeshOutputEnabled = true;
     bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
     bool _isAnisotropicSurfaceMeshReconstructionEnabled = false;
@@ -1065,35 +1043,42 @@ private:
     bool _isFoamDiffuseMaterialEnabled = false;
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
-    bool _isAutosaveEnabled = true;
+    int _outputFluidSurfaceSubdivisionLevel = 1;
+    int _numSurfaceReconstructionPolygonizerSlices = 1;
+    double _surfaceReconstructionSmoothingValue = 0.5;
+    int _surfaceReconstructionSmoothingIterations = 2;
+    int _minimumSurfacePolyhedronTriangleCount = 0;
+    double _markerParticleRadius = 0.0;
+    double _markerParticleScale = 3.0;
     int _currentBrickMeshFrame = 0;
     int _brickMeshFrameOffset = -3;
-
-    std::vector<vmath::vec3> _constantBodyForces;
-
-    typedef vmath::vec3 (*FieldFunction)(vmath::vec3);
-    std::vector<FieldFunction> _variableBodyForces;
-
-    MACVelocityField _MACVelocity;
-    FluidMaterialGrid _materialGrid;
-    FragmentedVector<MarkerParticle> _markerParticles;
-    GridIndexVector _fluidCellIndices;
-    GridIndexVector _addedFluidCellQueue;
-    LogFile _logfile;
-    TriangleMesh _surfaceMesh;
-    LevelSet _levelset;
-    DiffuseParticleSimulation _diffuseMaterial;
-    
-    std::vector<FluidPoint> _fluidPoints;
-    std::vector<FluidCuboid> _fluidCuboids;
-    std::vector<FluidSource*> _fluidSources;
-    std::vector<SphericalFluidSource*> _sphericalFluidSources;
-    std::vector<CuboidFluidSource*> _cuboidFluidSources;
-    int _uniqueFluidSourceID = 0;
-
-    Array3d<Brick> _brickGrid;
     FluidBrickGrid _fluidBrickGrid;
 
+    // Advect velocity field
+    int _maxParticlesPerVelocityAdvection = 5e6;
+
+    // Apply body forces
+    typedef vmath::vec3 (*FieldFunction)(vmath::vec3);
+    std::vector<FieldFunction> _variableBodyForces;
+    std::vector<vmath::vec3> _constantBodyForces;
+
+    // Pressure solve
+    double _density = 20.0;
+
+    // Update diffuse particle simulation
+    DiffuseParticleSimulation _diffuseMaterial;
+
+    // Update MarkerParticle velocities
+    int _maxParticlesPerPICFLIPUpdate = 10e6;
+    double _ratioPICFLIP = 0.05f;
+    MACVelocityField _MACVelocity;
+    MACVelocityField _savedVelocityField;
+
+    // Advance MarkerParticles
+    int _maxParticlesPerParticleAdvection = 10e6;
+    int _maxMarkerParticlesPerCell = 100;
+    
+    // OpenCL
     ParticleAdvector _particleAdvector;
     CLScalarField _scalarFieldAccelerator;
 
