@@ -58,6 +58,14 @@ void example_load_state(std::string filename) {
     FluidSimulation fluidsim(state);
 
     /*
+        After constructing the FluidSimulation object, the save state is
+        no longer needed and can be closed. Closing the state will
+        clean up any temporary files that were created during loading
+        the state and initializing the fluid simulation.
+    */
+    state.closeState();
+
+    /*
         The save state feature only saves the following data:
             - grid dimensions and cell size
             - current frame
