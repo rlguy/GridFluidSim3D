@@ -1864,7 +1864,7 @@ void FluidSimulation::_updateBrickGrid(double dt) {
         points.push_back(_markerParticles[i].position);
     }
 
-    _fluidBrickGrid.update(_levelset, points, dt);
+    _fluidBrickGrid.update(_levelset, _materialGrid, points, dt);
 }
 
 void FluidSimulation::_reconstructOutputFluidSurface(double dt) {

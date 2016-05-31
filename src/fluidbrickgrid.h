@@ -28,6 +28,7 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "aabb.h"
 #include "levelset.h"
+#include "fluidmaterialgrid.h"
 #include "trianglemesh.h"
 #include "vmath.h"
 #include "gridindexvector.h"
@@ -50,7 +51,10 @@ public:
     void setBrickDimensions(AABB brick);
     bool getBrickMesh(LevelSet &levelset, TriangleMesh &mesh);
     bool isBrickMeshReady();
-    void update(LevelSet &levelset, std::vector<vmath::vec3> &markerParticles, double dt);
+    void update(LevelSet &levelset, 
+                FluidMaterialGrid &materialGrid,
+                std::vector<vmath::vec3> &markerParticles, 
+                double dt);
     void saveState(std::string filename);
     int getBrickGridQueueSize();
     int getNumUpdates();
@@ -79,7 +83,8 @@ private:
     void _updateTargetDensities(std::vector<vmath::vec3> &particles);
     void _updateDensities(double dt);
     void _updateDensity(int i, int j, int k, double dt);
-    void _updateBrickGrid(LevelSet &levelset);
+    void _updateBrickGrid(LevelSet &levelset,
+                          FluidMaterialGrid &materialGrid);
     float _getBrickIntensity(int i, int j, int k);
     bool _isBrickNextToActiveNeighbour(int i, int j, int k);
     void _postProcessBrickGrid();

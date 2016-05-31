@@ -344,11 +344,14 @@ void FluidBrickGrid::_postProcessBrickGrid() {
     _mergeBrickGrids();
 }
 
-void FluidBrickGrid::update(LevelSet &levelset, std::vector<vmath::vec3> &particles, double dt) {
+void FluidBrickGrid::update(LevelSet &levelset, 
+                            FluidMaterialGrid &materialGrid,
+                            std::vector<vmath::vec3> &particles, 
+                            double dt) {
     assert(isInitialized());
 
     _updateDensityGrid(particles, dt);
-    _updateBrickGrid(levelset);
+    _updateBrickGrid(levelset, materialGrid);
 
     if (_brickGridQueueSize == 3) {
         _postProcessBrickGrid();
@@ -599,7 +602,8 @@ bool FluidBrickGrid::_isBrickNextToActiveNeighbour(int i, int j, int k) {
     return hasNeighbour;
 }
 
-void FluidBrickGrid::_updateBrickGrid(LevelSet &levelset) {
+void FluidBrickGrid::_updateBrickGrid(LevelSet &levelset,
+                                      FluidMaterialGrid &materialGrid) {
     _brickGrid.fill(Brick());
 
     double bw = _brick.width;
@@ -609,13 +613,16 @@ void FluidBrickGrid::_updateBrickGrid(LevelSet &levelset) {
     vmath::vec3 coffset = vmath::vec3(0.5*bw, 0.5*bh, 0.5*bd);
 
     vmath::vec3 p;
+    GridIndex g;
     for (int k = 0;  k < _brickGrid.depth; k++) {
         for (int j = 0;  j < _brickGrid.height; j++) {
             for (int i = 0;  i < _brickGrid.width; i++) {
                 p = coffset + vmath::vec3(i*bw, j*bh, k*bd);
+                g = Grid3d::positionToGridIndex(p, _dx);
 
                 if (Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize) && 
-                        levelset.isPointInInsideCell(p)) {
+                        levelset.isPointInInsideCell(p) &&
+                        materialGrid.isCellFluid(g)) {
                     float intensity = _getBrickIntensity(i, j, k);
                     Brick b = Brick(intensity);
                     b.isActive = true;
