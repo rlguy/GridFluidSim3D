@@ -16,7 +16,7 @@ MESH_FILEPATH_DIRECTORY = "C:\\cygwin64\\home\\Ryan\\fluidsim\\bakefiles\\"
 # Prefix of the mesh filename
 #
 # Example: if filename is diffuse000000.ply, the variable would be
-#  DIFFUSE_FILE_NAME_PREFIX = "anisotropic"
+#  DIFFUSE_FILE_NAME_PREFIX = "diffuse"
 #
 # Leave empty if there is no prefix to the file number
 DIFFUSE_FILE_NAME_PREFIX = "diffuse"
