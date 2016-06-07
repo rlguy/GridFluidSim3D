@@ -1634,19 +1634,16 @@ void FluidSimulation::_writeDiffuseMaterialToFile(std::string diffusefile) {
 
 void FluidSimulation::_writeBrickColorListToFile(TriangleMesh &mesh, 
                                                      std::string filename) {
-    int binsize = 3*sizeof(int)*mesh.vertexcolors.size();
+    int binsize = 3*sizeof(unsigned char)*mesh.vertexcolors.size();
     char *storage = new char[binsize];
 
-    int *colordata = new int[3*mesh.vertexcolors.size()];
     vmath::vec3 c;
     for (unsigned int i = 0; i < mesh.vertexcolors.size(); i++) {
         c = mesh.vertexcolors[i];
-        colordata[3*i] = (int)(c.x*255.0);
-        colordata[3*i + 1] = (int)(c.y*255.0);
-        colordata[3*i + 2] = (int)(c.z*255.0);
+        storage[3*i] = (unsigned char)(c.x*255.0);
+        storage[3*i + 1] = (unsigned char)(c.y*255.0);
+        storage[3*i + 2] = (unsigned char)(c.z*255.0);
     }
-    memcpy(storage, colordata, 3*sizeof(int)*mesh.vertexcolors.size());
-    delete[] colordata;
     
     std::ofstream erasefile;
     erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
