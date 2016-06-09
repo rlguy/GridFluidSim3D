@@ -2,6 +2,8 @@
 
 This program is an implementation of a PIC/FLIP liquid fluid simulation written in C++11 based on methods described in Robert Bridson's "Fluid Simulation for Computer Graphics" textbook. The fluid simulation program outputs the surface of the fluid as a sequence of triangle meshes stored in the Stanford .PLY file format which can then be imported into your renderer of choice.
 
+Visit [http://rlguy.com/gridfluidsim/](http://rlguy.com/gridfluidsim/) for more information about the program.
+
 ## Gallery
 
 The following screencaps are of animations that were simulated within the program and rendered using [Blender](http://www.blender.org). Animations created with the fluid simulation program can be viewed on [YouTube](https://www.youtube.com/rlguyportfolio).
