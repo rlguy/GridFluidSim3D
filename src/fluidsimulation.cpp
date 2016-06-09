@@ -98,20 +98,20 @@ double FluidSimulation::getDensity() {
 
 void FluidSimulation::setDensity(double p) { 
     if (p <= 0.0) {
-        _printError("ERROR: density must be greater than 0\n");
-        std::cerr << "density: " << p << std::endl;
+        std::string msg = "Error: density must be greater than 0.\n";
+        msg += "density: " + _toString(p) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(p > 0); 
+
     _density = p; 
 }
 
 Material FluidSimulation::getMaterial(int i, int j, int k) { 
-    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
-    if (!isInRange) {
-        _printError("ERROR: material index out of range\n");
-        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    if (!Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize)) {
+        std::string msg = "Error: material index out of range.\n";
+        msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+        throw std::out_of_range(msg);
     }
-    assert(isInRange);
 
     return _materialGrid(i, j, k); 
 }
@@ -121,12 +121,12 @@ Material FluidSimulation::getMaterial(GridIndex g) {
 }
 
 void FluidSimulation::setMarkerParticleScale(double s) { 
-     if (s < 0.0) {
-        _printError("ERROR: marker particle scale must be greater than or equal to 0\n");
-        std::cerr << "scale: " << s << std::endl;
+    if (s < 0.0) {
+        std::string msg = "Error: marker particle scale must be greater than or equal to 0.\n";
+        msg += "scale: " + _toString(s) + "\n";
+        throw std::domain_error(msg);
     }
 
-    assert(s >= 0); 
     _markerParticleScale = s; 
 }
 
@@ -137,28 +137,31 @@ double FluidSimulation::getMarkerParticleScale() {
 
 void FluidSimulation::setSurfaceSubdivisionLevel(int n) {
     if (n < 1) {
-        _printError("ERROR: subdivision level must be greater than or equal to 1\n");
-        std::cerr << "Subdivision level: " << n << std::endl;
+        std::string msg = "Error: subdivision level must be greater than or equal to 1.\n";
+        msg += "subdivision level: " + _toString(n) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(n >= 1);
+
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
 void FluidSimulation::setNumSurfaceReconstructionPolygonizerSlices(int n) {
     if (n < 1) {
-        _printError("ERROR: number of polygonizer slices must be greater than or equal to 1\n");
-        std::cerr << "polygonizer slices: : " << n << std::endl;
+        std::string msg = "Error: number of polygonizer slices must be greater than or equal to 1.\n";
+        msg += "polygonizer slices: " + _toString(n) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(n >= 1);
+
     _numSurfaceReconstructionPolygonizerSlices = n;
 }
 
 void FluidSimulation::setMinimumPolyhedronTriangleCount(int n) {
     if (n < 1) {
-        _printError("ERROR: minimum polyhedron triangle count must be greater than or equal to 0\n");
-        std::cerr << "triangle count: " << n << std::endl;
+        std::string msg = "Error: minimum polyhedron triangle count must be greater than or equal to 0.\n";
+        msg += "triangle count: " + _toString(n) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(n >= 0);
+
     _minimumSurfacePolyhedronTriangleCount = n;
 }
 
@@ -273,10 +276,11 @@ int FluidSimulation::getMaxNumDiffuseParticles() {
 
 void FluidSimulation::setMaxNumDiffuseParticles(int n) {
     if (n < 0) {
-        _printError("ERROR: maxNumDiffuseParticles must be greater than or equal to 0\n");
-        std::cerr << "n: " << n << std::endl;
+        std::string msg = "Error: maxNumDiffuseParticles must be greater than or equal to 0.\n";
+        msg += "n: " + _toString(n) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(n >= 0);
+
     _diffuseMaterial.setMaxNumDiffuseParticles(n);
 }
 
@@ -286,10 +290,11 @@ double FluidSimulation::getMaxDiffuseParticleLifetime() {
 
 void FluidSimulation::setMaxDiffuseParticleLifetime(double lifetime) {
     if (lifetime < 0) {
-        _printError("ERROR: lifetime must be greater than 0\n");
-        std::cerr << "lifetime: " << lifetime << std::endl;
+        std::string msg = "Error: lifetime must be greater than 0.\n";
+        msg += "lifetime: " + _toString(lifetime) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(lifetime >= 0);
+
     _diffuseMaterial.setMaxDiffuseParticleLifetime(lifetime);
 }
 
@@ -299,10 +304,11 @@ double FluidSimulation::getDiffuseParticleWavecrestEmissionRate() {
 
 void FluidSimulation::setDiffuseParticleWavecrestEmissionRate(double r) {
     if (r < 0) {
-        _printError("ERROR: wavecrest emission rate must be greater than or equal to 0\n");
-        std::cerr << "rate: " << r << std::endl;
+        std::string msg = "Error: wavecrest emission rate must be greater than or equal to 0.\n";
+        msg += "rate: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(r >= 0);
+
     _diffuseMaterial.setDiffuseParticleWavecrestEmissionRate(r);
 }
 
@@ -312,10 +318,11 @@ double FluidSimulation::getDiffuseParticleTurbulenceEmissionRate() {
 
 void FluidSimulation::setDiffuseParticleTurbulenceEmissionRate(double r) {
     if (r < 0) {
-        _printError("ERROR: turbulence emission rate must be greater than or equal to 0\n");
-        std::cerr << "rate: " << r << std::endl;
+        std::string msg = "Error: turbulence emission rate must be greater than or equal to 0.\n";
+        msg += "rate: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(r >= 0);
+
     _diffuseMaterial.setDiffuseParticleTurbulenceEmissionRate(r);
 }
 
@@ -326,30 +333,34 @@ void FluidSimulation::getDiffuseParticleEmissionRates(double *rwc,
 
 void FluidSimulation::setDiffuseParticleEmissionRates(double r) {
     if (r < 0) {
-        _printError("ERROR: emission rate must be greater than or equal to 0\n");
-        std::cerr << "rate: " << r << std::endl;
+        std::string msg = "Error: emission rate must be greater than or equal to 0.\n";
+        msg += "rate: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(r >= 0);
+
     _diffuseMaterial.setDiffuseParticleEmissionRates(r);
 }
 
 void FluidSimulation::setDiffuseParticleEmissionRates(double rwc, 
                                                       double rt) {
     if (rwc < 0 || rt < 0) {
-        _printError("ERROR: emission rates must be greater than or equal to 0\n");
-        std::cerr << "wavecrest emission rate: " << rwc << std::endl;
-        std::cerr << "turbulence emission rate: " << rt << std::endl;
+        std::string msg = "Error: emission rates must be greater than or equal to 0.\n";
+        msg += "wavecrest emission rate: " + _toString(rwc) + "\n";
+        msg += "turbulence emission rate: " + _toString(rt) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(rwc >= 0 && rt >= 0);
+
     _diffuseMaterial.setDiffuseParticleEmissionRates(rwc, rt);
 }
 
 void FluidSimulation::enableBrickOutput(double width, double height, double depth) {
     if (!(width > 0.0 && height > 0.0 && depth > 0.0)) {
-        _printError("ERROR: brick dimensions must be greater than 0\n");
-        std::cerr << "width: " << width << " height: " << height << " depth: " << depth << std::endl;
+        std::string msg = "Error: brick dimensions must be greater than 0.\n";
+        msg += "width: " + _toString(width) + 
+               " height: " + _toString(height) + 
+               " depth: " + _toString(depth) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(width > 0.0 && height > 0.0 && depth > 0.0);
 
     AABB brick = AABB(vmath::vec3(), width, height, depth);
 
@@ -422,13 +433,14 @@ void FluidSimulation::addImplicitFluidPoint(double x, double y, double z, double
 
 void FluidSimulation::addImplicitFluidPoint(vmath::vec3 p, double r) {
     if (r < 0.0) {
-        _printError("ERROR: Implicit fluid point radius must be greater than or equal to 0\n");
-        std::cerr << "radius: " << r << std::endl;
+        std::string msg = "Error: implicit fluid point radius must be greater than or equal to 0.\n";
+        msg += "radius: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(r >= 0.0);
 
     if (_isSimulationInitialized) {
-        _printError("ERROR: Implicit fluid point must be added before before simulation is initialized\n");
+        std::string msg = "Error: implicit fluid point must be added before before simulation is initialized.\n";
+        throw std::runtime_error(msg);
     }
 
     _fluidPoints.push_back(FluidPoint(p, r));
@@ -456,13 +468,16 @@ void FluidSimulation::addFluidCuboid(AABB bbox) {
 
 void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d) {
     if (!(w >= 0.0 && h >= 0.0 && d >= 0.0)) {
-        _printError("ERROR: Fluid cuboid dimensions must be greater than or equal to 0\n");
-        std::cerr << "width: " << w << " height: " << h << " depth: " << d << std::endl;
+        std::string msg = "Error: Fluid cuboid dimensions must be greater than or equal to 0.\n";
+        msg += "width: " + _toString(w) + 
+               " height: " + _toString(h) + 
+               " depth: " + _toString(d) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(w >= 0.0 && h >= 0.0 && d >= 0.0);
 
     if (_isSimulationInitialized) {
-        _printError("ERROR: Fluid cuboid must be added before simulation is initialized\n");
+        std::string msg = "Error: fluid cuboid must be added before simulation is initialized.\n";
+        throw std::runtime_error(msg);
     }
 
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
@@ -476,10 +491,10 @@ SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, 
 SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r, 
                                                                vmath::vec3 velocity) {
     if (r < 0.0) {
-        _printError("ERROR: Spherical fluid source radius must be greater than or equal to 0");
-        std::cerr << "radius: " << r << std::endl;
+        std::string msg = "Error: spherical fluid source radius must be greater than or equal to 0.\n";
+        msg += "radius: " + _toString(r) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(r >= 0.0);
 
     SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
     source->setID(_getUniqueFluidSourceID());
@@ -496,12 +511,12 @@ CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
 CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, vmath::vec3 velocity) {
     bool isValidDimensions = bbox.width >= 0.0 && bbox.height >= 0.0 && bbox.depth >= 0.0;
     if (!isValidDimensions) {
-        _printError("ERROR: Cuboid fluid source dimensions must be greater than or equal to 0");
-        std::cerr << "width: " << bbox.width << 
-                     " height: " << bbox.height << 
-                     " depth: " << bbox.depth << std::endl;
+        std::string msg = "Error: cuboid fluid source dimensions must be greater than or equal to 0.\n";
+        msg += "width: " + _toString(bbox.width) + 
+               " height: " + _toString(bbox.height) + 
+               " depth: " + _toString(bbox.depth) + "\n";
+        throw std::domain_error(msg);
     }
-    assert(isValidDimensions);
 
     CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
     source->setID(_getUniqueFluidSourceID());
@@ -523,10 +538,10 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
     }
 
     if (!isFound) {
-        _printError("ERROR: could not find fluid source to remove");
-        std::cerr << "Fluid source: " << source << std::endl;
+        std::string msg = "Error: could not find fluid source to remove.\n";
+        msg += "fluid source: " + _toString(source) + "\n";
+        throw std::invalid_argument(msg);
     }
-    assert(isFound);
 
     isFound = false;
     for (unsigned int i = 0; i < _sphericalFluidSources.size(); i++) {
@@ -558,12 +573,11 @@ void FluidSimulation::removeFluidSources() {
 }
 
 void FluidSimulation::addSolidCell(int i, int j, int k) {
-    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
-    if (!isInRange) {
-        _printError("ERROR: Solid cell index out of range\n");
-        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    if (!Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize)) {
+        std::string msg = "Error: solid cell index out of range.\n";
+        msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+        throw std::out_of_range(msg);
     }
-    assert(isInRange);
 
     _materialGrid.setSolid(i, j, k);
 }
@@ -579,12 +593,11 @@ void FluidSimulation::addSolidCells(std::vector<GridIndex> &indices) {
 }
 
 void FluidSimulation::removeSolidCell(int i, int j, int k) {
-    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
-    if (!isInRange) {
-        _printError("ERROR: Solid cell index out of range\n");
-        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    if (!Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize)) {
+        std::string msg = "Error: solid cell index out of range.\n";
+        msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+        throw std::out_of_range(msg);
     }
-    assert(isInRange);
 
     // Cannot remove border cells
     if (Grid3d::isGridIndexOnBorder(i, j, k, _isize, _jsize, _ksize)) { 
@@ -633,12 +646,11 @@ std::vector<vmath::vec3> FluidSimulation::getSolidCellPositions() {
 }
 
 void FluidSimulation::addFluidCell(int i, int j, int k) {
-    bool isInRange = Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize);
-    if (!isInRange) {
-        _printError("ERROR: Fluid cell index out of range\n");
-        std::cerr << "i: " << i << " j: " << j << " k: " << k << std::endl;
+    if (!Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize)) {
+        std::string msg = "Error: fluid cell index out of range.\n";
+        msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+        throw std::out_of_range(msg);
     }
-    assert(isInRange);
 
     if (_materialGrid.isCellAir(i, j, k)) {
         _addedFluidCellQueue.push_back(i, j, k);
@@ -671,8 +683,12 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startidx, int endidx) {
-    assert(startidx >= 0 && startidx < (int)_markerParticles.size());
-    assert(endidx >= 0 && endidx < (int)_markerParticles.size());
+    int size = _markerParticles.size();
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<vmath::vec3> particles;
     particles.reserve(endidx - startidx + 1);
@@ -689,8 +705,12 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities() {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int startidx, int endidx) {
-    assert(startidx >= 0 && startidx < (int)_markerParticles.size());
-    assert(endidx >= 0 && endidx < (int)_markerParticles.size());
+    int size = _markerParticles.size();
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<vmath::vec3> velocities;
     velocities.reserve(endidx - startidx + 1);
@@ -713,8 +733,11 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    assert(startidx >= 0 && startidx < size);
-    assert(endidx >= 0 && endidx < size);
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<vmath::vec3> particles;
     particles.reserve(endidx - startidx + 1);
@@ -734,8 +757,11 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities() {
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    assert(startidx >= 0 && startidx < size);
-    assert(endidx >= 0 && endidx < size);
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<vmath::vec3> velocities;
     velocities.reserve(endidx - startidx + 1);
@@ -755,8 +781,11 @@ std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
 
 std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    assert(startidx >= 0 && startidx < size);
-    assert(endidx >= 0 && endidx < size);
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<float> lifetimes;
     lifetimes.reserve(endidx - startidx + 1);
@@ -776,8 +805,11 @@ std::vector<char> FluidSimulation::getDiffuseParticleTypes() {
 
 std::vector<char> FluidSimulation::getDiffuseParticleTypes(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    assert(startidx >= 0 && startidx < size);
-    assert(endidx >= 0 && endidx < size);
+    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
 
     std::vector<char> types;
     types.reserve(endidx - startidx + 1);
@@ -2811,20 +2843,16 @@ void FluidSimulation::_autosave() {
     saveState("savestates/autosave.state");
 }
 
-void FluidSimulation::_printError(std::string msg) {
-    std::cerr << msg;
-}
-
 void FluidSimulation::update(double dt) {
     if (!_isSimulationInitialized) {
-        _printError("ERROR: FluidSimulation must be initialized before update\n");
-        assert(_isSimulationInitialized);
+        std::string msg = "Error: FluidSimulation must be initialized before update.\n";
+        throw std::runtime_error(msg);
     }
 
     if (dt < 0.0) {
-        _printError("ERROR: Delta time must be greater than or equal to 0\n");
-        std::cerr << "Delta time: " << dt << std::endl;
-        assert(dt >= 0.0);
+        std::string msg = "Error: delta time must be greater than or equal to 0.\n";
+        msg += "delta time: " + _toString(dt) + "\n";
+        throw std::domain_error(msg);
     }
 
     _isCurrentFrameFinished = false;

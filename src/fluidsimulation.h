@@ -720,7 +720,6 @@ private:
     double _calculateNextTimeStep();
     double _getMaximumMarkerParticleSpeed();
     void _autosave();
-    void _printError(std::string msg);
     void _stepFluid(double dt);
 
     /*
@@ -991,6 +990,14 @@ private:
 
     inline double _randomDouble(double min, double max) {
         return min + (double)rand() / ((double)RAND_MAX / (max - min));
+    }
+
+    template<class T>
+    std::string _toString(T item) {
+        std::ostringstream sstream;
+        sstream << item;
+
+        return sstream.str();
     }
 
     // Simulator grid dimensions and cell size
