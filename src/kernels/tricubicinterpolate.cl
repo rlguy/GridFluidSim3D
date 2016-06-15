@@ -49,19 +49,19 @@ float cubic_interpolate(float p[4], float x) {
 
 float bicubic_interpolate(float p[4][4], float x, float y) {
     float arr[4];
-    arr[0] = cubic_interpolate(p[0], y);
-    arr[1] = cubic_interpolate(p[1], y);
-    arr[2] = cubic_interpolate(p[2], y);
-    arr[3] = cubic_interpolate(p[3], y);
-    return cubic_interpolate(arr, x);
+    arr[0] = cubic_interpolate(p[0], x);
+    arr[1] = cubic_interpolate(p[1], x);
+    arr[2] = cubic_interpolate(p[2], x);
+    arr[3] = cubic_interpolate(p[3], x);
+    return cubic_interpolate(arr, y);
 }
 
 float tricubic_interpolate(float p[4][4][4], float x, float y, float z) {
     float arr[4];
-    arr[0] = bicubic_interpolate(p[0], y, x);
-    arr[1] = bicubic_interpolate(p[1], y, x);
-    arr[2] = bicubic_interpolate(p[2], y, x);
-    arr[3] = bicubic_interpolate(p[3], y, x);
+    arr[0] = bicubic_interpolate(p[0], x, y);
+    arr[1] = bicubic_interpolate(p[1], x, y);
+    arr[2] = bicubic_interpolate(p[2], x, y);
+    arr[3] = bicubic_interpolate(p[3], x, y);
     return cubic_interpolate(arr, z);
 }
 
