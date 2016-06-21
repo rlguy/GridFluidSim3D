@@ -511,122 +511,110 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
     }
 
     if (_edgeTable[cubeIndex] & 1) {
-        if (!edges.isSetU(vertices[0])) {
+        if (edges.U(vertices[0]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
                                                      vertexValues[0],    vertexValues[1]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[0], _surface.vertices.size() - 1);
-            edges.isSetU.set(vertices[0], true);
         }
         vertexList[0] = edges.U(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 2) {
-        if (!edges.isSetW(vertices[1])) {
+        if (edges.W(vertices[1]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2], 
                                                      vertexValues[1],    vertexValues[2]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[1], _surface.vertices.size() - 1);
-            edges.isSetW.set(vertices[1], true);
         }
         vertexList[1] = edges.W(vertices[1]);
     }
     if (_edgeTable[cubeIndex] & 4) {
-        if (!edges.isSetU(vertices[3])) {
+        if (edges.U(vertices[3]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3], 
                                                      vertexValues[2],    vertexValues[3]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[3], _surface.vertices.size() - 1);
-            edges.isSetU.set(vertices[3], true);
         }
         vertexList[2] = edges.U(vertices[3]);
     }
     if (_edgeTable[cubeIndex] & 8) {
-        if (!edges.isSetW(vertices[0])) {
+        if (edges.W(vertices[0]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0], 
                                                      vertexValues[3],    vertexValues[0]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[0], _surface.vertices.size() - 1);
-            edges.isSetW.set(vertices[0], true);
         }
         vertexList[3] = edges.W(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 16) {
-        if (!edges.isSetU(vertices[4])) {
+        if (edges.U(vertices[4]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5], 
                                                      vertexValues[4],    vertexValues[5]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[4], _surface.vertices.size() - 1);
-            edges.isSetU.set(vertices[4], true);
         }
         vertexList[4] = edges.U(vertices[4]);
     }
     if (_edgeTable[cubeIndex] & 32) {
-        if (!edges.isSetW(vertices[5])) {
+        if (edges.W(vertices[5]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6], 
                                                      vertexValues[5],    vertexValues[6]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[5], _surface.vertices.size() - 1);
-            edges.isSetW.set(vertices[5], true);
         }
         vertexList[5] = edges.W(vertices[5]);
     }
     if (_edgeTable[cubeIndex] & 64) {
-        if (!edges.isSetU(vertices[7])) {
+        if (edges.U(vertices[7]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7], 
                                                      vertexValues[6],    vertexValues[7]);
             _surface.vertices.push_back(v);
             edges.U.set(vertices[7], _surface.vertices.size() - 1);
-            edges.isSetU.set(vertices[7], true);
         }
         vertexList[6] = edges.U(vertices[7]);
     }
     if (_edgeTable[cubeIndex] & 128) {
-        if (!edges.isSetW(vertices[4])) {
+        if (edges.W(vertices[4]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4], 
                                                      vertexValues[7],    vertexValues[4]);
             _surface.vertices.push_back(v);
             edges.W.set(vertices[4], _surface.vertices.size() - 1);
-            edges.isSetW.set(vertices[4], true);
         }
         vertexList[7] = edges.W(vertices[4]);
     }
     if (_edgeTable[cubeIndex] & 256) {
-        if (!edges.isSetV(vertices[0])) {
+        if (edges.V(vertices[0]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4], 
                                                      vertexValues[0],    vertexValues[4]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[0], _surface.vertices.size() - 1);
-            edges.isSetV.set(vertices[0], true);
         }
         vertexList[8] = edges.V(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 512) {
-        if (!edges.isSetV(vertices[1])) {
+        if (!edges.V(vertices[1]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5], 
                                                      vertexValues[1],    vertexValues[5]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[1], _surface.vertices.size() - 1);
-            edges.isSetV.set(vertices[1], true);
         }
         vertexList[9] = edges.V(vertices[1]);
     }
     if (_edgeTable[cubeIndex] & 1024) {
-        if (!edges.isSetV(vertices[2])) {
+        if (edges.V(vertices[2]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6], 
                                                      vertexValues[2],    vertexValues[6]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[2], _surface.vertices.size() - 1);
-            edges.isSetV.set(vertices[2], true);
         }
         vertexList[10] = edges.V(vertices[2]);
     }
     if (_edgeTable[cubeIndex] & 2048) {
-        if (!edges.isSetV(vertices[3])) {
+        if (edges.V(vertices[3]) == -1) {
             vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7], 
                                                      vertexValues[3],    vertexValues[7]);
             _surface.vertices.push_back(v);
             edges.V.set(vertices[3], _surface.vertices.size() - 1);
-            edges.isSetV.set(vertices[3], true);
         }
         vertexList[11] = edges.V(vertices[3]);
     }

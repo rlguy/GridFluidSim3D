@@ -55,24 +55,15 @@ private:
         Array3d<int> U;         // store index to vertex
         Array3d<int> V;
         Array3d<int> W;
-        Array3d<bool> isSetU;
-        Array3d<bool> isSetV;
-        Array3d<bool> isSetW;
 
         EdgeGrid() : U(Array3d<int>(0, 0, 0)),
                      V(Array3d<int>(0, 0, 0)),
-                     W(Array3d<int>(0, 0, 0)),
-                     isSetU(Array3d<bool>(0, 0, 0)),
-                     isSetV(Array3d<bool>(0, 0, 0)), 
-                     isSetW(Array3d<bool>(0, 0, 0)) {}
+                     W(Array3d<int>(0, 0, 0)) {}
 
         EdgeGrid(int i, int j, int k) : 
-                     U(Array3d<int>(i, j + 1, k + 1)),
-                     V(Array3d<int>(i + 1, j, k + 1)),
-                     W(Array3d<int>(i + 1, j + 1, k)),
-                     isSetU(Array3d<bool>(i, j + 1, k + 1, false)),
-                     isSetV(Array3d<bool>(i + 1, j, k + 1, false)),
-                     isSetW(Array3d<bool>(i + 1, j + 1, k, false)) {}
+                     U(Array3d<int>(i, j + 1, k + 1, -1)),
+                     V(Array3d<int>(i + 1, j, k + 1, -1)),
+                     W(Array3d<int>(i + 1, j + 1, k, -1)) {}
     };
 
     void _getCellVertexPositions(GridIndex g, vmath::vec3 positions[8]);
