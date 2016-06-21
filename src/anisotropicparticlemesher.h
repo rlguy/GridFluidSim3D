@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 #include "levelset.h"
 #include "trianglemesh.h"
-#include "implicitsurfacescalarfield.h"
+#include "scalarfield.h"
 #include "polygonizer3d.h"
 #include "stopwatch.h"
 #include "vmath.h"
@@ -225,7 +225,7 @@ private:
     FragmentedVector<GridPointReference> _farSurfaceParticleRefs;
     FragmentedVector<vmath::vec3> _smoothedPositions;
 
-    ImplicitSurfaceScalarField _scalarField;
+    ScalarField _scalarField;
 
     int _anisotropicParticleChunkSize = 1000000;  // Max number of particles to add to scalar
                                                   // field at once.

@@ -33,7 +33,7 @@ SOURCES=$(SOURCEPATH)/aabb.cpp \
 		$(SOURCEPATH)/gridindexkeymap.cpp \
 		$(SOURCEPATH)/gridindexvector.cpp \
 		$(SOURCEPATH)/implicitpointprimitive.cpp \
-		$(SOURCEPATH)/implicitsurfacescalarfield.cpp \
+		$(SOURCEPATH)/scalarfield.cpp \
 		$(SOURCEPATH)/interpolation.cpp \
 		$(SOURCEPATH)/isotropicparticlemesher.cpp \
 		$(SOURCEPATH)/levelset.cpp \

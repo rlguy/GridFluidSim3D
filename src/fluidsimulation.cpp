@@ -920,7 +920,7 @@ void FluidSimulation::_addMarkerParticles(std::vector<vmath::vec3> particles) {
     }
 }
 
-void FluidSimulation::_calculateInitialFluidSurfaceScalarField(ImplicitSurfaceScalarField &field) {
+void FluidSimulation::_calculateInitialFluidSurfaceScalarField(ScalarField &field) {
     FluidPoint fp;
     for (unsigned int i = 0; i < _fluidPoints.size(); i++) {
         fp = _fluidPoints[i];
@@ -934,7 +934,7 @@ void FluidSimulation::_calculateInitialFluidSurfaceScalarField(ImplicitSurfaceSc
     }
 }
 
-void FluidSimulation::_getInitialFluidCellsFromScalarField(ImplicitSurfaceScalarField &field,
+void FluidSimulation::_getInitialFluidCellsFromScalarField(ScalarField &field,
                                                            GridIndexVector &fluidCells) {
     Polygonizer3d polygonizer(&field);
 
@@ -958,7 +958,7 @@ void FluidSimulation::_getInitialFluidCellsFromScalarField(ImplicitSurfaceScalar
 
 
 void FluidSimulation::_getPartiallyFilledFluidCellParticles(GridIndexVector &partialFluidCells,
-                                                            ImplicitSurfaceScalarField &field,
+                                                            ScalarField &field,
                                                             std::vector<vmath::vec3> &partialParticles) {
     FluidMaterialGrid submgrid(_isize, _jsize, _ksize);
     GridIndex g;
@@ -1018,7 +1018,7 @@ void FluidSimulation::_initializeFluidCellIndices() {
 
 void FluidSimulation::_initializeFluidMaterial() {
 
-    ImplicitSurfaceScalarField field = ImplicitSurfaceScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
+    ScalarField field = ScalarField(_isize + 1, _jsize + 1, _ksize + 1, _dx);
     _calculateInitialFluidSurfaceScalarField(field);
 
     GridIndexVector fluidCells(_isize, _jsize, _ksize);
@@ -1972,7 +1972,7 @@ void FluidSimulation::_computeVelocityScalarField(Array3d<float> &field,
                                                   int dir) {
     int U = 0; int V = 1; int W = 2;
 
-    ImplicitSurfaceScalarField grid = ImplicitSurfaceScalarField(field.width,
+    ScalarField grid = ScalarField(field.width,
                                                                  field.height,
                                                                  field.depth, _dx);
     grid.enableWeightField();

@@ -28,7 +28,7 @@ freely, subject to the following restrictions:
 #include <fstream>
 #include <assert.h>
 
-#include "implicitsurfacescalarfield.h"
+#include "scalarfield.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "trianglemesh.h"
@@ -40,7 +40,7 @@ class Polygonizer3d
 {
 public:
     Polygonizer3d();
-    Polygonizer3d(ImplicitSurfaceScalarField *scalarField);
+    Polygonizer3d(ScalarField *scalarField);
 
     ~Polygonizer3d();
 
@@ -101,7 +101,7 @@ private:
     double _surfaceThreshold = 0.5;
     bool _isScalarFieldSet = false;
 
-    ImplicitSurfaceScalarField *_scalarField;
+    ScalarField *_scalarField;
     Array3d<bool> *_surfaceCellMask;
     bool _isSurfaceCellMaskSet = false;
 

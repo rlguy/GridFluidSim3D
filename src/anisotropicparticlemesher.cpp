@@ -535,7 +535,7 @@ void AnisotropicParticleMesher::_initializeScalarField(FluidMaterialGrid &materi
     int depth = _ksize*subd;
     double dx = _dx / (double)subd;
 
-    _scalarField = ImplicitSurfaceScalarField(width + 1, height + 1, depth + 1, dx);
+    _scalarField = ScalarField(width + 1, height + 1, depth + 1, dx);
     
     int origsubd = materialGrid.getSubdivisionLevel();
     materialGrid.setSubdivisionLevel(subd);
@@ -565,7 +565,7 @@ void AnisotropicParticleMesher::_initializeSliceScalarField(int startidx, int en
     }
 
 
-    _scalarField = ImplicitSurfaceScalarField(gridWidth + 1, gridHeight + 1, gridDepth + 1, dx);
+    _scalarField = ScalarField(gridWidth + 1, gridHeight + 1, gridDepth + 1, dx);
 
     FluidMaterialGrid sliceMaterialGrid(gridWidth, gridHeight, gridDepth);
     _getSliceMaterialGrid(startidx, endidx, materialGrid, sliceMaterialGrid);

@@ -31,12 +31,12 @@ freely, subject to the following restrictions:
 #include "aabb.h"
 #include "fluidmaterialgrid.h"
 
-class ImplicitSurfaceScalarField
+class ScalarField
 {
 public:
-    ImplicitSurfaceScalarField();
-    ImplicitSurfaceScalarField(int i, int j, int k, double dx);
-    ~ImplicitSurfaceScalarField();
+    ScalarField();
+    ScalarField(int i, int j, int k, double dx);
+    ~ScalarField();
 
     void getGridDimensions(int *i, int *j, int *k) { *i = _isize; *j = _jsize; *k = _ksize; }
     double getCellSize() { return _dx; }

@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #include "macvelocityfield.h"
 #include "array3d.h"
 #include "grid3d.h"
-#include "implicitsurfacescalarfield.h"
+#include "scalarfield.h"
 #include "clscalarfield.h"
 #include "polygonizer3d.h"
 #include "trianglemesh.h"
@@ -665,11 +665,11 @@ private:
     void _initializeSimulation();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
-    void _calculateInitialFluidSurfaceScalarField(ImplicitSurfaceScalarField &field);
-    void _getInitialFluidCellsFromScalarField(ImplicitSurfaceScalarField &field,
+    void _calculateInitialFluidSurfaceScalarField(ScalarField &field);
+    void _getInitialFluidCellsFromScalarField(ScalarField &field,
                                               GridIndexVector &fluidCells);
     void _getPartiallyFilledFluidCellParticles(GridIndexVector &partialFluidCells,
-                                               ImplicitSurfaceScalarField &field,
+                                               ScalarField &field,
                                                std::vector<vmath::vec3> &partialParticles);
     void _initializeMarkerParticles(GridIndexVector &fullFluidCells,
                                     std::vector<vmath::vec3> &partialParticles);

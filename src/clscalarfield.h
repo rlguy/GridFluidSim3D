@@ -36,7 +36,7 @@ freely, subject to the following restrictions:
 #include <string>
 
 #include "macvelocityfield.h"
-#include "implicitsurfacescalarfield.h"
+#include "scalarfield.h"
 #include "array3d.h"
 #include "arrayview3d.h"
 #include "grid3d.h"
@@ -58,9 +58,9 @@ public:
                    double radius,
                    vmath::vec3 offset,
                    double dx,
-                   ImplicitSurfaceScalarField &field);
+                   ScalarField &field);
     void addPoints(std::vector<vmath::vec3> &points, 
-                   ImplicitSurfaceScalarField &field);
+                   ScalarField &field);
 
     void addPointValues(std::vector<vmath::vec3> &points, 
                         std::vector<float> &values,
@@ -80,10 +80,10 @@ public:
                         double radius,
                         vmath::vec3 offset,
                         double dx,
-                        ImplicitSurfaceScalarField &field);
+                        ScalarField &field);
     void addPointValues(std::vector<vmath::vec3> &points, 
                         std::vector<float> &values,
-                        ImplicitSurfaceScalarField &field);
+                        ScalarField &field);
 
     void setMaxScalarFieldValueThreshold(float val);
     void setMaxScalarFieldValueThreshold();

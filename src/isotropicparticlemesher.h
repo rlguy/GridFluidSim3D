@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #include "markerparticle.h"
 #include "fluidmaterialgrid.h"
 #include "trianglemesh.h"
-#include "implicitsurfacescalarfield.h"
+#include "scalarfield.h"
 #include "clscalarfield.h"
 #include "polygonizer3d.h"
 #include "aabb.h"
@@ -66,7 +66,7 @@ private:
 	void _computeSliceScalarField(int startidx, int endidx, 
 		                          FragmentedVector<MarkerParticle> &particles,
 		                          FluidMaterialGrid &materialGrid,
-		                          ImplicitSurfaceScalarField &field);
+		                          ScalarField &field);
 	vmath::vec3 _getSliceGridPositionOffset(int startidx, int endidx);
 	void _getSliceParticles(int startidx, int endidx, 
 		                    FragmentedVector<MarkerParticle> &markerParticles,
@@ -76,16 +76,16 @@ private:
 		                       FluidMaterialGrid &sliceMaterialGrid);
 	AABB _getSliceAABB(int startidx, int endidx);
 	void _addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
-	                             ImplicitSurfaceScalarField &field);
+	                             ScalarField &field);
 	void _addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
-	                             ImplicitSurfaceScalarField &field);
+	                             ScalarField &field);
 	void _addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
-	                                        ImplicitSurfaceScalarField &field);
+	                                        ScalarField &field);
 	void _addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
-	                                        ImplicitSurfaceScalarField &field);
-	void _updateScalarFieldSeam(int startidx, int endidx, ImplicitSurfaceScalarField &field);
-	void _applyScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field);
-	void _saveScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field);
+	                                        ScalarField &field);
+	void _updateScalarFieldSeam(int startidx, int endidx, ScalarField &field);
+	void _applyScalarFieldSliceSeamData(ScalarField &field);
+	void _saveScalarFieldSliceSeamData(ScalarField &field);
 	void _getSliceMask(int startidx, int endidx, Array3d<bool> &mask);
 
 	int _isize = 0;

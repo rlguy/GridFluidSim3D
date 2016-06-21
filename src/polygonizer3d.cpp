@@ -22,7 +22,7 @@ freely, subject to the following restrictions:
 Polygonizer3d::Polygonizer3d() {
 }
 
-Polygonizer3d::Polygonizer3d(ImplicitSurfaceScalarField *scalarField) {
+Polygonizer3d::Polygonizer3d(ScalarField *scalarField) {
     _scalarField = scalarField;
 
     int i, j, k;

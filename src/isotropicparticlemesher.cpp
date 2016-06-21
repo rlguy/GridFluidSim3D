@@ -81,7 +81,7 @@ TriangleMesh IsotropicParticleMesher::_polygonizeAll(FragmentedVector<MarkerPart
 	int depth = _ksize*subd;
 	double dx = _dx / (double)subd;
 
-	ImplicitSurfaceScalarField field(width + 1, height + 1, depth + 1, dx);
+	ScalarField field(width + 1, height + 1, depth + 1, dx);
 
 	int origsubd = materialGrid.getSubdivisionLevel();
 	materialGrid.setSubdivisionLevel(subd);
@@ -147,7 +147,7 @@ TriangleMesh IsotropicParticleMesher::_polygonizeSlice(int startidx, int endidx,
 		gridWidth += 2;
 	}
 
-	ImplicitSurfaceScalarField field(gridWidth + 1, gridHeight + 1, gridDepth + 1, dx);
+	ScalarField field(gridWidth + 1, gridHeight + 1, gridDepth + 1, dx);
 	_computeSliceScalarField(startidx, endidx, particles, materialGrid, field);
 
 	Array3d<bool> mask(gridWidth, gridHeight, gridDepth);
@@ -170,7 +170,7 @@ void IsotropicParticleMesher::_getSubdividedGridDimensions(int *i, int *j, int *
 void IsotropicParticleMesher::_computeSliceScalarField(int startidx, int endidx, 
 	                                                   FragmentedVector<MarkerParticle> &markerParticles,
 	                                                   FluidMaterialGrid &materialGrid,
-	                                                   ImplicitSurfaceScalarField &field) {
+	                                                   ScalarField &field) {
 	
 	FragmentedVector<vmath::vec3> sliceParticles;
 	_getSliceParticles(startidx, endidx, markerParticles, sliceParticles);
@@ -266,7 +266,7 @@ AABB IsotropicParticleMesher::_getSliceAABB(int startidx, int endidx) {
 }
 
 void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
-	                                                  ImplicitSurfaceScalarField &field) {
+	                                                  ScalarField &field) {
 	
 	if (_isScalarFieldAcceleratorSet) {
 		_addPointsToScalarFieldAccelerator(points, field);
@@ -278,7 +278,7 @@ void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<vmath::ve
 }
 
 void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
-	                                                  ImplicitSurfaceScalarField &field) {
+	                                                  ScalarField &field) {
 	if (_isScalarFieldAcceleratorSet) {
 		_addPointsToScalarFieldAccelerator(points, field);
 	} else {
@@ -289,7 +289,7 @@ void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<MarkerPar
 }
 
 void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
-	                                                             ImplicitSurfaceScalarField &field) {
+	                                                             ScalarField &field) {
 	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
 	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
 	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
@@ -320,7 +320,7 @@ void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVecto
 }
 
 void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
-                                                                 ImplicitSurfaceScalarField &field) {
+                                                                 ScalarField &field) {
 	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
 	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
 	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
@@ -351,7 +351,7 @@ void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVecto
 }
 
 void IsotropicParticleMesher::_updateScalarFieldSeam(int startidx, int endidx,
-	                                                 ImplicitSurfaceScalarField &field) {
+	                                                 ScalarField &field) {
 	int width, height, depth;
 	double dx;
 	_getSubdividedGridDimensions(&width, &height, &depth, &dx);
@@ -367,7 +367,7 @@ void IsotropicParticleMesher::_updateScalarFieldSeam(int startidx, int endidx,
 	}
 }
 
-void IsotropicParticleMesher::_applyScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field) {
+void IsotropicParticleMesher::_applyScalarFieldSliceSeamData(ScalarField &field) {
 	int width, height, depth;
 	field.getGridDimensions(&width, &height, &depth);
 
@@ -380,7 +380,7 @@ void IsotropicParticleMesher::_applyScalarFieldSliceSeamData(ImplicitSurfaceScal
 	}
 }
 
-void IsotropicParticleMesher::_saveScalarFieldSliceSeamData(ImplicitSurfaceScalarField &field) {
+void IsotropicParticleMesher::_saveScalarFieldSliceSeamData(ScalarField &field) {
 	int width, height, depth;
 	field.getGridDimensions(&width, &height, &depth);
 

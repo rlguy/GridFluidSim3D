@@ -116,14 +116,14 @@ void CLScalarField::addPoints(std::vector<vmath::vec3> &points,
                               double radius,
                               vmath::vec3 offset,
                               double dx,
-                              ImplicitSurfaceScalarField &isfield) {
+                              ScalarField &isfield) {
 
     Array3d<float> *field = isfield.getPointerToScalarField();
     addPoints(points, radius, offset, dx, field);
 }
 
 void CLScalarField::addPoints(std::vector<vmath::vec3> &points,
-                              ImplicitSurfaceScalarField &isfield) {
+                              ScalarField &isfield) {
 
     double r = isfield.getPointRadius();
     vmath::vec3 offset = isfield.getOffset();
@@ -251,7 +251,7 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
                                    double radius,
                                    vmath::vec3 offset,
                                    double dx,
-                                   ImplicitSurfaceScalarField &isfield) {
+                                   ScalarField &isfield) {
 
     Array3d<float> *field = isfield.getPointerToScalarField();
 
@@ -265,7 +265,7 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
 
 void CLScalarField::addPointValues(std::vector<vmath::vec3> &points, 
                                    std::vector<float> &values,
-                                   ImplicitSurfaceScalarField &isfield) {
+                                   ScalarField &isfield) {
 
     double r = isfield.getPointRadius();
     vmath::vec3 offset = isfield.getOffset();
@@ -584,7 +584,7 @@ cl_int CLScalarField::_initializeCLCommandQueue() {
 /*  
     The scalarfield.cl kernels calculate field values at cell centers. We want
     values to be calculated at minimal cell corners to match the convention of
-    the ImplicitSurfaceScalarField class. To do this, <0.5dx, 0.5dx, 0.5dx> is
+    the ScalarField class. To do this, <0.5dx, 0.5dx, 0.5dx> is
     subtracted from the offset that the user sets.
 */ 
 vmath::vec3 CLScalarField::_getInternalOffset() {
