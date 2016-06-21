@@ -21,7 +21,8 @@ freely, subject to the following restrictions:
 #define ARRAYVIEW3D_H
 
 #include <vector>
-#include <assert.h>
+#include <stdexcept>
+#include <sstream>
 
 #include "array3d.h"
 
@@ -104,7 +105,14 @@ public:
     }
 
     void setDimensions(int isize, int jsize, int ksize) {
-        assert(_isDimensionsValid(isize, jsize, ksize));
+        if (!_isDimensionsValid(isize, jsize, ksize)) {
+            std::string msg = "Error: dimensions cannot be negative.\n";
+            msg += "width: " + _toString(isize) + 
+                   " height: " + _toString(jsize) + 
+                   " depth: " + _toString(ksize) + "\n";
+            throw std::domain_error(msg);
+        }
+
         width = isize;
         height = jsize;
         depth = ksize;
@@ -165,7 +173,13 @@ public:
     }
 
     void getViewAsArray3d(Array3d<T> &view) {
-        assert(view.width == width && view.height == height && view.depth = depth);
+        if (!(view.width == width && view.height == height && view.depth = depth)) {
+            std::string msg = "Error: array dimensions must be equal to view dimensions.\n";
+            msg += "width: " + _toString(width) + 
+                   " height: " + _toString(height) + 
+                   " depth: " + _toString(depth) + "\n";
+            throw std::domain_error(msg);
+        }
 
         for (int k = 0; k < depth; k++) {
             for (int j = 0; j < height; j++) {
@@ -189,27 +203,45 @@ public:
     }
 
     T get(int i, int j, int k) {
-        assert(_isIndexInView(i, j, k));
+        if (!_isIndexInView(i, j, k)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         GridIndex pidx = _viewToParentIndex(i, j, k);
         bool isInRange = _parent->isIndexInRange(pidx);
         if (!isInRange && _parent->isOutOfRangeValueSet()) {
             return _parent->getOutOfRangeValue();
         }
-        assert(isInRange);
+
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _parent->get(pidx);
     }
 
     T get(GridIndex g) {
-        assert(_isIndexInView(g));
+        if (!_isIndexInView(g)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
         
         GridIndex pidx = _viewToParentIndex(g);
         bool isInRange = _parent->isIndexInRange(pidx);
         if (!isInRange && _parent->isOutOfRangeValueSet()) {
             return _parent->getOutOfRangeValue();
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _parent->get(pidx);   
     }
@@ -223,7 +255,11 @@ public:
     }
 
     void set(int i, int j, int k, T value) {
-        assert(_isIndexInView(i, j, k));
+        if (!_isIndexInView(i, j, k)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         GridIndex pidx = _viewToParentIndex(i, j, k);
         if (_parent->isIndexInRange(pidx)) {
@@ -232,7 +268,11 @@ public:
     }
 
     void set(GridIndex g, T value) {
-        assert(_isIndexInView(g));
+        if (!_isIndexInView(g)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         GridIndex pidx = _viewToParentIndex(g);
         if (_parent->isIndexInRange(pidx)) {
@@ -247,7 +287,11 @@ public:
     }
 
     void add(int i, int j, int k, T value) {
-        assert(_isIndexInView(i, j, k));
+        if (!_isIndexInView(i, j, k)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         GridIndex pidx = _viewToParentIndex(i, j, k);
         if (_parent->isIndexInRange(pidx)) {
@@ -256,7 +300,11 @@ public:
     }
 
     void add(GridIndex g, T value) {
-        assert(_isIndexInView(g));
+       if (!_isIndexInView(g)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         GridIndex pidx = _viewToParentIndex(g);
         if (_parent->isIndexInRange(pidx)) {
@@ -265,12 +313,20 @@ public:
     }
 
     T *getPointer(int i, int j, int k) {
-        assert(_isIndexInView(i, j, k));
+        if (!_isIndexInView(i, j, k)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
         _parent->getPointer(_viewToParentIndex(i, j, k));
     }
 
     T *getPointer(GridIndex g) {
-        assert(_isIndexInView(g));
+        if (!_isIndexInView(g)) {
+            std::string msg = "Error: index out of view range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
         _parent->getPointer(_viewToParentIndex(g));
     }
 
@@ -316,6 +372,14 @@ private:
 
     inline GridIndex _viewToParentIndex(GridIndex g) {
         return GridIndex(g.i + _ioffset, g.j + _joffset, g.k + _koffset);
+    }
+
+    template<class S>
+    std::string _toString(S item) {
+        std::ostringstream sstream;
+        sstream << item;
+
+        return sstream.str();
     }
 
     int _ioffset = 0;

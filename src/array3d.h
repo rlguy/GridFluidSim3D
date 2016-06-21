@@ -21,10 +21,11 @@ freely, subject to the following restrictions:
 #define ARRAY3D_H
 
 #include <vector>
-#include <assert.h>
+#include <stdio.h>
 #include <iostream>
-#include <functional>
+#include <stdexcept>
 #include <string>
+#include <sstream>
 
 struct GridIndex {
     int i, j, k;
@@ -45,7 +46,11 @@ struct GridIndex {
     }
 
     int& operator[](unsigned int idx) {
-        assert(idx <= 2);
+        if (idx > 2) {
+            std::string msg = "Error: index out of range.\n";
+            throw std::out_of_range(msg);
+        }
+
         return (&i)[idx];
     }
 };
@@ -134,7 +139,12 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[_getFlatIndex(i, j, k)];
     }
@@ -144,7 +154,12 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[_getFlatIndex(g)];;
     }
@@ -154,7 +169,12 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "index: " + _toString(flatidx) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[flatidx];
     }
@@ -164,7 +184,12 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[_getFlatIndex(i, j, k)];
     }
@@ -174,7 +199,12 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[_getFlatIndex(g)];;
     }
@@ -184,18 +214,33 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "index: " + _toString(flatidx) + "\n";
+            throw std::out_of_range(msg);
+        }
 
         return _grid[flatidx];
     }
 
     void set(int i, int j, int k, T value) {
-        assert(_isIndexInRange(i, j, k));
+        if (!_isIndexInRange(i, j, k)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[_getFlatIndex(i, j, k)] = value;
     }
 
     void set(GridIndex g, T value) {
-        assert(_isIndexInRange(g.i, g.j, g.k));
+        if (!_isIndexInRange(g)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[_getFlatIndex(g)] = value;
     }
 
@@ -206,22 +251,42 @@ public:
     }
 
     void set(int flatidx, T value) {
-        assert(flatidx >= 0 && flatidx < _numElements);
+        if (!(flatidx >= 0 && flatidx < _numElements)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "index: " + _toString(flatidx) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[flatidx] = value;
     }
 
     void add(int i, int j, int k, T value) {
-        assert(_isIndexInRange(i, j, k));
+        if (!_isIndexInRange(i, j, k)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[_getFlatIndex(i, j, k)] += value;
     }
 
     void add(GridIndex g, T value) {
-        assert(_isIndexInRange(g.i, g.j, g.k));
+        if (!_isIndexInRange(g)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[_getFlatIndex(g)] += value;
     }
 
     void add(int flatidx, T value) {
-        assert(flatidx >= 0 && flatidx < _numElements);
+        if (!(flatidx >= 0 && flatidx < _numElements)) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "index: " + _toString(flatidx) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         _grid[flatidx] += value;
     }
 
@@ -231,7 +296,12 @@ public:
             return &_outOfRangeValue;
         }
 
-        assert(isInRange);
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         return &_grid[_getFlatIndex(i, j, k)];
     }
 
@@ -241,7 +311,12 @@ public:
             return &_outOfRangeValue;
         }
 
-        assert(isInRange);
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "i: " + _toString(g.i) + " j: " + _toString(g.j) + " k: " + _toString(g.k) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         return &_grid[_getFlatIndex(g)];
     }
 
@@ -251,7 +326,12 @@ public:
             return &_outOfRangeValue;
         }
 
-        assert(isInRange);
+        if (!isInRange) {
+            std::string msg = "Error: index out of range.\n";
+            msg += "index: " + _toString(flatidx) + "\n";
+            throw std::out_of_range(msg);
+        }
+
         return &_grid[flatidx];
     }
 
@@ -292,11 +372,23 @@ public:
 
 private:
     void _initializeGrid() {
+        if (width < 0 || height < 0 || depth < 0) {
+            std::string msg = "Error: dimensions cannot be negative.\n";
+            msg += "width: " + _toString(width) + 
+                   " height: " + _toString(height) + 
+                   " depth: " + _toString(depth) + "\n";
+            throw std::domain_error(msg);
+        }
+
         _grid = new T[width*height*depth];
     }
 
     inline bool _isIndexInRange(int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth;
+    }
+
+    inline bool _isIndexInRange(GridIndex g) {
+        return g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth;
     }
 
     inline unsigned int _getFlatIndex(int i, int j, int k) {
@@ -307,6 +399,14 @@ private:
     inline unsigned int _getFlatIndex(GridIndex g) {
         return (unsigned int)g.i + (unsigned int)width *
                ((unsigned int)g.j + (unsigned int)height * (unsigned int)g.k);
+    }
+
+    template<class S>
+    std::string _toString(S item) {
+        std::ostringstream sstream;
+        sstream << item;
+
+        return sstream.str();
     }
 
     T *_grid;

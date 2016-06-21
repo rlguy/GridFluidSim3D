@@ -21,7 +21,8 @@ freely, subject to the following restrictions:
 #define SUBDIVIDEDARRAY3D_H
 
 #include <vector>
-#include <assert.h>
+#include <stdexcept>
+#include <sstream>
 
 #include "gridindexvector.h"
 #include "array3d.h"
@@ -49,6 +50,12 @@ public:
 
     void setSubdivisionLevel(int level) {
         assert(level >= 1);
+        if (level <= 0) {
+            std::string msg = "Error: subdivision level must be greater than or equal to 1.\n";
+            msg += "level: " + _toString(level) + "\n";
+            throw std::domain_error(msg);
+        }
+
         width  = level * _isize;
         height = level * _jsize;
         depth  = level * _ksize;
@@ -165,6 +172,14 @@ public:
     int depth = 0;
 
 private:
+
+    template<class S>
+    std::string _toString(S item) {
+        std::ostringstream sstream;
+        sstream << item;
+
+        return sstream.str();
+    }
 
     int _isize = 0;
     int _jsize = 0;
