@@ -50,14 +50,6 @@ struct GridIndex {
     }
 };
 
-struct GridIndexHasher {
-    std::size_t operator()(const GridIndex& g) const {
-        return ((std::hash<int>()(g.i) ^
-                (std::hash<int>()(g.j) << 1)) >> 1) ^
-                (std::hash<int>()(g.k) << 1);
-    }
-};
-
 template <class T>
 class Array3d
 {
