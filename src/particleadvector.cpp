@@ -351,14 +351,14 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
 
     std::vector<DataChunkParameters> chunks;
     for (int i = 0; i < numComputations; i++) {
-        std::vector<DataChunkParameters>::iterator beg;
-        std::vector<DataChunkParameters>::iterator end;
-
-        beg = chunkParams.begin() + i*maxChunks;
-        end = beg + maxChunks;
-        if (chunkParams.end() - end < 0) {
-            end = chunkParams.end();
+        int begidx = i*maxChunks;
+        int endidx = begidx + maxChunks;
+        if (endidx > chunkParams.size()) {
+            endidx = chunkParams.size();
         }
+
+        std::vector<DataChunkParameters>::iterator beg = chunkParams.begin() + begidx;
+        std::vector<DataChunkParameters>::iterator end = chunkParams.begin() + endidx;
 
         chunks.clear();
         chunks.insert(chunks.begin(), beg, end);
@@ -620,16 +620,17 @@ void ParticleAdvector::_getDataChunkParametersForChunkIndex(GridIndex cindex,
     for (int i = 0; i < numDataChunks; i++) {
         DataChunkParameters params;
 
-        params.particlesBegin = particleChunk->particles.begin() + i*groupSize;
-        params.referencesBegin = particleChunk->references.begin() + i*groupSize;
-
-        params.particlesEnd = params.particlesBegin + groupSize;
-        params.referencesEnd = params.referencesBegin + groupSize;
-
-        if (particleChunk->particles.end() - params.particlesEnd < 0) {
-            params.particlesEnd = particleChunk->particles.end();
-            params.referencesEnd = particleChunk->references.end();
+        int begidx = i*groupSize;
+        int endidx = begidx + groupSize;
+        if (endidx > particleChunk->particles.size()) {
+            endidx = particleChunk->particles.size();
         }
+
+        params.particlesBegin = particleChunk->particles.begin() + begidx;
+        params.referencesBegin = particleChunk->references.begin() + begidx;
+
+        params.particlesEnd = particleChunk->particles.begin() + endidx;
+        params.referencesEnd = particleChunk->references.begin() + endidx;
 
         params.ufieldview = ugridview;
         params.vfieldview = vgridview;

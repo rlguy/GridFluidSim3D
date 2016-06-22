@@ -867,12 +867,14 @@ void CLScalarField::_getWorkChunksFromWorkGroup(WorkGroup *group,
         WorkChunk c;
         c.workGroupIndex = groupidx;
 
-        c.particlesBegin = group->particles.begin() + i;
-        c.particlesEnd = c.particlesBegin + chunksize;
-
-        if (group->particles.end() - c.particlesEnd < 0) {
-            c.particlesEnd = group->particles.end();
+        int begidx = i;
+        int endidx = begidx + chunksize;
+        if (endidx > size) {
+            endidx = size;
         }
+
+        c.particlesBegin = group->particles.begin() + begidx;
+        c.particlesEnd = group->particles.begin() + endidx;
 
         chunks.push_back(c);
     }
