@@ -48,7 +48,6 @@ public:
     void polygonizeSurface();
     
     TriangleMesh getTriangleMesh() { return _surface; };
-    void writeSurfaceToOBJ(std::string filename);
 
 private:
     struct EdgeGrid {
@@ -66,20 +65,15 @@ private:
                      W(Array3d<int>(i + 1, j + 1, k, -1)) {}
     };
 
-    void _getCellVertexPositions(GridIndex g, vmath::vec3 positions[8]);
     vmath::vec3 _getVertexPosition(GridIndex v);
     double _getVertexFieldValue(GridIndex v);
-    bool _isCellOutsideSurface(GridIndex g);
-    bool _isCellInsideSurface(GridIndex g);
     bool _isCellOnSurface(GridIndex g);
-    int _getCellSurfaceStatus(GridIndex g);
     void _polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges);
     int _calculateCubeIndex(GridIndex g, double isolevel);
     void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, int vertList[12], EdgeGrid &edges);
     vmath::vec3 _vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
-    void _calculateSurfaceTriangles();
-
-    GridIndexVector _findSurfaceCells();
+    void _calculateSurfaceTriangles(GridIndexVector &surfaceCells);
+    void _findSurfaceCells(GridIndexVector &surfaceCells);
 
     static const int _edgeTable[256];
     static const int _triTable[256][16];
@@ -90,13 +84,13 @@ private:
     double _dx = 0.0;
 
     double _surfaceThreshold = 0.5;
-    bool _isScalarFieldSet = false;
 
     ScalarField *_scalarField;
+    bool _isScalarFieldSet = false;
+
     Array3d<bool> *_surfaceCellMask;
     bool _isSurfaceCellMaskSet = false;
 
-    GridIndexVector _surfaceCells;
     TriangleMesh _surface;
 };
 

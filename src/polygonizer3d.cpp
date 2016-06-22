@@ -333,69 +333,33 @@ const int Polygonizer3d::_triTable[256][16] = {
 Polygonizer3d::~Polygonizer3d() {
 }
 
-void Polygonizer3d::writeSurfaceToOBJ(std::string filename) {
-    _surface.writeMeshToOBJ(filename);
-}
-
-void Polygonizer3d::_getCellVertexPositions(GridIndex g, vmath::vec3 positions[8]) {
-    GridIndex verts[8];
-    Grid3d::getGridIndexVertices(g, verts);
-    for (int i = 0; i < 8; i++) {
-        positions[i] = _getVertexPosition(verts[i]);
-    }
-}
-
 vmath::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
     assert(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
     return (float)_dx*vmath::vec3((float)g.i, (float)g.j, (float)g.k);
 }
 
-double Polygonizer3d::_getVertexFieldValue(GridIndex g) {
-    assert(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
-    return _scalarField->getScalarFieldValue(g);
-}
-
-bool Polygonizer3d::_isCellOutsideSurface(GridIndex g) {
-    return _getCellSurfaceStatus(g) == 1;
-}
-
-bool Polygonizer3d::_isCellInsideSurface(GridIndex g) {
-    return _getCellSurfaceStatus(g) == -1;
-}
-
 bool Polygonizer3d::_isCellOnSurface(GridIndex g) {
-    return _getCellSurfaceStatus(g) == 0;
-}
-
-int Polygonizer3d::_getCellSurfaceStatus(GridIndex g) {
     GridIndex vertices[8];
     Grid3d::getGridIndexVertices(g, vertices);
 
     bool hasInside = false;
     bool hasOutside = false;
     for (int idx = 0; idx < 8; idx ++) {
-        double val = _getVertexFieldValue(vertices[idx]);
-
-        if (val > _surfaceThreshold) {
+        if (_scalarField->getScalarFieldValue(vertices[idx]) > _surfaceThreshold) {
             hasInside = true;
-        }
-        else {
+        } else {
             hasOutside = true;
         }
     }
 
     if (hasInside && hasOutside) {
-        return 0;
+        return true;
     } 
-    else if (hasInside) {
-        return -1;
-    }
-    else {
-        return 1;
-    }
+
+    return false;
 }
 
-GridIndexVector Polygonizer3d::_findSurfaceCells() {
+void Polygonizer3d::_findSurfaceCells(GridIndexVector &surfaceCells) {
     bool isEmpty = true;
     for (int k = 0; k < _ksize + 1; k++) {
         for (int j = 0; j < _jsize + 1; j++) {
@@ -410,10 +374,9 @@ GridIndexVector Polygonizer3d::_findSurfaceCells() {
     endLoop:
 
     if (isEmpty) {
-        return GridIndexVector(_isize, _jsize, _ksize);
+        return;
     }
 
-    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
             for (int i = 0; i < _isize; i++) {
@@ -429,8 +392,6 @@ GridIndexVector Polygonizer3d::_findSurfaceCells() {
             }
         }
     }
-
-    return surfaceCells;
 }
 
 int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
@@ -438,14 +399,14 @@ int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
     Grid3d::getGridIndexVertices(g, vs);
 
     int cubeIndex = 0;
-    if (_getVertexFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
-    if (_getVertexFieldValue(vs[1]) > isolevel) { cubeIndex |= 2; }
-    if (_getVertexFieldValue(vs[2]) > isolevel) { cubeIndex |= 4; }
-    if (_getVertexFieldValue(vs[3]) > isolevel) { cubeIndex |= 8; }
-    if (_getVertexFieldValue(vs[4]) > isolevel) { cubeIndex |= 16; }
-    if (_getVertexFieldValue(vs[5]) > isolevel) { cubeIndex |= 32; }
-    if (_getVertexFieldValue(vs[6]) > isolevel) { cubeIndex |= 64; }
-    if (_getVertexFieldValue(vs[7]) > isolevel) { cubeIndex |= 128; }
+    if (_scalarField->getScalarFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
+    if (_scalarField->getScalarFieldValue(vs[1]) > isolevel) { cubeIndex |= 2; }
+    if (_scalarField->getScalarFieldValue(vs[2]) > isolevel) { cubeIndex |= 4; }
+    if (_scalarField->getScalarFieldValue(vs[3]) > isolevel) { cubeIndex |= 8; }
+    if (_scalarField->getScalarFieldValue(vs[4]) > isolevel) { cubeIndex |= 16; }
+    if (_scalarField->getScalarFieldValue(vs[5]) > isolevel) { cubeIndex |= 32; }
+    if (_scalarField->getScalarFieldValue(vs[6]) > isolevel) { cubeIndex |= 64; }
+    if (_scalarField->getScalarFieldValue(vs[7]) > isolevel) { cubeIndex |= 128; }
 
     return cubeIndex;
 }
@@ -506,7 +467,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
 
     Grid3d::getGridIndexVertices(g, vertices);
     for (int i = 0; i < 8; i++) {
-        vertexValues[i] = _getVertexFieldValue(vertices[i]);
+        vertexValues[i] = _scalarField->getScalarFieldValue(vertices[i]);
         vertexPositions[i] = _getVertexPosition(vertices[i]);
     }
 
@@ -642,11 +603,11 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
     }
 }
 
-void Polygonizer3d::_calculateSurfaceTriangles() {
+void Polygonizer3d::_calculateSurfaceTriangles(GridIndexVector &surfaceCells) {
     _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
-    for (unsigned int i = 0; i < _surfaceCells.size(); i++) {
-        _polygonizeCell(_surfaceCells[i], _surfaceThreshold, edges);
+    for (unsigned int i = 0; i < surfaceCells.size(); i++) {
+        _polygonizeCell(surfaceCells[i], _surfaceThreshold, edges);
     }
 }
 
@@ -662,7 +623,8 @@ void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
 void Polygonizer3d::polygonizeSurface() {
     assert(_isScalarFieldSet);
 
-    _surfaceCells = _findSurfaceCells();
-    _calculateSurfaceTriangles();
+    GridIndexVector surfaceCells(_isize, _jsize, _ksize);
+    _findSurfaceCells(surfaceCells);
+    _calculateSurfaceTriangles(surfaceCells);
     _surface.updateVertexNormals();
 }
