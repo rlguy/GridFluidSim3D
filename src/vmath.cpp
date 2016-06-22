@@ -142,25 +142,37 @@ vmath::vec3 vmath::vec3::normalize() {
     MATRIX 3
 ********************************************************************************/
 
-vmath::mat3::mat3() : m{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0} {
+vmath::mat3::mat3() {
+    m[0] = 1.0; m[1] = 0.0; m[2] = 0.0; 
+    m[3] = 0.0; m[4] = 1.0; m[5] = 0.0; 
+    m[6] = 0.0; m[7] = 0.0; m[8] = 1.0;
 }
 
-vmath::mat3::mat3(const vmath::vec3 &v1, const vmath::vec3 &v2, const vmath::vec3 &v3) : 
-                        m{v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z} {
+vmath::mat3::mat3(const vmath::vec3 &v1, const vmath::vec3 &v2, const vmath::vec3 &v3) {
+    m[0] = v1.x; m[1] = v1.y; m[2] = v1.z; 
+    m[3] = v2.x; m[4] = v2.y; m[5] = v2.z; 
+    m[6] = v3.x; m[7] = v3.y; m[8] = v3.z;
 }
 
-vmath::mat3::mat3(const float vals[9]) : 
-                        m{vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8]} {
+vmath::mat3::mat3(const float vals[9]) {
+    m[0] = vals[0]; m[1] = vals[1]; m[2] = vals[2]; 
+    m[3] = vals[3]; m[4] = vals[4]; m[5] = vals[5]; 
+    m[6] = vals[6]; m[7] = vals[7]; m[8] = vals[8];
 }
 
 vmath::mat3::mat3(float v0, float v1, float v2, 
                   float v3, float v4, float v5, 
-                  float v6, float v7, float v8) :
-                        m{v0, v1, v2, v3, v4, v5, v6, v7, v8} {
+                  float v6, float v7, float v8) {
+    m[0] = v0; m[1] = v1; m[2] = v2; 
+    m[3] = v3; m[4] = v4; m[5] = v5; 
+    m[6] = v6; m[7] = v7; m[8] = v8;
 }
 
-vmath::mat3::mat3(float fillval) :
-                        m{fillval, fillval, fillval, fillval, fillval, fillval, fillval, fillval, fillval} {}
+vmath::mat3::mat3(float fillval) {
+    m[0] = fillval; m[1] = fillval; m[2] = fillval; 
+    m[3] = fillval; m[4] = fillval; m[5] = fillval; 
+    m[6] = fillval; m[7] = fillval; m[8] = fillval;
+}
 
 vmath::mat3::~mat3() { 
 }

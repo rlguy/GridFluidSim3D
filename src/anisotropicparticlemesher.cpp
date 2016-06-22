@@ -777,7 +777,7 @@ void AnisotropicParticleMesher::_covarianceMatrixToSVD(vmath::mat3 &covariance, 
     double kr = _maxEigenvalueRatio;
     double sigma0 = (double)D[k0][k0];
     double sigma1 = std::max((double)D[k1][k1], sigma0 / kr);
-    double sigma2 = std::max((double)D[k2][k2], sigma0 / kr);;
+    double sigma2 = std::max((double)D[k2][k2], sigma0 / kr);
 
     double ks = cbrt(1.0/(sigma0*sigma1*sigma2));          // scale so that det(covariance) == 1
     svd.rotation = vmath::mat3(Q[k0], Q[k1], Q[k2]);

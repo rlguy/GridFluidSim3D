@@ -286,12 +286,10 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
 
     bool isColorEnabled = vertices.size() == vertexcolors.size();
 
-    char vertstring[10];
-    char facestring[10];
-    int vertdigits = _numDigitsInInteger(vertices.size());
-    int facedigits = _numDigitsInInteger(triangles.size());
-    snprintf(vertstring, 10, "%u", (unsigned int)vertices.size());
-    snprintf(facestring, 10, "%u", (unsigned int)triangles.size());
+    std::string vertstring = _toString(vertices.size());
+    std::string facestring = _toString(triangles.size());
+    int vertdigits = vertstring.length();
+    int facedigits = facestring.length();
 
     int offset = 0;
     int headersize;
@@ -313,7 +311,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
 
     memcpy(bin + offset, header1, 51);
     offset += 51;
-    memcpy(bin + offset, vertstring, vertdigits*sizeof(char));
+    memcpy(bin + offset, vertstring.c_str(), vertdigits*sizeof(char));
     offset += vertdigits*sizeof(char);
 
     if (isColorEnabled) { 
@@ -324,7 +322,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
         offset += 65;
     }
 
-    memcpy(bin + offset, facestring, facedigits*sizeof(char));
+    memcpy(bin + offset, facestring.c_str(), facedigits*sizeof(char));
     offset += facedigits*sizeof(char);
     memcpy(bin + offset, header3, 49);
     offset += 49;

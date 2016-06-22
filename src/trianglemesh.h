@@ -154,6 +154,14 @@ private:
         return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
     }
 
+    template<class T>
+    std::string _toString(T item) {
+        std::ostringstream sstream;
+        sstream << item;
+
+        return sstream.str();
+    }
+
     int _gridi = 0;
     int _gridj = 0;
     int _gridk = 0;
