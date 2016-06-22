@@ -45,9 +45,7 @@ public:
     ~Polygonizer3d();
 
     void setSurfaceCellMask(Array3d<bool> *mask);
-    void polygonizeSurface();
-    
-    TriangleMesh getTriangleMesh() { return _surface; };
+    TriangleMesh polygonizeSurface();
 
 private:
     struct EdgeGrid {

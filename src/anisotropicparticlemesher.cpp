@@ -276,11 +276,8 @@ TriangleMesh AnisotropicParticleMesher::_polygonizeAll(FragmentedVector<vmath::v
     _computeScalarField(materialGrid, particles, levelset);
    
     Polygonizer3d polygonizer = Polygonizer3d(&_scalarField);
-    polygonizer.polygonizeSurface();
 
-    return polygonizer.getTriangleMesh();
-
-    return TriangleMesh();
+    return polygonizer.polygonizeSurface();
 }
 
 TriangleMesh AnisotropicParticleMesher::_polygonizeSlices(FragmentedVector<vmath::vec3> &particles, 
@@ -344,9 +341,8 @@ TriangleMesh AnisotropicParticleMesher::_polygonizeSlice(int startidx, int endid
 
     Polygonizer3d polygonizer(&_scalarField);
     polygonizer.setSurfaceCellMask(&mask);
-    polygonizer.polygonizeSurface();
 
-    return polygonizer.getTriangleMesh();
+    return polygonizer.polygonizeSurface();
 }
 
 void AnisotropicParticleMesher::_getSubdividedGridDimensions(int *i, int *j, int *k, double *dx) {

@@ -92,9 +92,8 @@ TriangleMesh IsotropicParticleMesher::_polygonizeAll(FragmentedVector<MarkerPart
 	_addPointsToScalarField(particles, field);
 
     Polygonizer3d polygonizer(&field);
-    polygonizer.polygonizeSurface();
 
-    return polygonizer.getTriangleMesh();
+    return polygonizer.polygonizeSurface();
 }
 
 TriangleMesh IsotropicParticleMesher::_polygonizeSlices(FragmentedVector<MarkerParticle> &particles, 
@@ -155,9 +154,8 @@ TriangleMesh IsotropicParticleMesher::_polygonizeSlice(int startidx, int endidx,
 
 	Polygonizer3d polygonizer(&field);
 	polygonizer.setSurfaceCellMask(&mask);
-    polygonizer.polygonizeSurface();
 
-    return polygonizer.getTriangleMesh();
+    return polygonizer.polygonizeSurface();
 }
 
 void IsotropicParticleMesher::_getSubdividedGridDimensions(int *i, int *j, int *k, double *dx) {

@@ -940,8 +940,7 @@ void FluidSimulation::_getInitialFluidCellsFromScalarField(ScalarField &field,
 
     field.setMaterialGrid(_materialGrid);
 
-    polygonizer.polygonizeSurface();
-    _surfaceMesh = polygonizer.getTriangleMesh();
+    _surfaceMesh = polygonizer.polygonizeSurface();
     _surfaceMesh.setGridDimensions(_isize, _jsize, _ksize, _dx);
 
     GridIndexVector insideCells(_isize, _jsize, _ksize);

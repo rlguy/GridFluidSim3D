@@ -604,7 +604,6 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
 }
 
 void Polygonizer3d::_calculateSurfaceTriangles(GridIndexVector &surfaceCells) {
-    _surface.clear();
     EdgeGrid edges(_isize, _jsize, _ksize);
     for (unsigned int i = 0; i < surfaceCells.size(); i++) {
         _polygonizeCell(surfaceCells[i], _surfaceThreshold, edges);
@@ -620,11 +619,14 @@ void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
     _isSurfaceCellMaskSet = true;
 }
 
-void Polygonizer3d::polygonizeSurface() {
+TriangleMesh Polygonizer3d::polygonizeSurface() {
     assert(_isScalarFieldSet);
+    _surface.clear();
 
     GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _findSurfaceCells(surfaceCells);
     _calculateSurfaceTriangles(surfaceCells);
     _surface.updateVertexNormals();
+
+    return _surface;
 }
