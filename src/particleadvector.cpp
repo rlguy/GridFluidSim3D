@@ -474,7 +474,7 @@ ParticleAdvector::CLDeviceInfo ParticleAdvector::_initializeDeviceInfo(cl::Devic
 }
 
 cl_int ParticleAdvector::_initializeCLKernel() {
-    std::string prog = _getProgramString("src/kernels/tricubicinterpolate.cl");
+    std::string prog = _getProgramString("resources/kernels/tricubicinterpolate.cl");
 
     cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
     cl::Program program(_CLContext, source);
