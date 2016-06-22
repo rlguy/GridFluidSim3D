@@ -394,35 +394,35 @@ void Polygonizer3d::_findSurfaceCells(GridIndexVector &surfaceCells) {
     }
 }
 
-int Polygonizer3d::_calculateCubeIndex(GridIndex g, double isolevel) {
+int Polygonizer3d::_calculateCubeIndex(GridIndex g) {
     GridIndex vs[8];
     Grid3d::getGridIndexVertices(g, vs);
 
     int cubeIndex = 0;
-    if (_scalarField->getScalarFieldValue(vs[0]) > isolevel) { cubeIndex |= 1; }
-    if (_scalarField->getScalarFieldValue(vs[1]) > isolevel) { cubeIndex |= 2; }
-    if (_scalarField->getScalarFieldValue(vs[2]) > isolevel) { cubeIndex |= 4; }
-    if (_scalarField->getScalarFieldValue(vs[3]) > isolevel) { cubeIndex |= 8; }
-    if (_scalarField->getScalarFieldValue(vs[4]) > isolevel) { cubeIndex |= 16; }
-    if (_scalarField->getScalarFieldValue(vs[5]) > isolevel) { cubeIndex |= 32; }
-    if (_scalarField->getScalarFieldValue(vs[6]) > isolevel) { cubeIndex |= 64; }
-    if (_scalarField->getScalarFieldValue(vs[7]) > isolevel) { cubeIndex |= 128; }
+    if (_scalarField->getScalarFieldValue(vs[0]) > _surfaceThreshold) { cubeIndex |= 1; }
+    if (_scalarField->getScalarFieldValue(vs[1]) > _surfaceThreshold) { cubeIndex |= 2; }
+    if (_scalarField->getScalarFieldValue(vs[2]) > _surfaceThreshold) { cubeIndex |= 4; }
+    if (_scalarField->getScalarFieldValue(vs[3]) > _surfaceThreshold) { cubeIndex |= 8; }
+    if (_scalarField->getScalarFieldValue(vs[4]) > _surfaceThreshold) { cubeIndex |= 16; }
+    if (_scalarField->getScalarFieldValue(vs[5]) > _surfaceThreshold) { cubeIndex |= 32; }
+    if (_scalarField->getScalarFieldValue(vs[6]) > _surfaceThreshold) { cubeIndex |= 64; }
+    if (_scalarField->getScalarFieldValue(vs[7]) > _surfaceThreshold) { cubeIndex |= 128; }
 
     return cubeIndex;
 }
 
-vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, 
-                                                        double valp1, double valp2) {
+vmath::vec3 Polygonizer3d::_vertexInterp(vmath::vec3 p1, vmath::vec3 p2, 
+                                         double valp1, double valp2) {
 
     // Don't return a point that is exactly on p1 or p2.
     // This could result in a triangle with equal vertices and
     // its normal will be calculated as undefined.
     double eps = 1e-10;
-    if (fabs(isolevel - valp1) < eps || fabs(valp1 - valp2) < eps) {
+    if (fabs(_surfaceThreshold - valp1) < eps || fabs(valp1 - valp2) < eps) {
         vmath::vec3 v = vmath::normalize(p2 - p1);
         return p1 + (float)(eps*_dx)*v;
     }
-    if (fabs(isolevel - valp2) < eps) { 
+    if (fabs(_surfaceThreshold - valp2) < eps) { 
         vmath::vec3 v = vmath::normalize(p2 - p1);
         return p2 - (float)(eps*_dx)*v; 
     }
@@ -433,12 +433,12 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
     vmath::vec3 a = p1;
     vmath::vec3 b = p2;
     vmath::vec3 c;
-    double vala = valp1 - isolevel;
+    double vala = valp1 - _surfaceThreshold;
     double valc = 0.0;
     while (n < nmax) {
         c = 0.5f*(a + b);
 
-        valc = _scalarField->tricubicInterpolation(c) - isolevel;
+        valc = _scalarField->tricubicInterpolation(c) - _surfaceThreshold;
         if (fabs(valc) < tol || vmath::length(b - a) < tol ) {
             return c;
         }
@@ -455,127 +455,119 @@ vmath::vec3 Polygonizer3d::_vertexInterp(double isolevel, vmath::vec3 p1, vmath:
     }
 
     // method failed: linearly interpolate value
-    double mu = (isolevel - valp1) / (valp2 - valp1);
+    double mu = (_surfaceThreshold - valp1) / (valp2 - valp1);
     return p1 + (float)mu*(p2 - p1);
 }
 
-void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeIndex, 
-                                         int vertexList[12], EdgeGrid &edges) {
+void Polygonizer3d::_calculateVertexList(GridIndex g,
+                                         int cubeIndex, 
+                                         EdgeGrid &edges,
+                                         std::vector<vmath::vec3> &meshVertices,
+                                         int vertexList[12]) {
     GridIndex vertices[8];
-    double vertexValues[8];
-    vmath::vec3 vertexPositions[8];
+    double values[8];
+    vmath::vec3 positions[8];
+    vmath::vec3 v;
 
     Grid3d::getGridIndexVertices(g, vertices);
     for (int i = 0; i < 8; i++) {
-        vertexValues[i] = _scalarField->getScalarFieldValue(vertices[i]);
-        vertexPositions[i] = _getVertexPosition(vertices[i]);
+        values[i] = _scalarField->getScalarFieldValue(vertices[i]);
+        positions[i] = _getVertexPosition(vertices[i]);
     }
 
     if (_edgeTable[cubeIndex] & 1) {
         if (edges.U(vertices[0]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[1], 
-                                                     vertexValues[0],    vertexValues[1]);
-            _surface.vertices.push_back(v);
-            edges.U.set(vertices[0], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[0], positions[1], values[0], values[1]);
+            meshVertices.push_back(v);
+            edges.U.set(vertices[0], meshVertices.size() - 1);
         }
         vertexList[0] = edges.U(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 2) {
         if (edges.W(vertices[1]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[2], 
-                                                     vertexValues[1],    vertexValues[2]);
-            _surface.vertices.push_back(v);
-            edges.W.set(vertices[1], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[1], positions[2], values[1], values[2]);
+            meshVertices.push_back(v);
+            edges.W.set(vertices[1], meshVertices.size() - 1);
         }
         vertexList[1] = edges.W(vertices[1]);
     }
     if (_edgeTable[cubeIndex] & 4) {
         if (edges.U(vertices[3]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[3], 
-                                                     vertexValues[2],    vertexValues[3]);
-            _surface.vertices.push_back(v);
-            edges.U.set(vertices[3], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[2], positions[3], values[2], values[3]);
+            meshVertices.push_back(v);
+            edges.U.set(vertices[3], meshVertices.size() - 1);
         }
         vertexList[2] = edges.U(vertices[3]);
     }
     if (_edgeTable[cubeIndex] & 8) {
         if (edges.W(vertices[0]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[0], 
-                                                     vertexValues[3],    vertexValues[0]);
-            _surface.vertices.push_back(v);
-            edges.W.set(vertices[0], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[3], positions[0], values[3], values[0]);
+            meshVertices.push_back(v);
+            edges.W.set(vertices[0], meshVertices.size() - 1);
         }
         vertexList[3] = edges.W(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 16) {
         if (edges.U(vertices[4]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[4], vertexPositions[5], 
-                                                     vertexValues[4],    vertexValues[5]);
-            _surface.vertices.push_back(v);
-            edges.U.set(vertices[4], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[4], positions[5], values[4], values[5]);
+            meshVertices.push_back(v);
+            edges.U.set(vertices[4], meshVertices.size() - 1);
         }
         vertexList[4] = edges.U(vertices[4]);
     }
     if (_edgeTable[cubeIndex] & 32) {
         if (edges.W(vertices[5]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[5], vertexPositions[6], 
-                                                     vertexValues[5],    vertexValues[6]);
-            _surface.vertices.push_back(v);
-            edges.W.set(vertices[5], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[5], positions[6], values[5], values[6]);
+            meshVertices.push_back(v);
+            edges.W.set(vertices[5], meshVertices.size() - 1);
         }
         vertexList[5] = edges.W(vertices[5]);
     }
     if (_edgeTable[cubeIndex] & 64) {
         if (edges.U(vertices[7]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[6], vertexPositions[7], 
-                                                     vertexValues[6],    vertexValues[7]);
-            _surface.vertices.push_back(v);
-            edges.U.set(vertices[7], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[6], positions[7], values[6], values[7]);
+            meshVertices.push_back(v);
+            edges.U.set(vertices[7], meshVertices.size() - 1);
         }
         vertexList[6] = edges.U(vertices[7]);
     }
     if (_edgeTable[cubeIndex] & 128) {
         if (edges.W(vertices[4]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[7], vertexPositions[4], 
-                                                     vertexValues[7],    vertexValues[4]);
-            _surface.vertices.push_back(v);
-            edges.W.set(vertices[4], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[7], positions[4], values[7], values[4]);
+            meshVertices.push_back(v);
+            edges.W.set(vertices[4], meshVertices.size() - 1);
         }
         vertexList[7] = edges.W(vertices[4]);
     }
     if (_edgeTable[cubeIndex] & 256) {
         if (edges.V(vertices[0]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[0], vertexPositions[4], 
-                                                     vertexValues[0],    vertexValues[4]);
-            _surface.vertices.push_back(v);
-            edges.V.set(vertices[0], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[0], positions[4], values[0], values[4]);
+            meshVertices.push_back(v);
+            edges.V.set(vertices[0], meshVertices.size() - 1);
         }
         vertexList[8] = edges.V(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 512) {
         if (!edges.V(vertices[1]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[1], vertexPositions[5], 
-                                                     vertexValues[1],    vertexValues[5]);
-            _surface.vertices.push_back(v);
-            edges.V.set(vertices[1], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[1], positions[5], values[1], values[5]);
+            meshVertices.push_back(v);
+            edges.V.set(vertices[1], meshVertices.size() - 1);
         }
         vertexList[9] = edges.V(vertices[1]);
     }
     if (_edgeTable[cubeIndex] & 1024) {
         if (edges.V(vertices[2]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[2], vertexPositions[6], 
-                                                     vertexValues[2],    vertexValues[6]);
-            _surface.vertices.push_back(v);
-            edges.V.set(vertices[2], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[2], positions[6], values[2], values[6]);
+            meshVertices.push_back(v);
+            edges.V.set(vertices[2], meshVertices.size() - 1);
         }
         vertexList[10] = edges.V(vertices[2]);
     }
     if (_edgeTable[cubeIndex] & 2048) {
         if (edges.V(vertices[3]) == -1) {
-            vmath::vec3 v = _vertexInterp(isolevel, vertexPositions[3], vertexPositions[7], 
-                                                     vertexValues[3],    vertexValues[7]);
-            _surface.vertices.push_back(v);
-            edges.V.set(vertices[3], _surface.vertices.size() - 1);
+            v = _vertexInterp(positions[3], positions[7], values[3], values[7]);
+            meshVertices.push_back(v);
+            edges.V.set(vertices[3], meshVertices.size() - 1);
         }
         vertexList[11] = edges.V(vertices[3]);
     }
@@ -583,8 +575,11 @@ void Polygonizer3d::_calculateVertexList(GridIndex g, double isolevel, int cubeI
 
 // method of polygonizing a cell is adapted from:
 // http://paulbourke.net/geometry/polygonise/
-void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges) {
-    int cubeIndex = _calculateCubeIndex(g, isolevel);
+void Polygonizer3d::_polygonizeCell(GridIndex g,
+                                    EdgeGrid &edges, 
+                                    TriangleMesh &mesh) {
+
+    int cubeIndex = _calculateCubeIndex(g);
 
     /* Cube is entirely in/out of the surface */
     if (_edgeTable[cubeIndex] == 0) {
@@ -592,21 +587,22 @@ void Polygonizer3d::_polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edge
     }
 
     int vertexList[12];
-    _calculateVertexList(g, isolevel, cubeIndex, vertexList, edges);
+    _calculateVertexList(g, cubeIndex, edges, mesh.vertices, vertexList);
 
     for (int i = 0; _triTable[cubeIndex][i] != -1; i += 3) {
         Triangle t = Triangle(vertexList[_triTable[cubeIndex][i]],
                               vertexList[_triTable[cubeIndex][i + 1]],
                               vertexList[_triTable[cubeIndex][i + 2]]);
 
-        _surface.triangles.push_back(t);
+        mesh.triangles.push_back(t);
     }
 }
 
-void Polygonizer3d::_calculateSurfaceTriangles(GridIndexVector &surfaceCells) {
+void Polygonizer3d::_calculateSurfaceTriangles(GridIndexVector &surfaceCells,
+                                               TriangleMesh &mesh) {
     EdgeGrid edges(_isize, _jsize, _ksize);
     for (unsigned int i = 0; i < surfaceCells.size(); i++) {
-        _polygonizeCell(surfaceCells[i], _surfaceThreshold, edges);
+        _polygonizeCell(surfaceCells[i], edges, mesh);
     }
 }
 
@@ -621,12 +617,14 @@ void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
 
 TriangleMesh Polygonizer3d::polygonizeSurface() {
     assert(_isScalarFieldSet);
-    _surface.clear();
 
     GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _findSurfaceCells(surfaceCells);
-    _calculateSurfaceTriangles(surfaceCells);
-    _surface.updateVertexNormals();
 
-    return _surface;
+    TriangleMesh mesh;
+    _calculateSurfaceTriangles(surfaceCells, mesh);
+
+    mesh.updateVertexNormals();
+
+    return mesh;
 }

@@ -66,11 +66,15 @@ private:
     vmath::vec3 _getVertexPosition(GridIndex v);
     double _getVertexFieldValue(GridIndex v);
     bool _isCellOnSurface(GridIndex g);
-    void _polygonizeCell(GridIndex g, double isolevel, EdgeGrid &edges);
-    int _calculateCubeIndex(GridIndex g, double isolevel);
-    void _calculateVertexList(GridIndex g, double isolevel, int cubeIndex, int vertList[12], EdgeGrid &edges);
-    vmath::vec3 _vertexInterp(double isolevel, vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
-    void _calculateSurfaceTriangles(GridIndexVector &surfaceCells);
+    void _polygonizeCell(GridIndex g, EdgeGrid &edges, TriangleMesh &mesh);
+    int _calculateCubeIndex(GridIndex g);
+    void _calculateVertexList(GridIndex g,
+                              int cubeIndex, 
+                              EdgeGrid &edges, 
+                              std::vector<vmath::vec3> &meshVertices, 
+                              int vertList[12]);
+    vmath::vec3 _vertexInterp(vmath::vec3 p1, vmath::vec3 p2, double valp1, double valp2);
+    void _calculateSurfaceTriangles(GridIndexVector &surfaceCells, TriangleMesh &mesh);
     void _findSurfaceCells(GridIndexVector &surfaceCells);
 
     static const int _edgeTable[256];
@@ -89,7 +93,6 @@ private:
     Array3d<bool> *_surfaceCellMask;
     bool _isSurfaceCellMaskSet = false;
 
-    TriangleMesh _surface;
 };
 
 #endif
