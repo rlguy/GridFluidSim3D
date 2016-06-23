@@ -35,7 +35,7 @@ struct GridPointReference {
     int id;
 
     GridPointReference() : id(-1) {}
-    GridPointReference(unsigned int n) : id(n) {}
+    GridPointReference(int n) : id(n) {}
 
     bool operator==(const GridPointReference &other) const { 
         return id == other.id;

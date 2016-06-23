@@ -173,7 +173,7 @@ void export_particle_positions() {
     fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
-    while (true) {
+    for (;;) {
 
         // Create a string from the current frame number to be used
         // for saving files as a numbered sequence

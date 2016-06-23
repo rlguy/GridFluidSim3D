@@ -190,6 +190,7 @@ void IsotropicParticleMesher::_computeSliceScalarField(int startidx, int endidx,
 }
 
 vmath::vec3 IsotropicParticleMesher::_getSliceGridPositionOffset(int startidx, int endidx) {
+    (void)endidx;
 	int width, height, depth;
 	double dx;
 	_getSubdividedGridDimensions(&width, &height, &depth, &dx);
@@ -220,7 +221,7 @@ void IsotropicParticleMesher::_getSliceParticles(int startidx, int endidx,
 void IsotropicParticleMesher::_getSliceMaterialGrid(int startidx, int endidx,
 		                       FluidMaterialGrid &materialGrid,
 		                       FluidMaterialGrid &sliceMaterialGrid) {
-
+    (void)endidx;
 	int origsubd = materialGrid.getSubdivisionLevel();
 	materialGrid.setSubdivisionLevel(_subdivisionLevel);
 	
@@ -289,7 +290,7 @@ void IsotropicParticleMesher::_addPointsToScalarField(FragmentedVector<MarkerPar
 void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
 	                                                             ScalarField &field) {
 	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
-	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
+	double origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
 	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
 
 	int n = _maxParticlesPerScalarFieldAddition;
@@ -320,7 +321,7 @@ void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVecto
 void IsotropicParticleMesher::_addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
                                                                  ScalarField &field) {
 	bool isThresholdSet = _scalarFieldAccelerator->isMaxScalarFieldValueThresholdSet();
-	bool origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
+	double origThreshold = _scalarFieldAccelerator->getMaxScalarFieldValueThreshold();
 	_scalarFieldAccelerator->setMaxScalarFieldValueThreshold(_maxScalarFieldValueThreshold);
 
 	int n = _maxParticlesPerScalarFieldAddition;

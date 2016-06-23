@@ -91,7 +91,7 @@ void LogFile::timestamp() {
 }
 
 void LogFile::log(std::string str, int indentLevel) {
-    log(str, "", 0);
+    log(str, "", indentLevel);
 }
 
 void LogFile::log(std::string str, int value, int indentLevel) {

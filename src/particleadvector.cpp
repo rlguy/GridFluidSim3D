@@ -17,9 +17,10 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "particleadvector.h"
 
@@ -353,7 +354,7 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
     for (int i = 0; i < numComputations; i++) {
         int begidx = i*maxChunks;
         int endidx = begidx + maxChunks;
-        if (endidx > chunkParams.size()) {
+        if (endidx > (int)chunkParams.size()) {
             endidx = chunkParams.size();
         }
 
@@ -622,7 +623,7 @@ void ParticleAdvector::_getDataChunkParametersForChunkIndex(GridIndex cindex,
 
         int begidx = i*groupSize;
         int endidx = begidx + groupSize;
-        if (endidx > particleChunk->particles.size()) {
+        if (endidx > (int)particleChunk->particles.size()) {
             endidx = particleChunk->particles.size();
         }
 
@@ -895,4 +896,6 @@ void ParticleAdvector::_setOutputData(std::vector<DataChunkParameters> &chunks,
     }
 }
 
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif

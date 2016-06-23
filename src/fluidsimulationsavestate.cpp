@@ -582,8 +582,8 @@ void FluidSimulationSaveState::_writeBinaryFluidBrickGrid(FluidSimulation *_flui
 
     _appendFileToSaveState(tempfilename, state);
 
-    bool error = remove(tempfilename.c_str());
-    assert(!error);
+    int error = remove(tempfilename.c_str());
+    assert(error == 0);
 }
 
 void FluidSimulationSaveState::_appendFileToSaveState(std::string filename, 

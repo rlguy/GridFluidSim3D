@@ -47,7 +47,7 @@ void example_dambreak() {
     fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
-    while (true) {
+    for (;;) {
         fluidsim.update(timestep);
     }
     

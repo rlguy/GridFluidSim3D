@@ -353,6 +353,7 @@ void AnisotropicParticleMesher::_getSubdividedGridDimensions(int *i, int *j, int
 }
 
 vmath::vec3 AnisotropicParticleMesher::_getSliceGridPositionOffset(int startidx, int endidx) {
+    (void)endidx;
     int width, height, depth;
     double dx;
     _getSubdividedGridDimensions(&width, &height, &depth, &dx);
@@ -372,7 +373,7 @@ vmath::vec3 AnisotropicParticleMesher::_getSliceGridPositionOffset(int startidx,
 void AnisotropicParticleMesher::_getSliceMaterialGrid(int startidx, int endidx,
                                                       FluidMaterialGrid &materialGrid,
                                                       FluidMaterialGrid &sliceMaterialGrid) {
-
+    (void)endidx;
     int origsubd = materialGrid.getSubdivisionLevel();
     materialGrid.setSubdivisionLevel(_subdivisionLevel);
     

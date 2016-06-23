@@ -548,7 +548,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         vertexList[8] = edges.V(vertices[0]);
     }
     if (_edgeTable[cubeIndex] & 512) {
-        if (!edges.V(vertices[1]) == -1) {
+        if (edges.V(vertices[1]) == -1) {
             v = _vertexInterp(positions[1], positions[5], values[1], values[5]);
             meshVertices.push_back(v);
             edges.V.set(vertices[1], meshVertices.size() - 1);

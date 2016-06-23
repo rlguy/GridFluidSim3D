@@ -52,7 +52,7 @@ void example_lego_sphere_drop() {
     fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
-    while (true) {
+    for (;;) {
         fluidsim.update(timestep);
     }
     

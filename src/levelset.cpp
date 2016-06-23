@@ -421,8 +421,6 @@ vmath::vec3 LevelSet::_evaluateVelocityAtPosition(MACVelocityField &vgrid, vmath
         p = _findClosestPointOnSurface(p);
         return vgrid.evaluateVelocityAtPosition(p);
     }
-
-    return vgrid.evaluateVelocityAtPosition(p);
 }
 
 vmath::vec3 LevelSet::_evaluateVelocityAtGridIndex(MACVelocityField &vgrid, GridIndex g) {

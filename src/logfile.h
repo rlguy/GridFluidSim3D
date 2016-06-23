@@ -38,12 +38,20 @@ public:
     LogFile(std::string filename, std::string extension);
     ~LogFile();
 
-    LogFile(LogFile &obj)
-    {  
+    LogFile(LogFile &obj) {  
+        _path = obj._path;
+        _filename = obj._filename;
+        _startTimeString = obj._startTimeString;
+        _separator = obj._separator;
     }
 
-    LogFile operator=(LogFile & rhs)
+    LogFile operator=(LogFile &rhs)
     {
+        _path = rhs._path;
+        _filename = rhs._filename;
+        _startTimeString = rhs._startTimeString;
+        _separator = rhs._separator;
+        
         return *this;
     }
 

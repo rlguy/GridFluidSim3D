@@ -18,16 +18,31 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
 #ifndef CLSCALARFIELD_H
 #define CLSCALARFIELD_H
+
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+#ifdef _MSC_VER 
+    #pragma warning(push)
+    #pragma warning(disable : 4996 4512 4510 4512 4610 )
+#endif
 
 #if defined(__APPLE__) || defined(__MACOSX)
     #include <OpenCL/cl.hpp>
 #else
     #include <CL/cl.hpp>
+#endif
+
+#ifdef _MSC_VER 
+    #pragma warning(pop)
+#endif
+
+#ifdef __GNUC__
+  #pragma GCC diagnostic pop
 #endif
 
 #include <vector>
@@ -236,17 +251,15 @@ private:
                                       int numParticles,
                                       std::vector<float> &buffer);
     void _getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks,
-                                       Array3d<WorkGroup> &grid,
                                        std::vector<float> &buffer);
     void _getHostScalarWeightFieldDataBuffer(std::vector<WorkChunk> &chunks,
-                                             Array3d<WorkGroup> &grid,
                                              std::vector<float> &buffer);
     void _getHostChunkOffsetDataBuffer(std::vector<WorkChunk> &chunks,
                                        std::vector<GridIndex> &buffer);
     void _initializeCLDataBuffers(DataBuffer &buffer);
-    void _setPointComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
-    void _setPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
-    void _setWeightPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles, double dx);
+    void _setPointComputationCLKernelArgs(DataBuffer &buffer, int numParticles);
+    void _setPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles);
+    void _setWeightPointValueComputationCLKernelArgs(DataBuffer &buffer, int numParticles);
     void _setKernelArgs(cl::Kernel &kernel, 
                         DataBuffer &buffer, 
                         int localDataBytes,
@@ -305,5 +318,3 @@ private:
 };
 
 #endif
-
-#pragma GCC diagnostic pop

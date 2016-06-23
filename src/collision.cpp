@@ -269,7 +269,7 @@ double Collision::_clamp(double v, double min, double max) {
 }
 
 vmath::vec3 Collision::getTriangleCentroid(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2) {
-    return (1.0/3.0) * (p0 + p1 + p2);
+    return (1.0f / 3.0f) * (p0 + p1 + p2);
 }
 
 vmath::vec3 Collision::getTriangleNormal(vmath::vec3 p0, vmath::vec3 p1, vmath::vec3 p2) {
@@ -355,7 +355,7 @@ bool Collision::getLineSegmentVoxelIntersection(vmath::vec3 p0,
 
     int maxiter = 1e6;
     int itercount = 0;
-    while (true) {
+    for (;;) {
         if (Grid3d::isGridIndexInRange(gx, gy, gz, gw, gh, gd)) {
             if (grid.isCellSolid(gx, gy, gz)) {
                 (*voxel).i = gx;

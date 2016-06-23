@@ -84,7 +84,7 @@ void example_inflow_outflow() {
 
     double timestep = 1.0 / 30.0;
     double runtime = 0.0;
-    while (true) {
+    for (;;) {
         runtime += timestep;
 
         // Oscillate position of inflow source between two points

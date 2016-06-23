@@ -982,7 +982,7 @@ private:
             }
         }
 
-        for (int i = 0; i < items.size() - currentidx; i++) {
+        for (unsigned int i = 0; i < items.size() - currentidx; i++) {
             items.pop_back();
         }
         items.shrink_to_fit();

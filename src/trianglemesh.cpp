@@ -59,7 +59,7 @@ bool TriangleMesh::loadOBJ(std::string filename, vmath::vec3 offset, double scal
         return false;
     }
 
-    while( true ){
+    for (;;) {
         char lineHeader[128];
         // read the first word of the line
         int res = fscanf(file, "%s", lineHeader);

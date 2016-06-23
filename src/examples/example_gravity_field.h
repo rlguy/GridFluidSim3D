@@ -126,7 +126,7 @@ void example_gravity_field() {
  
     double timestep = 1.0/60.0;
     double simulationTime = 0.0;
-    while (true) {
+    for (;;) {
  
         int frameno = fluidsim.getCurrentFrame();
         if (frameno >= 200) {

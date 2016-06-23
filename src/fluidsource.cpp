@@ -106,18 +106,15 @@ bool FluidSource::isActive() {
     return isRunning;
 }
 
-GridIndexVector FluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
-                                                     double dx) {
+GridIndexVector FluidSource::getNewFluidCells(FluidMaterialGrid&, double) {
     return GridIndexVector();
 }
 
-GridIndexVector FluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
-                                                  double dx) {
+GridIndexVector FluidSource::getFluidCells(FluidMaterialGrid&, double) {
     return GridIndexVector();
 }
 
-GridIndexVector FluidSource::getCells(FluidMaterialGrid &materialGrid,
-                                             double dx) {
+GridIndexVector FluidSource::getCells(FluidMaterialGrid&, double) {
     return GridIndexVector();
 }
 

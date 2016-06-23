@@ -18,8 +18,10 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "clscalarfield.h"
 
@@ -804,7 +806,7 @@ void CLScalarField::_insertParticlesIntoWorkGroupGrid(std::vector<PointValue> &p
         double cz = (double)ck * chunkdz;
 
         cbbox.position = vmath::vec3(cx + _radius, cy + _radius, cz + _radius);
-        if (false && cbbox.isPointInside(p) && Grid3d::isGridIndexInRange(ci, cj, ck, gmax)) {
+        if (cbbox.isPointInside(p) && Grid3d::isGridIndexInRange(ci, cj, ck, gmax)) {
             // sphere is contained within one grid cell
             group = grid.getPointer(ci, cj, ck);
             group->particles.push_back(pv);
@@ -975,7 +977,7 @@ void CLScalarField::_computePointScalarField(std::vector<WorkChunk> &chunks,
 
     DataBuffer buffer;
     _initializePointComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
-    _setPointComputationCLKernelArgs(buffer, numParticles, _dx);
+    _setPointComputationCLKernelArgs(buffer, numParticles);
 
     int numWorkItems = chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelPoints, numWorkItems, _workGroupSize);
@@ -993,7 +995,7 @@ void CLScalarField::_computePointValueScalarField(std::vector<WorkChunk> &chunks
 
     DataBuffer buffer;
     _initializePointValueComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
-    _setPointValueComputationCLKernelArgs(buffer, numParticles, _dx);
+    _setPointValueComputationCLKernelArgs(buffer, numParticles);
 
     int numWorkItems = chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelPointValues, numWorkItems, _workGroupSize);
@@ -1010,7 +1012,7 @@ void CLScalarField::_computePointValueScalarWeightField(std::vector<WorkChunk> &
 
     DataBuffer buffer;
     _initializeWeightPointValueComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
-    _setWeightPointValueComputationCLKernelArgs(buffer, numParticles, _dx);
+    _setWeightPointValueComputationCLKernelArgs(buffer, numParticles);
 
     int numWorkItems = chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelWeightPointValues, numWorkItems, _workGroupSize);
@@ -1039,7 +1041,7 @@ void CLScalarField::_initializePointComputationDataBuffer(std::vector<WorkChunk>
                                                           int numParticles,
                                                           DataBuffer &buffer) {
     _getHostPointDataBuffer(chunks, workGroupGrid, numParticles, buffer.pointDataH);
-    _getHostScalarFieldDataBuffer(chunks, workGroupGrid, buffer.scalarFieldDataH);
+    _getHostScalarFieldDataBuffer(chunks, buffer.scalarFieldDataH);
     _getHostChunkOffsetDataBuffer(chunks, buffer.offsetDataH);
     _initializeCLDataBuffers(buffer);
 }
@@ -1049,7 +1051,7 @@ void CLScalarField::_initializePointValueComputationDataBuffer(std::vector<WorkC
                                                                int numParticles,
                                                                DataBuffer &buffer) {
     _getHostPointValueDataBuffer(chunks, workGroupGrid, numParticles, buffer.pointDataH);
-    _getHostScalarFieldDataBuffer(chunks, workGroupGrid, buffer.scalarFieldDataH);
+    _getHostScalarFieldDataBuffer(chunks, buffer.scalarFieldDataH);
     _getHostChunkOffsetDataBuffer(chunks, buffer.offsetDataH);
     _initializeCLDataBuffers(buffer);
 }
@@ -1059,7 +1061,7 @@ void CLScalarField::_initializeWeightPointValueComputationDataBuffer(std::vector
                                                                      int numParticles,
                                                                      DataBuffer &buffer) {
     _getHostPointValueDataBuffer(chunks, workGroupGrid, numParticles, buffer.pointDataH);
-    _getHostScalarWeightFieldDataBuffer(chunks, workGroupGrid, buffer.scalarFieldDataH);
+    _getHostScalarWeightFieldDataBuffer(chunks, buffer.scalarFieldDataH);
     _getHostChunkOffsetDataBuffer(chunks, buffer.offsetDataH);
     _initializeCLDataBuffers(buffer);
 }
@@ -1177,7 +1179,6 @@ void CLScalarField::_getHostPointValueDataBuffer(std::vector<WorkChunk> &chunks,
 }
 
 void CLScalarField::_getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks,
-                                                  Array3d<WorkGroup> &grid,
                                                   std::vector<float> &buffer) {
     int numElements = chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
     buffer.reserve(numElements);
@@ -1187,7 +1188,6 @@ void CLScalarField::_getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks
 }
 
 void CLScalarField::_getHostScalarWeightFieldDataBuffer(std::vector<WorkChunk> &chunks,
-                                                        Array3d<WorkGroup> &grid,
                                                         std::vector<float> &buffer) {
     int numElements = 2 * chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
     buffer.reserve(numElements);
@@ -1205,24 +1205,21 @@ void CLScalarField::_getHostChunkOffsetDataBuffer(std::vector<WorkChunk> &chunks
 }
 
 void CLScalarField::_setPointComputationCLKernelArgs(DataBuffer &buffer, 
-                                                     int numParticles, 
-                                                     double dx) {
+                                                     int numParticles) {
     int localDataBytes = numParticles * 3 * sizeof(float);
     _setKernelArgs(_CLKernelPoints, 
                    buffer, localDataBytes, numParticles, _radius, _dx);
 }
 
 void CLScalarField::_setPointValueComputationCLKernelArgs(DataBuffer &buffer, 
-                                                          int numParticles, 
-                                                          double dx) {
+                                                          int numParticles) {
     int localDataBytes = numParticles * 4 * sizeof(float);
     _setKernelArgs(_CLKernelPointValues, 
                    buffer, localDataBytes, numParticles, _radius, _dx);
 }
 
 void CLScalarField::_setWeightPointValueComputationCLKernelArgs(DataBuffer &buffer, 
-                                                                int numParticles, 
-                                                                double dx) {
+                                                                int numParticles) {
     int localDataBytes = numParticles * 4 * sizeof(float);
     _setKernelArgs(_CLKernelWeightPointValues, 
                    buffer, localDataBytes, numParticles, _radius, _dx);
@@ -1250,7 +1247,7 @@ void CLScalarField::_setKernelArgs(cl::Kernel &kernel,
     err = kernel.setArg(4, numParticles);
     _checkError(err, "Kernel::setArg() - num particles");
 
-    err = kernel.setArg(5, (float)_radius);
+    err = kernel.setArg(5, (float)radius);
     _checkError(err, "Kernel::setArg() - radius");
 
     err = kernel.setArg(6, (float)dx);
@@ -1363,4 +1360,6 @@ float CLScalarField::_getWorkGroupMinimumValue(WorkGroup *g) {
     return minval;
 }
 
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif

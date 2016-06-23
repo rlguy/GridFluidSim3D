@@ -1,6 +1,6 @@
 #include "main.h"
 
-int main(int argc, char* args[]) {
+int main() {
     
     // This example will drop a ball of fluid in the center
     // of the fluid simulation domain.
@@ -21,14 +21,9 @@ int main(int argc, char* args[]) {
     fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
-    while (true) {
+    for (;;) {
         fluidsim.update(timestep);
     }
     
     return 0;
 }
-
-
-
-
-

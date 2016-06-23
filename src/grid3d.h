@@ -492,7 +492,7 @@ namespace Grid3d {
             pmin = vmath::vec3();
         }
 
-        vmath::vec3 eps = vmath::vec3(10e-12, 10e-12, 10e-12);
+        vmath::vec3 eps = vmath::vec3(10e-9f, 10e-9f, 10e-9f);
         if (!isGridIndexInRange(gmax, imax, jmax, kmax)) {
             pmax = GridIndexToPosition(gmax, dx) + vmath::vec3(dx, dx, dx) - eps;
         }

@@ -18,16 +18,31 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
 #ifndef PARTICLEADVECTOR_H
 #define PARTICLEADVECTOR_H
+
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+#ifdef _MSC_VER 
+    #pragma warning(push)
+    #pragma warning(disable : 4996 4512 4510 4512 4610 )
+#endif
 
 #if defined(__APPLE__) || defined(__MACOSX)
     #include <OpenCL/cl.hpp>
 #else
     #include <CL/cl.hpp>
+#endif
+
+#ifdef _MSC_VER 
+    #pragma warning(pop)
+#endif
+
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
 #endif
 
 #include <vector>
@@ -200,5 +215,3 @@ private:
 };
 
 #endif
-
-#pragma GCC diagnostic pop
