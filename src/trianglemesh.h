@@ -27,7 +27,6 @@ freely, subject to the following restrictions:
 #include <fstream>
 #include <string.h>
 #include <algorithm>
-#include <assert.h>
 
 #include "triangle.h"
 #include "array3d.h"
@@ -37,6 +36,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "gridindexvector.h"
 #include "spatialpointgrid.h"
+#include "fluidsimassert.h"
 
 class TriangleMesh
 {

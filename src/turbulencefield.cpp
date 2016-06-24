@@ -135,7 +135,7 @@ void TurbulenceField::destroyTurbulenceField() {
 }
 
 double TurbulenceField::evaluateTurbulenceAtPosition(vmath::vec3 p) {
-    assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
     p -= vmath::vec3(0.5*_dx, 0.5*_dx, 0.5*_dx);
 

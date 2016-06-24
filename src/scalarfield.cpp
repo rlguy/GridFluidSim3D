@@ -114,7 +114,7 @@ double ScalarField::getWeight(int i, int j, int k) {
         return 0.0;
     }
 
-    assert(_weightField.isIndexInRange(i, j, k));
+    FLUIDSIM_ASSERT(_weightField.isIndexInRange(i, j, k));
     return _weightField(i, j, k);
 }
 
@@ -326,7 +326,7 @@ void ScalarField::setMaterialGrid(GridIndexVector &solidCells) {
     for (unsigned int i = 0; i < solidCells.size(); i++) {
         g = solidCells[i];
 
-        assert(Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1));
+        FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize-1, _jsize-1, _ksize-1));
         Grid3d::getGridIndexVertices(g, vertices);
         for (int idx = 0; idx < 8; idx++) {
             _isVertexSolid.set(vertices[idx], true);
@@ -335,7 +335,7 @@ void ScalarField::setMaterialGrid(GridIndexVector &solidCells) {
 }
 
 void ScalarField::setMaterialGrid(FluidMaterialGrid &matGrid) {
-    assert(matGrid.width == _isize-1 && 
+    FLUIDSIM_ASSERT(matGrid.width == _isize-1 && 
            matGrid.height == _jsize-1 && 
            matGrid.depth == _ksize-1);
 
@@ -359,7 +359,7 @@ void ScalarField::getWeightField(Array3d<float> &field) {
         return;
     }
 
-    assert(field.width == _field.width && 
+    FLUIDSIM_ASSERT(field.width == _field.width && 
            field.height == _field.height && 
            field.depth == _field.depth);
 
@@ -373,7 +373,7 @@ void ScalarField::getWeightField(Array3d<float> &field) {
 }
 
 void ScalarField::getScalarField(Array3d<float> &field) {
-    assert(field.width == _field.width && 
+    FLUIDSIM_ASSERT(field.width == _field.width && 
            field.height == _field.height && 
            field.depth == _field.depth);
 
@@ -397,7 +397,7 @@ double ScalarField::getScalarFieldValue(GridIndex g) {
 }
 
 double ScalarField::getScalarFieldValue(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
 
     double val = _field(i, j, k);
     if (_isVertexSolid(i, j, k) && val > _surfaceThreshold) {
@@ -412,12 +412,12 @@ double ScalarField::getRawScalarFieldValue(GridIndex g) {
 }
 
 double ScalarField::getRawScalarFieldValue(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     return _field(i, j, k);
 }
 
 void ScalarField::getSetScalarFieldValues(Array3d<bool> &isVertexSet) {
-    assert(isVertexSet.width == _isVertexSet.width && 
+    FLUIDSIM_ASSERT(isVertexSet.width == _isVertexSet.width && 
            isVertexSet.height == _isVertexSet.height && 
            isVertexSet.depth == _isVertexSet.depth);
 
@@ -435,12 +435,12 @@ bool ScalarField::isScalarFieldValueSet(GridIndex g) {
 }
 
 bool ScalarField::isScalarFieldValueSet(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     return _isVertexSet(i, j, k);
 }
 
 void ScalarField::setScalarFieldValue(int i, int j, int k, double value) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.set(i, j, k, value);
     _isVertexSet.set(i, j, k, true);
 }
@@ -450,7 +450,7 @@ void ScalarField::setScalarFieldValue(GridIndex g, double value) {
 }
 
 void ScalarField::addScalarFieldValue(int i, int j, int k, double value) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width, _field.height, _field.depth));
     _field.add(i, j, k, value);
     _isVertexSet.set(i, j, k, true);
 }
@@ -460,7 +460,7 @@ void ScalarField::addScalarFieldValue(GridIndex g, double value) {
 }
 
 void ScalarField::addCellFieldValues(int i, int j, int k, double value) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _field.width-1, _field.height-1, _field.depth-1));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width-1, _field.height-1, _field.depth-1));
     GridIndex vertices[8];
     Grid3d::getGridIndexVertices(i, j, k, vertices);
     for (int i = 0; i < 8; i++) {
@@ -541,7 +541,7 @@ Array3d<float>* ScalarField::getPointerToScalarField() {
 }
 
 Array3d<float>* ScalarField::getPointerToWeightField() {
-    assert(_isWeightFieldEnabled);
+    FLUIDSIM_ASSERT(_isWeightFieldEnabled);
     return &_weightField;
 }
 

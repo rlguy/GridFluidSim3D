@@ -23,7 +23,8 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include <assert.h>
+
+#include "fluidsimassert.h"
 
 template <class T>
 class FragmentedVector 
@@ -82,12 +83,12 @@ public:
 	}
 
 	inline T front() {
-		assert(_size > 0);
+		FLUIDSIM_ASSERT(_size > 0);
 		return _nodes[0][0];
 	}
 
 	inline T back() {
-		assert(_size > 0);
+		FLUIDSIM_ASSERT(_size > 0);
 		return _nodes[_currentNodeIndex].back();
 	}
 
@@ -135,14 +136,14 @@ public:
 	}
 
 	const T operator [](int i) const {
-		assert(i >= 0 && i < (int)_size);
+		FLUIDSIM_ASSERT(i >= 0 && i < (int)_size);
 		int nodeIdx = i * _invElementsPerFragment;
 		int itemIdx = i % _elementsPerFragment;
 		return _nodes[nodeIdx][itemIdx];
 	}
 
 	T& operator[](int i) {
-		assert(i >= 0 && i < (int)_size);
+		FLUIDSIM_ASSERT(i >= 0 && i < (int)_size);
 		int nodeIdx = i * _invElementsPerFragment;
 		int itemIdx = i % _elementsPerFragment;
 		return _nodes[nodeIdx][itemIdx];
@@ -246,17 +247,17 @@ private:
 			}
 
 			inline T front() {
-				assert(_vector.size() > 0);
+				FLUIDSIM_ASSERT(_vector.size() > 0);
 				return _vector[0];
 			}
 
 			inline T back() {
-				assert(_vector.size() > 0);
+				FLUIDSIM_ASSERT(_vector.size() > 0);
 				return _vector.back();
 			}
 
 			inline void push_back(T item) {
-				assert(_vector.size() < _capacity);
+				FLUIDSIM_ASSERT(_vector.size() < _capacity);
 				_vector.push_back(item);
 			}
 
@@ -272,12 +273,12 @@ private:
 			}
 
 			const T operator [](int i) const {
-				assert(i >= 0 && i < (int)_vector.size());
+				FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
 				return _vector[i];
 			}
 
     		T& operator[](int i) {
-    			assert(i >= 0 && i < (int)_vector.size());
+    			FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
 				return _vector[i];
     		}
 

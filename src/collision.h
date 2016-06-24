@@ -22,10 +22,12 @@ freely, subject to the following restrictions:
 
 #include <stdio.h>
 #include <iostream>
+
 #include "vmath.h"
 #include "grid3d.h"
 #include "fluidmaterialgrid.h"
 #include "aabb.h"
+#include "fluidsimassert.h"
 
 namespace Collision {
 

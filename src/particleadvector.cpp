@@ -146,7 +146,7 @@ void ParticleAdvector::advectParticlesRK4(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     /*
         // Classic fourth-order method
@@ -206,7 +206,7 @@ void ParticleAdvector::advectParticlesRK3(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     /*
         // Ralston's third order method (Ralston 62)
@@ -258,7 +258,7 @@ void ParticleAdvector::advectParticlesRK2(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     /*
         // Midpoint method
@@ -295,7 +295,7 @@ void ParticleAdvector::advectParticlesRK1(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     /*  // Forward Euler
         vmath::vec3 RK1(vmath::vec3 p0, double dt) {
@@ -317,7 +317,7 @@ void ParticleAdvector::advectParticlesRK1(std::vector<vmath::vec3> &particles,
 void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
                                            MACVelocityField *vfield,
                                            std::vector<vmath::vec3> &output) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     vfield->getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = vfield->getGridCellSize();
@@ -376,7 +376,7 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
 void ParticleAdvector::_checkError(cl_int err, const char * name) {
     if (err != CL_SUCCESS) {
         std::cerr << "ERROR: " << name  << " (" << err << ")" << std::endl;
-        assert(err == CL_SUCCESS);
+        FLUIDSIM_ASSERT(err == CL_SUCCESS);
     }
 }
 
@@ -541,7 +541,7 @@ void ParticleAdvector::_getParticleChunkGrid(double cwidth, double cheight, doub
         int pj = (int)(p.y / cheight);
         int pk = (int)(p.z / cdepth);
 
-        assert(Grid3d::isGridIndexInRange(pi, pj, pk, grid.width, grid.height, grid.depth));
+        FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(pi, pj, pk, grid.width, grid.height, grid.depth));
 
         countGrid.add(pi, pj, pk, 1);
     }
@@ -866,7 +866,7 @@ void ParticleAdvector::_setCLKernelArgs(DataBuffer &buffer, double dx) {
     _checkError(err, "Kernel::setArg() - chunk offset data");
 
     int vfieldLocalBytes = _getChunkVelocityDataSize();
-    assert((unsigned int)vfieldLocalBytes <= _deviceInfo.cl_device_local_mem_size);
+    FLUIDSIM_ASSERT((unsigned int)vfieldLocalBytes <= _deviceInfo.cl_device_local_mem_size);
 
     err = _CLKernel.setArg(3, cl::__local(vfieldLocalBytes));
     _checkError(err, "Kernel::setArg() - local vfield data");

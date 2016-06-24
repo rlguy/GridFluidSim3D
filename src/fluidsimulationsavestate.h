@@ -23,13 +23,13 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <fstream>
 #include <stdio.h>
-#include <assert.h>
 
 #include "fluidbrickgridsavestate.h"
 #include "macvelocityfield.h"
 #include "fluidmaterialgrid.h"
 #include "array3d.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 class FluidSimulation;
 

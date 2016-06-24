@@ -57,6 +57,7 @@ freely, subject to the following restrictions:
 #include "grid3d.h"
 #include "collision.h"
 #include "stopwatch.h"
+#include "fluidsimassert.h"
 
 class CLScalarField
 {

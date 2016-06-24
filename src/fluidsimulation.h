@@ -23,7 +23,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include <assert.h>
 
 #include "stopwatch.h"
 #include "macvelocityfield.h"
@@ -54,6 +53,7 @@ freely, subject to the following restrictions:
 #include "gridindexvector.h"
 #include "fragmentedvector.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 #include "markerparticle.h"
 #include "diffuseparticle.h"
@@ -77,7 +77,7 @@ public:
 
             std::string filename = "savestates/autosave.state";
             FluidSimulationSaveState state;
-            assert(state.loadState(filename));
+            FLUIDSIM_ASSERT(state.loadState(filename));
             FluidSimulation fluidsim(state);
     */
     FluidSimulation(FluidSimulationSaveState &state);
@@ -972,7 +972,7 @@ private:
 
     template<class T>
     void _removeItemsFromVector(FragmentedVector<T> &items, std::vector<bool> &isRemoved) {
-        assert(items.size() == isRemoved.size());
+        FLUIDSIM_ASSERT(items.size() == isRemoved.size());
 
         int currentidx = 0;
         for (unsigned int i = 0; i < items.size(); i++) {

@@ -33,7 +33,7 @@ FluidSimulation::FluidSimulation(int isize, int jsize, int ksize, double dx) :
 }
 
 FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
-    assert(state.isLoadStateInitialized());
+    FLUIDSIM_ASSERT(state.isLoadStateInitialized());
     _initializeSimulationFromSaveState(state);
 }
 
@@ -560,7 +560,7 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
         }
     }
 
-    assert(isFound);
+    FLUIDSIM_ASSERT(isFound);
 }
 
 void FluidSimulation::removeFluidSources() {
@@ -1068,7 +1068,7 @@ void FluidSimulation::_initializeFluidMaterialParticlesFromSaveState() {
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        assert(!_materialGrid.isCellSolid(g));
+        FLUIDSIM_ASSERT(!_materialGrid.isCellSolid(g));
         _materialGrid.setFluid(g);
     }
 
@@ -1266,10 +1266,10 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 
 void FluidSimulation::_initializeCLObjects() {
     bool success = _particleAdvector.initialize();
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     success = _scalarFieldAccelerator.initialize();
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 }
 
 /********************************************************************************
@@ -1405,7 +1405,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
 }
 
 void FluidSimulation::_updateInflowFluidSource(FluidSource *source) {
-    assert(source->isInflow());
+    FLUIDSIM_ASSERT(source->isInflow());
 
     GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
     vmath::vec3 velocity = source->getVelocity();
@@ -1522,7 +1522,7 @@ void FluidSimulation::_updateFluidCells() {
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
-        assert(!_materialGrid.isCellSolid(g));
+        FLUIDSIM_ASSERT(!_materialGrid.isCellSolid(g));
         _materialGrid.setFluid(g);
     }
 
@@ -2577,8 +2577,8 @@ vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, 
     
     GridIndex g1 = Grid3d::positionToGridIndex(p0, _dx);
     GridIndex g2 = Grid3d::positionToGridIndex(p1, _dx);
-    assert(!_materialGrid.isCellSolid(g1));
-    assert(_materialGrid.isCellSolid(g2));
+    FLUIDSIM_ASSERT(!_materialGrid.isCellSolid(g1));
+    FLUIDSIM_ASSERT(_materialGrid.isCellSolid(g2));
 
     GridIndex voxel;
     bool foundVoxel = Collision::getLineSegmentVoxelIntersection(p0, p1, _dx,
@@ -2611,7 +2611,7 @@ vmath::vec3 FluidSimulation::_resolveParticleSolidCellCollision(vmath::vec3 p0, 
 
 void FluidSimulation::_advanceRangeOfMarkerParticles(int startIdx, int endIdx, 
                                                      double dt) {
-    assert(startIdx <= endIdx);
+    FLUIDSIM_ASSERT(startIdx <= endIdx);
 
     std::vector<vmath::vec3> positions;
     positions.reserve(endIdx - startIdx + 1);

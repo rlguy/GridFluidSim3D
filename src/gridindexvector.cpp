@@ -31,7 +31,7 @@ GridIndexVector::~GridIndexVector() {
 
 
 GridIndex GridIndexVector::operator[](int i) {
-    assert(i >= 0 && i < (int)_indices.size());
+    FLUIDSIM_ASSERT(i >= 0 && i < (int)_indices.size());
     return _getUnflattenedIndex(_indices[i]);
 }
 
@@ -43,13 +43,13 @@ void GridIndexVector::insert(std::vector<GridIndex> &indices) {
 }
 
 void GridIndexVector::insert(GridIndexVector &indices) {
-    assert(width == indices.width && height == indices.height && depth == indices.depth);
+    FLUIDSIM_ASSERT(width == indices.width && height == indices.height && depth == indices.depth);
 
     reserve(_indices.size() + indices.size());
     int maxidx = width*height*depth - 1;
     for (unsigned int i = 0; i < indices.size(); i++) {
         int flatidx = indices.getFlatIndex(i);
-        assert(flatidx >= 0 && flatidx <= maxidx);
+        FLUIDSIM_ASSERT(flatidx >= 0 && flatidx <= maxidx);
         _indices.push_back(flatidx);
     }
 }

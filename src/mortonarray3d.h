@@ -21,11 +21,11 @@ freely, subject to the following restrictions:
 #define MORTONARRAY3D_H
 
 #include <vector>
-#include <assert.h>
 
 #include "grid3d.h"
 #include "gridindexvector.h"
 #include "array3d.h"
+#include "fluidsimassert.h"
 
 template <class T>
 class MortonArray3d
@@ -101,7 +101,7 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
 
         return _grid[_getMortonIndex(i, j, k)];
     }
@@ -111,7 +111,7 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
 
         return _grid[_getMortonIndex(g)];;
     }
@@ -121,7 +121,7 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
 
         return _grid[_getMortonIndex(i, j, k)];
     }
@@ -131,18 +131,18 @@ public:
         if (!isInRange && _isOutOfRangeValueSet) {
             return _outOfRangeValue;
         }
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
 
         return _grid[_getMortonIndex(g)];;
     }
 
     void set(int i, int j, int k, T value) {
-        assert(_isIndexInRange(i, j, k));
+        FLUIDSIM_ASSERT(_isIndexInRange(i, j, k));
         _grid[_getMortonIndex(i, j, k)] = value;
     }
 
     void set(GridIndex g, T value) {
-        assert(_isIndexInRange(g.i, g.j, g.k));
+        FLUIDSIM_ASSERT(_isIndexInRange(g.i, g.j, g.k));
         _grid[_getMortonIndex(g)] = value;
     }
 
@@ -153,12 +153,12 @@ public:
     }
 
     void add(int i, int j, int k, T value) {
-        assert(_isIndexInRange(i, j, k));
+        FLUIDSIM_ASSERT(_isIndexInRange(i, j, k));
         _grid[_getMortonIndex(i, j, k)] += value;
     }
 
     void add(GridIndex g, T value) {
-        assert(_isIndexInRange(g.i, g.j, g.k));
+        FLUIDSIM_ASSERT(_isIndexInRange(g.i, g.j, g.k));
         _grid[_getMortonIndex(g)] += value;
     }
 
@@ -168,7 +168,7 @@ public:
             return &_outOfRangeValue;
         }
 
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
         return &_grid[_getMortonIndex(i, j, k)];
     }
 
@@ -178,7 +178,7 @@ public:
             return &_outOfRangeValue;
         }
 
-        assert(isInRange);
+        FLUIDSIM_ASSERT(isInRange);
         return &_grid[_getMortonIndex(g)];
     }
 

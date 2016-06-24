@@ -20,7 +20,8 @@ freely, subject to the folloq.wing restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
-#include <assert.h>
+
+#include "fluidsimassert.h"
 
 namespace vmath {
 

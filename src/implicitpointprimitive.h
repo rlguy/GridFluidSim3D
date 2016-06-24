@@ -23,7 +23,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 
-#include <assert.h>
 #include "vmath.h"
 
 class ImplicitPointPrimitive

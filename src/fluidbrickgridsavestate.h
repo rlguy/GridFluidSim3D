@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "aabb.h"
 #include "brick.h"
+#include "fluidsimassert.h"
 
 class FluidBrickGrid;
 

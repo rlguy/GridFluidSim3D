@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "gridindexvector.h"
 #include "fluidbrickgridsavestate.h"
 #include "brick.h"
+#include "fluidsimassert.h"
 
 class FluidBrickGrid
 {

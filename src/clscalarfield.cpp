@@ -67,7 +67,7 @@ void CLScalarField::addPoints(std::vector<vmath::vec3> &points,
                               vmath::vec3 offset,
                               double dx,
                               Array3d<float> *field) {
-    assert(_isInitialized);
+    FLUIDSIM_ASSERT(_isInitialized);
 
     _isize = field->width;
     _jsize = field->height;
@@ -141,8 +141,8 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
                                    double dx,
                                    Array3d<float> *field) {
     
-    assert(_isInitialized);
-    assert(points.size() == values.size());
+    FLUIDSIM_ASSERT(_isInitialized);
+    FLUIDSIM_ASSERT(points.size() == values.size());
 
     _isize = field->width;
     _jsize = field->height;
@@ -192,9 +192,9 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
                                    double dx,
                                    Array3d<float> *scalarfield,
                                    Array3d<float> *weightfield) {
-    assert(_isInitialized);
-    assert(points.size() == values.size());
-    assert(scalarfield->width == weightfield->width &&
+    FLUIDSIM_ASSERT(_isInitialized);
+    FLUIDSIM_ASSERT(points.size() == values.size());
+    FLUIDSIM_ASSERT(scalarfield->width == weightfield->width &&
            scalarfield->height == weightfield->height &&
            scalarfield->depth == weightfield->depth);
 
@@ -430,7 +430,7 @@ bool CLScalarField::isUsingCPU() {
 void CLScalarField::_checkError(cl_int err, const char * name) {
     if (err != CL_SUCCESS) {
         std::cerr << "ERROR: " << name  << " (" << err << ")" << std::endl;
-        assert(err == CL_SUCCESS);
+        FLUIDSIM_ASSERT(err == CL_SUCCESS);
     }
 }
 
@@ -606,7 +606,7 @@ void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
 void CLScalarField::_initializePointValues(std::vector<vmath::vec3> &points,
                                            std::vector<float> &values,
                                            std::vector<PointValue> &pvs) {
-    assert(points.size() == values.size());
+    FLUIDSIM_ASSERT(points.size() == values.size());
 
     vmath::vec3 offset = _getInternalOffset();
     pvs.reserve(points.size());
@@ -1240,7 +1240,7 @@ void CLScalarField::_setKernelArgs(cl::Kernel &kernel,
     err = kernel.setArg(2, buffer.offsetDataCL);
     _checkError(err, "Kernel::setArg() - chunk offset data");
 
-    assert((unsigned int)localDataBytes <= _deviceInfo.cl_device_local_mem_size);
+    FLUIDSIM_ASSERT((unsigned int)localDataBytes <= _deviceInfo.cl_device_local_mem_size);
     err = kernel.setArg(3, cl::__local(localDataBytes));
     _checkError(err, "Kernel::setArg() - local position data");
 
@@ -1267,7 +1267,7 @@ void CLScalarField::_launchKernel(cl::Kernel &kernel, int numWorkItems, int work
 }
 
 void CLScalarField::_readCLBuffer(cl::Buffer &sourceCL, std::vector<float> &destH, int dataSize) {
-    assert((int)(destH.size() * sizeof(float)) >= dataSize);
+    FLUIDSIM_ASSERT((int)(destH.size() * sizeof(float)) >= dataSize);
     cl_int err = _CLQueue.enqueueReadBuffer(sourceCL, CL_TRUE, 0, dataSize, (void*)&(destH[0]));
     _checkError(err, "CommandQueue::enqueueReadBuffer()");
 }
@@ -1276,7 +1276,7 @@ void CLScalarField::_setPointComputationOutputFieldData(std::vector<float> &buff
                                                         std::vector<WorkChunk> &chunks,
                                                         Array3d<WorkGroup> &workGroupGrid) {
     int elementsPerChunk = _chunkWidth * _chunkHeight * _chunkDepth;
-    assert(buffer.size() == chunks.size() * elementsPerChunk);
+    FLUIDSIM_ASSERT(buffer.size() == chunks.size() * elementsPerChunk);
 
     GridIndex cg;
     ArrayView3d<float> fieldview;
@@ -1306,7 +1306,7 @@ void CLScalarField::_setWeightPointValueComputationOutputFieldData(std::vector<f
                                                                    std::vector<WorkChunk> &chunks,
                                                                    Array3d<WorkGroup> &workGroupGrid) {
     int elementsPerChunk = _chunkWidth * _chunkHeight * _chunkDepth;
-    assert(buffer.size() == 2 * chunks.size() * elementsPerChunk);
+    FLUIDSIM_ASSERT(buffer.size() == 2 * chunks.size() * elementsPerChunk);
 
     GridIndex cg;
     WorkGroup *group;

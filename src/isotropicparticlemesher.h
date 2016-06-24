@@ -23,7 +23,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include <assert.h>
 
 #include "fragmentedvector.h"
 #include "markerparticle.h"
@@ -34,6 +33,7 @@ freely, subject to the following restrictions:
 #include "polygonizer3d.h"
 #include "aabb.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 class IsotropicParticleMesher {
 

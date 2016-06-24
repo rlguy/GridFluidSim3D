@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include "interpolation.h"
 #include "aabb.h"
 #include "fluidmaterialgrid.h"
+#include "fluidsimassert.h"
 
 class ScalarField
 {

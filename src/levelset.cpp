@@ -340,7 +340,7 @@ double LevelSet::_minDistToTriangleSquared(vmath::vec3 p, int tidx, vmath::vec3 
 }
 
 vmath::vec3 LevelSet::_findClosestPointOnSurface(GridIndex g) {
-    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && _isDistanceSet(g));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize) && _isDistanceSet(g));
 
     vmath::vec3 tri[3];
     _surfaceMesh.getTrianglePosition(_indexGrid(g), tri);
@@ -593,7 +593,7 @@ double LevelSet::getSurfaceCurvature(vmath::vec3 p) {
 }
 
 double LevelSet::getSurfaceCurvature(vmath::vec3 p, vmath::vec3 *normal) {
-    assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
+    FLUIDSIM_ASSERT(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
 
     int tidx;
     p = _findClosestPointOnSurface(p, &tidx);
@@ -622,8 +622,8 @@ double LevelSet::getSurfaceCurvature(unsigned int tidx) {
         return 0.0;
     }
 
-    assert(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
-    assert(tidx < _surfaceMesh.triangles.size());
+    FLUIDSIM_ASSERT(_vertexCurvatures.size() == _surfaceMesh.vertices.size());
+    FLUIDSIM_ASSERT(tidx < _surfaceMesh.triangles.size());
 
     Triangle t = _surfaceMesh.triangles[tidx];
     double k0 = _vertexCurvatures[t.tri[0]];
@@ -729,7 +729,7 @@ double LevelSet::_cubicInterpolateSignedDistance(vmath::vec3 p) {
 
 double LevelSet::getDistance(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
     if (!_isDistanceSet(g)) {
         return std::numeric_limits<double>::infinity();
@@ -740,7 +740,7 @@ double LevelSet::getDistance(vmath::vec3 p) {
 
 double LevelSet::getSignedDistance(vmath::vec3 p) {
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
     if (!_isDistanceSet(g)) {
         return std::numeric_limits<double>::infinity();
@@ -750,7 +750,7 @@ double LevelSet::getSignedDistance(vmath::vec3 p) {
 }
 
 double LevelSet::getDistance(GridIndex g) {
-    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
     if (!_isDistanceSet(g)) {
         return std::numeric_limits<double>::infinity();
@@ -760,7 +760,7 @@ double LevelSet::getDistance(GridIndex g) {
 }
 
 double LevelSet::getSignedDistance(GridIndex g) {
-    assert(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize, _jsize, _ksize));
 
     if (!_isDistanceSet(g)) {
         return std::numeric_limits<double>::infinity();
@@ -770,10 +770,10 @@ double LevelSet::getSignedDistance(GridIndex g) {
 }
 
 bool LevelSet::isPointInInsideCell(vmath::vec3 p) {
-    assert(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isPositionInGrid(p, _dx, _isize, _jsize, _ksize));
 
     GridIndex g = Grid3d::positionToGridIndex(p, _dx);
-    assert(_isDistanceSet(g));
+    FLUIDSIM_ASSERT(_isDistanceSet(g));
 
     return _signedDistance(g) > 0.0;
 }
@@ -783,11 +783,11 @@ bool LevelSet::_isPointInsideSurface(vmath::vec3 p) {
 }
 
 bool LevelSet::_isCellInsideSurface(GridIndex g) {
-    assert(_isDistanceSet(g));
+    FLUIDSIM_ASSERT(_isDistanceSet(g));
     return _signedDistance(g) > 0.0;
 }
 
 bool LevelSet::_isCellInsideSurface(int i, int j, int k) {
-    assert(_isDistanceSet(i, j, k));
+    FLUIDSIM_ASSERT(_isDistanceSet(i, j, k));
     return _signedDistance(i, j, k) > 0.0;
 }

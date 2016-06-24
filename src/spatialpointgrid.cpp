@@ -72,7 +72,7 @@ void SpatialPointGrid::queryPointsInsideSphere(vmath::vec3 p, double r, std::vec
 }
 
 void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r, std::vector<vmath::vec3> &points) {
-    assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
+    FLUIDSIM_ASSERT(ref.id >= 0 && ref.id < (int)_gridPoints.size());
 
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     _queryPointsInsideSphere(gp.position, r, gp.ref.id, points);
@@ -87,8 +87,8 @@ void SpatialPointGrid::queryPointsInsideSphere(vmath::vec3 p, double r,
 void SpatialPointGrid::queryPointsInsideSphere(GridPointReference ref, double r, 
                                                std::vector<bool> &exclusions, 
                                                std::vector<vmath::vec3> &points) {
-    assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
-    assert(exclusions.size() == _gridPoints.size());
+    FLUIDSIM_ASSERT(ref.id >= 0 && ref.id < (int)_gridPoints.size());
+    FLUIDSIM_ASSERT(exclusions.size() == _gridPoints.size());
 
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     _queryPointsInsideSphere(gp.position, r, exclusions, points);
@@ -101,7 +101,7 @@ void SpatialPointGrid::queryPointReferencesInsideSphere(vmath::vec3 p, double r,
 
 void SpatialPointGrid::queryPointReferencesInsideSphere(GridPointReference ref, double r, 
                                                         std::vector<GridPointReference> &refs) {
-    assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
+    FLUIDSIM_ASSERT(ref.id >= 0 && ref.id < (int)_gridPoints.size());
 
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     _queryPointReferencesInsideSphere(gp.position, r, gp.ref.id, refs);
@@ -116,8 +116,8 @@ void SpatialPointGrid::queryPointReferencesInsideSphere(vmath::vec3 p, double r,
 void SpatialPointGrid::queryPointReferencesInsideSphere(GridPointReference ref, double r, 
                                         std::vector<bool> &exclusions,
                                         std::vector<GridPointReference> &refs) {
-    assert(ref.id >= 0 && ref.id < (int)_gridPoints.size());
-    assert(exclusions.size() == _gridPoints.size());
+    FLUIDSIM_ASSERT(ref.id >= 0 && ref.id < (int)_gridPoints.size());
+    FLUIDSIM_ASSERT(exclusions.size() == _gridPoints.size());
 
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     _queryPointReferencesInsideSphere(gp.position, r, exclusions, refs);
@@ -207,7 +207,7 @@ void SpatialPointGrid::getConnectedPointReferences(GridPointReference seed, doub
 }
 
 vmath::vec3 SpatialPointGrid::getPointFromReference(GridPointReference ref) {
-    assert(ref.id >= 0 && ref.id < (int)_refIDToGridPointIndexTable.size());
+    FLUIDSIM_ASSERT(ref.id >= 0 && ref.id < (int)_refIDToGridPointIndexTable.size());
     GridPoint gp = _gridPoints[_refIDToGridPointIndexTable[ref.id]];
     return gp.position;
 }
@@ -265,7 +265,7 @@ void SpatialPointGrid::_sortGridPointsByGridIndex(std::vector<vmath::vec3> &poin
     GridPointReference ref;
     unsigned int flatIndex;
     for (unsigned int i = 0; i < points.size(); i++) {
-        assert(_bbox.isPointInside(points[i]));
+        FLUIDSIM_ASSERT(_bbox.isPointInside(points[i]));
 
         ref = GridPointReference(i);
         gp = GridPoint(points[i], ref);
@@ -292,7 +292,7 @@ void SpatialPointGrid::_updateRefIDToGridPointIndexTable() {
     GridPoint gp;
     for (unsigned int i = 0; i < _gridPoints.size(); i++) {
         gp = _gridPoints[i];
-        assert(gp.ref.id >= 0 && gp.ref.id < (int)_gridPoints.size());
+        FLUIDSIM_ASSERT(gp.ref.id >= 0 && gp.ref.id < (int)_gridPoints.size());
         _refIDToGridPointIndexTable[gp.ref.id] = i;
     }
 }
@@ -362,7 +362,7 @@ void SpatialPointGrid::_queryPointsInsideSphere(vmath::vec3 p, double r, int ref
 void SpatialPointGrid::_queryPointsInsideSphere(vmath::vec3 p, double r, 
                                                 std::vector<bool> &exclusions, 
                                                 std::vector<vmath::vec3> &points) {
-    assert(exclusions.size() == _gridPoints.size());
+    FLUIDSIM_ASSERT(exclusions.size() == _gridPoints.size());
 
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, r, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
@@ -427,7 +427,7 @@ void SpatialPointGrid::_queryPointReferencesInsideSphere(vmath::vec3 p, double r
 void SpatialPointGrid::_queryPointReferencesInsideSphere(vmath::vec3 p, double r, 
                                                          std::vector<bool> &exclusions, 
                                                          std::vector<GridPointReference> &refs) {
-    assert(exclusions.size() == _gridPoints.size());
+    FLUIDSIM_ASSERT(exclusions.size() == _gridPoints.size());
 
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(p, r, _dx, _isize, _jsize, _ksize, &gmin, &gmax);

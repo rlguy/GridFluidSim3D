@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "trianglemesh.h"
 #include "macvelocityfield.h"
 #include "gridindexvector.h"
+#include "fluidsimassert.h"
 
 class LevelSet
 {

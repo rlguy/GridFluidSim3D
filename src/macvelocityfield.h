@@ -25,13 +25,13 @@ freely, subject to the following restrictions:
 #include <iostream>
 #include <limits>
 #include <time.h>
-#include <assert.h>
 
 #include "fluidmaterialgrid.h"
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
 #include "vmath.h" 
+#include "fluidsimassert.h"
 
 class MACVelocityField
 {

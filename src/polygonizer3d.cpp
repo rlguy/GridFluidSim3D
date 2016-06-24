@@ -334,7 +334,7 @@ Polygonizer3d::~Polygonizer3d() {
 }
 
 vmath::vec3 Polygonizer3d::_getVertexPosition(GridIndex g) {
-    assert(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _isize + 1, _jsize + 1, _ksize + 1));
     return (float)_dx*vmath::vec3((float)g.i, (float)g.j, (float)g.k);
 }
 
@@ -607,7 +607,7 @@ void Polygonizer3d::_calculateSurfaceTriangles(GridIndexVector &surfaceCells,
 }
 
 void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
-    assert(mask->width == _isize && 
+    FLUIDSIM_ASSERT(mask->width == _isize && 
            mask->height == _jsize && 
            mask->depth == _ksize);
 
@@ -616,7 +616,7 @@ void Polygonizer3d::setSurfaceCellMask(Array3d<bool> *mask) {
 }
 
 TriangleMesh Polygonizer3d::polygonizeSurface() {
-    assert(_isScalarFieldSet);
+    FLUIDSIM_ASSERT(_isScalarFieldSet);
 
     GridIndexVector surfaceCells(_isize, _jsize, _ksize);
     _findSurfaceCells(surfaceCells);

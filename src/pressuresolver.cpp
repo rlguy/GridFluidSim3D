@@ -43,12 +43,12 @@ VectorXd::~VectorXd() {
 }
 
 const double VectorXd::operator[](int i) const {
-    assert(i >= 0 && i < (int)_vector.size());
+    FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
     return _vector[i];
 }
 
 double& VectorXd::operator[](int i) {
-    assert(i >= 0 && i < (int)_vector.size());
+    FLUIDSIM_ASSERT(i >= 0 && i < (int)_vector.size());
     return _vector[i];
 }
 
@@ -59,7 +59,7 @@ void VectorXd::fill(double fill) {
 }
 
 double VectorXd::dot(VectorXd &vector) {
-	assert(_vector.size() == vector._vector.size());
+	FLUIDSIM_ASSERT(_vector.size() == vector._vector.size());
 
 	double sum = 0.0;
 	for (unsigned int i = 0; i < _vector.size(); i++) {
@@ -94,12 +94,12 @@ MatrixCoefficients::~MatrixCoefficients() {
 }
 
 const MatrixCell MatrixCoefficients::operator[](int i) const {
-    assert(i >= 0 && i < (int)cells.size());
+    FLUIDSIM_ASSERT(i >= 0 && i < (int)cells.size());
     return cells[i];
 }
 
 MatrixCell& MatrixCoefficients::operator[](int i) {
-    assert(i >= 0 && i < (int)cells.size());
+    FLUIDSIM_ASSERT(i >= 0 && i < (int)cells.size());
     return cells[i];
 }
 
@@ -116,7 +116,7 @@ PressureSolver::~PressureSolver() {
 void PressureSolver::solve(PressureSolverParameters params, VectorXd &pressure) {
 	_initialize(params);
 
-    assert(pressure.size() == (unsigned int)_matSize);
+    FLUIDSIM_ASSERT(pressure.size() == (unsigned int)_matSize);
     pressure.fill(0.0);
 
 	_initializeGridIndexKeyMap();
@@ -244,7 +244,7 @@ void PressureSolver::_calculateMatrixCoefficients(MatrixCoefficients &A) {
 }
 
 void PressureSolver::_calculatePreconditionerVector(MatrixCoefficients &A, VectorXd &precon) {
-    assert(A.size() == precon.size());
+    FLUIDSIM_ASSERT(A.size() == precon.size());
 
     double scale = _deltaTime / (_density*_dx*_dx);
     double negscale = -scale;
@@ -386,7 +386,7 @@ void PressureSolver::_applyPreconditioner(MatrixCoefficients &A,
 }
 
 void PressureSolver::_applyMatrix(MatrixCoefficients &A, VectorXd &x, VectorXd &result) {
-    assert(A.size() == x.size() && x.size() == result.size());
+    FLUIDSIM_ASSERT(A.size() == x.size() && x.size() == result.size());
 
     double scale = _deltaTime / (_density*_dx*_dx);
     double negscale = -scale;
@@ -427,7 +427,7 @@ void PressureSolver::_applyMatrix(MatrixCoefficients &A, VectorXd &x, VectorXd &
 
 // v1 += v2*scale
 void PressureSolver::_addScaledVector(VectorXd &v1, VectorXd &v2, double scale) {
-    assert(v1.size() == v2.size());
+    FLUIDSIM_ASSERT(v1.size() == v2.size());
     for (unsigned int idx = 0; idx < v1.size(); idx++) {
         v1._vector[idx] += v2._vector[idx]*scale;
     }
@@ -437,7 +437,7 @@ void PressureSolver::_addScaledVector(VectorXd &v1, VectorXd &v2, double scale) 
 void PressureSolver::_addScaledVectors(VectorXd &v1, double s1, 
                                        VectorXd &v2, double s2,
                                        VectorXd &result) {
-    assert(v1.size() == v2.size() && v2.size() == result.size());
+    FLUIDSIM_ASSERT(v1.size() == v2.size() && v2.size() == result.size());
     for (unsigned int idx = 0; idx < v1.size(); idx++) {
         result._vector[idx] = v1._vector[idx]*s1 + v2._vector[idx]*s2;
     }

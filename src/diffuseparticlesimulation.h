@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "grid3d.h"
 #include "collision.h"
+#include "fluidsimassert.h"
 
 class DiffuseParticleSimulation
 {
@@ -141,7 +142,7 @@ private:
 
     template<class T>
     void _removeItemsFromVector(FragmentedVector<T> &items, std::vector<bool> &isRemoved) {
-        assert(items.size() == isRemoved.size());
+        FLUIDSIM_ASSERT(items.size() == isRemoved.size());
 
         int currentidx = 0;
         for (unsigned int i = 0; i < items.size(); i++) {

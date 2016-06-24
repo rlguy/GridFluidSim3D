@@ -61,7 +61,7 @@ void FluidBrickGrid::setBrickDimensions(double width, double height, double dept
 }
 
 void FluidBrickGrid::setBrickDimensions(AABB brick) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     double eps = 10e-9;
     if (fabs(brick.width - _brick.width) > eps || 
@@ -78,7 +78,7 @@ void FluidBrickGrid::setBrickDimensions(AABB brick) {
 }
 
 bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     if (!_isCurrentBrickGridReady) {
         return false;
@@ -116,7 +116,7 @@ bool FluidBrickGrid::isBrickMeshReady() {
 }
 
 void FluidBrickGrid::saveState(std::string filename) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     FluidBrickGridSaveState state;
     state.saveState(filename, this);
@@ -131,7 +131,7 @@ int FluidBrickGrid::getNumUpdates() {
 }
 
 void FluidBrickGrid::getDensityGridCurrentDensityValues(Array3d<float> &grid) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -144,7 +144,7 @@ void FluidBrickGrid::getDensityGridCurrentDensityValues(Array3d<float> &grid) {
 }
 
 void FluidBrickGrid::getDensityGridTargetDensityValues(Array3d<float> &grid) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -157,7 +157,7 @@ void FluidBrickGrid::getDensityGridTargetDensityValues(Array3d<float> &grid) {
 }
 
 void FluidBrickGrid::getDensityGridVelocityValues(Array3d<float> &grid) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     for (int k = 0; k < _ksize; k++) {
         for (int j = 0; j < _jsize; j++) {
@@ -170,7 +170,7 @@ void FluidBrickGrid::getDensityGridVelocityValues(Array3d<float> &grid) {
 }
 
 Array3d<Brick>* FluidBrickGrid::getPointerToBrickGridQueue() {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     return _brickGridQueue;
 }
@@ -348,7 +348,7 @@ void FluidBrickGrid::update(LevelSet &levelset,
                             FluidMaterialGrid &materialGrid,
                             std::vector<vmath::vec3> &particles, 
                             double dt) {
-    assert(isInitialized());
+    FLUIDSIM_ASSERT(isInitialized());
 
     _updateDensityGrid(particles, dt);
     _updateBrickGrid(levelset, materialGrid);
@@ -378,7 +378,7 @@ void FluidBrickGrid::_initialize() {
 }
 
 void FluidBrickGrid::_initializeFromSaveState(FluidBrickGridSaveState &state) {
-    assert(state.isLoadStateInitialized());
+    FLUIDSIM_ASSERT(state.isLoadStateInitialized());
 
     state.getGridDimensions(&_isize, &_jsize, &_ksize);
     _dx = state.getCellSize();
@@ -465,9 +465,9 @@ void FluidBrickGrid::_initializeBrickGridQueueFromSaveState(
 }
 
 void FluidBrickGrid::_initializeBrickGrid() {
-    assert(_brick.width > 0.0);
-    assert(_brick.height > 0.0);
-    assert(_brick.depth > 0.0);
+    FLUIDSIM_ASSERT(_brick.width > 0.0);
+    FLUIDSIM_ASSERT(_brick.height > 0.0);
+    FLUIDSIM_ASSERT(_brick.depth > 0.0);
 
     double width = _isize*_dx;
     double height = _jsize*_dx;

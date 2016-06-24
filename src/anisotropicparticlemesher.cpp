@@ -32,12 +32,12 @@ AnisotropicParticleMesher::~AnisotropicParticleMesher() {
 }
 
 void AnisotropicParticleMesher::setSubdivisionLevel(int n) {
-    assert(n >= 1);
+    FLUIDSIM_ASSERT(n >= 1);
     _subdivisionLevel = n;
 }
 
 void AnisotropicParticleMesher::setNumPolygonizationSlices(int n) {
-    assert(n >= 1);
+    FLUIDSIM_ASSERT(n >= 1);
 
     if (n > _isize) {
         n = _isize;
@@ -51,10 +51,10 @@ TriangleMesh AnisotropicParticleMesher::meshParticles(FragmentedVector<MarkerPar
                                                       FluidMaterialGrid &materialGrid,
                                                       double particleRadius) {
 
-    assert(materialGrid.width == _isize &&
+    FLUIDSIM_ASSERT(materialGrid.width == _isize &&
            materialGrid.height == _jsize &&
            materialGrid.depth == _ksize);
-    assert(particleRadius > 0.0);
+    FLUIDSIM_ASSERT(particleRadius > 0.0);
 
     _setParticleRadius(particleRadius);
 
@@ -855,7 +855,7 @@ void AnisotropicParticleMesher::_setParticleRadius(double r) {
 }
 
 void AnisotropicParticleMesher::_setKernelRadius(double r) {
-    assert(r > 0.0);
+    FLUIDSIM_ASSERT(r > 0.0);
 
     _kernelRadius = r;
     _invKernelRadius = 1 / r;

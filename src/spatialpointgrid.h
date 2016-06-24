@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include "fragmentedvector.h"
 #include "grid3d.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 struct GridPointReference {
     int id;

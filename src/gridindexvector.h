@@ -23,9 +23,9 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <stdio.h>
 #include <iostream>
-#include <assert.h>
 
 #include "array3d.h"
+#include "fluidsimassert.h"
 
 class GridIndexVector
 {
@@ -53,37 +53,37 @@ public:
     GridIndex operator[](int i);
 
     inline GridIndex at(int i) {
-        assert(i >= 0 && i < (int)_indices.size());
+        FLUIDSIM_ASSERT(i >= 0 && i < (int)_indices.size());
         return _getUnflattenedIndex(_indices[i]);
     }
 
     inline GridIndex get(int i) {
-        assert(i >= 0 && i < (int)_indices.size());
+        FLUIDSIM_ASSERT(i >= 0 && i < (int)_indices.size());
         return _getUnflattenedIndex(_indices[i]);
     }
 
     inline unsigned int getFlatIndex(int i) {
-        assert(i >= 0 && i < (int)_indices.size());
+        FLUIDSIM_ASSERT(i >= 0 && i < (int)_indices.size());
         return _indices[i];
     }
 
     inline GridIndex front() {
-        assert(!_indices.empty());
+        FLUIDSIM_ASSERT(!_indices.empty());
         return _getUnflattenedIndex(_indices.front());
     }
 
     inline GridIndex back() {
-        assert(!_indices.empty());
+        FLUIDSIM_ASSERT(!_indices.empty());
         return _getUnflattenedIndex(_indices.back());
     }
 
     inline void push_back(GridIndex g) {
-        assert(g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth);
+        FLUIDSIM_ASSERT(g.i >= 0 && g.j >= 0 && g.k >= 0 && g.i < width && g.j < height && g.k < depth);
         _indices.push_back(_getFlatIndex(g));
     }
 
     inline void push_back(int i, int j, int k) {
-        assert(i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth);
+        FLUIDSIM_ASSERT(i >= 0 && j >= 0 && k >= 0 && i < width && j < height && k < depth);
         _indices.push_back(_getFlatIndex(i, j, k));
     }
 
@@ -91,7 +91,7 @@ public:
     void insert(GridIndexVector &indices);
 
     inline void pop_back() {
-        assert(!_indices.empty());
+        FLUIDSIM_ASSERT(!_indices.empty());
         _indices.pop_back();
     }
 

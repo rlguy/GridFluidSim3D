@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 #ifndef FLUIDMATERIALGRID_H
 #define FLUIDMATERIALGRID_H
 
-#include <assert.h>
 #include <vector>
 
 #include "subdividedarray3d.h"

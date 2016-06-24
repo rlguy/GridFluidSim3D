@@ -26,7 +26,6 @@ freely, subject to the following restrictions:
 #include <queue>
 #include <sstream>
 #include <fstream>
-#include <assert.h>
 
 #include "scalarfield.h"
 #include "array3d.h"
@@ -35,6 +34,7 @@ freely, subject to the following restrictions:
 #include "vmath.h"
 #include "gridindexvector.h"
 #include "stopwatch.h"
+#include "fluidsimassert.h"
 
 class Polygonizer3d
 {

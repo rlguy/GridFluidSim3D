@@ -386,7 +386,7 @@ bool Collision::getLineSegmentVoxelIntersection(vmath::vec3 p0,
         }
 
         itercount++;
-        assert(itercount < maxiter);
+        FLUIDSIM_ASSERT(itercount < maxiter);
     }
 
     return false;

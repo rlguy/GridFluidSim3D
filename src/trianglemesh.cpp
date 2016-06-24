@@ -155,7 +155,7 @@ bool TriangleMesh::loadPLY(std::string PLYFilename) {
 }
 
 void TriangleMesh::writeMeshToOBJ(std::string filename) {
-    assert(normals.size() == vertices.size());
+    FLUIDSIM_ASSERT(normals.size() == vertices.size());
 
     std::ostringstream str;
 
@@ -478,12 +478,12 @@ void TriangleMesh::updateVertexNormals() {
 }
 
 void TriangleMesh::getFaceNeighbours(unsigned int tidx, std::vector<int> &n) {
-    assert(tidx < triangles.size());
+    FLUIDSIM_ASSERT(tidx < triangles.size());
     getFaceNeighbours(triangles[tidx], n);
 }
 
 void TriangleMesh::getFaceNeighbours(Triangle t, std::vector<int> &n) {
-    assert(vertices.size() == _vertexTriangles.size());
+    FLUIDSIM_ASSERT(vertices.size() == _vertexTriangles.size());
 
     std::vector<int> vn;
     for (int i = 1; i < 3; i++) {
@@ -493,14 +493,14 @@ void TriangleMesh::getFaceNeighbours(Triangle t, std::vector<int> &n) {
 }
 
 void TriangleMesh::getVertexNeighbours(unsigned int vidx, std::vector<int> &n) {
-    assert(vertices.size() == _vertexTriangles.size());
-    assert(vidx < vertices.size());
+    FLUIDSIM_ASSERT(vertices.size() == _vertexTriangles.size());
+    FLUIDSIM_ASSERT(vidx < vertices.size());
     std::vector<int> vn = _vertexTriangles[vidx];
     n.insert(n.end(), vn.begin(), vn.end());
 }
 
 double TriangleMesh::getTriangleArea(int tidx) {
-    assert((unsigned int)tidx < triangles.size());
+    FLUIDSIM_ASSERT((unsigned int)tidx < triangles.size());
 
     if ((unsigned int)tidx < _triangleAreas.size()) {
         return _triangleAreas[tidx];
@@ -808,7 +808,7 @@ void TriangleMesh::_getSurfaceCells(GridIndexVector &cells) {
 }
 
 void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
-    assert(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
     if (cells(g)) {
         return;
     }
@@ -838,11 +838,11 @@ void TriangleMesh::_floodfill(GridIndex g, Array3d<bool> &cells) {
 }
 
 void TriangleMesh::getTrianglePosition(unsigned int index, vmath::vec3 tri[3]) {
-    assert(index < triangles.size());
+    FLUIDSIM_ASSERT(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     tri[0] = vertices[t.tri[0]];
     tri[1] = vertices[t.tri[1]];
@@ -850,11 +850,11 @@ void TriangleMesh::getTrianglePosition(unsigned int index, vmath::vec3 tri[3]) {
 }
 
 vmath::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
-    assert(index < triangles.size());
+    FLUIDSIM_ASSERT(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     return vmath::normalize(normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]]);
 }
@@ -862,7 +862,7 @@ vmath::vec3 TriangleMesh::getTriangleNormal(unsigned int index) {
 vmath::vec3 TriangleMesh::getBarycentricCoordinates(unsigned int index, vmath::vec3 p) {
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     vmath::vec3 a = vertices[t.tri[0]];
     vmath::vec3 b = vertices[t.tri[1]];
@@ -881,11 +881,11 @@ vmath::vec3 TriangleMesh::getBarycentricCoordinates(unsigned int index, vmath::v
 }
 
 vmath::vec3 TriangleMesh::getTriangleNormalSmooth(unsigned int index, vmath::vec3 p) {
-    assert(index < triangles.size());
+    FLUIDSIM_ASSERT(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     vmath::vec3 bary = getBarycentricCoordinates(index, p);
 
@@ -893,21 +893,21 @@ vmath::vec3 TriangleMesh::getTriangleNormalSmooth(unsigned int index, vmath::vec
 }
 
 vmath::vec3 TriangleMesh::getTriangleFaceDirection(unsigned int index) {
-    assert(index < triangles.size());
+    FLUIDSIM_ASSERT(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     return normals[t.tri[0]] + normals[t.tri[1]] + normals[t.tri[2]];
 }
 
 vmath::vec3 TriangleMesh::getTriangleCenter(unsigned int index) {
-    assert(index < triangles.size());
+    FLUIDSIM_ASSERT(index < triangles.size());
 
     Triangle t = triangles[index];
     int size = (int)vertices.size();
-    assert(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
+    FLUIDSIM_ASSERT(t.tri[0] < size && t.tri[1] < size && t.tri[2] < size);
 
     return (vertices[t.tri[0]] + vertices[t.tri[1]] + vertices[t.tri[2]]) / 3.0f;
 }
@@ -990,8 +990,8 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
     // count how many intersections between point and edge of grid
     // even intersections: outside
     // odd intersections: inside
-    assert(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
-    assert(_triGrid(g).size() == 0);
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(g, _gridi, _gridj, _gridk));
+    FLUIDSIM_ASSERT(_triGrid(g).size() == 0);
 
     // Add a random jitter to the center position of the cell.
     // If the line position is exactly in the center, intersections
@@ -1051,7 +1051,7 @@ bool TriangleMesh::_isCellInsideMesh(const GridIndex g) {
         n = GridIndex(n.i + 1, n.j, n.k);
     }
 
-    assert(leftIntersections.size() % 2 == rightIntersections.size() % 2);
+    FLUIDSIM_ASSERT(leftIntersections.size() % 2 == rightIntersections.size() % 2);
 
     return leftIntersections.size() % 2 == 1;
 }
@@ -1061,7 +1061,7 @@ void TriangleMesh::getCellsInsideMesh(GridIndexVector &cells) {
         return;
     }
 
-    assert(cells.width == _gridi && cells.height == _gridj && cells.depth == _gridk);
+    FLUIDSIM_ASSERT(cells.width == _gridi && cells.height == _gridj && cells.depth == _gridk);
 
     // find all cells that are on the surface boundary.
     // Iterate through surface cells and test if any of their
@@ -1151,7 +1151,7 @@ void TriangleMesh::_getBoolVectorOfSmoothedVertices(std::vector<int> &verts,
                                                     std::vector<bool> &isVertexSmooth) {
     isVertexSmooth.assign(vertices.size(), false);
     for (unsigned int i = 0; i < verts.size(); i++) {
-        assert(verts[i] >= 0 && (unsigned int)verts[i] < vertices.size());
+        FLUIDSIM_ASSERT(verts[i] >= 0 && (unsigned int)verts[i] < vertices.size());
         isVertexSmooth[verts[i]] = true;
     }
 }
@@ -1207,7 +1207,7 @@ void TriangleMesh::_getPolyhedronFromTriangle(int tidx,
                                               std::vector<bool> &visitedTriangles,
                                               std::vector<int> &polyhedron) {
 
-    assert(!visitedTriangles[tidx]);
+    FLUIDSIM_ASSERT(!visitedTriangles[tidx]);
 
     std::vector<int> queue;
     queue.push_back(tidx);
@@ -1330,7 +1330,7 @@ void TriangleMesh::removeExtraneousVertices() {
         t.tri[0] = indexTranslationTable[t.tri[0]];
         t.tri[1] = indexTranslationTable[t.tri[1]];
         t.tri[2] = indexTranslationTable[t.tri[2]];
-        assert(t.tri[0] != -1 && t.tri[1] != -1 && t.tri[2] != -1);
+        FLUIDSIM_ASSERT(t.tri[0] != -1 && t.tri[1] != -1 && t.tri[2] != -1);
 
         triangles[i] = t;
     }

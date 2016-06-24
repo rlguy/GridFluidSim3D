@@ -49,7 +49,6 @@ public:
     }
 
     void setSubdivisionLevel(int level) {
-        assert(level >= 1);
         if (level <= 0) {
             std::string msg = "Error: subdivision level must be greater than or equal to 1.\n";
             msg += "level: " + _toString(level) + "\n";

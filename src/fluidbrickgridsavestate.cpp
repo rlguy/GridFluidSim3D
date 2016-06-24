@@ -36,7 +36,7 @@ void FluidBrickGridSaveState::saveState(std::string filename, FluidBrickGrid *br
 
     std::ofstream state(filename.c_str(), std::ios::out | std::ios::binary);
 
-    assert(state.is_open());
+    FLUIDSIM_ASSERT(state.is_open());
 
     int i, j, k;
     brickgrid->getGridDimensions(&i, &j, &k);
@@ -156,41 +156,41 @@ void FluidBrickGridSaveState::closeState() {
 }
 
 void FluidBrickGridSaveState::getGridDimensions(int *i, int *j, int *k) {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     *i = _isize;
     *j = _jsize;
     *k = _ksize;
 }
 
 void FluidBrickGridSaveState::getBrickGridDimensions(int *bi, int *bj, int *bk) {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     _getBrickGridDimensions(bi, bj, bk);
 }
 
 double FluidBrickGridSaveState::getCellSize() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _dx;
 }
 
 AABB FluidBrickGridSaveState::getBrickAABB() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _brickAABB;
 }
 
 int FluidBrickGridSaveState::getBrickGridQueueSize() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _brickGridQueueSize;
 }
 
 int FluidBrickGridSaveState::getNumUpdates() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _numUpdates;
 }
 
 
 void FluidBrickGridSaveState::getCurrentDensityGrid(Array3d<float> &grid) {
-    assert(_isLoadStateInitialized);
-    assert(grid.width == _isize &&
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(grid.width == _isize &&
            grid.height == _jsize &&
            grid.depth == _ksize);
 
@@ -198,12 +198,12 @@ void FluidBrickGridSaveState::getCurrentDensityGrid(Array3d<float> &grid) {
     _setLoadStateFileOffset(_currentDensityOffset);
 
     char *bin = (char *)grid.getRawArray();
-    assert(_readLoadState(bin, binsize));
+    FLUIDSIM_ASSERT(_readLoadState(bin, binsize));
 }
 
 void FluidBrickGridSaveState::getTargetDensityGrid(Array3d<float> &grid) {
-    assert(_isLoadStateInitialized);
-    assert(grid.width == _isize &&
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(grid.width == _isize &&
            grid.height == _jsize &&
            grid.depth == _ksize);
 
@@ -211,12 +211,12 @@ void FluidBrickGridSaveState::getTargetDensityGrid(Array3d<float> &grid) {
     _setLoadStateFileOffset(_targetDensityOffset);
 
     char *bin = (char *)grid.getRawArray();
-    assert(_readLoadState(bin, binsize));
+    FLUIDSIM_ASSERT(_readLoadState(bin, binsize));
 }
 
 void FluidBrickGridSaveState::getVelocityDensityGrid(Array3d<float> &grid) {
-    assert(_isLoadStateInitialized);
-    assert(grid.width == _isize &&
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(grid.width == _isize &&
            grid.height == _jsize &&
            grid.depth == _ksize);
 
@@ -224,20 +224,20 @@ void FluidBrickGridSaveState::getVelocityDensityGrid(Array3d<float> &grid) {
     _setLoadStateFileOffset(_velocityDensityOffset);
 
     char *bin = (char *)grid.getRawArray();
-    assert(_readLoadState(bin, binsize));
+    FLUIDSIM_ASSERT(_readLoadState(bin, binsize));
 }
 
 void FluidBrickGridSaveState::getBrickActivityGrid(Array3d<bool> &grid, int idx) {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
 
     int bi, bj, bk;
     _getBrickGridDimensions(&bi, &bj, &bk);
-    assert(grid.width == bi &&
+    FLUIDSIM_ASSERT(grid.width == bi &&
            grid.height == bj &&
            grid.depth == bk);
 
-    assert(idx >= 0 && idx <= 2);
-    assert(idx < _brickGridQueueSize);
+    FLUIDSIM_ASSERT(idx >= 0 && idx <= 2);
+    FLUIDSIM_ASSERT(idx < _brickGridQueueSize);
 
     if (idx == 0) {
         _setLoadStateFileOffset(_brickGridOffset1);
@@ -249,20 +249,20 @@ void FluidBrickGridSaveState::getBrickActivityGrid(Array3d<bool> &grid, int idx)
 
     int binsize = bi * bj * bk * sizeof(bool);
     char *bin = (char *)grid.getRawArray();
-    assert(_readLoadState(bin, binsize));
+    FLUIDSIM_ASSERT(_readLoadState(bin, binsize));
 }
 
 void FluidBrickGridSaveState::getBrickIntensityGrid(Array3d<float> &grid, int idx) {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
 
     int bi, bj, bk;
     _getBrickGridDimensions(&bi, &bj, &bk);
-    assert(grid.width == bi &&
+    FLUIDSIM_ASSERT(grid.width == bi &&
            grid.height == bj &&
            grid.depth == bk);
 
-    assert(idx >= 0 && idx <= 2);
-    assert(idx < _brickGridQueueSize);
+    FLUIDSIM_ASSERT(idx >= 0 && idx <= 2);
+    FLUIDSIM_ASSERT(idx < _brickGridQueueSize);
 
     int dataOffset = bi * bj * bk * sizeof(bool);
 
@@ -276,7 +276,7 @@ void FluidBrickGridSaveState::getBrickIntensityGrid(Array3d<float> &grid, int id
 
     int binsize = bi * bj * bk * sizeof(float);
     char *bin = (char *)grid.getRawArray();
-    assert(_readLoadState(bin, binsize));
+    FLUIDSIM_ASSERT(_readLoadState(bin, binsize));
 }
 
 void FluidBrickGridSaveState::_writeInt(int *value, std::ofstream *state) {

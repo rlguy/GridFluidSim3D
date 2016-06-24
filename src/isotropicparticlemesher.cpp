@@ -32,12 +32,12 @@ IsotropicParticleMesher::~IsotropicParticleMesher() {
 }
 
 void IsotropicParticleMesher::setSubdivisionLevel(int n) {
-	assert(n >= 1);
+	FLUIDSIM_ASSERT(n >= 1);
 	_subdivisionLevel = n;
 }
 
 void IsotropicParticleMesher::setNumPolygonizationSlices(int n) {
-	assert(n >= 1);
+	FLUIDSIM_ASSERT(n >= 1);
 
 	if (n > _isize) {
 		n = _isize;
@@ -50,10 +50,10 @@ TriangleMesh IsotropicParticleMesher::meshParticles(FragmentedVector<MarkerParti
 	                                                FluidMaterialGrid &materialGrid,
 	                                                double particleRadius) {
 
-	assert(materialGrid.width == _isize &&
+	FLUIDSIM_ASSERT(materialGrid.width == _isize &&
 		   materialGrid.height == _jsize &&
 		   materialGrid.depth == _ksize);
-	assert(particleRadius > 0.0);
+	FLUIDSIM_ASSERT(particleRadius > 0.0);
 
 	_particleRadius = particleRadius;
 

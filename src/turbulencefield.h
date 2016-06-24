@@ -20,8 +20,6 @@ freely, subject to the following restrictions:
 #ifndef TURBULENCEFIELD_H
 #define TURBULENCEFIELD_H
 
-#include <assert.h>
-
 #include "array3d.h"
 #include "grid3d.h"
 #include "interpolation.h"
@@ -29,6 +27,7 @@ freely, subject to the following restrictions:
 #include "gridindexvector.h"
 #include "fluidmaterialgrid.h"
 #include "vmath.h"
+#include "fluidsimassert.h"
 
 class TurbulenceField
 {

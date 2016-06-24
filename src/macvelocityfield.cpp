@@ -181,21 +181,21 @@ void MACVelocityField::setW(GridIndex g, double val) {
 }
 
 void MACVelocityField::setU(Array3d<float> &ugrid) {
-    assert(ugrid.width == _u.width && 
+    FLUIDSIM_ASSERT(ugrid.width == _u.width && 
            ugrid.height == _u.height && 
            ugrid.depth == _u.depth);
     _u = ugrid;
 }
 
 void MACVelocityField::setV(Array3d<float> &vgrid) {
-    assert(vgrid.width == _v.width && 
+    FLUIDSIM_ASSERT(vgrid.width == _v.width && 
            vgrid.height == _v.height && 
            vgrid.depth == _v.depth);
     _v = vgrid;
 }
 
 void MACVelocityField::setW(Array3d<float> &wgrid) {
-    assert(wgrid.width == _w.width && 
+    FLUIDSIM_ASSERT(wgrid.width == _w.width && 
            wgrid.height == _w.height && 
            wgrid.depth == _w.depth);
     _w = wgrid;
@@ -226,7 +226,7 @@ void MACVelocityField::addW(int i, int j, int k, double val) {
 }
 
 vmath::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
-    assert(isIndexInRangeU(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeU(i, j, k));
 
     double gx = (double)(i-1)*_dx;
     double gy = (double)j*_dx;
@@ -236,7 +236,7 @@ vmath::vec3 MACVelocityField::velocityIndexToPositionU(int i, int j, int k) {
 }
 
 vmath::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
-    assert(isIndexInRangeV(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeV(i, j, k));
 
     double gx = (double)i*_dx;
     double gy = (double)(j-1)*_dx;
@@ -246,7 +246,7 @@ vmath::vec3 MACVelocityField::velocityIndexToPositionV(int i, int j, int k) {
 }
 
 vmath::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
-    assert(isIndexInRangeW(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeW(i, j, k));
 
     double gx = (float)i*_dx;
     double gy = (float)j*_dx;
@@ -256,7 +256,7 @@ vmath::vec3 MACVelocityField::velocityIndexToPositionW(int i, int j, int k) {
 }
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
@@ -266,7 +266,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtCellCenter(int i, int j, int k) 
 }
 
 float MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double xavg = 0.5 * (U(i + 1, j, k) + U(i, j, k));
     double yavg = 0.5 * (V(i, j + 1, k) + V(i, j, k));
@@ -276,7 +276,7 @@ float MACVelocityField::evaluateVelocityMagnitudeSquaredAtCellCenter(int i, int 
 }
 
 float MACVelocityField::evaluateVelocityMagnitudeAtCellCenter(int i, int j, int k) {
-    assert(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize));
 
     double mag = evaluateVelocityMagnitudeSquaredAtCellCenter(i, j, k);
     if (mag > 0.0) {
@@ -308,7 +308,7 @@ float MACVelocityField::evaluateMaximumVelocityMagnitude() {
 }
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k) {
-    assert(isIndexInRangeU(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeU(i, j, k));
 
     // Shift reference coordinate to the left. The formula used is for calculating
     // u(i+1/2, j, k). If we keep original (i,j,k) coordinate, then using the formula
@@ -324,7 +324,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterU(int i, int j, int k)
 }
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k) {
-    assert(isIndexInRangeV(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeV(i, j, k));
 
     j--;
 
@@ -336,7 +336,7 @@ vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterV(int i, int j, int k)
 }
 
 vmath::vec3 MACVelocityField::evaluateVelocityAtFaceCenterW(int i, int j, int k) {
-    assert(isIndexInRangeW(i, j, k));
+    FLUIDSIM_ASSERT(isIndexInRangeW(i, j, k));
 
     k--;
 

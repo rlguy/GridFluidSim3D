@@ -129,7 +129,7 @@ int DiffuseParticleSimulation::getMaxNumDiffuseParticles() {
 }
 
 void DiffuseParticleSimulation::setMaxNumDiffuseParticles(int n) {
-    assert(n >= 0);
+    FLUIDSIM_ASSERT(n >= 0);
     _maxNumDiffuseParticles = n;
 }
 
@@ -138,7 +138,7 @@ double DiffuseParticleSimulation::getMaxDiffuseParticleLifetime() {
 }
 
 void DiffuseParticleSimulation::setMaxDiffuseParticleLifetime(double lifetime) {
-    assert(lifetime >= 0);
+    FLUIDSIM_ASSERT(lifetime >= 0);
     _maxDiffuseParticleLifetime = lifetime;
 }
 
@@ -147,7 +147,7 @@ double DiffuseParticleSimulation::getDiffuseParticleWavecrestEmissionRate() {
 }
 
 void DiffuseParticleSimulation::setDiffuseParticleWavecrestEmissionRate(double r) {
-    assert(r >= 0);
+    FLUIDSIM_ASSERT(r >= 0);
     _wavecrestEmissionRate = r;
 }
 
@@ -156,7 +156,7 @@ double DiffuseParticleSimulation::getDiffuseParticleTurbulenceEmissionRate() {
 }
 
 void DiffuseParticleSimulation::setDiffuseParticleTurbulenceEmissionRate(double r) {
-    assert(r >= 0);
+    FLUIDSIM_ASSERT(r >= 0);
     _turbulenceEmissionRate = r;
 }
 
@@ -610,8 +610,8 @@ vmath::vec3 DiffuseParticleSimulation::
     
     GridIndex g1 = Grid3d::positionToGridIndex(p0, _dx);
     GridIndex g2 = Grid3d::positionToGridIndex(p1, _dx);
-    assert(!_materialGrid->isCellSolid(g1));
-    assert(_materialGrid->isCellSolid(g2));
+    FLUIDSIM_ASSERT(!_materialGrid->isCellSolid(g1));
+    FLUIDSIM_ASSERT(_materialGrid->isCellSolid(g2));
 
     GridIndex voxel;
     bool foundVoxel = Collision::getLineSegmentVoxelIntersection(p0, p1, _dx,

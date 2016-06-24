@@ -18,10 +18,10 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 #include <string>
-#include <assert.h>
 
 #include "../fluidsimulation.h"
 #include "../fluidsimulationsavestate.h"
+#include "../fluidsimassert.h"
 
 void example_save_state(std::string filename) {
 
@@ -53,7 +53,7 @@ void example_load_state(std::string filename) {
 
     FluidSimulationSaveState state;
     bool success = state.loadState(filename);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     FluidSimulation fluidsim(state);
 

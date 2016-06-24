@@ -28,6 +28,7 @@ freely, subject to the following restrictions:
 
 #include "grid3d.h"
 #include "array3d.h"
+#include "fluidsimassert.h"
 
 class GridIndexKeyMap
 {

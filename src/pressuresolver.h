@@ -25,6 +25,7 @@ freely, subject to the following restrictions:
 #include <iostream>
 #include <limits>
 #include <algorithm>
+
 #include "macvelocityfield.h"
 #include "gridindexkeymap.h"
 #include "logfile.h"
@@ -32,6 +33,7 @@ freely, subject to the following restrictions:
 #include "array3d.h"
 #include "fluidmaterialgrid.h"
 #include "gridindexvector.h"
+#include "fluidsimassert.h"
 
 struct PressureSolverParameters {
     double cellwidth;

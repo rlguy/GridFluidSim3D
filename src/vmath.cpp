@@ -109,12 +109,12 @@ vmath::vec3 vmath::operator-(const vmath::vec3 &v) {
 }
 
 float vmath::vec3::get(int i) {
-    assert(i >= 0 && i <= 2);
+    FLUIDSIM_ASSERT(i >= 0 && i <= 2);
     return (&x)[i];
 }
 
 float vmath::vec3::operator[](int i) {
-    assert(i >= 0 && i <= 2);
+    FLUIDSIM_ASSERT(i >= 0 && i <= 2);
     return (&x)[i];
 }
 
@@ -297,12 +297,12 @@ vmath::mat3 vmath::operator-(const vmath::mat3 &m) {
 }
 
 vmath::vec3 vmath::mat3::get(int i) {
-    assert(i >= 0 && i <= 2);
+    FLUIDSIM_ASSERT(i >= 0 && i <= 2);
     return vec3(m[3*i], m[3*i + 1], m[3*i + 2]);
 }
 
 vmath::vec3 vmath::mat3::operator[](int i) {
-    assert(i >= 0 && i <= 2);
+    FLUIDSIM_ASSERT(i >= 0 && i <= 2);
     return vec3(m[3*i], m[3*i + 1], m[3*i + 2]);
 }
 

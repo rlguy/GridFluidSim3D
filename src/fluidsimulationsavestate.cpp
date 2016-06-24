@@ -35,7 +35,7 @@ void FluidSimulationSaveState::saveState(std::string filename, FluidSimulation *
 
     std::ofstream state(filename.c_str(), std::ios::out | std::ios::binary);
 
-    assert(state.is_open());
+    FLUIDSIM_ASSERT(state.is_open());
 
     int i, j, k;
     _fluidsim->getGridDimensions(&i, &j, &k);
@@ -158,34 +158,34 @@ void FluidSimulationSaveState::closeState() {
 }
 
 void FluidSimulationSaveState::getGridDimensions(int *i, int *j, int *k) {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     *i = _isize;
     *j = _jsize;
     *k = _ksize;
 }
 
 double FluidSimulationSaveState::getCellSize() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _dx;
 }
 
 int FluidSimulationSaveState::getCurrentFrame() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _currentFrame;
 }
 
 int FluidSimulationSaveState::getNumMarkerParticles() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _numMarkerParticles;
 }
 
 int FluidSimulationSaveState::getNumDiffuseParticles() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _numDiffuseParticles;
 }
 
 int FluidSimulationSaveState::getNumSolidCells() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _numSolidCells;
 }
 
@@ -223,8 +223,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
         return std::vector<vmath::vec3>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(endidx >= 0 && endidx < _numMarkerParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numMarkerParticles);
 
     unsigned int foffset = _mpPositionOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
@@ -234,7 +234,7 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
     positions.reserve(n);
 
     bool success = _readParticleVectors(positions, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return positions;
 }
@@ -245,8 +245,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities(
         return std::vector<vmath::vec3>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(endidx >= 0 && endidx < _numMarkerParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numMarkerParticles);
 
     unsigned int foffset = _mpVelocityOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
@@ -256,7 +256,7 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities(
     velocities.reserve(n);
 
     bool success = _readParticleVectors(velocities, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return velocities;
 }
@@ -267,8 +267,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions(
         return std::vector<vmath::vec3>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
 
     unsigned int foffset = _dpPositionOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
@@ -278,7 +278,7 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions(
     positions.reserve(n);
 
     bool success = _readParticleVectors(positions, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return positions;
 }
@@ -289,8 +289,8 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities(
         return std::vector<vmath::vec3>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
 
     unsigned int foffset = _dpVelocityOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
@@ -300,7 +300,7 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities(
     velocities.reserve(n);
 
     bool success = _readParticleVectors(velocities, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return velocities;
 }
@@ -311,9 +311,9 @@ std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes(
         return std::vector<float>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(startidx <= endidx);
-    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(startidx <= endidx);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
 
     unsigned int foffset = _dpLifetimeOffset + startidx*sizeof(float);
     _setLoadStateFileOffset(foffset);
@@ -323,7 +323,7 @@ std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes(
     lifetimes.reserve(n);
 
     bool success = _readParticleLifetimes(lifetimes, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return lifetimes;
 }
@@ -335,9 +335,9 @@ std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes(
         return std::vector<char>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(startidx <= endidx);
-    assert(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(startidx <= endidx);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
 
     unsigned int foffset = _dpTypeOffset + startidx*sizeof(char);
     _setLoadStateFileOffset(foffset);
@@ -347,7 +347,7 @@ std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes(
     types.reserve(n);
 
     bool success = _readParticleTypes(types, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return types;
 }
@@ -358,8 +358,8 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
         return std::vector<GridIndex>();
     }
 
-    assert(_isLoadStateInitialized);
-    assert(endidx >= 0 && endidx < _numSolidCells);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numSolidCells);
 
     unsigned int foffset = _solidCellOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
@@ -369,22 +369,22 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
     cells.reserve(n);
 
     bool success = _readSolidCells(cells, n, &_loadState);
-    assert(success);
+    FLUIDSIM_ASSERT(success);
 
     return cells;
 }
 
 bool FluidSimulationSaveState::isFluidBrickGridEnabled() {
-    assert(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
     return _isFluidBrickGridEnabled;
 }
 
 void FluidSimulationSaveState::getFluidBrickGridSaveState(FluidBrickGridSaveState &state) {
-    assert(_isLoadStateInitialized);
-    assert(_isFluidBrickGridEnabled);
-    assert(_isTempFileInUse);
-    assert(state.loadState(_tempFilename));
-    assert(state.isLoadStateInitialized());
+    FLUIDSIM_ASSERT(_isLoadStateInitialized);
+    FLUIDSIM_ASSERT(_isFluidBrickGridEnabled);
+    FLUIDSIM_ASSERT(_isTempFileInUse);
+    FLUIDSIM_ASSERT(state.loadState(_tempFilename));
+    FLUIDSIM_ASSERT(state.isLoadStateInitialized());
 }
 
 bool FluidSimulationSaveState::isLoadStateInitialized() {
@@ -573,7 +573,7 @@ void FluidSimulationSaveState::_writeBinarySolidCellIndices(FluidSimulation *_fl
 
 void FluidSimulationSaveState::_writeBinaryFluidBrickGrid(FluidSimulation *_fluidsim, 
                                                           std::ofstream *state) {
-    assert(_fluidsim->isBrickOutputEnabled());
+    FLUIDSIM_ASSERT(_fluidsim->isBrickOutputEnabled());
     FluidBrickGrid *brickGrid = _fluidsim->getFluidBrickGrid();
 
     std::string tempfilename = _getTemporaryFilename();
@@ -583,14 +583,14 @@ void FluidSimulationSaveState::_writeBinaryFluidBrickGrid(FluidSimulation *_flui
     _appendFileToSaveState(tempfilename, state);
 
     int error = remove(tempfilename.c_str());
-    assert(error == 0);
+    FLUIDSIM_ASSERT(error == 0);
 }
 
 void FluidSimulationSaveState::_appendFileToSaveState(std::string filename, 
                                                       std::ofstream *state) {
     std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
     *state << file.rdbuf();
-    assert(file.good() && state->good());
+    FLUIDSIM_ASSERT(file.good() && state->good());
 }
 
 std::string FluidSimulationSaveState::_getTemporaryFilename() {
@@ -601,7 +601,7 @@ std::string FluidSimulationSaveState::_getTemporaryFilename() {
     while (std::ifstream(tfile)) {
         tfile = _getRandomString(filenamelen);
         numtries++;
-        assert(numtries < 100);
+        FLUIDSIM_ASSERT(numtries < 100);
     }
 
     return tfile;

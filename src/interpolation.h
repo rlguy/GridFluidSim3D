@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
-#include <assert.h>
 
 namespace Interpolation {
 
