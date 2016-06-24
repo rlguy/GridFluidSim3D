@@ -1265,8 +1265,11 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
 }
 
 void FluidSimulation::_initializeCLObjects() {
-    assert(_particleAdvector.initialize());
-    assert(_scalarFieldAccelerator.initialize());
+    bool success = _particleAdvector.initialize();
+    assert(success);
+
+    success = _scalarFieldAccelerator.initialize();
+    assert(success);
 }
 
 /********************************************************************************
