@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 2.8.9)
+
 project(fluidsim)
+set(CMAKE_BUILD_TYPE Release)
+
+set(PROGRAM_DIR ${CMAKE_BINARY_DIR}/fluidsim)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROGRAM_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG  ${PROGRAM_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE  ${PROGRAM_DIR})
 
 if (MSVC)
     add_definitions(-DCL_USE_DEPRECATED_OPENCL_1_1_APIS -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
@@ -43,9 +50,9 @@ add_executable(fluidsim ${SOURCES})
 target_include_directories(fluidsim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(fluidsim ${OpenCL_LIBRARY})
 
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bakefiles")
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/logs")
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/savestates")
+file(MAKE_DIRECTORY "${PROGRAM_DIR}/bakefiles")
+file(MAKE_DIRECTORY "${PROGRAM_DIR}/logs")
+file(MAKE_DIRECTORY "${PROGRAM_DIR}/savestates")
 
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/resources")
-file(COPY "src/kernels" DESTINATION "resources")
+file(MAKE_DIRECTORY "${PROGRAM_DIR}/resources")
+file(COPY "src/kernels" DESTINATION "${PROGRAM_DIR}/resources")

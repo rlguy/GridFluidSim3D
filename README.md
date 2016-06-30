@@ -57,6 +57,8 @@ cmake -G "MinGW Makefiles"
 
 will generate Makefiles for the MinGW compiler which can then be built using the [GNU Make](https://www.gnu.org/software/make/) utility with the command ```make```. A list of CMake generators can be found [here](https://cmake.org/cmake/help/v3.0/manual/cmake-generators.7.html).
 
+Once successfully built, the program will be located in the '''build/fluidsim/''' directory.
+
 ## Configuring the Fluid Simulator
 
 The simulator is configured in the file [src/main.cpp](src/main.cpp). The default simulation will drop a ball of fluid in the center of the simulation domain. Example configurations are located in the [src/examples/](src/examples) directory. Some documentation on the public methods for the FluidSimulation class is provided in the [fluidsimulation.h](src/fluidsimulation.h) header.
