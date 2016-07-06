@@ -1,4 +1,10 @@
 import array
+import ctypes
+
+class GridIndex_t(ctypes.Structure):
+    _fields_ = [("i", ctypes.c_int),
+                ("j", ctypes.c_int),
+                ("k", ctypes.c_int)]
 
 class GridIndex(object):
 

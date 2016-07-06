@@ -25,8 +25,4 @@ def __load_library(name):
 
         return library
 
-def __init_library(lib):
-    None
-
 lib = __load_library("fluidcore")
-__init_library(lib)

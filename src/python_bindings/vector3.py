@@ -1,5 +1,11 @@
 import array
+import ctypes
 import math
+
+class Vector3_t(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_float),
+                ("y", ctypes.c_float),
+                ("z", ctypes.c_float)]
 
 class Vector3(object):
 

@@ -361,7 +361,7 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
     FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numSolidCells);
 
-    unsigned int foffset = _solidCellOffset + startidx*(3*sizeof(float));
+    unsigned int foffset = _solidCellOffset + startidx*(3*sizeof(int));
     _setLoadStateFileOffset(foffset);
 
     int n = endidx - startidx;
@@ -400,9 +400,9 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticlePositions(FluidSimulati
     std::vector<vmath::vec3> mps;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         mps = _fluidsim->getMarkerParticlePositions(startidx, endidx);
@@ -421,9 +421,9 @@ void FluidSimulationSaveState::_writeBinaryMarkerParticleVelocities(FluidSimulat
     std::vector<vmath::vec3> mvs;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         mvs = _fluidsim->getMarkerParticleVelocities(startidx, endidx);
@@ -442,9 +442,9 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticlePositions(FluidSimulat
     std::vector<vmath::vec3> dps;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         dps = _fluidsim->getDiffuseParticlePositions(startidx, endidx);
@@ -463,9 +463,9 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticleVelocities(FluidSimula
     std::vector<vmath::vec3> dvs;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         dvs = _fluidsim->getDiffuseParticleVelocities(startidx, endidx);
@@ -484,9 +484,9 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticleLifetimes(FluidSimulat
     std::vector<float> dfs;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         dfs = _fluidsim->getDiffuseParticleLifetimes(startidx, endidx);
@@ -505,9 +505,9 @@ void FluidSimulationSaveState::_writeBinaryDiffuseParticleTypes(FluidSimulation 
     std::vector<char> dts;
     while (numWritten < n) {
         int startidx = numWritten;
-        int endidx = numWritten + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numWritten + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         dts = _fluidsim->getDiffuseParticleTypes(startidx, endidx);
