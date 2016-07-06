@@ -679,21 +679,21 @@ void FluidSimulation::getMarkerParticles(std::vector<MarkerParticle> &mps) {
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
-    return getMarkerParticlePositions(0, _markerParticles.size() - 1);
+    return getMarkerParticlePositions(0, _markerParticles.size());
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startidx, int endidx) {
     int size = _markerParticles.size();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<vmath::vec3> particles;
-    particles.reserve(endidx - startidx + 1);
+    particles.reserve(endidx - startidx);
 
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         particles.push_back(_markerParticles[i].position);
     }
 
@@ -701,21 +701,21 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions(int startid
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities() {
-    return getMarkerParticleVelocities(0, _markerParticles.size() - 1);
+    return getMarkerParticleVelocities(0, _markerParticles.size());
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int startidx, int endidx) {
     int size = _markerParticles.size();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<vmath::vec3> velocities;
-    velocities.reserve(endidx - startidx + 1);
+    velocities.reserve(endidx - startidx);
 
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         velocities.push_back(_markerParticles[i].velocity);
     }
 
@@ -728,22 +728,22 @@ unsigned int FluidSimulation::getNumDiffuseParticles() {
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
     int size = getNumDiffuseParticles();
-    return getDiffuseParticlePositions(0, size - 1);
+    return getDiffuseParticlePositions(0, size);
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<vmath::vec3> particles;
-    particles.reserve(endidx - startidx + 1);
+    particles.reserve(endidx - startidx);
 
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         particles.push_back(dps->at(i).position);
     }
 
@@ -752,22 +752,22 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions(int starti
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities() {
     int size = getNumDiffuseParticles();
-    return getDiffuseParticleVelocities(0, size - 1);
+    return getDiffuseParticleVelocities(0, size);
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<vmath::vec3> velocities;
-    velocities.reserve(endidx - startidx + 1);
+    velocities.reserve(endidx - startidx);
 
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         velocities.push_back(dps->at(i).velocity);
     }
 
@@ -776,22 +776,22 @@ std::vector<vmath::vec3> FluidSimulation::getDiffuseParticleVelocities(int start
 
 std::vector<float> FluidSimulation::getDiffuseParticleLifetimes() {
     int size = getNumDiffuseParticles();
-    return getDiffuseParticleLifetimes(0, size - 1);
+    return getDiffuseParticleLifetimes(0, size);
 }
 
 std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<float> lifetimes;
-    lifetimes.reserve(endidx - startidx + 1);
+    lifetimes.reserve(endidx - startidx);
 
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         lifetimes.push_back(dps->at(i).lifetime);
     }
 
@@ -800,22 +800,22 @@ std::vector<float> FluidSimulation::getDiffuseParticleLifetimes(int startidx, in
 
 std::vector<char> FluidSimulation::getDiffuseParticleTypes() {
     int size = getNumDiffuseParticles();
-    return getDiffuseParticleTypes(0, size - 1);
+    return getDiffuseParticleTypes(0, size);
 }
 
 std::vector<char> FluidSimulation::getDiffuseParticleTypes(int startidx, int endidx) {
     int size = getNumDiffuseParticles();
-    if (!(startidx >= 0 && startidx < size) || !(endidx >= 0 && endidx < size)) {
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
         std::string msg = "Error: invalid index range.\n";
         msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
         throw std::out_of_range(msg);
     }
 
     std::vector<char> types;
-    types.reserve(endidx - startidx + 1);
+    types.reserve(endidx - startidx);
 
     FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (int i = startidx; i <= endidx; i++) {
+    for (int i = startidx; i < endidx; i++) {
         types.push_back((char)(dps->at(i).type));
     }
 

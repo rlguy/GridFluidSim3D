@@ -190,31 +190,31 @@ int FluidSimulationSaveState::getNumSolidCells() {
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions() {
-    return getMarkerParticlePositions(0, _numMarkerParticles - 1);
+    return getMarkerParticlePositions(0, _numMarkerParticles);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities() {
-    return getMarkerParticleVelocities(0, _numMarkerParticles - 1);
+    return getMarkerParticleVelocities(0, _numMarkerParticles);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions() {
-    return getDiffuseParticlePositions(0, _numDiffuseParticles - 1);
+    return getDiffuseParticlePositions(0, _numDiffuseParticles);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities() {
-    return getDiffuseParticleVelocities(0, _numDiffuseParticles - 1);
+    return getDiffuseParticleVelocities(0, _numDiffuseParticles);
 }
 
 std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes() {
-    return getDiffuseParticleLifetimes(0, _numDiffuseParticles - 1);
+    return getDiffuseParticleLifetimes(0, _numDiffuseParticles);
 }
 
 std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes() {
-    return getDiffuseParticleTypes(0, _numDiffuseParticles - 1);
+    return getDiffuseParticleTypes(0, _numDiffuseParticles);
 }
 
 std::vector<GridIndex> FluidSimulationSaveState::getSolidCells() {
-    return getSolidCells(0, _numSolidCells - 1);
+    return getSolidCells(0, _numSolidCells);
 }
 
 std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
@@ -224,12 +224,12 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticlePositions(
     }
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numMarkerParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numMarkerParticles);
 
     unsigned int foffset = _mpPositionOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<vmath::vec3> positions;
     positions.reserve(n);
 
@@ -246,12 +246,12 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getMarkerParticleVelocities(
     }
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numMarkerParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numMarkerParticles);
 
     unsigned int foffset = _mpVelocityOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<vmath::vec3> velocities;
     velocities.reserve(n);
 
@@ -268,12 +268,12 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticlePositions(
     }
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numDiffuseParticles);
 
     unsigned int foffset = _dpPositionOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<vmath::vec3> positions;
     positions.reserve(n);
 
@@ -290,12 +290,12 @@ std::vector<vmath::vec3> FluidSimulationSaveState::getDiffuseParticleVelocities(
     }
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numDiffuseParticles);
 
     unsigned int foffset = _dpVelocityOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<vmath::vec3> velocities;
     velocities.reserve(n);
 
@@ -313,12 +313,12 @@ std::vector<float> FluidSimulationSaveState::getDiffuseParticleLifetimes(
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
     FLUIDSIM_ASSERT(startidx <= endidx);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numDiffuseParticles);
 
     unsigned int foffset = _dpLifetimeOffset + startidx*sizeof(float);
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<float> lifetimes;
     lifetimes.reserve(n);
 
@@ -337,12 +337,12 @@ std::vector<char> FluidSimulationSaveState::getDiffuseParticleTypes(
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
     FLUIDSIM_ASSERT(startidx <= endidx);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numDiffuseParticles);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numDiffuseParticles);
 
     unsigned int foffset = _dpTypeOffset + startidx*sizeof(char);
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<char> types;
     types.reserve(n);
 
@@ -359,12 +359,12 @@ std::vector<GridIndex> FluidSimulationSaveState::getSolidCells(
     }
 
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
-    FLUIDSIM_ASSERT(endidx >= 0 && endidx < _numSolidCells);
+    FLUIDSIM_ASSERT(endidx >= 0 && endidx <= _numSolidCells);
 
     unsigned int foffset = _solidCellOffset + startidx*(3*sizeof(float));
     _setLoadStateFileOffset(foffset);
 
-    int n = endidx - startidx + 1;
+    int n = endidx - startidx;
     std::vector<GridIndex> cells;
     cells.reserve(n);
 

@@ -557,7 +557,7 @@ public:
     /*
         Returns a vector of diffuse particle positions. If range indices
         are specified, the vector will contain positions ranging from 
-        start index startidx and ending at endidx inclusively.
+        [startidx, endidx).
     */
     std::vector<vmath::vec3> getDiffuseParticlePositions();
     std::vector<vmath::vec3> getDiffuseParticlePositions(int startidx, int endidx);
@@ -565,7 +565,7 @@ public:
     /*
         Returns a vector of diffuse particle velocities. If range indices
         are specified, the vector will contain velocities ranging from 
-        start index startidx and ending at endidx inclusively.
+        [startidx, endidx).
     */
     std::vector<vmath::vec3> getDiffuseParticleVelocities();
     std::vector<vmath::vec3> getDiffuseParticleVelocities(int startidx, int endidx);
@@ -573,7 +573,7 @@ public:
     /*
         Returns a vector of diffuse particle lifetimes. If range indices
         are specified, the vector will contain remaining lifetimes (in seconds) 
-        ranging from start index startidx and ending at endidx inclusively.
+        ranging from [startidx, endidx).
     */
     std::vector<float> getDiffuseParticleLifetimes();
     std::vector<float> getDiffuseParticleLifetimes(int startidx, int endidx);
@@ -581,7 +581,7 @@ public:
     /*
         Returns a vector of diffuse particle types. If range indices
         are specified, the vector will contain types ranging from 
-        start index startidx and ending at endidx inclusively.
+        [startidx, endidx).
 
         Char value and corresponding diffuse particle type:
 

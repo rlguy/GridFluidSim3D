@@ -43,7 +43,7 @@ public:
     bool loadState(std::string filename);
     void closeState();
 
-    void getGridDimensions(int *i, int *j, int *);
+    void getGridDimensions(int *i, int *j, int *k);
     double getCellSize();
     int getCurrentFrame();
     int getNumMarkerParticles();
