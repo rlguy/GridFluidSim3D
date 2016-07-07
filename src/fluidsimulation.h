@@ -93,6 +93,7 @@ public:
         be made before this method is run.
     */
     void initialize();
+    bool isInitialized();
 
     /*
         Advance the fluid simulation for a single frame time of dt seconds.
@@ -128,6 +129,9 @@ public:
             k   ->   depth
     */
     void getGridDimensions(int *i, int *j, int *k);
+    int getGridWidth();
+    int getGridHeight();
+    int getGridDepth();
 
     /*  
         Retrieves the physical simulation dimensions. Values are equivalent

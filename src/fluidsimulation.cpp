@@ -53,6 +53,10 @@ void FluidSimulation::initialize() {
     }
 }
 
+bool FluidSimulation::isInitialized() {
+    return _isSimulationInitialized;
+}
+
 void FluidSimulation::saveState(std::string filename) {
     FluidSimulationSaveState state;
     state.saveState(filename, this);
@@ -72,6 +76,18 @@ double FluidSimulation::getCellSize() {
 
 void FluidSimulation::getGridDimensions(int *i, int *j, int *k) { 
     *i = _isize; *j = _jsize; *k = _ksize; 
+}
+
+int FluidSimulation::getGridWidth() {
+    return _isize;
+}
+
+int FluidSimulation::getGridHeight() {
+    return _jsize;
+}
+
+int FluidSimulation::getGridDepth() {
+    return _ksize;
 }
 
 void FluidSimulation::getSimulationDimensions(double *w, double *h, double *d) { 
@@ -1096,9 +1112,9 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
     std::vector<vmath::vec3> vectors;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         vectors = state.getMarkerParticlePositions(startidx, endidx);
@@ -1112,9 +1128,9 @@ void FluidSimulation::_initializeMarkerParticlesFromSaveState(
     numRead = 0;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         vectors = state.getMarkerParticleVelocities(startidx, endidx);
@@ -1140,9 +1156,9 @@ void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
     std::vector<vmath::vec3> vectors;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         vectors = state.getDiffuseParticlePositions(startidx, endidx);
@@ -1157,9 +1173,9 @@ void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
     numRead = 0;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         vectors = state.getDiffuseParticleVelocities(startidx, endidx);
@@ -1176,9 +1192,9 @@ void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
     std::vector<float> lifetimes;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         lifetimes = state.getDiffuseParticleLifetimes(startidx, endidx);
@@ -1193,9 +1209,9 @@ void FluidSimulation::_initializeDiffuseParticlesFromSaveState(
     std::vector<char> types;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         types = state.getDiffuseParticleTypes(startidx, endidx);
@@ -1217,9 +1233,9 @@ void FluidSimulation::_initializeSolidCellsFromSaveState(FluidSimulationSaveStat
     std::vector<GridIndex> indices;
     while (numRead < n) {
         int startidx = numRead;
-        int endidx = numRead + chunksize - 1;
-        if (endidx >= n) {
-            endidx = n - 1;
+        int endidx = numRead + chunksize;
+        if (endidx > n) {
+            endidx = n;
         }
 
         indices = state.getSolidCells(startidx, endidx);
