@@ -383,7 +383,8 @@ void FluidSimulationSaveState::getFluidBrickGridSaveState(FluidBrickGridSaveStat
     FLUIDSIM_ASSERT(_isLoadStateInitialized);
     FLUIDSIM_ASSERT(_isFluidBrickGridEnabled);
     FLUIDSIM_ASSERT(_isTempFileInUse);
-    FLUIDSIM_ASSERT(state.loadState(_tempFilename));
+    bool success = state.loadState(_tempFilename);
+    FLUIDSIM_ASSERT(success);
     FLUIDSIM_ASSERT(state.isLoadStateInitialized());
 }
 
