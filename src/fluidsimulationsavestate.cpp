@@ -596,7 +596,8 @@ void FluidSimulationSaveState::_appendFileToSaveState(std::string filename,
 
 std::string FluidSimulationSaveState::_getTemporaryFilename() {
     int filenamelen = 16;
-    std::string tfile = _getRandomString(filenamelen);
+    std::string filepath = Config::getTempDirectory();
+    std::string tfile = filepath + "/" + _getRandomString(filenamelen);
 
     int numtries = 0;
     while (std::ifstream(tfile)) {

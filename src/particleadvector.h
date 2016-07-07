@@ -55,6 +55,7 @@ freely, subject to the following restrictions:
 #include "arrayview3d.h"
 #include "grid3d.h"
 #include "stopwatch.h"
+#include "config.h"
 #include "fluidsimassert.h"
 
 class ParticleAdvector

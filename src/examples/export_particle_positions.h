@@ -25,6 +25,7 @@ freely, subject to the following restrictions:
 
 #include "../trianglemesh.h"
 #include "../vmath.h"
+#include "../config.h"
 
 // convert number to a string and pad to a width of npad with zeros
 std::string numberToPaddedString(int number, int npad) {
@@ -40,7 +41,8 @@ std::string numberToPaddedString(int number, int npad) {
     only vertices that represent particle positions.
 */
 void exportParticlesAsPLY(std::vector<vmath::vec3> &particles, std::string framestr) {
-    std::string filename = "bakefiles/particles" + framestr + ".ply";
+    std::string bakefilespath = Config::getBakefilesDirectory();
+    std::string filename = bakefilespath + "/particles" + framestr + ".ply";
 
     TriangleMesh mesh;
     mesh.vertices = particles;
@@ -66,7 +68,8 @@ std::vector<vmath::vec3> importPLYParticles(std::string filename){
     with each number stored as a float.
 */
 void exportParticlesAsBinary(std::vector<vmath::vec3> &particles, std::string framestr) {
-    std::string filename = "bakefiles/particles" + framestr + ".data";
+    std::string bakefilespath = Config::getBakefilesDirectory();
+    std::string filename = bakefilespath + "/particles" + framestr + ".data";
 
     int particleByteSize = 3 * sizeof(float);
     unsigned int dataByteSize = particles.size() * particleByteSize;
@@ -113,7 +116,8 @@ std::vector<vmath::vec3> importBinaryParticles(std::string filename){
         pnz
 */
 void exportParticlesAsPlaintext(std::vector<vmath::vec3> &particles, std::string framestr) {
-    std::string filename = "bakefiles/particles" + framestr + ".txt";
+    std::string bakefilespath = Config::getBakefilesDirectory();
+    std::string filename = bakefilespath + "/particles" + framestr + ".txt";
 
     std::ostringstream writestr;
     for (unsigned int i = 0; i < particles.size(); i++) {

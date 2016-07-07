@@ -54,6 +54,7 @@ freely, subject to the following restrictions:
 #include "fragmentedvector.h"
 #include "vmath.h"
 #include "fluidsimassert.h"
+#include "config.h"
 
 #include "markerparticle.h"
 #include "diffuseparticle.h"

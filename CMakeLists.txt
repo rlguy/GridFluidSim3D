@@ -54,13 +54,21 @@ set_output_directories(${PYTHON_MODULE_DIR})
 add_library(fluidcore SHARED $<TARGET_OBJECTS:objects>)
 target_link_libraries(fluidcore ${OpenCL_LIBRARY})
 
-file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/bakefiles")
-file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/logs")
-file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/savestates")
+file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/bakefiles")
+file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/logs")
+file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/savestates")
+file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/temp")
 file(COPY "src/kernels" DESTINATION "${EXECUTABLE_DIR}/resources")
-
-file(MAKE_DIRECTORY "${PYTHON_MODULE_DIR}/bakefiles")
-file(MAKE_DIRECTORY "${PYTHON_MODULE_DIR}/logs")
-file(MAKE_DIRECTORY "${PYTHON_MODULE_DIR}/savestates")
 file(COPY "${CMAKE_SOURCE_DIR}/src/python_bindings/" DESTINATION "${PYTHON_MODULE_DIR}")
-file(COPY "src/kernels" DESTINATION "${PYTHON_MODULE_DIR}/resources")
+
+set(CONFIG_DATA_EXECUTABLE_DIR  ${EXECUTABLE_DIR})
+set(CONFIG_DATA_RESOURCES_DIR   ${EXECUTABLE_DIR}/resources)
+set(CONFIG_DATA_OUTPUT_DIR      ${EXECUTABLE_DIR}/output)
+set(CONFIG_DATA_BAKEFILES_DIR   ${EXECUTABLE_DIR}/output/bakefiles)
+set(CONFIG_DATA_LOGS_DIR        ${EXECUTABLE_DIR}/output/logs)
+set(CONFIG_DATA_SAVESTATES_DIR  ${EXECUTABLE_DIR}/output/savestates)
+set(CONFIG_DATA_TEMP_DIR        ${EXECUTABLE_DIR}/output/temp)
+configure_file(
+  "${PROJECT_SOURCE_DIR}/src/config_data.h.in"
+  "${PROJECT_SOURCE_DIR}/src/config_data.h"
+)

@@ -111,7 +111,7 @@ Now we have a simulation domain with some fluid, and a force acting on the fluid
 fluidsim.initialize();
 ```
 
-We will now run the simulation for a total of 30 animation frames at a rate of 30 frames per second by repeatedly making calls to the `update` function. The `update` function advances the state of the simulation by a specified period of time. To update the simulation at a rate of 30 frames per second, each call to `update` will need to be supplied with a time value of `1.0/30.0.` Each call to update will generate a triangle mesh that represents the fluid surface. The mesh files will be saved in the [bakefiles](bakefiles/) directory as a numbered sequence of files stored in the Stanford .PLY file format.
+We will now run the simulation for a total of 30 animation frames at a rate of 30 frames per second by repeatedly making calls to the `update` function. The `update` function advances the state of the simulation by a specified period of time. To update the simulation at a rate of 30 frames per second, each call to `update` will need to be supplied with a time value of `1.0/30.0.` Each call to update will generate a triangle mesh that represents the fluid surface. The mesh files will be saved in the ```output/bakefiles/``` directory as a numbered sequence of files stored in the Stanford .PLY file format.
 
 ```c++
 double timestep = 1.0 / 30.0;
@@ -121,7 +121,7 @@ for (int i = 0; i < numframes; i++) {
 }
 ```
 
-As this loop runs, the program should output simulation stats and timing metrics to the terminal. After the loop completes, the [bakefiles](bakefiles/) directory should contain 30 .PLY triangle meshes numbered in sequence from 0 to 29: `000000.ply, 000001.ply, 000002.ply, ..., 000028.ply, 000029.ply`.
+As this loop runs, the program should output simulation stats and timing metrics to the terminal. After the loop completes, the ```output/bakefiles/``` directory should contain 30 .PLY triangle meshes numbered in sequence from 0 to 29: `000000.ply, 000001.ply, 000002.ply, ..., 000028.ply, 000029.ply`.
 
 If you open the `000029.ply` mesh file in a 3D modelling package such as [Blender](http://www.blender.org), the mesh should look similar to the following image.
 
@@ -131,7 +131,7 @@ The fluid simulation in this example is quick to compute, but of low quality due
 
 ## Rendering
 
-This fluid simulation program generates a triangle mesh for each frame and stores this data in the [bakefiles/](src/bakefiles) directory as a sequence of .PLY files. The fluid simulation is configured in the file [src/main.cpp](src/main.cpp) and the default simulation drops a ball of fluid in the center of the fluid domain.
+This fluid simulation program generates a triangle mesh for each frame and stores this data in the ```output/bakefiles/``` directory as a sequence of .PLY files. The fluid simulation is configured in the file [src/main.cpp](src/main.cpp) and the default simulation drops a ball of fluid in the center of the fluid domain.
 
 To render the simulation into an animation, you will need to import the series of .ply meshes into a rendering program where you can set up a scene with lighting and materials, such as the free and open source [Blender](http://www.blender.org) software.
 

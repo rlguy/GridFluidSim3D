@@ -529,7 +529,8 @@ CLScalarField::CLDeviceInfo CLScalarField::_initializeDeviceInfo(cl::Device &dev
 }
 
 cl_int CLScalarField::_initializeCLKernels() {
-    std::string prog = _getProgramString("resources/kernels/scalarfield.cl");
+    std::string fname = Config::getResourcesDirectory() + "/kernels/scalarfield.cl";
+    std::string prog = _getProgramString(fname);
 
     cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
     cl::Program program(_CLContext, source);

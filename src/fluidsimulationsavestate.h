@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 #include "fluidmaterialgrid.h"
 #include "array3d.h"
 #include "vmath.h"
+#include "config.h"
 #include "fluidsimassert.h"
 
 class FluidSimulation;

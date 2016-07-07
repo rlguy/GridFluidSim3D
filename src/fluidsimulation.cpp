@@ -1778,23 +1778,24 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &isomesh,
     std::string currentFrame = _numberToString(_currentFrame);
     currentFrame.insert(currentFrame.begin(), 6 - currentFrame.size(), '0');
 
+    std::string bakedir = Config::getBakefilesDirectory();
     if (_isSurfaceMeshOutputEnabled) {
         if (_isIsotropicSurfaceMeshReconstructionEnabled) {
-            isomesh.writeMeshToPLY("bakefiles/" + currentFrame + ".ply");
+            isomesh.writeMeshToPLY(bakedir + "/" + currentFrame + ".ply");
         }
 
         if (_isAnisotropicSurfaceMeshReconstructionEnabled) {
-            anisomesh.writeMeshToPLY("bakefiles/anisotropic" + currentFrame + ".ply");
+            anisomesh.writeMeshToPLY(bakedir + "/anisotropic" + currentFrame + ".ply");
         }
     }
 
     if (_isDiffuseMaterialOutputEnabled) {
         if (_isDiffuseMaterialFilesSeparated) {
-            _writeDiffuseMaterialToFile("bakefiles/bubble" + currentFrame + ".ply",
-                                        "bakefiles/foam" + currentFrame + ".ply",
-                                        "bakefiles/spray" + currentFrame + ".ply");
+            _writeDiffuseMaterialToFile(bakedir + "/bubble" + currentFrame + ".ply",
+                                        bakedir + "/foam" + currentFrame + ".ply",
+                                        bakedir + "/spray" + currentFrame + ".ply");
         } else {
-            _writeDiffuseMaterialToFile("bakefiles/diffuse" + currentFrame + ".ply");
+            _writeDiffuseMaterialToFile(bakedir + "/diffuse" + currentFrame + ".ply");
         }
     }
 
@@ -1802,9 +1803,9 @@ void FluidSimulation::_writeSurfaceMeshToFile(TriangleMesh &isomesh,
         std::string currentBrickMeshFrame = _numberToString(_currentBrickMeshFrame);
         currentBrickMeshFrame.insert(currentBrickMeshFrame.begin(), 6 - currentBrickMeshFrame.size(), '0');
 
-        _writeBrickMaterialToFile("bakefiles/brick" + currentBrickMeshFrame + ".ply", 
-                                  "bakefiles/brickcolor" + currentBrickMeshFrame + ".data",
-                                  "bakefiles/bricktexture" + currentBrickMeshFrame + ".data");
+        _writeBrickMaterialToFile(bakedir + "/brick" + currentBrickMeshFrame + ".ply", 
+                                  bakedir + "/brickcolor" + currentBrickMeshFrame + ".data",
+                                  bakedir + "/bricktexture" + currentBrickMeshFrame + ".data");
         _currentBrickMeshFrame++;
     }
 }
@@ -2834,6 +2835,8 @@ void FluidSimulation::_stepFluid(double dt) {
     _logfile.log("Update time:   ", totalTime, 3);
     _logfile.log("Total time:    ", _realTime, 3);
     _logfile.newline();
+
+    _logfile.setPath(Config::getLogsDirectory());
     _logfile.write();
 }
 
@@ -2858,7 +2861,8 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::_autosave() {
-    saveState("savestates/autosave.state");
+    std::string fname = Config::getSavestatesDirectory() + "/autosave.state";
+    saveState(fname);
 }
 
 void FluidSimulation::update(double dt) {
