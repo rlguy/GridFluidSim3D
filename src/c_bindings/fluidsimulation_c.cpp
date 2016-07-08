@@ -9,13 +9,21 @@
 #define FLUIDSIMULATION_SUCCESS 1
 #define FLUIDSIMULATION_FAIL 0
 
+char FLUIDSIMULATION_ERROR_MESSAGE[4096];
+void FluidSimulation_set_error_message(std::exception &ex) {
+    std::string msg = ex.what();
+    msg.copy(FLUIDSIMULATION_ERROR_MESSAGE, msg.length(), 0);
+    FLUIDSIMULATION_ERROR_MESSAGE[msg.length()] = '\0';
+}
+
 extern "C" {
     EXPORTDLL FluidSimulation* FluidSimulation_new_from_empty(int *err) {
         FluidSimulation *fluidsim = nullptr;
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             fluidsim = new FluidSimulation();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -29,7 +37,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             fluidsim = new FluidSimulation(isize, jsize, ksize, dx);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -43,7 +52,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             fluidsim = new FluidSimulation(*savestate);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -58,7 +68,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->initialize();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
     }
@@ -68,7 +79,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             result = obj->isInitialized();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -79,7 +91,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->update(dt);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
     }
@@ -89,7 +102,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->saveState(std::string(filename));
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
     }
@@ -99,7 +113,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             result = obj->getCurrentFrame();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -112,7 +127,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             result = obj->isCurrentFrameFinished();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -124,7 +140,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             dx = obj->getCellSize();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -137,7 +154,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->getGridDimensions(i, j, k);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
     }
@@ -147,7 +165,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             isize = obj->getGridWidth();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -159,7 +178,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             jsize = obj->getGridHeight();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -171,7 +191,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             ksize = obj->getGridDepth();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -185,7 +206,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->getSimulationDimensions(width, height, depth);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
     }
@@ -196,7 +218,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             width = obj->getSimulationWidth();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -209,7 +232,8 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             height = obj->getSimulationHeight();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
@@ -222,11 +246,25 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             depth = obj->getSimulationDepth();
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
 
         return depth;
+    }
+
+    EXPORTDLL double FluidSimulation_get_density(FluidSimulation* obj, int *err) {
+        double density = 0.0;
+        *err = FLUIDSIMULATION_SUCCESS;
+        try {
+            density = obj->getDensity();
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
+            *err = FLUIDSIMULATION_FAIL;
+        }
+
+        return density;
     }
 
     EXPORTDLL void FluidSimulation_add_implicit_fluid_point(
@@ -236,8 +274,13 @@ extern "C" {
         *err = FLUIDSIMULATION_SUCCESS;
         try {
             obj->addImplicitFluidPoint(x, y, z, r);
-        } catch (...) {
+        } catch (std::exception &ex) {
+            FluidSimulation_set_error_message(ex);
             *err = FLUIDSIMULATION_FAIL;
         }
+    }
+
+    EXPORTDLL char* FluidSimulation_get_error_message() {
+        return FLUIDSIMULATION_ERROR_MESSAGE;
     }
 }

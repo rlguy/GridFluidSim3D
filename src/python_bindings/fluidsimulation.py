@@ -68,7 +68,9 @@ class FluidSimulation(object):
         success = ctypes.c_int()
         self._obj = lib.FluidSimulation_new_from_empty(ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_new_from_empty")
+            errmsg = "FluidSimulation_new_from_empty - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     def _init_from_dimensions(self, isize, jsize, ksize, dx):
         if not all(x > 0 for x in (isize, jsize, ksize, dx)):
@@ -78,7 +80,9 @@ class FluidSimulation(object):
         self._obj = lib.FluidSimulation_new_from_dimensions(
                         isize, jsize, ksize, dx, ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_new_from_dimensions")
+            errmsg = "FluidSimulation_new_from_dimensions - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     @classmethod
     def from_save_state(cls, savestate):
@@ -90,7 +94,9 @@ class FluidSimulation(object):
             self._obj = lib.FluidSimulation_new_from_save_state(
                             savestate(), ctypes.byref(success))
             if not success:
-                raise RuntimeError("FluidSimulation_new_from_save_state")
+                errmsg = "FluidSimulation_new_from_save_state - "
+                errmsg += lib.FluidSimulation_get_error_message()
+                raise RuntimeError(errmsg)
 
             return self
         else:
@@ -102,13 +108,17 @@ class FluidSimulation(object):
         success = ctypes.c_int()
         lib.FluidSimulation_initialize(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_initialize")
+            errmsg = "FluidSimulation_initialize - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     def is_initialized(self):
         success = ctypes.c_int()
         result = lib.FluidSimulation_is_initialized(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_is_initialized")
+            errmsg = "FluidSimulation_is_initialized - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return bool(result)
 
     @_check_simulation_initialized
@@ -117,7 +127,9 @@ class FluidSimulation(object):
         success = ctypes.c_int()
         lib.FluidSimulation_update(self(), deltatime, ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_update")
+            errmsg = "FluidSimulation_update - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     @_check_simulation_initialized
     def save_state(self, filename):
@@ -125,14 +137,18 @@ class FluidSimulation(object):
         success = ctypes.c_int()
         lib.FluidSimulation_save_state(self(), cfilename, ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_save_state")
+            errmsg = "FluidSimulation_save_state - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     def get_current_frame(self):
         success = ctypes.c_int()
         frameno = lib.FluidSimulation_get_current_frame(self(), 
                                                         ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_current_frame")
+            errmsg = "FluidSimulation_get_current_frame - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return int(frameno)
 
     def is_current_frame_finished(self):
@@ -140,14 +156,18 @@ class FluidSimulation(object):
         result = lib.FluidSimulation_is_current_frame_finished(self(), 
                                                                ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_is_current_frame_finished")
+            errmsg = "FluidSimulation_is_current_frame_finished - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return bool(result)
 
     def get_cell_size(self):
         success = ctypes.c_int()
         dx = lib.FluidSimulation_get_cell_size(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_cell_size")
+            errmsg = "FluidSimulation_get_cell_size - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return float(dx)
 
     def get_grid_dimensions(self):
@@ -160,28 +180,36 @@ class FluidSimulation(object):
                                                         ctypes.byref(ksize),
                                                         ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_grid_dimensions")
+            errmsg = "FluidSimulation_get_grid_dimensions - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return GridIndex(isize.value, jsize.value, ksize.value)
 
     def get_grid_width(self):
         success = ctypes.c_int()
         isize = lib.FluidSimulation_get_grid_width(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_grid_width")
+            errmsg = "FluidSimulation_get_grid_width - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return int(isize)
 
     def get_grid_height(self):
         success = ctypes.c_int()
         jsize = lib.FluidSimulation_get_grid_height(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_grid_height")
+            errmsg = "FluidSimulation_get_grid_height - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return int(jsize)
 
     def get_grid_depth(self):
         success = ctypes.c_int()
         ksize = lib.FluidSimulation_get_grid_depth(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_grid_depth")
+            errmsg = "FluidSimulation_get_grid_depth - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return int(ksize)
 
     def get_simulation_dimensions(self):
@@ -194,28 +222,36 @@ class FluidSimulation(object):
                                                               ctypes.byref(depth),
                                                               ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_simulation_dimensions")
+            errmsg = "FluidSimulation_get_simulation_dimensions - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return Vector3(width.value, height.value, depth.value)
 
     def get_simulation_width(self):
         success = ctypes.c_int()
         width = lib.FluidSimulation_get_simulation_width(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_simulation_width")
+            errmsg = "FluidSimulation_get_simulation_width - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return float(width)
 
     def get_simulation_height(self):
         success = ctypes.c_int()
         height = lib.FluidSimulation_get_simulation_height(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_simulation_height")
+            errmsg = "FluidSimulation_get_simulation_height - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return float(height)
 
     def get_simulation_depth(self):
         success = ctypes.c_int()
         depth = lib.FluidSimulation_get_simulation_depth(self(), ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_get_simulation_depth")
+            errmsg = "FluidSimulation_get_simulation_depth - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
         return float(depth)
 
     @_check_simulation_not_initialized
@@ -235,7 +271,9 @@ class FluidSimulation(object):
                                                      x, y, z, radius, 
                                                      ctypes.byref(success))
         if not success:
-            raise RuntimeError("FluidSimulation_add_implicit_fluid_point")
+            errmsg = "FluidSimulation_add_implicit_fluid_point - "
+            errmsg += lib.FluidSimulation_get_error_message()
+            raise RuntimeError(errmsg)
 
     def __del__(self):
         try:
@@ -340,7 +378,8 @@ def __init__(lib):
                                                              ctypes.c_void_p]
     lib.FluidSimulation_add_implicit_fluid_point.restype = None
 
-
+    lib.FluidSimulation_get_error_message.argtypes = []
+    lib.FluidSimulation_get_error_message.restype = ctypes.c_char_p
 
     
 
