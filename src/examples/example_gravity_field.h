@@ -104,7 +104,7 @@ void example_gravity_field() {
     FluidSimulation fluidsim(isize, jsize, ksize, dx);
  
     fluidsim.setSurfaceSubdivisionLevel(2);
-    fluidsim.setNumSurfaceReconstructionPolygonizerSlices(4);
+    fluidsim.setNumPolygonizerSlices(4);
  
     double width, height, depth;
     fluidsim.getSimulationDimensions(&width, &height, &depth);

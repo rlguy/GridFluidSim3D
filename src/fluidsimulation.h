@@ -165,8 +165,8 @@ public:
         A marker particle with a scale of 1.0 will have the radius of a 
         sphere that has a volume 1/8th of the volume of a grid cell.
     */
-    void setMarkerParticleScale(double s);
     double getMarkerParticleScale();
+    void setMarkerParticleScale(double s);
 
     /*
         The surface subdivision level determines how many times the
@@ -181,6 +181,7 @@ public:
         A higher subdivision level will produce a higher quality surface at
         the cost of longer simulation times and greater memory usage.
     */
+    int getSurfaceSubdivisionLevel();
     void setSurfaceSubdivisionLevel(int n);
 
     /*
@@ -193,7 +194,8 @@ public:
         store the polygonization grid data. Setting the number of slices will 
         reduce the memory required at the cost of speed.
     */
-    void setNumSurfaceReconstructionPolygonizerSlices(int n);
+    int getNumPolygonizerSlices();
+    void setNumPolygonizerSlices(int n);
 
     /*
         Will ensure that the output triangle mesh only contains polyhedrons
@@ -201,7 +203,8 @@ public:
         a low triangle count will reduce the triangle mesh size when saved to 
         disk.
     */
-    void setMinimumPolyhedronTriangleCount(int n);
+    int getMinPolyhedronTriangleCount();
+    void setMinPolyhedronTriangleCount(int n);
 
     /*
         Enable/disable the simulation from saving polygonized triangle meshes 
@@ -224,7 +227,7 @@ public:
     */
     void enableIsotropicSurfaceReconstruction();
     void disableIsotropicSurfaceReconstruction();
-    bool isIsotropicSurfaceReconstuctionEnabled();
+    bool isIsotropicSurfaceReconstructionEnabled();
 
     /*
         Enable/disable the simulation from saving anisotropic reconstructed triangle 
@@ -240,7 +243,7 @@ public:
     */
     void enableAnisotropicSurfaceReconstruction();
     void disableAnisotropicSurfaceReconstruction();
-    bool isAnisotropicSurfaceReconstuctionEnabled();
+    bool isAnisotropicSurfaceReconstructionEnabled();
 
     /*
         Enable/disable the simulation from simulating diffuse 
@@ -1050,9 +1053,9 @@ private:
     bool _isIsotropicSurfaceMeshReconstructionEnabled = true;
     bool _isAnisotropicSurfaceMeshReconstructionEnabled = false;
     bool _isDiffuseMaterialOutputEnabled = false;
-    bool _isBubbleDiffuseMaterialEnabled = false;
-    bool _isSprayDiffuseMaterialEnabled = false;
-    bool _isFoamDiffuseMaterialEnabled = false;
+    bool _isBubbleDiffuseMaterialEnabled = true;
+    bool _isSprayDiffuseMaterialEnabled = true;
+    bool _isFoamDiffuseMaterialEnabled = true;
     bool _isDiffuseMaterialFilesSeparated = false;
     bool _isBrickOutputEnabled = false;
     int _outputFluidSurfaceSubdivisionLevel = 1;

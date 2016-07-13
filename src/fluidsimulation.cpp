@@ -150,6 +150,9 @@ double FluidSimulation::getMarkerParticleScale() {
     return _markerParticleScale;
 }
 
+int FluidSimulation::getSurfaceSubdivisionLevel() {
+    return _outputFluidSurfaceSubdivisionLevel;
+}
 
 void FluidSimulation::setSurfaceSubdivisionLevel(int n) {
     if (n < 1) {
@@ -161,7 +164,11 @@ void FluidSimulation::setSurfaceSubdivisionLevel(int n) {
     _outputFluidSurfaceSubdivisionLevel = n;
 }
 
-void FluidSimulation::setNumSurfaceReconstructionPolygonizerSlices(int n) {
+int FluidSimulation::getNumPolygonizerSlices() {
+    return _numSurfaceReconstructionPolygonizerSlices;
+}
+
+void FluidSimulation::setNumPolygonizerSlices(int n) {
     if (n < 1) {
         std::string msg = "Error: number of polygonizer slices must be greater than or equal to 1.\n";
         msg += "polygonizer slices: " + _toString(n) + "\n";
@@ -171,8 +178,12 @@ void FluidSimulation::setNumSurfaceReconstructionPolygonizerSlices(int n) {
     _numSurfaceReconstructionPolygonizerSlices = n;
 }
 
-void FluidSimulation::setMinimumPolyhedronTriangleCount(int n) {
-    if (n < 1) {
+int FluidSimulation::getMinPolyhedronTriangleCount() {
+    return _minimumSurfacePolyhedronTriangleCount;
+}
+
+void FluidSimulation::setMinPolyhedronTriangleCount(int n) {
+    if (n < 0) {
         std::string msg = "Error: minimum polyhedron triangle count must be greater than or equal to 0.\n";
         msg += "triangle count: " + _toString(n) + "\n";
         throw std::domain_error(msg);
@@ -202,7 +213,7 @@ void FluidSimulation::disableIsotropicSurfaceReconstruction() {
     _isIsotropicSurfaceMeshReconstructionEnabled = false;
 }
 
-bool FluidSimulation::isIsotropicSurfaceReconstuctionEnabled() {
+bool FluidSimulation::isIsotropicSurfaceReconstructionEnabled() {
     return _isIsotropicSurfaceMeshReconstructionEnabled;
 }
 
@@ -215,22 +226,16 @@ void FluidSimulation::disableAnisotropicSurfaceReconstruction() {
     _isAnisotropicSurfaceMeshReconstructionEnabled = false;
 }
 
-bool FluidSimulation::isAnisotropicSurfaceReconstuctionEnabled() {
+bool FluidSimulation::isAnisotropicSurfaceReconstructionEnabled() {
     return _isAnisotropicSurfaceMeshReconstructionEnabled;
 }
 
 void FluidSimulation::enableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = true;
-    _isBubbleDiffuseMaterialEnabled = true;
-    _isSprayDiffuseMaterialEnabled = true;
-    _isFoamDiffuseMaterialEnabled = true;
 }
 
 void FluidSimulation::disableDiffuseMaterialOutput() {
     _isDiffuseMaterialOutputEnabled = false;
-    _isBubbleDiffuseMaterialEnabled = false;
-    _isSprayDiffuseMaterialEnabled = false;
-    _isFoamDiffuseMaterialEnabled = false;
 }
 
 bool FluidSimulation::isDiffuseMaterialOutputEnabled() {
