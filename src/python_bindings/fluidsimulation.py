@@ -1,9 +1,4 @@
-import ctypes
-from ctypes import c_void_p
-from ctypes import c_char_p
-from ctypes import c_int
-from ctypes import c_double
-from ctypes import byref
+from ctypes import c_void_p, c_char_p, c_int, c_double, byref
 import numbers
 
 from fluidlib import lib
@@ -54,17 +49,15 @@ class FluidSimulation(object):
 
     def _init_from_empty(self):
         libfunc = lib.FluidSimulation_new_from_empty
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p]
-            libfunc.restype = c_void_p
+        self._init_lib_func(libfunc, [c_void_p], c_void_p)
         self._obj = self._execute_lib_func(libfunc, [])
 
     @decorators.check_gt_zero
     def _init_from_dimensions(self, isize, jsize, ksize, dx):
         libfunc = lib.FluidSimulation_new_from_dimensions
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_int, c_int, c_int, c_double, c_void_p]
-            libfunc.restype = c_void_p
+        self._init_lib_func(libfunc, 
+                            [c_int, c_int, c_int, c_double, c_void_p], 
+                            c_void_p)
         self._obj = self._execute_lib_func(libfunc, [isize, jsize, ksize, dx])
 
     @classmethod
@@ -74,19 +67,13 @@ class FluidSimulation(object):
         lib.FluidSimulation_destroy(self._obj)
 
         libfunc = lib.FluidSimulation_new_from_save_state
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_void_p
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_void_p)
         self._obj = self._execute_lib_func(libfunc, [savestate()])
-
         return self
 
     def __del__(self):
         libfunc = lib.FluidSimulation_destroy
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p]
-            libfunc.restype = None
-
+        self._init_lib_func(libfunc, [c_void_p], None)
         try:
             libfunc(self._obj)
         except:
@@ -98,55 +85,40 @@ class FluidSimulation(object):
     def initialize(self):
         if self.is_initialized():
             return
-
         libfunc = lib.FluidSimulation_initialize
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     def is_initialized(self):
         libfunc = lib.FluidSimulation_is_initialized
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @_check_simulation_initialized
     def update(self, dt):
         libfunc = lib.FluidSimulation_update
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), dt])
 
     @_check_simulation_initialized
     def save_state(self, filename):
         libfunc = lib.FluidSimulation_save_state
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_char_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_char_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), filename])
 
     def get_current_frame(self):
         libfunc = lib.FluidSimulation_get_current_frame
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     def is_current_frame_finished(self):
         libfunc = lib.FluidSimulation_is_current_frame_finished
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     def get_cell_size(self):
         libfunc = lib.FluidSimulation_get_cell_size
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_grid_dimensions(self):
@@ -154,7 +126,9 @@ class FluidSimulation(object):
         if libfunc.argtypes is None:
             libfunc.argtypes = [c_void_p, c_void_p, c_void_p, c_void_p, c_void_p]
             libfunc.restype = None
-
+        self._init_lib_func(libfunc, 
+                            [c_void_p, c_void_p, c_void_p, c_void_p, c_void_p], 
+                            None)
         isize = c_int()
         jsize = c_int()
         ksize = c_int()
@@ -166,31 +140,24 @@ class FluidSimulation(object):
 
     def get_grid_width(self):
         libfunc = lib.FluidSimulation_get_grid_width
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_grid_height(self):
         libfunc = lib.FluidSimulation_get_grid_height
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_grid_depth(self):
         libfunc = lib.FluidSimulation_get_grid_depth
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_simulation_dimensions(self):
         libfunc = lib.FluidSimulation_get_simulation_dimensions
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p, c_void_p, c_void_p, c_void_p]
-            libfunc.restype = None
-
+        self._init_lib_func(libfunc, 
+                            [c_void_p, c_void_p, c_void_p, c_void_p, c_void_p], 
+                            None)
         width = c_double()
         height = c_double()
         depth = c_double()
@@ -202,125 +169,95 @@ class FluidSimulation(object):
 
     def get_simulation_width(self):
         libfunc = lib.FluidSimulation_get_simulation_width
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_simulation_height(self):
         libfunc = lib.FluidSimulation_get_simulation_height
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     def get_simulation_depth(self):
         libfunc = lib.FluidSimulation_get_simulation_depth
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     @property
     def density(self):
         libfunc = lib.FluidSimulation_get_density
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     @density.setter
     @decorators.check_gt_zero
     def density(self, value):
         libfunc = lib.FluidSimulation_set_density
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), value])
 
 
     @decorators.ijk_or_gridindex
     def get_material(self, i, j, k):
         libfunc = lib.FluidSimulation_get_material
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_int, c_int, c_int, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self(), i, j, k])
 
     @property
     def marker_particle_scale(self):
         libfunc = lib.FluidSimulation_get_marker_particle_scale
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     @marker_particle_scale.setter
     @decorators.check_ge_zero
     def marker_particle_scale(self, scale):
         libfunc = lib.FluidSimulation_set_marker_particle_scale
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), scale])
 
     @property
     def surface_subdivision_level(self):
         libfunc = lib.FluidSimulation_get_surface_subdivision_level
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     @surface_subdivision_level.setter
     @decorators.check_ge(1)
     def surface_subdivision_level(self, level):
         libfunc = lib.FluidSimulation_set_surface_subdivision_level
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_int, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), level])
 
     @property
     def num_polygonizer_slices(self):
         libfunc = lib.FluidSimulation_get_num_polygonizer_slices
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     @num_polygonizer_slices.setter
     @decorators.check_ge(1)
     def num_polygonizer_slices(self, slices):
         libfunc = lib.FluidSimulation_set_num_polygonizer_slices
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_int, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), slices])
 
     @property
     def min_polyhedron_triangle_count(self):
         libfunc = lib.FluidSimulation_get_min_polyhedron_triangle_count
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     @min_polyhedron_triangle_count.setter
     @decorators.check_ge_zero
     def min_polyhedron_triangle_count(self, count):
         libfunc = lib.FluidSimulation_set_min_polyhedron_triangle_count
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_int, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), count])
 
     @property
     def enable_surface_mesh_output(self):
         libfunc = lib.FluidSimulation_is_surface_mesh_output_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_surface_mesh_output.setter
@@ -330,18 +267,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_surface_mesh_output
         else:
             libfunc = lib.FluidSimulation_disable_surface_mesh_output
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_isotropic_surface_reconstruction(self):
         libfunc = lib.FluidSimulation_is_isotropic_surface_reconstruction_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_isotropic_surface_reconstruction.setter
@@ -351,18 +283,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_isotropic_surface_reconstruction
         else:
             libfunc = lib.FluidSimulation_disable_isotropic_surface_reconstruction
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_anisotropic_surface_reconstruction(self):
         libfunc = lib.FluidSimulation_is_anisotropic_surface_reconstruction_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_anisotropic_surface_reconstruction.setter
@@ -372,18 +299,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_anisotropic_surface_reconstruction
         else:
             libfunc = lib.FluidSimulation_disable_anisotropic_surface_reconstruction
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_diffuse_material_output(self):
         libfunc = lib.FluidSimulation_is_diffuse_material_output_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_diffuse_material_output.setter
@@ -393,18 +315,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_diffuse_material_output
         else:
             libfunc = lib.FluidSimulation_disable_diffuse_material_output
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_bubble_diffuse_material(self):
         libfunc = lib.FluidSimulation_is_bubble_diffuse_material_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_bubble_diffuse_material.setter
@@ -414,18 +331,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_bubble_diffuse_material
         else:
             libfunc = lib.FluidSimulation_disable_bubble_diffuse_material
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_spray_diffuse_material(self):
         libfunc = lib.FluidSimulation_is_spray_diffuse_material_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_spray_diffuse_material.setter
@@ -435,18 +347,13 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_enable_spray_diffuse_material
         else:
             libfunc = lib.FluidSimulation_disable_spray_diffuse_material
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def enable_foam_diffuse_material(self):
         libfunc = lib.FluidSimulation_is_foam_diffuse_material_enabled
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(self._execute_lib_func(libfunc, [self()]))
 
     @enable_foam_diffuse_material.setter
@@ -456,80 +363,68 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_get_max_num_diffuse_particles
         else:
             libfunc = lib.FluidSimulation_disable_foam_diffuse_material
-
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], None)
         self._execute_lib_func(libfunc, [self()])
 
     @property
     def max_num_diffuse_particles(self):
         libfunc = lib.FluidSimulation_get_max_num_diffuse_particles
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_int
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return self._execute_lib_func(libfunc, [self()])
 
     @max_num_diffuse_particles.setter
     def max_num_diffuse_particles(self, num):
         libfunc = lib.FluidSimulation_set_max_num_diffuse_particles
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_int, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), num])
 
     @property
     def diffuse_particle_wavecrest_emission_rate(self):
         libfunc = lib.FluidSimulation_get_diffuse_particle_wavecrest_emission_rate
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     @diffuse_particle_wavecrest_emission_rate.setter
     @decorators.check_ge_zero
     def diffuse_particle_wavecrest_emission_rate(self, rate):
         libfunc = lib.FluidSimulation_set_diffuse_particle_wavecrest_emission_rate
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), rate])
 
     @property
     def diffuse_particle_turbulence_emission_rate(self):
         libfunc = lib.FluidSimulation_get_diffuse_particle_turbulence_emission_rate
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_void_p]
-            libfunc.restype = c_double
+        self._init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
         return self._execute_lib_func(libfunc, [self()])
 
     @diffuse_particle_turbulence_emission_rate.setter
     @decorators.check_ge_zero
     def diffuse_particle_turbulence_emission_rate(self, rate):
         libfunc = lib.FluidSimulation_set_diffuse_particle_turbulence_emission_rate
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
         self._execute_lib_func(libfunc, [self(), rate])
 
     @_check_simulation_not_initialized
     @decorators.xyz_or_vector_and_radius
     def add_implicit_fluid_point(self, x, y, z, radius):
         libfunc = lib.FluidSimulation_add_implicit_fluid_point
-        if libfunc.argtypes is None:
-            libfunc.argtypes = [c_void_p, c_double, c_double, c_double, c_double, c_void_p]
-            libfunc.restype = None
+        self._init_lib_func(
+            libfunc, 
+            [c_void_p, c_double, c_double, c_double, c_double, c_void_p], None
+        )
         self._execute_lib_func(libfunc, [self(), x, y, z, radius])
 
     def _check_success(self, success, errprefix):
         libfunc = lib.FluidSimulation_get_error_message
-        if libfunc.argtypes is None:
-            libfunc.argtypes = []
-            libfunc.restype = c_char_p
-
+        self._init_lib_func(libfunc, [], c_char_p)
         if not success:
             errmsg = errprefix + lib.FluidSimulation_get_error_message()
             raise RuntimeError(errmsg)
+
+    def _init_lib_func(self, libfunc, argtypes, restype):
+        if libfunc.argtypes is None:
+            libfunc.argtypes = argtypes
+            libfunc.restype = restype
 
     def _execute_lib_func(self, libfunc, params):
         args = []
