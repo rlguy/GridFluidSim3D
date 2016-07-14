@@ -16,6 +16,62 @@ void FluidSimulation_set_error_message(std::exception &ex) {
     FLUIDSIMULATION_ERROR_MESSAGE[msg.length()] = '\0';
 }
 
+void FluidSimulation_execute_method(FluidSimulation *obj,
+                                    void (FluidSimulation::*funcptr)(void),
+                                    int *err) {
+    *err = FLUIDSIMULATION_SUCCESS;
+    try {
+        (obj->*funcptr)();
+    } catch (std::exception &ex) {
+        FluidSimulation_set_error_message(ex);
+        *err = FLUIDSIMULATION_FAIL;
+    }
+}
+
+template<typename T>
+T FluidSimulation_execute_method(FluidSimulation *obj,
+                                    T (FluidSimulation::*funcptr)(void),
+                                    int *err) {
+    *err = FLUIDSIMULATION_SUCCESS;
+    T result = T();
+    try {
+        result = (obj->*funcptr)();
+    } catch (std::exception &ex) {
+        FluidSimulation_set_error_message(ex);
+        *err = FLUIDSIMULATION_FAIL;
+    }
+
+    return result;
+}
+
+template<typename T>
+void FluidSimulation_execute_method(FluidSimulation *obj,
+                                   void (FluidSimulation::*funcptr)(T),
+                                   double param,
+                                   int *err) {
+    *err = FLUIDSIMULATION_SUCCESS;
+    try {
+        (obj->*funcptr)(param);
+    } catch (std::exception &ex) {
+        FluidSimulation_set_error_message(ex);
+        *err = FLUIDSIMULATION_FAIL;
+    }
+}
+
+template<typename T>
+void FluidSimulation_execute_method(FluidSimulation *obj,
+                                   void (FluidSimulation::*funcptr)(T, T, T),
+                                   T param1, T param2, T param3,
+                                   int *err) {
+    *err = FLUIDSIMULATION_SUCCESS;
+    try {
+        (obj->*funcptr)(param1, param2, param3);
+    } catch (std::exception &ex) {
+        FluidSimulation_set_error_message(ex);
+        *err = FLUIDSIMULATION_FAIL;
+    }
+}
+
 extern "C" {
     EXPORTDLL FluidSimulation* FluidSimulation_new_from_empty(int *err) {
         FluidSimulation *fluidsim = nullptr;
@@ -65,36 +121,19 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_initialize(FluidSimulation* obj, int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->initialize();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(obj, &FluidSimulation::initialize, err);
     }
 
     EXPORTDLL int FluidSimulation_is_initialized(FluidSimulation* obj, int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isInitialized();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isInitialized, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_update(FluidSimulation* obj, double dt, int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->update(dt);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::update, dt, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_save_state(FluidSimulation* obj, char* filename, 
@@ -109,174 +148,90 @@ extern "C" {
     }
 
     EXPORTDLL int FluidSimulation_get_current_frame(FluidSimulation* obj, int *err) {
-        int result = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->getCurrentFrame();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getCurrentFrame, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_current_frame_finished(FluidSimulation* obj, 
                                                             int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isCurrentFrameFinished();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isCurrentFrameFinished, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_cell_size(FluidSimulation* obj, int *err) {
-        double dx = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            dx = obj->getCellSize();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return dx;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getCellSize, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_get_grid_dimensions(
             FluidSimulation* obj, int *i, int *j, int *k, int *err) {
-
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->getGridDimensions(i, j, k);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::getGridDimensions, i, j, k, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_width(FluidSimulation* obj, int *err) {
-        int isize = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            isize = obj->getGridWidth();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return isize;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getGridWidth, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_height(FluidSimulation* obj, int *err) {
-        int jsize = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            jsize = obj->getGridHeight();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return jsize;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getGridHeight, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_depth(FluidSimulation* obj, int *err) {
-        int ksize = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            ksize = obj->getGridDepth();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return ksize;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getGridDepth, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_get_simulation_dimensions(
             FluidSimulation* obj, 
             double *width, double *height, double *depth, int *err) {
-
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->getSimulationDimensions(width, height, depth);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::getSimulationDimensions, width, height, depth, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_width(FluidSimulation* obj, 
                                                           int *err) {
-        double width = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            width = obj->getSimulationWidth();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return width;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getSimulationWidth, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_height(FluidSimulation* obj, 
                                                            int *err) {
-        double height = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            height = obj->getSimulationHeight();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return height;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getSimulationHeight, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_depth(FluidSimulation* obj, 
                                                           int *err) {
-        double depth = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            depth = obj->getSimulationDepth();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return depth;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getSimulationDepth, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_density(FluidSimulation* obj, int *err) {
-        double density = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            density = obj->getDensity();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return density;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getDensity, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_density(FluidSimulation* obj, 
                                                double density,
                                                int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setDensity(density);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setDensity, density, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_material(FluidSimulation* obj, 
@@ -295,433 +250,251 @@ extern "C" {
 
     EXPORTDLL double FluidSimulation_get_marker_particle_scale(FluidSimulation* obj, 
                                                                int *err) {
-        double scale = 0.0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            scale = obj->getMarkerParticleScale();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return scale;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getMarkerParticleScale, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_marker_particle_scale(FluidSimulation* obj, 
                                                              double scale,
                                                              int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setMarkerParticleScale(scale);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setMarkerParticleScale, scale, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_surface_subdivision_level(FluidSimulation* obj, 
                                                                 int *err) {
-        int level = 1;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            level = obj->getSurfaceSubdivisionLevel();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return level;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getSurfaceSubdivisionLevel, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_surface_subdivision_level(FluidSimulation* obj, 
                                                                  int level,
                                                                  int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setSurfaceSubdivisionLevel(level);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setSurfaceSubdivisionLevel, level, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_num_polygonizer_slices(FluidSimulation* obj, 
                                                              int *err) {
-        int numslices = 1;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            numslices = obj->getNumPolygonizerSlices();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return numslices;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getNumPolygonizerSlices, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_num_polygonizer_slices(FluidSimulation* obj, 
                                                               int numslices,
                                                               int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setNumPolygonizerSlices(numslices);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setNumPolygonizerSlices, numslices, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_min_polyhedron_triangle_count(FluidSimulation* obj, 
                                                                     int *err) {
-        double count = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            count = obj->getMinPolyhedronTriangleCount();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return count;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getMinPolyhedronTriangleCount, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_min_polyhedron_triangle_count(FluidSimulation* obj, 
                                                                      int count,
                                                                      int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setMinPolyhedronTriangleCount(count);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setMinPolyhedronTriangleCount, count, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_surface_mesh_output(FluidSimulation* obj,
                                                               int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableSurfaceMeshOutput();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableSurfaceMeshOutput, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_surface_mesh_output(FluidSimulation* obj,
                                                                int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableSurfaceMeshOutput();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableSurfaceMeshOutput, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_surface_mesh_output_enabled(FluidSimulation* obj,
                                                                  int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isSurfaceMeshOutputEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isSurfaceMeshOutputEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_isotropic_surface_reconstruction(FluidSimulation* obj,
                                                                            int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableIsotropicSurfaceReconstruction();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableIsotropicSurfaceReconstruction, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_isotropic_surface_reconstruction(FluidSimulation* obj,
                                                                             int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableIsotropicSurfaceReconstruction();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableIsotropicSurfaceReconstruction, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_isotropic_surface_reconstruction_enabled(FluidSimulation* obj,
                                                                               int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isIsotropicSurfaceReconstructionEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isIsotropicSurfaceReconstructionEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_anisotropic_surface_reconstruction(FluidSimulation* obj,
                                                                              int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableAnisotropicSurfaceReconstruction();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableAnisotropicSurfaceReconstruction, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_anisotropic_surface_reconstruction(FluidSimulation* obj,
                                                                               int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableAnisotropicSurfaceReconstruction();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableAnisotropicSurfaceReconstruction, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_anisotropic_surface_reconstruction_enabled(FluidSimulation* obj,
                                                                                 int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isAnisotropicSurfaceReconstructionEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isAnisotropicSurfaceReconstructionEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_diffuse_material_output(FluidSimulation* obj,
                                                                   int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableDiffuseMaterialOutput();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableDiffuseMaterialOutput, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_diffuse_material_output(FluidSimulation* obj,
                                                                    int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableDiffuseMaterialOutput();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableDiffuseMaterialOutput, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_diffuse_material_output_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isDiffuseMaterialOutputEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isDiffuseMaterialOutputEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_bubble_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableBubbleDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableBubbleDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_bubble_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableBubbleDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableBubbleDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_bubble_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isBubbleDiffuseMaterialEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isBubbleDiffuseMaterialEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_spray_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableSprayDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableSprayDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_spray_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableSprayDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableSprayDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_spray_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isSprayDiffuseMaterialEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isSprayDiffuseMaterialEnabled, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_enable_foam_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->enableFoamDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::enableFoamDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_disable_foam_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->disableFoamDiffuseMaterial();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::disableFoamDiffuseMaterial, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_is_foam_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        bool result = false;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            result = obj->isFoamDiffuseMaterialEnabled();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return (int)result;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::isFoamDiffuseMaterialEnabled, err
+        );
     }
 
     EXPORTDLL int FluidSimulation_get_max_num_diffuse_particles(FluidSimulation* obj,
                                                                 int *err) {
-        int n = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            n = obj->getMaxNumDiffuseParticles();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return n;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getMaxNumDiffuseParticles, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_max_num_diffuse_particles(FluidSimulation* obj,
                                                                  int n, int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setMaxNumDiffuseParticles(n);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setMaxNumDiffuseParticles, n, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_diffuse_particle_wavecrest_emission_rate(
             FluidSimulation* obj, int *err) {
-        double rate = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            rate = obj->getDiffuseParticleWavecrestEmissionRate();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return rate;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getDiffuseParticleWavecrestEmissionRate, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_diffuse_particle_wavecrest_emission_rate(
             FluidSimulation* obj, double rate, int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setDiffuseParticleWavecrestEmissionRate(rate);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setDiffuseParticleWavecrestEmissionRate, rate, err
+        );
     }
 
     EXPORTDLL double FluidSimulation_get_diffuse_particle_turbulence_emission_rate(
             FluidSimulation* obj, int *err) {
-        double rate = 0;
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            rate = obj->getDiffuseParticleTurbulenceEmissionRate();
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
-
-        return rate;
+        return FluidSimulation_execute_method(
+            obj, &FluidSimulation::getDiffuseParticleTurbulenceEmissionRate, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_set_diffuse_particle_turbulence_emission_rate(
             FluidSimulation* obj, double rate, int *err) {
-        *err = FLUIDSIMULATION_SUCCESS;
-        try {
-            obj->setDiffuseParticleTurbulenceEmissionRate(rate);
-        } catch (std::exception &ex) {
-            FluidSimulation_set_error_message(ex);
-            *err = FLUIDSIMULATION_FAIL;
-        }
+        FluidSimulation_execute_method(
+            obj, &FluidSimulation::setDiffuseParticleTurbulenceEmissionRate, rate, err
+        );
     }
 
     EXPORTDLL void FluidSimulation_add_implicit_fluid_point(
