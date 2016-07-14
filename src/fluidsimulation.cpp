@@ -58,8 +58,9 @@ bool FluidSimulation::isInitialized() {
 }
 
 void FluidSimulation::saveState(std::string filename) {
+    std::string abspath = Config::getSavestatesDirectory() + "/" + filename;
     FluidSimulationSaveState state;
-    state.saveState(filename, this);
+    state.saveState(abspath, this);
 }
 
 int FluidSimulation::getCurrentFrame() {
@@ -2866,8 +2867,7 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::_autosave() {
-    std::string fname = Config::getSavestatesDirectory() + "/autosave.state";
-    saveState(fname);
+    saveState("autosave.state");
 }
 
 void FluidSimulation::update(double dt) {
