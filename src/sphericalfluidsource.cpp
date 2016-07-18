@@ -23,16 +23,38 @@ SphericalFluidSource::SphericalFluidSource() {
 }
 
 SphericalFluidSource::SphericalFluidSource(vmath::vec3 pos, double r) : 
-                                           FluidSource(pos),
+                                           FluidSource(),
+                                           _position(pos),
                                            _radius(r > 0.0 ? r : 0.0) {
 }
 
 SphericalFluidSource::SphericalFluidSource(vmath::vec3 pos, double r, vmath::vec3 velocity) : 
-                                           FluidSource(pos, velocity),
+                                           FluidSource(velocity),
+                                           _position(pos),
                                            _radius(r > 0.0 ? r : 0.0) {
 }
 
 SphericalFluidSource::~SphericalFluidSource() {
+}
+
+vmath::vec3 SphericalFluidSource::getPosition() {
+    return _position;
+}
+
+void SphericalFluidSource::setPosition(vmath::vec3 pos) {
+    _position = pos;
+}
+
+AABB SphericalFluidSource::getAABB() {
+    double d = 2.0*_radius;
+    vmath::vec3 p = _position - vmath::vec3(_radius, _radius, _radius);
+    return AABB(p, d, d, d);
+}
+
+bool SphericalFluidSource::containsPoint(vmath::vec3 p) {
+    vmath::vec3 v = p - getPosition();
+    double lensq = vmath::lengthsq(v);
+    return lensq < _radius*_radius;
 }
 
 void SphericalFluidSource::setRadius(double r) {
@@ -47,107 +69,24 @@ double SphericalFluidSource::getRadius() {
 }
 
 void SphericalFluidSource::setCenter(vmath::vec3 p) {
-    position = p;
+    _position = p;
 }
 
 void SphericalFluidSource::expand(double val) {
-    _radius += val;
+    _radius += 0.5 * val;
 
     if (_radius < 0.0) {
         _radius = 0.0;
     }
 }
 
-GridIndexVector SphericalFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
-                                                       double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-    if (isOutflow()) {
-        return GridIndexVector();
-    }
-
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices(w, h, d);
-    GridIndexVector newFluidCells(w, h, d);
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (materialGrid.isCellAir(g)) {
-            newFluidCells.push_back(g);
-        }
-    }
-
-    return newFluidCells;
-}
-
-GridIndexVector SphericalFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
-                                                           double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices;
-    GridIndexVector fluidCells;
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (materialGrid.isCellFluid(g)) {
-            fluidCells.push_back(g);
-        }
-    }
-
-    return fluidCells;
-}
-
-GridIndexVector SphericalFluidSource::getCells(FluidMaterialGrid &materialGrid,
-                                                   double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-    if (isOutflow()) {
-        return GridIndexVector();
-    }
-
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices(w, h, d);
-    GridIndexVector cells(w, h, d);
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (materialGrid.isCellSolid(g)) {
-            cells.push_back(g);
-        }
-    }
-
-    return cells;
-}
-
-void SphericalFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
-                                                      int isize, int jsize, int ksize, 
-                                                      double dx) {
-
+void SphericalFluidSource::_getOverlappingCells(GridIndexVector &indices, double dx) {
+    int isize = indices.width;
+    int jsize = indices.height;
+    int ksize = indices.depth;
     double r = _radius;
     GridIndex gmin, gmax;
-    Grid3d::getGridIndexBounds(position, r, dx, isize, jsize, ksize, &gmin, &gmax);
+    Grid3d::getGridIndexBounds(_position, r, dx, isize, jsize, ksize, &gmin, &gmax);
 
     double rsq = r*r;
     double distsq;
@@ -157,7 +96,7 @@ void SphericalFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
         for (int j = gmin.j; j <= gmax.j; j++) {
             for (int i = gmin.i; i <= gmax.i; i++) {
                 p = Grid3d::GridIndexToCellCenter(i, j, k, dx);
-                v = p - position;
+                v = p - _position;
                 distsq = vmath::dot(v, v);
                 if (distsq < rsq) {
                     indices.push_back(i, j, k);
@@ -166,16 +105,4 @@ void SphericalFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
         }
     }
 
-}
-
-AABB SphericalFluidSource::getAABB() {
-    double d = 2.0*_radius;
-    vmath::vec3 p = position - vmath::vec3(_radius, _radius, _radius);
-    return AABB(p, d, d, d);
-}
-
-bool SphericalFluidSource::containsPoint(vmath::vec3 p) {
-    vmath::vec3 v = p - getPosition();
-    double lensq = vmath::lengthsq(v);
-    return lensq < _radius*_radius;
 }

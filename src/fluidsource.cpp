@@ -19,44 +19,30 @@ freely, subject to the following restrictions:
 */
 #include "fluidsource.h"
 
+int FluidSource::_IDCounter = 0;
+
 FluidSource::FluidSource() {
+    _initializeID();
 }
 
-FluidSource::FluidSource(vmath::vec3 pos) : position(pos),
-                                            direction(1.0, 0.0, 0.0) {
-}
-
-FluidSource::FluidSource(vmath::vec3 pos, vmath::vec3 vel) : 
-                                          position(pos),
-                                          velocity(vel),
-                                          direction(vmath::normalize(velocity)) {
-    if (!(vmath::length(velocity) > 0.0)) {
-        direction = vmath::vec3(1.0, 0.0, 0.0);
+FluidSource::FluidSource(vmath::vec3 vel) : _velocity(vel),
+                                            _direction(vmath::normalize(_velocity)) {
+    if (!(vmath::length(_velocity) > 0.0)) {
+        _direction = vmath::vec3(1.0, 0.0, 0.0);
     }
+    _initializeID();
 }
 
 
 FluidSource::~FluidSource() {
 }
 
-void FluidSource::setPosition(vmath::vec3 pos) {
-    position = pos;
-}
-
-vmath::vec3 FluidSource::getPosition() {
-   return position;
-}
-
-void FluidSource::translate(vmath::vec3 trans) {
-    position += trans;
-}
-
 void FluidSource::setVelocity(vmath::vec3 v) {
-    velocity = v;
+    _velocity = v;
     if (vmath::length(v) > 0.0) {
-        direction = vmath::normalize(v);
+        _direction = vmath::normalize(v);
     } else {
-        direction = vmath::vec3(1.0, 0.0, 0.0);
+        _direction = vmath::vec3(1.0, 0.0, 0.0);
     }
 }
 
@@ -66,70 +52,125 @@ void FluidSource::setDirection(vmath::vec3 dir) {
         return;
     }
 
-    direction = vmath::normalize(dir);
-    velocity = vmath::length(velocity) * velocity;
+    _direction = vmath::normalize(dir);
+    _velocity = vmath::length(_velocity) * _direction;
 }
 
 vmath::vec3 FluidSource::getVelocity() {
-    return velocity;
+    return _velocity;
 }
 
 void FluidSource::setAsInFlow() {
-    sourceType = FluidSourceType::inflow;
+    _sourceType = FluidSourceType::inflow;
 }
 
 void FluidSource::setAsOutFlow() {
-    sourceType = FluidSourceType::outflow;
+    _sourceType = FluidSourceType::outflow;
 }
 
 FluidSourceType FluidSource::getSourceType() {
-    return sourceType;
+    return _sourceType;
 }
 
 bool FluidSource::isInflow() {
-    return sourceType == FluidSourceType::inflow;
+    return _sourceType == FluidSourceType::inflow;
 }
 
 bool FluidSource::isOutflow() {
-    return sourceType == FluidSourceType::outflow;
+    return _sourceType == FluidSourceType::outflow;
 }
 
 void FluidSource::activate() {
-    isRunning = true;
+    _isActive = true;
 }
 
 void FluidSource::deactivate() {
-    isRunning = false;
+    _isActive = false;
 }
 
 bool FluidSource::isActive() {
-    return isRunning;
+    return _isActive;
 }
 
-GridIndexVector FluidSource::getNewFluidCells(FluidMaterialGrid&, double) {
-    return GridIndexVector();
+GridIndexVector FluidSource::getAirCells(FluidMaterialGrid &materialGrid,
+                                                              double dx) {
+    int w = materialGrid.width;
+    int h = materialGrid.height;
+    int d = materialGrid.depth;
+    GridIndexVector cells(w, h, d);
+
+    if (!isActive()) {
+        return cells;
+    }
+
+    GridIndexVector overlappingIndices(w, h, d);
+    _getOverlappingCells(overlappingIndices, dx);
+
+    GridIndex g;
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
+        g = overlappingIndices[i];
+        if (materialGrid.isCellAir(g)) {
+            cells.push_back(g);
+        }
+    }
+
+    return cells;
 }
 
-GridIndexVector FluidSource::getFluidCells(FluidMaterialGrid&, double) {
-    return GridIndexVector();
+GridIndexVector FluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
+                                                        double dx) {
+    int w = materialGrid.width;
+    int h = materialGrid.height;
+    int d = materialGrid.depth;
+    GridIndexVector cells(w, h, d);
+
+    if (!isActive()) {
+        return cells;
+    }
+
+    GridIndexVector overlappingIndices(w, h, d);
+    _getOverlappingCells(overlappingIndices, dx);
+
+    GridIndex g;
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
+        g = overlappingIndices[i];
+        if (materialGrid.isCellFluid(g)) {
+            cells.push_back(g);
+        }
+    }
+
+    return cells;
 }
 
-GridIndexVector FluidSource::getCells(FluidMaterialGrid&, double) {
-    return GridIndexVector();
-}
+GridIndexVector FluidSource::getFluidOrAirCells(FluidMaterialGrid &materialGrid,
+                                                   double dx) {
+    int w = materialGrid.width;
+    int h = materialGrid.height;
+    int d = materialGrid.depth;
+    GridIndexVector cells(w, h, d);
 
-AABB FluidSource::getAABB() {
-    return AABB();
-}
+    if (!isActive()) {
+        return cells;
+    }
 
-bool FluidSource::containsPoint(vmath::vec3 p) {
-  return false;
+    GridIndexVector overlappingIndices(w, h, d);
+    _getOverlappingCells(overlappingIndices, dx);
+
+    GridIndex g;
+    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
+        g = overlappingIndices[i];
+        if (!materialGrid.isCellSolid(g)) {
+            cells.push_back(g);
+        }
+    }
+
+    return cells;
 }
 
 int FluidSource::getID() {
-    return id;
+    return _ID;
 }
 
-void FluidSource::setID(int identifier) {
-    id = identifier;
+void FluidSource::_initializeID() {
+    _ID = _IDCounter++;
 }

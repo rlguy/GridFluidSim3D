@@ -36,22 +36,21 @@ public:
     SphericalFluidSource(vmath::vec3 pos, double r, vmath::vec3 velocity);
     ~SphericalFluidSource();
 
+    virtual vmath::vec3 getPosition();
+    virtual void setPosition(vmath::vec3 pos);
+    virtual AABB getAABB();
+    virtual bool containsPoint(vmath::vec3 p);
+
     void setRadius(double r);
     double getRadius();
     void setCenter(vmath::vec3 p);
     void expand(double val);
 
-    virtual GridIndexVector getNewFluidCells(FluidMaterialGrid &materialGrid, double dx);
-    virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid, double dx);
-    virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid, double dx);
-    virtual AABB getAABB();
-    virtual bool containsPoint(vmath::vec3 p);
-
 private:
 
-    void _getOverlappingGridIndices(GridIndexVector &storage,
-                                    int i, int j, int k, double dx);
+    virtual void _getOverlappingCells(GridIndexVector &storage, double dx);
 
+    vmath::vec3 _position;
     double _radius = 0.0;
 
 };

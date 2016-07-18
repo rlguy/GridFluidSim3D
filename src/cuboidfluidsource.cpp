@@ -24,40 +24,60 @@ CuboidFluidSource::CuboidFluidSource() {
 
 CuboidFluidSource::CuboidFluidSource(vmath::vec3 position, 
                                      double w, double h, double d) : 
-                                     FluidSource(position), 
+                                     FluidSource(), 
                                      _bbox(position, w, h, d) {
 }
 
 CuboidFluidSource::CuboidFluidSource(AABB bbox) : 
-                                     FluidSource(bbox.position), 
+                                     FluidSource(), 
                                      _bbox(bbox) {
 }
 
 CuboidFluidSource::CuboidFluidSource(vmath::vec3 position, 
                                      double w, double h, double d,
                                      vmath::vec3 velocity) : 
-                                     FluidSource(position, velocity), 
+                                     FluidSource(velocity), 
                                      _bbox(position, w, h, d) {
 }
 
 CuboidFluidSource::CuboidFluidSource(AABB bbox, vmath::vec3 velocity) : 
-                                     FluidSource(bbox.position, velocity), 
+                                     FluidSource(velocity), 
                                      _bbox(bbox) {
 }
 
 CuboidFluidSource::~CuboidFluidSource() {
 }
 
+vmath::vec3 CuboidFluidSource::getPosition() {
+    return _bbox.position;
+}
+
+void CuboidFluidSource::setPosition(vmath::vec3 p) {
+    _bbox.position = p;
+}
+
+AABB CuboidFluidSource::getAABB() {
+    return _bbox;
+}
+
+void CuboidFluidSource::setAABB(AABB bbox) {
+    _bbox = bbox;
+}
+
+bool CuboidFluidSource::containsPoint(vmath::vec3 p) {
+    return _bbox.isPointInside(p);
+}
+
 void CuboidFluidSource::setWidth(double w) {
-    _bbox = AABB(position, w, _bbox.height, _bbox.depth);
+    _bbox.width = w;
 }
 
 void CuboidFluidSource::setHeight(double h) {
-    _bbox = AABB(position, _bbox.width, h, _bbox.depth);
+    _bbox.height = h;
 }
 
 void CuboidFluidSource::setDepth(double d) {
-    _bbox = AABB(position, _bbox.width, _bbox.height, d);
+    _bbox.depth = d;
 }
 
 double CuboidFluidSource::getWidth() {
@@ -72,124 +92,26 @@ double CuboidFluidSource::getDepth() {
     return _bbox.depth;
 }
 
-void CuboidFluidSource::setBoundingBox(AABB bbox) {
-    _bbox = bbox;
-    position = bbox.position;
-}
-
-AABB CuboidFluidSource::getBoundingBox() {
-    _bbox.position = position;
-    return _bbox;
-}
-
 void CuboidFluidSource::setCenter(vmath::vec3 pos) {
     vmath::vec3 c = getCenter();
-    translate(pos - c);
-    _bbox.position = getPosition();
+    vmath::vec3 trans = pos - c;
+    _bbox.position += trans;
 }
 
 vmath::vec3 CuboidFluidSource::getCenter() {
-    return vmath::vec3(position.x + 0.5*_bbox.width, 
-                       position.y + 0.5*_bbox.height, 
-                       position.z + 0.5*_bbox.depth);
+    return vmath::vec3(_bbox.position.x + 0.5*_bbox.width, 
+                       _bbox.position.y + 0.5*_bbox.height, 
+                       _bbox.position.z + 0.5*_bbox.depth);
 }
 
 void CuboidFluidSource::expand(double value) {
-    vmath::vec3 p = position - vmath::vec3(value, value, value);
-    _bbox = AABB(p, _bbox.width + 2*value, 
-                    _bbox.height + 2*value, 
-                    _bbox.depth + 2*value);
+    _bbox.expand(value);
 }
 
-GridIndexVector CuboidFluidSource::getNewFluidCells(FluidMaterialGrid &materialGrid,
-                                                              double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-    if (isOutflow()) {
-        return GridIndexVector();
-    }
-
-    _bbox.position = position;
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices(w, h, d);
-    GridIndexVector newFluidCells(w, h, d);
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (materialGrid.isCellAir(g)) {
-            newFluidCells.push_back(g);
-        }
-    }
-
-    return newFluidCells;
-}
-
-GridIndexVector CuboidFluidSource::getFluidCells(FluidMaterialGrid &materialGrid,
-                                                        double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-     _bbox.position = position;
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices(w, h, d);
-    GridIndexVector fluidCells(w, h, d);
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (materialGrid.isCellFluid(g)) {
-            fluidCells.push_back(g);
-        }
-    }
-
-    return fluidCells;
-}
-
-GridIndexVector CuboidFluidSource::getCells(FluidMaterialGrid &materialGrid,
-                                                   double dx) {
-    if (!isActive()) {
-        return GridIndexVector();
-    }
-
-    if (isOutflow()) {
-        return GridIndexVector();
-    }
-
-     _bbox.position = position;
-    int w = materialGrid.width;
-    int h = materialGrid.height;
-    int d = materialGrid.depth;
-    GridIndexVector overlappingIndices(w, h, d);
-    GridIndexVector cells(w, h, d);
-
-    _getOverlappingGridIndices(overlappingIndices, w, h, d, dx);
-
-    GridIndex g;
-    for (unsigned int i = 0; i < overlappingIndices.size(); i++) {
-        g = overlappingIndices[i];
-        if (!materialGrid.isCellSolid(g)) {
-            cells.push_back(g);
-        }
-    }
-
-    return cells;
-}
-
-void CuboidFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
-                                                   int isize, int jsize, int ksize, 
-                                                   double dx) {
+void CuboidFluidSource::_getOverlappingCells(GridIndexVector &indices, double dx) {
+    int isize = indices.width;
+    int jsize = indices.height;
+    int ksize = indices.depth;
     GridIndex gmin, gmax;
     Grid3d::getGridIndexBounds(_bbox, dx, isize, jsize, ksize, &gmin, &gmax);
 
@@ -200,12 +122,4 @@ void CuboidFluidSource::_getOverlappingGridIndices(GridIndexVector &indices,
             }
         }
     }
-}
-
-AABB CuboidFluidSource::getAABB() {
-    return _bbox;
-}
-
-bool CuboidFluidSource::containsPoint(vmath::vec3 p) {
-    return _bbox.isPointInside(p);
 }

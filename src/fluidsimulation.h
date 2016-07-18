@@ -410,11 +410,16 @@ public:
             }
     */
     void addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3));
+    vmath::vec3 getConstantBodyForce();
+    vmath::vec3 getVariableBodyForce(double x, double y, double z);
+    vmath::vec3 getVariableBodyForce(vmath::vec3 p);
+    vmath::vec3 getTotalBodyForce(double x, double y, double z);
+    vmath::vec3 getTotalBodyForce(vmath::vec3 p);
 
     /*
         Remove all added body forces.
     */
-    void resetBodyForces();
+    void resetBodyForce();
 
     /*
         Add an implicit point of fluid to the simulation. 
@@ -746,7 +751,6 @@ private:
         domain and outflow sources remove MarkerParticles and 
         DiffuseParticles from the domain.
     */
-    int _getUniqueFluidSourceID();
     void _updateFluidCells();
     void _removeParticlesInSolidCells();
     void _removeMarkerParticlesInSolidCells();
@@ -873,6 +877,8 @@ private:
     */
     void _applyBodyForcesToVelocityField(double dt);
     vmath::vec3 _getConstantBodyForce();
+    vmath::vec3 _getVariableBodyForce(double px, double py, double pz);
+    vmath::vec3 _getVariableBodyForce(vmath::vec3 p);
     void _applyConstantBodyForces(double dt);
     void _applyVariableBodyForces(double dt);
     void _applyVariableBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3),
@@ -1037,7 +1043,6 @@ private:
     std::vector<FluidSource*> _fluidSources;
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
-    int _uniqueFluidSourceID = 0;
     FragmentedVector<MarkerParticle> _markerParticles;
     GridIndexVector _addedFluidCellQueue;
     GridIndexVector _fluidCellIndices;

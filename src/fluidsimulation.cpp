@@ -444,7 +444,27 @@ void FluidSimulation::addBodyForce(vmath::vec3 (*fieldFunction)(vmath::vec3)) {
     _variableBodyForces.push_back(fieldFunction);
 }
 
-void FluidSimulation::resetBodyForces() {
+vmath::vec3 FluidSimulation::getConstantBodyForce() {
+    return _getConstantBodyForce();
+}
+
+vmath::vec3 FluidSimulation::getVariableBodyForce(double px, double py, double pz) {
+    return _getVariableBodyForce(px, py, pz);
+}
+
+vmath::vec3 FluidSimulation::getVariableBodyForce(vmath::vec3 p) {
+    return getVariableBodyForce(p);
+}
+
+vmath::vec3 FluidSimulation::getTotalBodyForce(double px, double py, double pz) {
+    return getConstantBodyForce() + getVariableBodyForce(px, py, pz);
+}
+
+vmath::vec3 FluidSimulation::getTotalBodyForce(vmath::vec3 p) {
+    return getTotalBodyForce(p.y, p.y, p.z);
+}
+
+void FluidSimulation::resetBodyForce() {
     _constantBodyForces.clear();
     _variableBodyForces.clear();
 }
@@ -519,7 +539,6 @@ SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, 
     }
 
     SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
-    source->setID(_getUniqueFluidSourceID());
 
     _fluidSources.push_back(source);
     _sphericalFluidSources.push_back(source);
@@ -541,7 +560,6 @@ CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, vmath::vec3 
     }
 
     CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
-    source->setID(_getUniqueFluidSourceID());
 
     _fluidSources.push_back(source);
     _cuboidFluidSources.push_back(source);
@@ -1298,12 +1316,6 @@ void FluidSimulation::_initializeCLObjects() {
     1. Update Fluid Material
 ********************************************************************************/
 
-int FluidSimulation::_getUniqueFluidSourceID() {
-    int id = _uniqueFluidSourceID;
-    _uniqueFluidSourceID++;
-    return id;
-}
-
 void FluidSimulation::_removeMarkerParticlesFromCells(Array3d<bool> &isRemovalCell) {
     std::vector<bool> isRemoved;
     isRemoved.reserve(_markerParticles.size());
@@ -1369,7 +1381,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
     int kdepth = gmax.k - gmin.k + 1;
     
     Array3d<bool> isInvalidCell = Array3d<bool>(iwidth, jheight, kdepth, true);
-    GridIndexVector sourceCells = source->getCells(_materialGrid, _dx);
+    GridIndexVector sourceCells = source->getFluidOrAirCells(_materialGrid, _dx);
     GridIndex g;
     for (unsigned int i = 0; i < sourceCells.size(); i++) {
         g = sourceCells[i];
@@ -1429,7 +1441,7 @@ void FluidSimulation::_getNewFluidParticles(FluidSource *source, std::vector<vma
 void FluidSimulation::_updateInflowFluidSource(FluidSource *source) {
     FLUIDSIM_ASSERT(source->isInflow());
 
-    GridIndexVector newCells = source->getNewFluidCells(_materialGrid, _dx);
+    GridIndexVector newCells = source->getAirCells(_materialGrid, _dx);
     vmath::vec3 velocity = source->getVelocity();
     if (newCells.size() > 0) {
         _addNewFluidCells(newCells, velocity);
@@ -1483,6 +1495,7 @@ void FluidSimulation::_removeMarkerParticlesInSolidCells() {
     bool isParticlesInSolidCell = false;
     MarkerParticle p;
     GridIndex g;
+    int count = 0;
     for (unsigned int i = 0; i < _markerParticles.size(); i++) {
         p = _markerParticles[i];
         g = Grid3d::positionToGridIndex(p.position, _dx);
@@ -1490,6 +1503,7 @@ void FluidSimulation::_removeMarkerParticlesInSolidCells() {
         bool isInSolidCell = _materialGrid.isCellSolid(g);
         if (isInSolidCell) {
             isParticlesInSolidCell = true;
+            count++;
         }
 
         isRemoved.push_back(isInSolidCell);
@@ -2215,6 +2229,21 @@ vmath::vec3 FluidSimulation::_getConstantBodyForce() {
     }
 
     return bf;
+}
+
+vmath::vec3 FluidSimulation::_getVariableBodyForce(double px, double py, double pz) {
+    return _getVariableBodyForce(vmath::vec3(px, py, pz));
+}
+
+vmath::vec3 FluidSimulation::_getVariableBodyForce(vmath::vec3 p) {
+    vmath::vec3 fsum;
+    vmath::vec3 (*fieldFunction)(vmath::vec3);
+    for (unsigned int i = 0; i < _variableBodyForces.size(); i++) {
+        fieldFunction = _variableBodyForces[i];
+        fsum += fieldFunction(p);
+    }
+
+    return fsum;
 }
 
 void FluidSimulation::_applyConstantBodyForces(double dt) {

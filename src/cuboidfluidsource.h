@@ -39,9 +39,8 @@ public:
     CuboidFluidSource(AABB bbox, vmath::vec3 velocity);
     ~CuboidFluidSource();
 
-    virtual GridIndexVector getNewFluidCells(FluidMaterialGrid &materialGrid, double dx);
-    virtual GridIndexVector getFluidCells(FluidMaterialGrid &materialGrid, double dx);
-    virtual GridIndexVector getCells(FluidMaterialGrid &materialGrid, double dx);
+    virtual vmath::vec3 getPosition();
+    virtual void setPosition(vmath::vec3 pos);
     virtual AABB getAABB();
     virtual bool containsPoint(vmath::vec3 p);
 
@@ -51,8 +50,7 @@ public:
     double getWidth();
     double getHeight();
     double getDepth();
-    void setBoundingBox(AABB bbox);
-    AABB getBoundingBox();
+    void setAABB(AABB bbox);
     void setCenter(vmath::vec3 pos);
     vmath::vec3 getCenter();
     void expand(double value);
@@ -60,8 +58,7 @@ public:
 private:
     AABB _bbox;
 
-    void _getOverlappingGridIndices(GridIndexVector &storage,
-                                    int i, int j, int k, double dx);
+    virtual void _getOverlappingCells(GridIndexVector &storage, double dx);
 };
 
 #endif
