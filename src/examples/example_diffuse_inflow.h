@@ -65,8 +65,9 @@ void example_diffuse_inflow() {
     // of the simulation domain.
     AABB inflowAABB(vmath::vec3(), 5*dx, 25*dx, 40*dx);
     vmath::vec3 inflowVelocity = vmath::vec3(10.0, 0.0, 0.0);
-    CuboidFluidSource *inflow = fluidsim.addCuboidFluidSource(inflowAABB, inflowVelocity);
-    inflow->setCenter(vmath::vec3(5*dx, 0.5*height, 0.5*depth));
+    CuboidFluidSource inflow(inflowAABB, inflowVelocity);
+    inflow.setCenter(vmath::vec3(5*dx, 0.5*height, 0.5*depth));
+    fluidsim.addCuboidFluidSource(&inflow);
 
     // Create a pillar of solid cells in the center of the domain
     vmath::vec3 center(0.5*width, 0.5*height, 0.5*depth);

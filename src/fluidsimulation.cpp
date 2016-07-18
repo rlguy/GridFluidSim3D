@@ -38,9 +38,6 @@ FluidSimulation::FluidSimulation(FluidSimulationSaveState &state) {
 }
 
 FluidSimulation::~FluidSimulation() {
-    for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        delete _fluidSources[i];
-    }
 }
 
 /*******************************************************************************
@@ -525,52 +522,32 @@ void FluidSimulation::addFluidCuboid(vmath::vec3 p, double w, double h, double d
     _fluidCuboids.push_back(FluidCuboid(p, w, h, d));
 }
 
-
-SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r) {
-    return addSphericalFluidSource(pos, r, vmath::vec3());
-}
-
-SphericalFluidSource* FluidSimulation::addSphericalFluidSource(vmath::vec3 pos, double r, 
-                                                               vmath::vec3 velocity) {
-    if (r < 0.0) {
-        std::string msg = "Error: spherical fluid source radius must be greater than or equal to 0.\n";
-        msg += "radius: " + _toString(r) + "\n";
-        throw std::domain_error(msg);
+void FluidSimulation::addSphericalFluidSource(SphericalFluidSource *source) {
+    for (unsigned int i = 0; i < _sphericalFluidSources.size(); i++) {
+        if (source->getID() == _sphericalFluidSources[i]->getID()) {
+            std::string msg = "Error: Fluid source has already been added.\n";
+            throw std::runtime_error(msg);
+        }
     }
-
-    SphericalFluidSource *source = new SphericalFluidSource(pos, r, velocity);
-
     _fluidSources.push_back(source);
     _sphericalFluidSources.push_back(source);
-    return source;
 }
 
-CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox) {
-    return addCuboidFluidSource(bbox, vmath::vec3());
-}
-
-CuboidFluidSource* FluidSimulation::addCuboidFluidSource(AABB bbox, vmath::vec3 velocity) {
-    bool isValidDimensions = bbox.width >= 0.0 && bbox.height >= 0.0 && bbox.depth >= 0.0;
-    if (!isValidDimensions) {
-        std::string msg = "Error: cuboid fluid source dimensions must be greater than or equal to 0.\n";
-        msg += "width: " + _toString(bbox.width) + 
-               " height: " + _toString(bbox.height) + 
-               " depth: " + _toString(bbox.depth) + "\n";
-        throw std::domain_error(msg);
+void FluidSimulation::addCuboidFluidSource(CuboidFluidSource *source) {
+    for (unsigned int i = 0; i < _cuboidFluidSources.size(); i++) {
+        if (source->getID() == _cuboidFluidSources[i]->getID()) {
+            std::string msg = "Error: Fluid source has already been added.\n";
+            throw std::runtime_error(msg);
+        }
     }
-
-    CuboidFluidSource *source = new CuboidFluidSource(bbox, velocity);
-
     _fluidSources.push_back(source);
     _cuboidFluidSources.push_back(source);
-    return source;
 }
 
 void FluidSimulation::removeFluidSource(FluidSource *source) {
     bool isFound = false;
     for (unsigned int i = 0; i < _fluidSources.size(); i++) {
         if (source->getID() == _fluidSources[i]->getID()) {
-            delete _fluidSources[i];
             _fluidSources.erase(_fluidSources.begin() + i);
             isFound = true;
             break;
@@ -604,9 +581,6 @@ void FluidSimulation::removeFluidSource(FluidSource *source) {
 }
 
 void FluidSimulation::removeFluidSources() {
-    for (unsigned int i = 0; i < _fluidSources.size(); i++) {
-        delete _fluidSources[i];
-    }
     _fluidSources.clear();
     _sphericalFluidSources.clear();
     _cuboidFluidSources.clear();

@@ -50,17 +50,19 @@ void example_inflow_outflow() {
     inflowAABB.height = 15*dx;
     inflowAABB.depth = 30*dx;
     vmath::vec3 inflowVelocity = vmath::vec3(10.0, 0.0, 0.0);
+    CuboidFluidSource inflow(inflowAABB, inflowVelocity);
 
     AABB outflowAABB;
     outflowAABB.position = vmath::vec3(width - 5*dx, 0.0, 0.0);
     outflowAABB.width = 10*dx;
     outflowAABB.height = height;
     outflowAABB.depth = depth;
+    CuboidFluidSource outflow(outflowAABB);
+    outflow.setAsOutFlow();
 
-    CuboidFluidSource *inflow = fluidsim.addCuboidFluidSource(inflowAABB, inflowVelocity);
-    CuboidFluidSource *outflow = fluidsim.addCuboidFluidSource(outflowAABB);
-    outflow->setAsOutFlow();
-    
+    fluidsim.addCuboidFluidSource(&inflow);
+    fluidsim.addCuboidFluidSource(&outflow);
+
     // Create a pillar of solid cells in the center of the domain
     vmath::vec3 center(0.5*width, 0.5*height, 0.5*depth);
     double pillarRadius = 10*dx;
@@ -95,7 +97,7 @@ void example_inflow_outflow() {
         vmath::vec3 p2(0.1*width, 0.85*height, 0.5*depth);
         vmath::vec3 p12 = p2 - p1;
         vmath::vec3 sourcepos = p1 + sinval*p12;
-        inflow->setCenter(sourcepos);
+        inflow.setCenter(sourcepos);
 
         fluidsim.update(timestep);
     }

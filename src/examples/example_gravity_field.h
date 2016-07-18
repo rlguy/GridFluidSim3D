@@ -93,9 +93,6 @@ void example_gravity_field() {
     // of a variable gravity force field. The force field generates a gravity
     // vector towards a sphere in the center of the fluid domain with force
     // strength falling off proportional to radius^2.
-    //
-    // This is a large scale simulation and will require compiling with a
-    // 64-bit address space to ensure there is enough memory.
 
     int isize = ISIZE;
     int jsize = JSIZE;
@@ -117,9 +114,9 @@ void example_gravity_field() {
     vmath::vec3 emitterPosition(0.5*width, 0.9*height, 0.5*depth);
     vmath::vec3 emitterVelocity(8.0, 0.0, 0.0);
     double emitterRadius = 1.0;
-    SphericalFluidSource *emitter = fluidsim.addSphericalFluidSource(emitterPosition,
-                                                                     emitterRadius,
-                                                                     emitterVelocity);
+    SphericalFluidSource emitter(emitterPosition, emitterRadius, emitterVelocity);
+    fluidsim.addSphericalFluidSource(&emitter);
+
     fluidsim.addBodyForce(gravityForceField);
  
     fluidsim.initialize();
@@ -130,7 +127,7 @@ void example_gravity_field() {
  
         int frameno = fluidsim.getCurrentFrame();
         if (frameno >= 200) {
-            emitter->deactivate();
+            emitter.deactivate();
         }
  
         double pi = 3.14159265;
@@ -140,7 +137,7 @@ void example_gravity_field() {
         double rotationFactor = sin(rotationSpeed*simulationTime);
         double rads = minAngle + rotationFactor*(maxAngle - minAngle);
         vmath::vec3 rotatedVelocity = rotateY(emitterVelocity, rads);
-        emitter->setVelocity(rotatedVelocity);
+        emitter.setVelocity(rotatedVelocity);
  
         fluidsim.update(timestep);
  

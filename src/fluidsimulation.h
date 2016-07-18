@@ -446,38 +446,17 @@ public:
     void addFluidCuboid(vmath::vec3 p, double width, double height, double depth);
 
     /*
-        Add a spherical shaped fluid source with position pos, radius r, and an optional 
-        emission velocity to the simulation and return a pointer to the source object.
-
-        A fluid source can be either of type inflow (emit fluid) or outflow (remove fluid) 
-        and type can be set using source->setAsInFlow() and source->setAsOutFlow() 
-        respectively.
-
-        Fluid sources are of type inflow by default.
+        Add a spherical shaped fluid source to the fluid domain. 
+        See sphericalfluidsource.h header for more information.
     */
-    SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r);
-    SphericalFluidSource *addSphericalFluidSource(vmath::vec3 pos, double r, 
-                                                  vmath::vec3 velocity);
+    void addSphericalFluidSource(SphericalFluidSource *source);
 
     /*
-        Add a cuboid shaped fluid source matching the position and dimensions of bbox 
-        to the simulation and return a pointer to the source object.
-
-        An axis aligned bounding box object can be initialized in the following manner:
-
-            AABB bbox(vmath::vec3(x, y, z), width, height, depth);
-
-        where x, y, z are the position coordinates of the minimal point of the AABB
-        and width, height, depth are the dimensions according to the x,y,z directions.
-
-        A fluid source can be either of type inflow (emit fluid) or outflow (remove fluid) 
-        and type can be set using source->setAsInFlow() and source->setAsOutFlow() 
-        respectively.
-
-        Fluid sources are of type inflow by default.
+        Add a cuboid shaped fluid source to the fluid domain. 
+        See cuboidfluidsource.h header for more information.
+        See examples/exaple_inflow_outflow.h for example usage.
     */
-    CuboidFluidSource *addCuboidFluidSource(AABB bbox);
-    CuboidFluidSource *addCuboidFluidSource(AABB bbox, vmath::vec3 velocity);
+    void addCuboidFluidSource(CuboidFluidSource *source);
 
     /*
         Remove a fluid source from the simulation. The pointer will become invalid
