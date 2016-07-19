@@ -1,15 +1,13 @@
-from vector3 import Vector3
+from vector3 import Vector3, Vector3_t
 from gridindex import GridIndex
 import method_decorators as decorators
 import ctypes
 
 class AABB_t(ctypes.Structure):
-    _fields_ = [("x", ctypes.c_float),
-                ("y", ctypes.c_float),
-                ("z", ctypes.c_float),
+    _fields_ = [("position", Vector3_t),
                 ("width", ctypes.c_float),
                 ("height", ctypes.c_float),
-                ("depth", ctypes.c_float),]
+                ("depth", ctypes.c_float)]
 
 class AABB(object):
 
@@ -85,6 +83,17 @@ class AABB(object):
         depth = maxz - minz + eps;
 
         return cls(minx, miny, minz, width, height, depth)
+
+    @classmethod
+    def from_struct(cls, cstruct):
+        return cls(Vector3.from_struct(cstruct.position), 
+                   float(cstruct.width), 
+                   float(cstruct.height), 
+                   float(cstruct.depth))
+
+    def to_struct(self):
+        return AABB_t(Vector3_t(self.x, self.y, self.z), 
+                      self.width, self.height, self.depth)
 
     @classmethod
     def from_grid_index(cls, grid_index = GridIndex(), dx = 0.0):

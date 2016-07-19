@@ -92,16 +92,16 @@ double CuboidFluidSource::getDepth() {
     return _bbox.depth;
 }
 
-void CuboidFluidSource::setCenter(vmath::vec3 pos) {
-    vmath::vec3 c = getCenter();
-    vmath::vec3 trans = pos - c;
-    _bbox.position += trans;
-}
-
 vmath::vec3 CuboidFluidSource::getCenter() {
     return vmath::vec3(_bbox.position.x + 0.5*_bbox.width, 
                        _bbox.position.y + 0.5*_bbox.height, 
                        _bbox.position.z + 0.5*_bbox.depth);
+}
+
+void CuboidFluidSource::setCenter(vmath::vec3 pos) {
+    vmath::vec3 c = getCenter();
+    vmath::vec3 trans = pos - c;
+    _bbox.position += trans;
 }
 
 void CuboidFluidSource::expand(double value) {

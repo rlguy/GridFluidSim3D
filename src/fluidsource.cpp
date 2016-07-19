@@ -37,6 +37,10 @@ FluidSource::FluidSource(vmath::vec3 vel) : _velocity(vel),
 FluidSource::~FluidSource() {
 }
 
+vmath::vec3 FluidSource::getVelocity() {
+    return _velocity;
+}
+
 void FluidSource::setVelocity(vmath::vec3 v) {
     _velocity = v;
     if (vmath::length(v) > 0.0) {
@@ -44,6 +48,10 @@ void FluidSource::setVelocity(vmath::vec3 v) {
     } else {
         _direction = vmath::vec3(1.0, 0.0, 0.0);
     }
+}
+
+vmath::vec3 FluidSource::getDirection() {
+    return _direction;
 }
 
 void FluidSource::setDirection(vmath::vec3 dir) {
@@ -56,15 +64,11 @@ void FluidSource::setDirection(vmath::vec3 dir) {
     _velocity = vmath::length(_velocity) * _direction;
 }
 
-vmath::vec3 FluidSource::getVelocity() {
-    return _velocity;
-}
-
-void FluidSource::setAsInFlow() {
+void FluidSource::setAsInflow() {
     _sourceType = FluidSourceType::inflow;
 }
 
-void FluidSource::setAsOutFlow() {
+void FluidSource::setAsOutflow() {
     _sourceType = FluidSourceType::outflow;
 }
 

@@ -6,25 +6,37 @@ from gridindex import GridIndex
 
 def ijk_or_gridindex(func):
     def ijk_or_gridindex_wrapper(self, *args):
-        if len(args) == 1 and isinstance(args[0], GridIndex):
-            return func(self, *args[0])
-        return func(self, *args)
+        try:
+            i, j, k = args
+        except:
+            i, j, k = args[0]
+        return func(self, i, j, k)
     return ijk_or_gridindex_wrapper
+
+def ijk_or_gridindex_and_value(func):
+    def ijk_or_gridindex_and_value_wrapper(self, *args):
+        try:
+            return func(self, *args)
+        except:
+            i, j, k = args[0]
+            return func(self, i, j, k, args[1])
+    return ijk_or_gridindex_and_value_wrapper
 
 def xyz_or_vector(func):
     def xyz_or_vector_wrapper(self, *args):
-        if len(args) == 1 and isinstance(args[0], Vector3):
+        try:
+            return func(self, *args)
+        except:
             return func(self, *args[0])
-        return func(self, *args)
     return xyz_or_vector_wrapper
 
 def xyz_or_vector_and_radius(func):
     def xyz_or_vector_wrapper(self, *args):
-        if len(args) == 2 and isinstance(args[0], Vector3):
-            return func(self, radius=args[1], *args[0])
-        elif len(args) == 4:
+        try:
             return func(self, *args)
-        return func(self, x, y, z, radius)
+        except:
+            x, y, z = args[0]
+            return func(self, x, y, z, args[1])
     return xyz_or_vector_wrapper
 
 def check_gt_zero(func):

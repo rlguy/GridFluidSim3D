@@ -41,8 +41,8 @@ public:
     virtual AABB getAABB();
     virtual bool containsPoint(vmath::vec3 p);
 
-    void setRadius(double r);
     double getRadius();
+    void setRadius(double r);
     void setCenter(vmath::vec3 p);
     void expand(double val);
 

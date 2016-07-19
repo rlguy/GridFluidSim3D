@@ -15,6 +15,13 @@ class Vector3(object):
         else:
             self._values = array.array('f', [x, y, z])
 
+    @classmethod
+    def from_struct(cls, cstruct):
+        return cls(cstruct.x, cstruct.y, cstruct.z)
+
+    def to_struct(self):
+        return Vector3_t(self.x, self.y, self.z)
+
     def __str__(self):
         return str(self.x) + " " + str(self.y) + " " + str(self.z)
 

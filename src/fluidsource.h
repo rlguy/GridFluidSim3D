@@ -48,11 +48,12 @@ public:
     virtual AABB getAABB() = 0;
     virtual bool containsPoint(vmath::vec3 p) = 0;
 
-    void setVelocity(vmath::vec3 v);
-    void setDirection(vmath::vec3 dir);
     vmath::vec3 getVelocity();
-    void setAsInFlow();
-    void setAsOutFlow();
+    void setVelocity(vmath::vec3 v);
+    vmath::vec3 getDirection();
+    void setDirection(vmath::vec3 dir);
+    void setAsInflow();
+    void setAsOutflow();
     FluidSourceType getSourceType();
     bool isInflow();
     bool isOutflow();

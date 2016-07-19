@@ -58,7 +58,7 @@ void example_inflow_outflow() {
     outflowAABB.height = height;
     outflowAABB.depth = depth;
     CuboidFluidSource outflow(outflowAABB);
-    outflow.setAsOutFlow();
+    outflow.setAsOutflow();
 
     fluidsim.addCuboidFluidSource(&inflow);
     fluidsim.addCuboidFluidSource(&outflow);

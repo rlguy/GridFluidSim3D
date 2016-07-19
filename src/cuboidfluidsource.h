@@ -51,8 +51,8 @@ public:
     double getHeight();
     double getDepth();
     void setAABB(AABB bbox);
-    void setCenter(vmath::vec3 pos);
     vmath::vec3 getCenter();
+    void setCenter(vmath::vec3 pos);
     void expand(double value);
     
 private:

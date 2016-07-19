@@ -57,15 +57,15 @@ bool SphericalFluidSource::containsPoint(vmath::vec3 p) {
     return lensq < _radius*_radius;
 }
 
+double SphericalFluidSource::getRadius() {
+    return _radius;
+}
+
 void SphericalFluidSource::setRadius(double r) {
     if (r < 0.0) {
         r = 0.0;
     }
     _radius = r;
-}
-
-double SphericalFluidSource::getRadius() {
-    return _radius;
 }
 
 void SphericalFluidSource::setCenter(vmath::vec3 p) {

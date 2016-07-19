@@ -1,5 +1,10 @@
-
 #include "cbindings.h"
+
+#ifdef _WIN32
+    #define EXPORTDLL __declspec(dllexport)
+#else
+    #define EXPORTDLL
+#endif
 
 namespace CBindings {
 
@@ -17,4 +22,33 @@ char* get_error_message() {
 	return CBINDINGS_ERROR_MESSAGE;
 }
 
+Vector3_t to_struct(vmath::vec3 v) {
+	return (Vector3_t){ .x = v.x, .y = v.y, .z = v.z};
+}
+
+vmath::vec3 to_class(Vector3_t v) {
+	return vmath::vec3(v.x, v.y, v.z);
+}
+
+AABB_t to_struct(AABB b) {
+	Vector3_t cpos = (Vector3_t){ .x = b.position.x, 
+                                  .y = b.position.y, 
+                                  .z = b.position.z };
+    return (AABB_t){ .position = cpos,
+                     .width = (float)b.width, 
+                     .height = (float)b.height, 
+                     .depth = (float)b.depth };
+}
+
+AABB to_class(AABB_t b) {
+	return AABB(b.position.x, b.position.y, b.position.z,
+                b.width, b.height, b.depth);
+}
+
+}
+
+extern "C" {
+	EXPORTDLL char* CBindings_get_error_message() {
+        return CBindings::get_error_message();
+    }
 }
