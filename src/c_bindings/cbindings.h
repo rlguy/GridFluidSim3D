@@ -83,6 +83,22 @@ void safe_execute_method(CLASS *obj,
 
 template<typename T, class RT, class CLASS>
 RT safe_execute_method(CLASS *obj,
+                       RT (CLASS::*funcptr)(T, T),
+                       T param1, T param2, int *err) {
+    RT result;
+    *err = SUCCESS;
+    try {
+        result = (obj->*funcptr)(param1, param2);
+    } catch (std::exception &ex) {
+        CBindings::set_error_message(ex);
+        *err = FAIL;
+    }
+
+    return result;
+}
+
+template<typename T, class RT, class CLASS>
+RT safe_execute_method(CLASS *obj,
                        RT (CLASS::*funcptr)(T, T, T),
                        T param1, T param2, T param3, int *err) {
     RT result;
