@@ -202,7 +202,7 @@ void FluidBrickGrid::_getConnectedBricks(int i, int j, int k,
 
     Array3d<bool> isProcessed = Array3d<bool>(bw, bh, bd, false);
 
-    GridIndexVector queue(_isize, _jsize, _ksize);
+    GridIndexVector queue(bw, bh, bd);
     queue.push_back(i, j, k);
     newBricks.set(i, j, k, false);
     isProcessed.set(i, j, k, true);
@@ -234,8 +234,9 @@ void FluidBrickGrid::_getbrickStructures(Array3d<Brick> &brickGrid, Array3d<bool
         for (int j = 0;  j < newBricks.height; j++) {
             for (int i = 0;  i < newBricks.width; i++) {
                 if (newBricks(i, j, k)) {
-
-                    GridIndexVector connectedBricks(_isize, _jsize, _ksize);
+                    GridIndexVector connectedBricks(newBricks.width, 
+                                                    newBricks.height, 
+                                                    newBricks.depth);
                     _getConnectedBricks(i, j, k, brickGrid, newBricks, connectedBricks);
                     brickStructures.push_back(connectedBricks);
                 }
