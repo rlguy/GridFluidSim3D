@@ -12,7 +12,7 @@
 extern "C" {
 
     EXPORTDLL Vector3_t FluidSource_get_position(FluidSource* obj, int *err) {
-        vmath::vec3 pos = CBindings::safe_execute_method(
+        vmath::vec3 pos = CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::getPosition, err
         );
         return CBindings::to_struct(pos);
@@ -21,11 +21,13 @@ extern "C" {
     EXPORTDLL void FluidSource_set_position(FluidSource* obj, 
                                             Vector3_t cpos, int *err) {
         vmath::vec3 p = CBindings::to_class(cpos);
-        CBindings::safe_execute_method(obj, &FluidSource::setPosition, p, err);
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSource::setPosition, p, err
+        );
     }
 
     EXPORTDLL Vector3_t FluidSource_get_velocity(FluidSource* obj, int *err) {
-        vmath::vec3 v = CBindings::safe_execute_method(
+        vmath::vec3 v = CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::getVelocity, err
         );
         return CBindings::to_struct(v);
@@ -34,11 +36,13 @@ extern "C" {
     EXPORTDLL void FluidSource_set_velocity(FluidSource* obj, 
                                             Vector3_t cvel, int *err) {
         vmath::vec3 v = CBindings::to_class(cvel);
-        CBindings::safe_execute_method(obj, &FluidSource::setVelocity, v, err);
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSource::setVelocity, v, err
+        );
     }
 
     EXPORTDLL Vector3_t FluidSource_get_direction(FluidSource* obj, int *err) {
-        vmath::vec3 d = CBindings::safe_execute_method(
+        vmath::vec3 d = CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::getDirection, err
         );
         return CBindings::to_struct(d);
@@ -47,11 +51,13 @@ extern "C" {
     EXPORTDLL void FluidSource_set_direction(FluidSource* obj, 
                                             Vector3_t cdir, int *err) {
         vmath::vec3 d = CBindings::to_class(cdir);
-        CBindings::safe_execute_method(obj, &FluidSource::setDirection, d, err);
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSource::setDirection, d, err
+        );
     }
 
     EXPORTDLL AABB_t FluidSource_get_AABB(FluidSource* obj, int *err) {
-        AABB bbox = CBindings::safe_execute_method(
+        AABB bbox = CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::getAABB, err
         );
         return CBindings::to_struct(bbox);
@@ -60,55 +66,55 @@ extern "C" {
     EXPORTDLL int FluidSource_contains_point(FluidSource* obj, 
                                              Vector3_t cpos, int *err) {
         vmath::vec3 p = CBindings::to_class(cpos);
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_1param(
             obj, &FluidSource::containsPoint, p, err
         );
     }
 
     EXPORTDLL int FluidSource_is_inflow(FluidSource* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::isInflow, err
         );
     }
 
     EXPORTDLL int FluidSource_is_outflow(FluidSource* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::isOutflow, err
         );
     }
 
     EXPORTDLL void FluidSource_set_as_inflow(FluidSource* obj, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSource::setAsInflow, err
         );
     }
 
     EXPORTDLL void FluidSource_set_as_outflow(FluidSource* obj, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSource::setAsOutflow, err
         );
     }
 
     EXPORTDLL void FluidSource_activate(FluidSource* obj, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSource::activate, err
         );
     }
 
     EXPORTDLL void FluidSource_deactivate(FluidSource* obj, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSource::deactivate, err
         );
     }
 
     EXPORTDLL int FluidSource_is_active(FluidSource* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::isActive, err
         );
     }
 
     EXPORTDLL int FluidSource_get_id(FluidSource* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSource::getID, err
         );
     }

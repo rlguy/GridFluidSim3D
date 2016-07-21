@@ -35,42 +35,42 @@ extern "C" {
  
     EXPORTDLL double CuboidFluidSource_get_width(CuboidFluidSource* obj, 
                                                  int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &CuboidFluidSource::getWidth, err
         );
     }
 
     EXPORTDLL void CuboidFluidSource_set_width(CuboidFluidSource* obj, 
                                                double width, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::setWidth, width, err
         );
     }
 
     EXPORTDLL double CuboidFluidSource_get_height(CuboidFluidSource* obj, 
                                                   int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &CuboidFluidSource::getHeight, err
         );
     }
 
     EXPORTDLL void CuboidFluidSource_set_height(CuboidFluidSource* obj, 
                                                 double height, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::setHeight, height, err
         );
     }
 
     EXPORTDLL double CuboidFluidSource_get_depth(CuboidFluidSource* obj, 
                                                  int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &CuboidFluidSource::getDepth, err
         );
     }
 
     EXPORTDLL void CuboidFluidSource_set_depth(CuboidFluidSource* obj, 
                                                double depth, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::setDepth, depth, err
         );
     }
@@ -78,14 +78,14 @@ extern "C" {
     EXPORTDLL void CuboidFluidSource_set_AABB(CuboidFluidSource* obj, 
                                               AABB_t cbbox, int *err) {
         AABB bbox = CBindings::to_class(cbbox);
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::setAABB, bbox, err
         );
     }
 
     EXPORTDLL Vector3_t CuboidFluidSource_get_center(CuboidFluidSource* obj, 
                                                      int *err) {
-        vmath::vec3 cpos = CBindings::safe_execute_method(
+        vmath::vec3 cpos = CBindings::safe_execute_method_ret_0param(
             obj, &CuboidFluidSource::getCenter, err
         );
         return CBindings::to_struct(cpos);
@@ -94,14 +94,14 @@ extern "C" {
     EXPORTDLL void CuboidFluidSource_set_center(CuboidFluidSource* obj, 
                                                 Vector3_t cpos, int *err) {
         vmath::vec3 c = CBindings::to_class(cpos);
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::setCenter, c, err
         );
     }
 
     EXPORTDLL void CuboidFluidSource_expand(CuboidFluidSource* obj, 
                                             double val, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &CuboidFluidSource::expand, val, err
         );
     }

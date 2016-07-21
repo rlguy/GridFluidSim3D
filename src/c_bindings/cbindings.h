@@ -19,7 +19,7 @@ extern void set_error_message(std::exception &ex);
 extern char* get_error_message();
 
 template<class CLASS>
-void safe_execute_method(CLASS *obj, void (CLASS::*funcptr)(void), int *err) {
+void safe_execute_method_void_0param(CLASS *obj, void (CLASS::*funcptr)(void), int *err) {
     *err = SUCCESS;
     try {
         (obj->*funcptr)();
@@ -30,7 +30,7 @@ void safe_execute_method(CLASS *obj, void (CLASS::*funcptr)(void), int *err) {
 }
 
 template<typename T, class CLASS>
-T safe_execute_method(CLASS *obj, T (CLASS::*funcptr)(void), int *err) {
+T safe_execute_method_ret_0param(CLASS *obj, T (CLASS::*funcptr)(void), int *err) {
     *err = SUCCESS;
     T result = T();
     try {
@@ -43,8 +43,19 @@ T safe_execute_method(CLASS *obj, T (CLASS::*funcptr)(void), int *err) {
     return result;
 }
 
+template<typename T, class CLASS>
+void safe_execute_method_void_1param(CLASS *obj, void (CLASS::*funcptr)(T), T param, int *err) {
+    *err = SUCCESS;
+    try {
+        (obj->*funcptr)(param);
+    } catch (std::exception &ex) {
+        CBindings::set_error_message(ex);
+        *err = FAIL;
+    }
+}
+
 template<typename T, typename RT, class CLASS>
-RT safe_execute_method(CLASS *obj, RT (CLASS::*funcptr)(T), T param, int *err) {
+RT safe_execute_method_ret_1param(CLASS *obj, RT (CLASS::*funcptr)(T), T param, int *err) {
     *err = SUCCESS;
     RT result = RT();
     try {
@@ -58,18 +69,36 @@ RT safe_execute_method(CLASS *obj, RT (CLASS::*funcptr)(T), T param, int *err) {
 }
 
 template<typename T, class CLASS>
-void safe_execute_method(CLASS *obj, void (CLASS::*funcptr)(T), T param, int *err) {
+void safe_execute_method_void_2param(CLASS *obj,
+                       void (CLASS::*funcptr)(T, T),
+                       T param1, T param2, int *err) {
     *err = SUCCESS;
     try {
-        (obj->*funcptr)(param);
+        (obj->*funcptr)(param1, param2);
     } catch (std::exception &ex) {
         CBindings::set_error_message(ex);
         *err = FAIL;
     }
 }
 
+template<typename T, class RT, class CLASS>
+RT safe_execute_method_ret_2param(CLASS *obj,
+                       RT (CLASS::*funcptr)(T, T),
+                       T param1, T param2, int *err) {
+    RT result = RT();
+    *err = SUCCESS;
+    try {
+        result = (obj->*funcptr)(param1, param2);
+    } catch (std::exception &ex) {
+        CBindings::set_error_message(ex);
+        *err = FAIL;
+    }
+
+    return result;
+}
+
 template<typename T, class CLASS>
-void safe_execute_method(CLASS *obj,
+void safe_execute_method_void_3param(CLASS *obj,
                          void (CLASS::*funcptr)(T, T, T),
                          T param1, T param2, T param3, int *err) {
     *err = SUCCESS;
@@ -82,26 +111,10 @@ void safe_execute_method(CLASS *obj,
 }
 
 template<typename T, class RT, class CLASS>
-RT safe_execute_method(CLASS *obj,
-                       RT (CLASS::*funcptr)(T, T),
-                       T param1, T param2, int *err) {
-    RT result;
-    *err = SUCCESS;
-    try {
-        result = (obj->*funcptr)(param1, param2);
-    } catch (std::exception &ex) {
-        CBindings::set_error_message(ex);
-        *err = FAIL;
-    }
-
-    return result;
-}
-
-template<typename T, class RT, class CLASS>
-RT safe_execute_method(CLASS *obj,
+RT safe_execute_method_ret_3param(CLASS *obj,
                        RT (CLASS::*funcptr)(T, T, T),
                        T param1, T param2, T param3, int *err) {
-    RT result;
+    RT result = RT();
     *err = SUCCESS;
     try {
         result = (obj->*funcptr)(param1, param2, param3);

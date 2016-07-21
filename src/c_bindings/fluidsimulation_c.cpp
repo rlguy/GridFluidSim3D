@@ -57,17 +57,17 @@ extern "C" {
     }
 
     EXPORTDLL void FluidSimulation_initialize(FluidSimulation* obj, int *err) {
-        CBindings::safe_execute_method(obj, &FluidSimulation::initialize, err);
+        CBindings::safe_execute_method_void_0param(obj, &FluidSimulation::initialize, err);
     }
 
     EXPORTDLL int FluidSimulation_is_initialized(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isInitialized, err
         );
     }
 
     EXPORTDLL void FluidSimulation_update(FluidSimulation* obj, double dt, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::update, dt, err
         );
     }
@@ -84,45 +84,45 @@ extern "C" {
     }
 
     EXPORTDLL int FluidSimulation_get_current_frame(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getCurrentFrame, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_current_frame_finished(FluidSimulation* obj, 
                                                             int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isCurrentFrameFinished, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_cell_size(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getCellSize, err
         );
     }
 
     EXPORTDLL void FluidSimulation_get_grid_dimensions(
             FluidSimulation* obj, int *i, int *j, int *k, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::getGridDimensions, i, j, k, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_width(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getGridWidth, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_height(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getGridHeight, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_grid_depth(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getGridDepth, err
         );
     }
@@ -130,34 +130,34 @@ extern "C" {
     EXPORTDLL void FluidSimulation_get_simulation_dimensions(
             FluidSimulation* obj, 
             double *width, double *height, double *depth, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::getSimulationDimensions, width, height, depth, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_width(FluidSimulation* obj, 
                                                           int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSimulationWidth, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_height(FluidSimulation* obj, 
                                                            int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSimulationHeight, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_simulation_depth(FluidSimulation* obj, 
                                                           int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSimulationDepth, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_density(FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDensity, err
         );
     }
@@ -165,7 +165,7 @@ extern "C" {
     EXPORTDLL void FluidSimulation_set_density(FluidSimulation* obj, 
                                                double density,
                                                int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDensity, density, err
         );
     }
@@ -186,7 +186,7 @@ extern "C" {
 
     EXPORTDLL double FluidSimulation_get_marker_particle_scale(FluidSimulation* obj, 
                                                                int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getMarkerParticleScale, err
         );
     }
@@ -194,14 +194,14 @@ extern "C" {
     EXPORTDLL void FluidSimulation_set_marker_particle_scale(FluidSimulation* obj, 
                                                              double scale,
                                                              int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setMarkerParticleScale, scale, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_surface_subdivision_level(FluidSimulation* obj, 
                                                                 int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getSurfaceSubdivisionLevel, err
         );
     }
@@ -209,14 +209,14 @@ extern "C" {
     EXPORTDLL void FluidSimulation_set_surface_subdivision_level(FluidSimulation* obj, 
                                                                  int level,
                                                                  int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setSurfaceSubdivisionLevel, level, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_num_polygonizer_slices(FluidSimulation* obj, 
                                                              int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getNumPolygonizerSlices, err
         );
     }
@@ -224,14 +224,14 @@ extern "C" {
     EXPORTDLL void FluidSimulation_set_num_polygonizer_slices(FluidSimulation* obj, 
                                                               int numslices,
                                                               int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setNumPolygonizerSlices, numslices, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_min_polyhedron_triangle_count(FluidSimulation* obj, 
                                                                     int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getMinPolyhedronTriangleCount, err
         );
     }
@@ -239,196 +239,196 @@ extern "C" {
     EXPORTDLL void FluidSimulation_set_min_polyhedron_triangle_count(FluidSimulation* obj, 
                                                                      int count,
                                                                      int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setMinPolyhedronTriangleCount, count, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_surface_mesh_output(FluidSimulation* obj,
                                                               int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableSurfaceMeshOutput, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_surface_mesh_output(FluidSimulation* obj,
                                                                int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableSurfaceMeshOutput, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_surface_mesh_output_enabled(FluidSimulation* obj,
                                                                  int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isSurfaceMeshOutputEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_isotropic_surface_reconstruction(FluidSimulation* obj,
                                                                            int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableIsotropicSurfaceReconstruction, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_isotropic_surface_reconstruction(FluidSimulation* obj,
                                                                             int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableIsotropicSurfaceReconstruction, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_isotropic_surface_reconstruction_enabled(FluidSimulation* obj,
                                                                               int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isIsotropicSurfaceReconstructionEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_anisotropic_surface_reconstruction(FluidSimulation* obj,
                                                                              int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableAnisotropicSurfaceReconstruction, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_anisotropic_surface_reconstruction(FluidSimulation* obj,
                                                                               int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableAnisotropicSurfaceReconstruction, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_anisotropic_surface_reconstruction_enabled(FluidSimulation* obj,
                                                                                 int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isAnisotropicSurfaceReconstructionEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_diffuse_material_output(FluidSimulation* obj,
                                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableDiffuseMaterialOutput, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_diffuse_material_output(FluidSimulation* obj,
                                                                    int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableDiffuseMaterialOutput, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_diffuse_material_output_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isDiffuseMaterialOutputEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_bubble_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableBubbleDiffuseMaterial, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_bubble_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableBubbleDiffuseMaterial, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_bubble_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isBubbleDiffuseMaterialEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_spray_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableSprayDiffuseMaterial, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_spray_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableSprayDiffuseMaterial, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_spray_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isSprayDiffuseMaterialEnabled, err
         );
     }
 
     EXPORTDLL void FluidSimulation_enable_foam_diffuse_material(FluidSimulation* obj,
                                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableFoamDiffuseMaterial, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_foam_diffuse_material(FluidSimulation* obj,
                                                                    int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableFoamDiffuseMaterial, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_foam_diffuse_material_enabled(FluidSimulation* obj,
                                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isFoamDiffuseMaterialEnabled, err
         );
     }
 
     EXPORTDLL int FluidSimulation_get_max_num_diffuse_particles(FluidSimulation* obj,
                                                                 int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getMaxNumDiffuseParticles, err
         );
     }
 
     EXPORTDLL void FluidSimulation_set_max_num_diffuse_particles(FluidSimulation* obj,
                                                                  int n, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setMaxNumDiffuseParticles, n, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_diffuse_particle_wavecrest_emission_rate(
             FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleWavecrestEmissionRate, err
         );
     }
 
     EXPORTDLL void FluidSimulation_set_diffuse_particle_wavecrest_emission_rate(
             FluidSimulation* obj, double rate, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseParticleWavecrestEmissionRate, rate, err
         );
     }
 
     EXPORTDLL double FluidSimulation_get_diffuse_particle_turbulence_emission_rate(
             FluidSimulation* obj, int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getDiffuseParticleTurbulenceEmissionRate, err
         );
     }
 
     EXPORTDLL void FluidSimulation_set_diffuse_particle_turbulence_emission_rate(
             FluidSimulation* obj, double rate, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::setDiffuseParticleTurbulenceEmissionRate, rate, err
         );
     }
@@ -437,21 +437,21 @@ extern "C" {
                                                        double width, 
                                                        double height, 
                                                        double depth, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::enableBrickOutput, width, height, depth, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_brick_output(FluidSimulation* obj, 
                                                         int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableBrickOutput, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_brick_output_enabled(FluidSimulation* obj,
                                                           int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isBrickOutputEnabled, err
         );
     }
@@ -471,21 +471,21 @@ extern "C" {
 
     EXPORTDLL void FluidSimulation_enable_autosave(FluidSimulation* obj, 
                                                    int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::enableAutosave, err
         );
     }
 
     EXPORTDLL void FluidSimulation_disable_autosave(FluidSimulation* obj,
                                                     int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::disableAutosave, err
         );
     }
 
     EXPORTDLL int FluidSimulation_is_autosave_enabled(FluidSimulation* obj,
                                                       int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::isAutosaveEnabled, err
         );
     }
@@ -493,14 +493,14 @@ extern "C" {
     EXPORTDLL void FluidSimulation_add_body_force(FluidSimulation* obj,
                                                   double fx, double fy, double fz,
                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::addBodyForce, fx, fy, fz, err
         );
     }
 
     EXPORTDLL Vector3_t FluidSimulation_get_constant_body_force(FluidSimulation* obj,
                                                                 int *err) {
-        vmath::vec3 f = CBindings::safe_execute_method(
+        vmath::vec3 f = CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulation::getConstantBodyForce, err
         );
         return CBindings::to_struct(f);
@@ -510,7 +510,7 @@ extern "C" {
                                                                 double px, 
                                                                 double py, 
                                                                 double pz, int *err) {
-        vmath::vec3 f = CBindings::safe_execute_method(
+        vmath::vec3 f = CBindings::safe_execute_method_ret_3param(
             obj, &FluidSimulation::getVariableBodyForce, px, py, pz, err
         );
         return CBindings::to_struct(f);
@@ -520,14 +520,14 @@ extern "C" {
                                                              double px, 
                                                              double py, 
                                                              double pz, int *err) {
-        vmath::vec3 f = CBindings::safe_execute_method(
+        vmath::vec3 f = CBindings::safe_execute_method_ret_3param(
             obj, &FluidSimulation::getTotalBodyForce, px, py, pz, err
         );
         return CBindings::to_struct(f);
     }
 
     EXPORTDLL void FluidSimulation_reset_body_force(FluidSimulation* obj, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::resetBodyForce, err
         );
     }
@@ -548,7 +548,7 @@ extern "C" {
     EXPORTDLL void FluidSimulation_add_fluid_cuboid(FluidSimulation* obj, 
                                                     AABB_t cbbox, int *err) {
         AABB bbox = CBindings::to_class(cbbox);
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::addFluidCuboid, bbox, err
         );
     }
@@ -556,7 +556,7 @@ extern "C" {
     EXPORTDLL void FluidSimulation_add_spherical_fluid_source(FluidSimulation* obj, 
                                                               SphericalFluidSource *source,
                                                               int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::addSphericalFluidSource, source, err
         );
     }
@@ -564,7 +564,7 @@ extern "C" {
     EXPORTDLL void FluidSimulation_add_cuboid_fluid_source(FluidSimulation* obj, 
                                                            CuboidFluidSource *source,
                                                            int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::addCuboidFluidSource, source, err
         );
     }
@@ -572,14 +572,14 @@ extern "C" {
     EXPORTDLL void FluidSimulation_remove_fluid_source(FluidSimulation* obj,
                                                        FluidSource *source,
                                                        int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &FluidSimulation::removeFluidSource, source, err
         );
     }
 
     EXPORTDLL void FluidSimulation_remove_fluid_sources(FluidSimulation* obj, 
                                                         int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulation::removeFluidSources, err
         );
     }
@@ -587,7 +587,7 @@ extern "C" {
     EXPORTDLL void FluidSimulation_add_solid_cell(FluidSimulation* obj, 
                                                   int i, int j, int k,
                                                   int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::addSolidCell, i, j, k, err
         );
     }

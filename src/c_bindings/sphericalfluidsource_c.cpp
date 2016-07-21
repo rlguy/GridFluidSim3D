@@ -35,21 +35,21 @@ extern "C" {
 
     EXPORTDLL double SphericalFluidSource_get_radius(SphericalFluidSource* obj, 
                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &SphericalFluidSource::getRadius, err
         );
     }
 
     EXPORTDLL void SphericalFluidSource_set_radius(SphericalFluidSource* obj, 
                                                    double radius, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &SphericalFluidSource::setRadius, radius, err
         );
     }
  
     EXPORTDLL void SphericalFluidSource_expand(SphericalFluidSource* obj, 
                                                double val, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_1param(
             obj, &SphericalFluidSource::expand, val, err
         );
     }

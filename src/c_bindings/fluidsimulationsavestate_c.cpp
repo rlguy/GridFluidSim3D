@@ -44,56 +44,56 @@ extern "C" {
                                                        char* filename,
                                                        int *err) {
         std::string filestr(filename);
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_1param(
             obj, &FluidSimulationSaveState::loadState, filestr, err
         );
     }
 
     EXPORTDLL void FluidSimulationSaveState_close_state(FluidSimulationSaveState* obj,
                                                         int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_0param(
             obj, &FluidSimulationSaveState::closeState, err
         );
     }
 
     EXPORTDLL void FluidSimulationSaveState_get_grid_dimensions(
             FluidSimulationSaveState* obj, int *i, int *j, int *k, int *err) {
-        CBindings::safe_execute_method(
+        CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulationSaveState::getGridDimensions, i, j, k, err
         );
     }
 
     EXPORTDLL double FluidSimulationSaveState_get_cell_size(FluidSimulationSaveState* obj,
                                                             int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::getCellSize, err
         );
     }
 
     EXPORTDLL int FluidSimulationSaveState_get_current_frame(FluidSimulationSaveState* obj,
                                                              int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::getCurrentFrame, err
         );
     }
 
     EXPORTDLL int FluidSimulationSaveState_get_num_marker_particles(FluidSimulationSaveState* obj,
                                                                     int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::getNumMarkerParticles, err
         );
     }
 
     EXPORTDLL int FluidSimulationSaveState_get_num_diffuse_particles(FluidSimulationSaveState* obj,
                                                                      int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::getNumDiffuseParticles, err
         );
     }
 
     EXPORTDLL int FluidSimulationSaveState_get_num_solid_cells(FluidSimulationSaveState* obj,
                                                                int *err) {
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::getNumSolidCells, err
         );
     }
@@ -103,7 +103,7 @@ extern "C" {
             int startidx, int endidx,
             Vector3_t *out, int *err) {
 
-        std::vector<vmath::vec3> mps = CBindings::safe_execute_method(
+        std::vector<vmath::vec3> mps = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getMarkerParticlePositions,
             startidx, endidx, err
         );
@@ -120,7 +120,7 @@ extern "C" {
             int startidx, int endidx,
             Vector3_t *out, int *err) {
 
-        std::vector<vmath::vec3> mvs = CBindings::safe_execute_method(
+        std::vector<vmath::vec3> mvs = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getMarkerParticleVelocities,
             startidx, endidx, err
         );
@@ -137,7 +137,7 @@ extern "C" {
             int startidx, int endidx,
             Vector3_t *out, int *err) {
 
-        std::vector<vmath::vec3> dps = CBindings::safe_execute_method(
+        std::vector<vmath::vec3> dps = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getDiffuseParticlePositions,
             startidx, endidx, err
         );
@@ -154,7 +154,7 @@ extern "C" {
             int startidx, int endidx,
             Vector3_t *out, int *err) {
 
-        std::vector<vmath::vec3> dvs = CBindings::safe_execute_method(
+        std::vector<vmath::vec3> dvs = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getDiffuseParticleVelocities,
             startidx, endidx, err
         );
@@ -171,7 +171,7 @@ extern "C" {
             int startidx, int endidx,
             float *out, int *err) {
 
-        std::vector<float> dls = CBindings::safe_execute_method(
+        std::vector<float> dls = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getDiffuseParticleLifetimes,
             startidx, endidx, err
         );
@@ -186,7 +186,7 @@ extern "C" {
             int startidx, int endidx,
             char *out, int *err) {
 
-        std::vector<char> dts = CBindings::safe_execute_method(
+        std::vector<char> dts = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getDiffuseParticleTypes,
             startidx, endidx, err
         );
@@ -201,7 +201,7 @@ extern "C" {
             int startidx, int endidx,
             GridIndex_t *out, int *err) {
 
-        std::vector<GridIndex> cells = CBindings::safe_execute_method(
+        std::vector<GridIndex> cells = CBindings::safe_execute_method_ret_2param(
             obj, &FluidSimulationSaveState::getSolidCells,
             startidx, endidx, err
         );
@@ -216,7 +216,7 @@ extern "C" {
     EXPORTDLL int FluidSimulationSaveState_is_fluid_brick_grid_enabled(
             FluidSimulationSaveState* obj, int *err) {
 
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::isFluidBrickGridEnabled, err
         );
     }
@@ -224,7 +224,7 @@ extern "C" {
     EXPORTDLL int FluidSimulationSaveState_is_load_state_initialized(
             FluidSimulationSaveState* obj, int *err) {
 
-        return CBindings::safe_execute_method(
+        return CBindings::safe_execute_method_ret_0param(
             obj, &FluidSimulationSaveState::isLoadStateInitialized, err
         );
     }
