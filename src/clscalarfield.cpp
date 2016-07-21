@@ -372,14 +372,14 @@ void CLScalarField::printDeviceInfo() {
 }
 
 cl_int CLScalarField::_initializeChunkDimensions() {
-    int groupsize = (int)_deviceInfo.cl_device_max_work_group_size;
+    unsigned int groupsize = (unsigned int)_deviceInfo.cl_device_max_work_group_size;
     groupsize = fmin(groupsize, _maxWorkGroupSize);
 
-    if (groupsize < _minWorkGroupSize) {
+    if (groupsize < (unsigned int)_minWorkGroupSize) {
         return (cl_int)-1;
     }
 
-    std::vector<int> validsizes;
+    std::vector<unsigned int> validsizes;
     int size = _minWorkGroupSize;
     while (size <= _maxWorkGroupSize) {
         validsizes.push_back(size);
