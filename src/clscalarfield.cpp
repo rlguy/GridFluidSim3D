@@ -508,9 +508,9 @@ CLScalarField::CLDeviceInfo CLScalarField::_initializeDeviceInfo(cl::Device &dev
     clGetDeviceInfo(device(), CL_DEVICE_MAX_MEM_ALLOC_SIZE, 
                     sizeof(cl_ulong), &(info.cl_device_max_mem_alloc_size), NULL);
     clGetDeviceInfo(device(), CL_DEVICE_MAX_WORK_GROUP_SIZE, 
-                    sizeof(cl_uint), &(info.cl_device_max_work_group_size), NULL);
+                    sizeof(size_t), &(info.cl_device_max_work_group_size), NULL);
 
-    std::vector<int> workItemSizes;
+    std::vector<size_t> workItemSizes;
     device.getInfo(CL_DEVICE_MAX_WORK_ITEM_SIZES, &workItemSizes);
 
     GridIndex groupdims(1, 1, 1);

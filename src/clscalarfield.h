@@ -129,7 +129,7 @@ private:
         cl_ulong cl_device_global_mem_size;
         cl_ulong cl_device_local_mem_size;
         cl_ulong cl_device_max_mem_alloc_size;
-        cl_uint cl_device_max_work_group_size;
+        size_t cl_device_max_work_group_size;
         GridIndex cl_device_max_work_item_sizes;
     };
 
