@@ -1,5 +1,6 @@
 #include "../fluidsimulation.h"
 #include "cbindings.h"
+#include "aabb_c.h"
 
 #ifdef _WIN32
     #define EXPORTDLL __declspec(dllexport)
@@ -432,6 +433,105 @@ extern "C" {
         );
     }
 
+    EXPORTDLL void FluidSimulation_enable_brick_output(FluidSimulation* obj, 
+                                                       double width, 
+                                                       double height, 
+                                                       double depth, int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::enableBrickOutput, width, height, depth, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_brick_output(FluidSimulation* obj, 
+                                                        int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::disableBrickOutput, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_brick_output_enabled(FluidSimulation* obj,
+                                                          int *err) {
+        return CBindings::safe_execute_method(
+            obj, &FluidSimulation::isBrickOutputEnabled, err
+        );
+    }
+
+    EXPORTDLL AABB_t FluidSimulation_get_brick_AABB(FluidSimulation* obj, 
+                                                    int *err) {
+        AABB bbox;
+        *err = CBindings::SUCCESS;
+        try {
+            bbox = obj->getBrickAABB();
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+        return CBindings::to_struct(bbox);
+    }
+
+    EXPORTDLL void FluidSimulation_enable_autosave(FluidSimulation* obj, 
+                                                   int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::enableAutosave, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_disable_autosave(FluidSimulation* obj,
+                                                    int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::disableAutosave, err
+        );
+    }
+
+    EXPORTDLL int FluidSimulation_is_autosave_enabled(FluidSimulation* obj,
+                                                      int *err) {
+        return CBindings::safe_execute_method(
+            obj, &FluidSimulation::isAutosaveEnabled, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_add_body_force(FluidSimulation* obj,
+                                                  double fx, double fy, double fz,
+                                                  int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::addBodyForce, fx, fy, fz, err
+        );
+    }
+
+    EXPORTDLL Vector3_t FluidSimulation_get_constant_body_force(FluidSimulation* obj,
+                                                                int *err) {
+        vmath::vec3 f = CBindings::safe_execute_method(
+            obj, &FluidSimulation::getConstantBodyForce, err
+        );
+        return CBindings::to_struct(f);
+    }
+
+    EXPORTDLL Vector3_t FluidSimulation_get_variable_body_force(FluidSimulation* obj,
+                                                                double px, 
+                                                                double py, 
+                                                                double pz, int *err) {
+        vmath::vec3 f = CBindings::safe_execute_method(
+            obj, &FluidSimulation::getVariableBodyForce, px, py, pz, err
+        );
+        return CBindings::to_struct(f);
+    }
+
+    EXPORTDLL Vector3_t FluidSimulation_get_total_body_force(FluidSimulation* obj,
+                                                             double px, 
+                                                             double py, 
+                                                             double pz, int *err) {
+        vmath::vec3 f = CBindings::safe_execute_method(
+            obj, &FluidSimulation::getTotalBodyForce, px, py, pz, err
+        );
+        return CBindings::to_struct(f);
+    }
+
+    EXPORTDLL void FluidSimulation_reset_body_force(FluidSimulation* obj, int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::resetBodyForce, err
+        );
+    }
+
     EXPORTDLL void FluidSimulation_add_implicit_fluid_point(
             FluidSimulation* obj, 
             double x, double y, double z, double r, 
@@ -443,6 +543,53 @@ extern "C" {
             CBindings::set_error_message(ex);
             *err = CBindings::FAIL;
         }
+    }
+
+    EXPORTDLL void FluidSimulation_add_fluid_cuboid(FluidSimulation* obj, 
+                                                    AABB_t cbbox, int *err) {
+        AABB bbox = CBindings::to_class(cbbox);
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::addFluidCuboid, bbox, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_add_spherical_fluid_source(FluidSimulation* obj, 
+                                                              SphericalFluidSource *source,
+                                                              int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::addSphericalFluidSource, source, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_add_cuboid_fluid_source(FluidSimulation* obj, 
+                                                           CuboidFluidSource *source,
+                                                           int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::addCuboidFluidSource, source, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_remove_fluid_source(FluidSimulation* obj,
+                                                       FluidSource *source,
+                                                       int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::removeFluidSource, source, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_remove_fluid_sources(FluidSimulation* obj, 
+                                                        int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::removeFluidSources, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_add_solid_cell(FluidSimulation* obj, 
+                                                  int i, int j, int k,
+                                                  int *err) {
+        CBindings::safe_execute_method(
+            obj, &FluidSimulation::addSolidCell, i, j, k, err
+        );
     }
 
     EXPORTDLL char* FluidSimulation_get_error_message() {

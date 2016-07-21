@@ -10,6 +10,8 @@ class LibraryLoadError(Exception):
 
 def __load_library(name):
         libdir = os.path.dirname(__file__)
+        if libdir == "":
+            libdir = "./"
         files = glob.glob(libdir + "/*" + name + "*")
 
         library = None

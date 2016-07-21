@@ -24,6 +24,18 @@ class Array3d:
             return self._out_of_range_value
         return self._grid[self._get_flat_index(i, j, k)]
 
+    def __iter__(self):
+        i = j = k = 0
+        for v in self._grid:
+            yield i, j, k, v
+            i += 1
+            if i >= self.width: 
+                i = 0
+                j += 1
+                if j >= self.height:
+                    j = 0
+                    k += 1
+
     @decorators.ijk_or_gridindex
     def get(self, i, j, k):
         return self(i, j, k)
