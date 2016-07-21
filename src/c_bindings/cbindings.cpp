@@ -23,7 +23,7 @@ char* get_error_message() {
 }
 
 Vector3_t to_struct(vmath::vec3 v) {
-	return (Vector3_t){ .x = v.x, .y = v.y, .z = v.z};
+	return Vector3_t{ v.x, v.y, v.z};
 }
 
 vmath::vec3 to_class(Vector3_t v) {
@@ -31,13 +31,13 @@ vmath::vec3 to_class(Vector3_t v) {
 }
 
 AABB_t to_struct(AABB b) {
-	Vector3_t cpos = (Vector3_t){ .x = b.position.x, 
-                                  .y = b.position.y, 
-                                  .z = b.position.z };
-    return (AABB_t){ .position = cpos,
-                     .width = (float)b.width, 
-                     .height = (float)b.height, 
-                     .depth = (float)b.depth };
+	Vector3_t cpos = Vector3_t{ b.position.x, 
+                                b.position.y, 
+                                b.position.z };
+    return AABB_t{ cpos,
+                   (float)b.width, 
+                   (float)b.height, 
+                   (float)b.depth };
 }
 
 AABB to_class(AABB_t b) {
