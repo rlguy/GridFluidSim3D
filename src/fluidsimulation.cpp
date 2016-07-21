@@ -450,7 +450,7 @@ vmath::vec3 FluidSimulation::getVariableBodyForce(double px, double py, double p
 }
 
 vmath::vec3 FluidSimulation::getVariableBodyForce(vmath::vec3 p) {
-    return getVariableBodyForce(p);
+    return getVariableBodyForce(p.x, p.y, p.z);
 }
 
 vmath::vec3 FluidSimulation::getTotalBodyForce(double px, double py, double pz) {
