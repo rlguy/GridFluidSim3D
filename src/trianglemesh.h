@@ -44,26 +44,13 @@ public:
     TriangleMesh();
     ~TriangleMesh();
 
-    bool loadOBJ(std::string OBJFilename) {
-        return loadOBJ(OBJFilename, vmath::vec3(), 1.0);
-    }
-    bool loadOBJ(std::string OBJFilename, vmath::vec3 offset) {
-        return loadOBJ(OBJFilename, offset, 1.0);
-    }
-    bool loadOBJ(std::string OBJFilename, double scale) {
-        return loadOBJ(OBJFilename, vmath::vec3(), scale);
-    }
-    bool loadOBJ(std::string OBJFilename, vmath::vec3 offset, double scale);
-
     bool loadPLY(std::string PLYFilename);
+    void writeMeshToPLY(std::string filename);
 
     int numVertices();
     int numFaces();
     int numTriangles() { return numFaces(); }
     void clear();
-    void writeMeshToOBJ(std::string filename);
-    void writeMeshToSTL(std::string filename);
-    void writeMeshToPLY(std::string filename);
     void removeDuplicateTriangles();
     void updateVertexNormals();
     void updateVertexTriangles();
