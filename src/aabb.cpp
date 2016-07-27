@@ -166,7 +166,8 @@ AABB AABB::getIntersection(AABB bbox) {
     vmath::vec3 maxp1 = getMaxPoint();
     vmath::vec3 maxp2 = bbox.getMaxPoint();
 
-    if (minp1.x > maxp2.x || minp1.y > maxp2.y || minp1.z > maxp2.z) {
+    if (minp1.x > maxp2.x || minp1.y > maxp2.y || minp1.z > maxp2.z ||
+        maxp1.x < minp2.x || maxp1.y < minp2.y || maxp1.z < minp2.z) {
         return AABB();
     }
 
