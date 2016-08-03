@@ -21,30 +21,30 @@ freely, subject to the following restrictions:
 
 namespace Config {
     std::string getExecutableDirectory() {
-        return std::string(CONFIG_DATA_EXECUTABLE_DIR);
+        return std::string(CONFIG_EXECUTABLE_DIR);
     }
 
     std::string getResourcesDirectory() {
-        return std::string(CONFIG_DATA_RESOURCES_DIR);
+        return std::string(CONFIG_RESOURCES_DIR);
     }
 
     std::string getOutputDirectory() {
-        return std::string(CONFIG_DATA_OUTPUT_DIR);
+        return std::string(CONFIG_OUTPUT_DIR);
     }
 
     std::string getBakefilesDirectory() {
-        return std::string(CONFIG_DATA_BAKEFILES_DIR);
+        return std::string(CONFIG_BAKEFILES_DIR);
     }
 
     std::string getLogsDirectory() {
-        return std::string(CONFIG_DATA_LOGS_DIR);
+        return std::string(CONFIG_LOGS_DIR);
     }
 
     std::string getSavestatesDirectory() {
-        return std::string(CONFIG_DATA_SAVESTATES_DIR);
+        return std::string(CONFIG_SAVESTATES_DIR);
     }
 
     std::string getTempDirectory() {
-        return std::string(CONFIG_DATA_TEMP_DIR);
+        return std::string(CONFIG_TEMP_DIR);
     }
 }

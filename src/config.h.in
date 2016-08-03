@@ -20,9 +20,15 @@ freely, subject to the following restrictions:
 #ifndef FLUIDSIM_CONFIG_H
 #define FLUIDSIM_CONFIG_H
 
-#include <string>
+#define CONFIG_EXECUTABLE_DIR 	"@CONFIG_EXECUTABLE_DIR@"
+#define CONFIG_RESOURCES_DIR 	"@CONFIG_RESOURCES_DIR@"
+#define CONFIG_OUTPUT_DIR 		"@CONFIG_OUTPUT_DIR@"
+#define CONFIG_BAKEFILES_DIR 	"@CONFIG_BAKEFILES_DIR@"
+#define CONFIG_LOGS_DIR 		"@CONFIG_LOGS_DIR@"
+#define CONFIG_SAVESTATES_DIR 	"@CONFIG_SAVESTATES_DIR@"
+#define CONFIG_TEMP_DIR 	    "@CONFIG_TEMP_DIR@"
 
-#include "config_data.h"
+#include <string>
 
 namespace Config {
     
