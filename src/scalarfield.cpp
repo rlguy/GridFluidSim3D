@@ -203,9 +203,9 @@ void ScalarField::addPointValue(vmath::vec3 p, double scale) {
 void ScalarField::addCuboid(vmath::vec3 pos, double w, double h, double d) {
     pos -= _gridOffset;
 
-    GridIndex gmin = Grid3d::positionToGridIndex(pos, _dx);
-    GridIndex gmax = Grid3d::positionToGridIndex(pos + vmath::vec3(w, h, d), _dx);
+    GridIndex gmin, gmax;
     AABB bbox = AABB(pos, w, h, d);
+    Grid3d::getGridIndexBounds(bbox, _dx, _isize, _jsize, _ksize, &gmin, &gmax);
 
     double eps = 10e-6;
     vmath::vec3 gpos;
