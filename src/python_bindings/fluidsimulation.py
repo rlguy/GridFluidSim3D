@@ -33,12 +33,15 @@ def _check_simulation_not_initialized(func):
 class FluidSimulation(object):
 
     def __init__(self, isize = None, jsize = None, ksize = None, dx = None):
+        is_empty_constructor = all(x == None for x in (isize, jsize, ksize, dx))
         is_dimensions_constructor = (isinstance(isize, int) and
                                      isinstance(jsize, int) and
                                      isinstance(ksize, int) and
                                      isinstance(dx, numbers.Real))
 
-        if is_dimensions_constructor:
+        if is_empty_constructor:
+            self._init_from_empty()
+        elif is_dimensions_constructor:
             self._init_from_dimensions(isize, jsize, ksize, dx)
         else:
             errmsg = "FluidSimulation must be initialized with types:\n"
@@ -47,6 +50,11 @@ class FluidSimulation(object):
                       "ksize:\t" + str(int) + "\n" + 
                       "dx:\t" + str(float))
             raise TypeError(errmsg)
+
+    def _init_from_empty(self):
+        libfunc = lib.FluidSimulation_new_from_empty
+        pb.init_lib_func(libfunc, [c_void_p], c_void_p)
+        self._obj = pb.execute_lib_func(libfunc, [])
 
     @decorators.check_gt_zero
     def _init_from_dimensions(self, isize, jsize, ksize, dx):
@@ -86,6 +94,8 @@ class FluidSimulation(object):
         pb.execute_lib_func(libfunc, [self()])
 
     def is_initialized(self):
+        """ KJSDSJDKJSJKDJKSDSD
+           SDKLLKSDLKSDKL """
         libfunc = lib.FluidSimulation_is_initialized
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
         return bool(pb.execute_lib_func(libfunc, [self()]))
@@ -362,6 +372,18 @@ class FluidSimulation(object):
         libfunc = lib.FluidSimulation_set_max_num_diffuse_particles
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), num])
+
+    @property
+    def max_diffuse_particle_lifetime(self):
+        libfunc = lib.FluidSimulation_get_max_diffuse_particle_lifetime
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_double)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @max_diffuse_particle_lifetime.setter
+    def max_diffuse_particle_lifetime(self, lifetime):
+        libfunc = lib.FluidSimulation_set_max_diffuse_particle_lifetime
+        pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), lifetime])
 
     @property
     def diffuse_particle_wavecrest_emission_rate(self):

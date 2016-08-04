@@ -408,6 +408,21 @@ extern "C" {
         );
     }
 
+    EXPORTDLL double FluidSimulation_get_max_diffuse_particle_lifetime(FluidSimulation* obj,
+                                                                       int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getMaxDiffuseParticleLifetime, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_set_max_diffuse_particle_lifetime(FluidSimulation* obj,
+                                                                     double lifetime, 
+                                                                     int *err) {
+        CBindings::safe_execute_method_void_1param(
+            obj, &FluidSimulation::setMaxDiffuseParticleLifetime, lifetime, err
+        );
+    }
+
     EXPORTDLL double FluidSimulation_get_diffuse_particle_wavecrest_emission_rate(
             FluidSimulation* obj, int *err) {
         return CBindings::safe_execute_method_ret_0param(

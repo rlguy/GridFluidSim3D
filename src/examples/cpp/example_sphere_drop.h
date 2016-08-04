@@ -30,13 +30,15 @@ void example_sphere_drop() {
     double dx = 0.0625;
     FluidSimulation fluidsim(isize, jsize, ksize, dx);
 
+    // Increase subdivision level to increase the resolution that
+    // the output meshes are generated at.
     int subdivisionLevel = 1;
     fluidsim.setSurfaceSubdivisionLevel(subdivisionLevel);
 
     if (subdivisionLevel >= 2) {
     	// Helps reduce output filesize by removing polyhedrons
     	// that do not meet a minimum triangle count threshold.
-    	fluidsim.setMinimumPolyhedronTriangleCount(64);
+    	fluidsim.setMinPolyhedronTriangleCount(64);
     }
 
     double width, height, depth;

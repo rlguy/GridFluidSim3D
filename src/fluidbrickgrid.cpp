@@ -87,8 +87,6 @@ bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
     double bw = _brick.width;
     double bh = _brick.height;
     double bd = _brick.depth;
-    double maxwidth = 2.0*fmax(bw, fmax(bh, bd));
-
     vmath::vec3 coffset = vmath::vec3(0.5*bw, 0.5*bh, 0.5*bd);
 
     vmath::vec3 p;
@@ -97,12 +95,9 @@ bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
             for (int i = 0;  i < _currentBrickGrid.width; i++) {
                 if (_currentBrickGrid(i, j, k).isActive) {
                     p = coffset + vmath::vec3(i*bw, j*bh, k*bd);
-
-                    if (levelset.getDistance(p) <= maxwidth) {
-                        double intensity = _currentBrickGrid(i, j, k).intensity;
-                        mesh.vertices.push_back(p);
-                        mesh.vertexcolors.push_back(vmath::vec3(intensity, intensity, intensity));
-                    }
+                    double intensity = _currentBrickGrid(i, j, k).intensity;
+                    mesh.vertices.push_back(p);
+                    mesh.vertexcolors.push_back(vmath::vec3(intensity, intensity, intensity));
                 }
             }
         }

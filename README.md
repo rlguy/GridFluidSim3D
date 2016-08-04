@@ -77,7 +77,7 @@ double cellsize = 0.25;
 FluidSimulation fluidsim(xsize, ysize, zsize, cellsize);
 ```
 
-We want to add a ball of fluid to the center of the fluid domain, so we will need to get the dimensions of the domain by calling `getSimulationDimensions` and passing it pointers to store the width, height, and depth values. Alternatively, the dimensions can be calculated by multiplying the cell width by the corresponding number of cells in a direction (e.g. `width = dx*xsize`).
+We want to add a ball of fluid to the center of the fluid domain, so we will need to get the dimensions of the domain by calling `getSimulationDimensions` and passing it pointers to store the width, height, and depth values. Alternatively, the dimensions can be calculated by multiplying the cell width by the corresponding number of cells in a direction (e.g. `width = dx*isize`).
 
 ```c++
 double width, height, depth;

@@ -36,9 +36,6 @@ void example_diffuse_inflow() {
     double dx = 0.0625;
     FluidSimulation fluidsim(isize, jsize, ksize, dx);
 
-    double width, height, depth;
-    fluidsim.getSimulationDimensions(&width, &height, &depth);
-
     // This option enables the diffuse particle simulation
     fluidsim.enableDiffuseMaterialOutput();
 
@@ -60,6 +57,9 @@ void example_diffuse_inflow() {
     // Limit the maximum number of particles simulated by the diffuse
     // particle simulator. 
     fluidsim.setMaxNumDiffuseParticles(6e6);
+
+    double width, height, depth;
+    fluidsim.getSimulationDimensions(&width, &height, &depth);
 
     // Initialize inflow fluid source located at one end of the
     // of the simulation domain.
