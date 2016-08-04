@@ -56,9 +56,8 @@ bool FluidSimulation::isInitialized() {
 }
 
 void FluidSimulation::saveState(std::string filename) {
-    std::string abspath = Config::getSavestatesDirectory() + "/" + filename;
     FluidSimulationSaveState state;
-    state.saveState(abspath, this);
+    state.saveState(filename, this);
 }
 
 int FluidSimulation::getCurrentFrame() {
@@ -603,7 +602,6 @@ void FluidSimulation::addSolidCell(GridIndex g) {
 
 void FluidSimulation::addSolidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
-        std::cout << indices[i].i << " " << indices[i].j << " " << indices[i].k << " " << std::endl;
         addSolidCell(indices[i]);
     }
 }
@@ -1516,11 +1514,9 @@ void FluidSimulation::_updateRemovedFluidCellQueue() {
         isRemoved.push_back(isInRemovalCell);
     }
 
-    std::cout << "SIZE: " << _markerParticles.size() << std::endl;
     if (isParticlesInRemovalCell) {
         _removeItemsFromVector(_markerParticles, isRemoved);
     }
-    std::cout << "SIZE: " << _markerParticles.size() << std::endl;
 
     _removedFluidCellQueue.clear();
     _removedFluidCellQueue.shrink_to_fit();
@@ -2946,7 +2942,8 @@ double FluidSimulation::_calculateNextTimeStep() {
 }
 
 void FluidSimulation::_autosave() {
-    saveState("autosave.state");
+    std::string dir = Config::getSavestatesDirectory();
+    saveState(dir + "/autosave.state");
 }
 
 void FluidSimulation::update(double dt) {

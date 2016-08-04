@@ -21,6 +21,7 @@ freely, subject to the following restrictions:
 
 #include "../../fluidsimulation.h"
 #include "../../fluidsimulationsavestate.h"
+#include "../../config.h"
 #include "../../fluidsimassert.h"
 
 void example_save_state(std::string filename) {
@@ -41,7 +42,7 @@ void example_save_state(std::string filename) {
     fluidsim.initialize();
 
     double timestep = 1.0 / 30.0;
-    int numFrames = 10;
+    int numFrames = 5;
     while (fluidsim.getCurrentFrame() < numFrames) {
         fluidsim.update(timestep);
     }
@@ -72,6 +73,7 @@ void example_load_state(std::string filename) {
             - marker particles
             - diffuse particles
             - solid cells
+            - FluidBrickGrid data
 
         The save state will not load any changed settings, body forces,
         or fluid sources, so these attributes/objects will need to be re-added
@@ -85,7 +87,7 @@ void example_load_state(std::string filename) {
     fluidsim.addBodyForce(0.0, -25.0, 0.0);
 
     double timestep = 1.0 / 30.0;
-    int numFrames = 10;
+    int numFrames = 5;
     int maxFrameNo = fluidsim.getCurrentFrame() + numFrames;
     while (fluidsim.getCurrentFrame() < maxFrameNo) {
         fluidsim.update(timestep);
@@ -100,7 +102,8 @@ void example_save_load_state() {
     // This example will turn off the autosave feature and demonstrate
     // how to manually save and load a savestate.
 
-    std::string filename = "savestates/mySaveState.state";
+    std::string dir = Config::getSavestatesDirectory();
+    std::string filename = dir + "/mySaveState.state";
     example_save_state(filename);
     example_load_state(filename);
 }
