@@ -61,7 +61,7 @@ Once successfully built, the program will be located in the '''build/fluidsim/''
 
 ## Configuring the Fluid Simulator
 
-The simulator is configured in the file [src/main.cpp](src/main.cpp). The default simulation will drop a ball of fluid in the center of the simulation domain. Example configurations are located in the [src/examples/](src/examples) directory. Some documentation on the public methods for the FluidSimulation class is provided in the [fluidsimulation.h](src/fluidsimulation.h) header.
+The simulator is configured in the file [src/main.cpp](src/main.cpp). The default simulation will drop a ball of fluid in the center of the simulation domain. Example configurations are located in the [src/examples/cpp/](src/examples/cpp) directory. Some documentation on the public methods for the FluidSimulation class is provided in the [fluidsimulation.h](src/fluidsimulation.h) header.
 
 ### Hello World
 

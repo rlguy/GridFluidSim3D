@@ -19,9 +19,9 @@ freely, subject to the following restrictions:
 */
 #include <math.h>
 
-#include "../fluidsimulation.h"
-#include "../grid3d.h"
-#include "../vmath.h"
+#include "../../fluidsimulation.h"
+#include "../../grid3d.h"
+#include "../../vmath.h"
 
 void example_inflow_outflow() {
 

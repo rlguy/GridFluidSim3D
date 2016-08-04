@@ -17,31 +17,31 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#include "../fluidsimulation.h"
+#include "../../fluidsimulation.h"
+#include "../../vmath.h"
 
-void example_sphere_drop() {
+void example_dambreak() {
 
-	// This example will drop a ball of fluid in the center
-    // of a rectangular fluid simulation domain.
+	// This example will run a dambreak scenario where
+	// a cuboid of fluid is released at one side of the 
+	// simulation domain.
 
-    int isize = 256;
-    int jsize = 128;
-    int ksize = 128;
-    double dx = 0.0625;
+    int isize = 128;
+    int jsize = 64;
+    int ksize = 64;
+    double dx = 0.125;
     FluidSimulation fluidsim(isize, jsize, ksize, dx);
-
-    int subdivisionLevel = 1;
-    fluidsim.setSurfaceSubdivisionLevel(subdivisionLevel);
-
-    if (subdivisionLevel >= 2) {
-    	// Helps reduce output filesize by removing polyhedrons
-    	// that do not meet a minimum triangle count threshold.
-    	fluidsim.setMinimumPolyhedronTriangleCount(64);
-    }
 
     double width, height, depth;
     fluidsim.getSimulationDimensions(&width, &height, &depth);
-    fluidsim.addImplicitFluidPoint(width/2, height/2, depth/2, 7.0);
+
+    AABB bbox;
+    bbox.position = vmath::vec3(0, 0, 0);
+    bbox.width = 0.25*width;
+    bbox.height = 0.75*height;
+    bbox.depth = depth;
+
+    fluidsim.addFluidCuboid(bbox);
     
     fluidsim.addBodyForce(0.0, -25.0, 0.0);
     fluidsim.initialize();

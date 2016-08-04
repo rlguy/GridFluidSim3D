@@ -19,9 +19,9 @@ freely, subject to the following restrictions:
 */
 #include <string>
 
-#include "../fluidsimulation.h"
-#include "../fluidsimulationsavestate.h"
-#include "../fluidsimassert.h"
+#include "../../fluidsimulation.h"
+#include "../../fluidsimulationsavestate.h"
+#include "../../fluidsimassert.h"
 
 void example_save_state(std::string filename) {
 

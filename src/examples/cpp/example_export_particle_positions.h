@@ -17,15 +17,15 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#include "../fluidsimulation.h"
+#include "../../fluidsimulation.h"
 
 #include <string>
 #include <sstream>    // std::ostringstream
 #include <fstream>    // std::ofstream, std::ifstream
 
-#include "../trianglemesh.h"
-#include "../vmath.h"
-#include "../config.h"
+#include "../../trianglemesh.h"
+#include "../../vmath.h"
+#include "../../config.h"
 
 // convert number to a string and pad to a width of npad with zeros
 std::string numberToPaddedString(int number, int npad) {
@@ -147,7 +147,7 @@ std::vector<vmath::vec3> importPlaintextParticles(std::string filename){
     return particles;
 }
 
-void export_particle_positions() {
+void example_export_particle_positions() {
 
     //  Exporting the simulation particle position data can be useful if you
     //  want to import the particles into an external program.

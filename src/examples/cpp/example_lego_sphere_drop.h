@@ -17,31 +17,36 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
-#include "../fluidsimulation.h"
-#include "../vmath.h"
+#include "../../fluidsimulation.h"
 
-void example_dambreak() {
+void example_lego_sphere_drop() {
 
-	// This example will run a dambreak scenario where
-	// a cuboid of fluid is released at one side of the 
-	// simulation domain.
+	// This example will drop a ball of fluid to a pool
+    // of resting fluid. The output surface mesh will be generated
+    // as LEGO bricks.
+    //
+    // The brick surface reconstruction method requires data from
+    // three consecutive frames, so data output will not be written
+    // to disk until the third frame.
 
     int isize = 128;
-    int jsize = 64;
-    int ksize = 64;
-    double dx = 0.125;
+    int jsize = 128;
+    int ksize = 128;
+    double dx = 0.0625;
     FluidSimulation fluidsim(isize, jsize, ksize, dx);
+
+    fluidsim.disableIsotropicSurfaceReconstruction();
+
+    double brickWidth = 3*dx;
+    double brickHeight = 1.2*brickWidth;
+    double brickDepth = brickWidth;
+    fluidsim.enableBrickOutput(brickWidth, brickHeight, brickDepth);
 
     double width, height, depth;
     fluidsim.getSimulationDimensions(&width, &height, &depth);
+    fluidsim.addImplicitFluidPoint(width/2, height/2, depth/2, 5.0);
 
-    AABB bbox;
-    bbox.position = vmath::vec3(0, 0, 0);
-    bbox.width = 0.25*width;
-    bbox.height = 0.75*height;
-    bbox.depth = depth;
-
-    fluidsim.addFluidCuboid(bbox);
+    fluidsim.addFluidCuboid(0.0, 0.0, 0.0, width, 0.125*height, depth);
     
     fluidsim.addBodyForce(0.0, -25.0, 0.0);
     fluidsim.initialize();
