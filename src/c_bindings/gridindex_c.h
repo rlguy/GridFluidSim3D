@@ -2,9 +2,9 @@
 #define GRIDINDEX_T_H
 
 typedef struct GridIndex_t {
-	float i;
-    float j;
-    float k;  
+	int i;
+    int j;
+    int k;  
 } GridIndex_t;
 
 #endif

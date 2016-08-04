@@ -31,9 +31,7 @@ vmath::vec3 to_class(Vector3_t v) {
 }
 
 AABB_t to_struct(AABB b) {
-	Vector3_t cpos = Vector3_t{ b.position.x, 
-                                b.position.y, 
-                                b.position.z };
+	Vector3_t cpos = to_struct(b.position);
     return AABB_t{ cpos,
                    (float)b.width, 
                    (float)b.height, 
@@ -44,6 +42,34 @@ AABB to_class(AABB_t b) {
 	return AABB(b.position.x, b.position.y, b.position.z,
                 b.width, b.height, b.depth);
 }
+
+MarkerParticle_t to_struct(MarkerParticle p) {
+    Vector3_t pos = to_struct(p.position);
+    Vector3_t vel = to_struct(p.velocity);
+    return MarkerParticle_t{ pos, vel };
+}
+
+MarkerParticle to_class(MarkerParticle_t p) {
+    vmath::vec3 pos = to_class(p.position);
+    vmath::vec3 vel = to_class(p.velocity);
+    return MarkerParticle(pos, vel);
+}
+
+DiffuseParticle_t to_struct(DiffuseParticle p) {
+    Vector3_t pos = to_struct(p.position);
+    Vector3_t vel = to_struct(p.velocity);
+    return DiffuseParticle_t{ pos, vel, p.lifetime, (char)p.type };
+}
+
+DiffuseParticle to_class(DiffuseParticle_t p) {
+    vmath::vec3 pos = to_class(p.position);
+    vmath::vec3 vel = to_class(p.velocity);
+    
+    DiffuseParticle dp(pos, vel, p.lifetime);
+    dp.type = (DiffuseParticleType)p.type;
+    return dp;
+}
+
 
 }
 

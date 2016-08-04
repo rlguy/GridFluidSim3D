@@ -8,6 +8,10 @@
 #include "../aabb.h"
 #include "vector3_c.h"
 #include "aabb_c.h"
+#include "../markerparticle.h"
+#include "../diffuseparticle.h"
+#include "markerparticle_c.h"
+#include "diffuseparticle_c.h"
 
 namespace CBindings {
 
@@ -130,6 +134,10 @@ Vector3_t to_struct(vmath::vec3 v);
 vmath::vec3 to_class(Vector3_t v);
 AABB_t to_struct(AABB b);
 AABB to_class(AABB_t v);
+MarkerParticle_t to_struct(MarkerParticle p);
+MarkerParticle to_class(MarkerParticle_t p);
+DiffuseParticle_t to_struct(DiffuseParticle p);
+DiffuseParticle to_class(DiffuseParticle_t p);
 
 }
 

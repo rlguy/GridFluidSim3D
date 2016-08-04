@@ -486,18 +486,8 @@ public:
         solid cells and will not be removed.
     */
     void removeSolidCell(int i, int j, int k);
+    void removeSolidCell(GridIndex g);
     void removeSolidCells(std::vector<GridIndex> &indices);
-
-    /*
-        Returns a vector containing the indices of all solid cells.
-    */
-    std::vector<GridIndex> getSolidCells();
-
-    /*
-        Returns a vector containing the position of the minimal grid cell
-        corner of all solid cells.
-    */
-    std::vector<vmath::vec3> getSolidCellPositions();
 
     /*
         Add fluid cells to the simulation grid. Fluid cells will only be
@@ -505,7 +495,16 @@ public:
     */
     void addFluidCell(int i, int j, int k);
     void addFluidCell(GridIndex g);
-    void addFluidCells(GridIndexVector &indices);
+    void addFluidCells(std::vector<GridIndex> &indices);
+
+    /*
+        Remove fluid cells from the simulation grid. When a fluid cell is
+        removed, all marker particles within the fluid cell will be removed
+        and the material will be replaced by air.
+    */
+    void removeFluidCell(int i, int j, int k);
+    void removeFluidCell(GridIndex g);
+    void removeFluidCells(std::vector<GridIndex> &indices);
 
     /*
         Returns the number of marker particles in the simulation. Marker particles
@@ -514,14 +513,16 @@ public:
     unsigned int getNumMarkerParticles();
 
     /*
-        Returns a vector of all marker particles in the simulation.
+        Returns a vector of all marker particles in the simulation. Marker
+        particles store position and velocity vectors.
     */
-    void getMarkerParticles(std::vector<MarkerParticle> &mps);
+    std::vector<MarkerParticle> getMarkerParticles();
+    std::vector<MarkerParticle> getMarkerParticles(int startidx, int endidx);
 
     /*
         Returns a vector of marker particle positions. If range indices
         are specified, the vector will contain positions ranging from 
-        start index startidx and ending at endidx inclusively.
+        [startidx, endidx).
     */
     std::vector<vmath::vec3> getMarkerParticlePositions();
     std::vector<vmath::vec3> getMarkerParticlePositions(int startidx, int endidx);
@@ -529,22 +530,23 @@ public:
     /*
         Returns a vector of marker particle velocities. If range indices
         are specified, the vector will contain velocities ranging from 
-        start index startidx and ending at endidx inclusively.
+        [startidx, endidx).
     */
     std::vector<vmath::vec3> getMarkerParticleVelocities();
     std::vector<vmath::vec3> getMarkerParticleVelocities(int startidx, int endidx);
 
     /*
-        Returns the number of diffuse particles in the simulation. Diffuse particles
-        have a position, velocity, lifetime value, and can be of type bubble, spray,
-        or foam.
+        Returns the number of diffuse particles in the simulation.
     */
     unsigned int getNumDiffuseParticles();
 
     /*
-        Returns a vector of all diffuse particles in the simulation.
+        Returns a vector of all diffuse particles in the simulation. Diffuse particles
+        store a position, velocity, lifetime, and and type (bubble, spray,
+        or foam).
     */
-    void getDiffuseParticles(std::vector<DiffuseParticle> &dps);
+    std::vector<DiffuseParticle> getDiffuseParticles();
+    std::vector<DiffuseParticle> getDiffuseParticles(int startidx, int endidx);
 
     /*
         Returns a vector of diffuse particle positions. If range indices
@@ -735,6 +737,7 @@ private:
     void _removeMarkerParticlesInSolidCells();
     void _removeDiffuseParticlesInSolidCells();
     void _updateAddedFluidCellQueue();
+    void _updateRemovedFluidCellQueue();
     void _updateFluidSources();
     void _updateInflowFluidSource(FluidSource *source);
     void _addNewFluidCells(GridIndexVector &cells, vmath::vec3 velocity);
@@ -975,7 +978,8 @@ private:
             }
         }
 
-        for (unsigned int i = 0; i < items.size() - currentidx; i++) {
+        int numRemoved = items.size() - currentidx;
+        for (unsigned int i = 0; i < numRemoved; i++) {
             items.pop_back();
         }
         items.shrink_to_fit();
@@ -1024,6 +1028,7 @@ private:
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
     FragmentedVector<MarkerParticle> _markerParticles;
     GridIndexVector _addedFluidCellQueue;
+    GridIndexVector _removedFluidCellQueue;
     GridIndexVector _fluidCellIndices;
 
     // Reconstruct internal fluid surface

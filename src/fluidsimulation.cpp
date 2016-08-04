@@ -27,6 +27,7 @@ FluidSimulation::FluidSimulation(int isize, int jsize, int ksize, double dx) :
                                 _isize(isize), _jsize(jsize), _ksize(ksize), _dx(dx),
                                 _materialGrid(_isize, _jsize, _ksize),
                                 _addedFluidCellQueue(_isize, _jsize, _ksize),
+                                _removedFluidCellQueue(_isize, _jsize, _ksize),
                                 _fluidCellIndices(_isize, _jsize, _ksize),
                                 _levelset(_isize, _jsize, _ksize, _dx),
                                 _MACVelocity(_isize, _jsize, _ksize, _dx) {
@@ -602,6 +603,7 @@ void FluidSimulation::addSolidCell(GridIndex g) {
 
 void FluidSimulation::addSolidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
+        std::cout << indices[i].i << " " << indices[i].j << " " << indices[i].k << " " << std::endl;
         addSolidCell(indices[i]);
     }
 }
@@ -623,40 +625,14 @@ void FluidSimulation::removeSolidCell(int i, int j, int k) {
     }
 }
 
+void FluidSimulation::removeSolidCell(GridIndex g) {
+    removeSolidCell(g.i, g.j, g.k);
+}
+
 void FluidSimulation::removeSolidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         removeSolidCell(indices[i].i, indices[i].j, indices[i].k);
     }
-}
-
-std::vector<GridIndex> FluidSimulation::getSolidCells() {
-    std::vector<GridIndex> indices;
-    for (int k = 1; k < _materialGrid.depth - 1; k++) {
-        for (int j = 1; j < _materialGrid.height - 1; j++) {
-            for (int i = 1; i < _materialGrid.width - 1; i++) {
-                if (_materialGrid.isCellSolid(i, j, k)) {
-                    indices.push_back(GridIndex(i, j, k));
-                }
-            }
-        }
-    }
-
-    return indices;
-}
-
-std::vector<vmath::vec3> FluidSimulation::getSolidCellPositions() {
-    std::vector<vmath::vec3> indices;
-    for (int k = 1; k < _materialGrid.depth - 1; k++) {
-        for (int j = 1; j < _materialGrid.height - 1; j++) {
-            for (int i = 1; i < _materialGrid.width - 1; i++) {
-                if (_materialGrid.isCellSolid(i, j, k)) {
-                    indices.push_back(Grid3d::GridIndexToPosition(i, j, k, _dx));
-                }
-            }
-        }
-    }
-
-    return indices;
 }
 
 void FluidSimulation::addFluidCell(int i, int j, int k) {
@@ -675,9 +651,29 @@ void FluidSimulation::addFluidCell(GridIndex g) {
     addFluidCell(g.i, g.j, g.k);
 }
 
-void FluidSimulation::addFluidCells(GridIndexVector &indices) {
+void FluidSimulation::addFluidCells(std::vector<GridIndex> &indices) {
     for (unsigned int i = 0; i < indices.size(); i++) {
         addFluidCell(indices[i]);
+    }
+}
+
+void FluidSimulation::removeFluidCell(int i, int j, int k) {
+    if (!Grid3d::isGridIndexInRange(i, j, k, _isize, _jsize, _ksize)) {
+        std::string msg = "Error: fluid cell index out of range.\n";
+        msg += "i: " + _toString(i) + " j: " + _toString(j) + " k: " + _toString(k) + "\n";
+        throw std::out_of_range(msg);
+    }
+
+    _removedFluidCellQueue.push_back(i, j, k);
+}
+
+void FluidSimulation::removeFluidCell(GridIndex g) {
+    removeFluidCell(g.i, g.j, g.k);
+}
+
+void FluidSimulation::removeFluidCells(std::vector<GridIndex> &indices) {
+    for (unsigned int i = 0; i < indices.size(); i++) {
+        removeFluidCell(indices[i]);
     }
 }
 
@@ -685,11 +681,26 @@ unsigned int FluidSimulation::getNumMarkerParticles() {
     return _markerParticles.size();
 }
 
-void FluidSimulation::getMarkerParticles(std::vector<MarkerParticle> &mps) {
-    mps.reserve(_markerParticles.size());
-    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
-        mps.push_back(_markerParticles[i]);
+std::vector<MarkerParticle> FluidSimulation::getMarkerParticles() {
+    return getMarkerParticles(0, _markerParticles.size());
+}
+
+std::vector<MarkerParticle> FluidSimulation::getMarkerParticles(int startidx, int endidx) {
+    int size = _markerParticles.size();
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
     }
+
+    std::vector<MarkerParticle> particles;
+    particles.reserve(endidx - startidx);
+
+    for (int i = startidx; i < endidx; i++) {
+        particles.push_back(_markerParticles[i]);
+    }
+
+    return particles;
 }
 
 std::vector<vmath::vec3> FluidSimulation::getMarkerParticlePositions() {
@@ -738,6 +749,29 @@ std::vector<vmath::vec3> FluidSimulation::getMarkerParticleVelocities(int starti
 
 unsigned int FluidSimulation::getNumDiffuseParticles() {
     return _diffuseMaterial.getNumDiffuseParticles();
+}
+
+std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles() {
+    return getDiffuseParticles(0, _markerParticles.size());
+}
+
+std::vector<DiffuseParticle> FluidSimulation::getDiffuseParticles(int startidx, int endidx) {
+    int size = getNumDiffuseParticles();
+    if (!(startidx >= 0 && startidx <= size) || !(endidx >= 0 && endidx <= size)) {
+        std::string msg = "Error: invalid index range.\n";
+        msg += "start index: " + _toString(startidx) + " end index: " + _toString(endidx) + "\n";
+        throw std::out_of_range(msg);
+    }
+
+    std::vector<DiffuseParticle> particles;
+    particles.reserve(endidx - startidx);
+
+    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
+    for (int i = startidx; i < endidx; i++) {
+        particles.push_back(dps->at(i));
+    }
+
+    return particles;
 }
 
 std::vector<vmath::vec3> FluidSimulation::getDiffuseParticlePositions() {
@@ -834,15 +868,6 @@ std::vector<char> FluidSimulation::getDiffuseParticleTypes(int startidx, int end
     }
 
     return types;
-}
-
-void FluidSimulation::getDiffuseParticles(std::vector<DiffuseParticle> &particles) {
-    particles.reserve(getNumDiffuseParticles());
-
-    FragmentedVector<DiffuseParticle> *dps = _diffuseMaterial.getDiffuseParticles();
-    for (unsigned int i = 0; i < dps->size(); i++) {
-        particles.push_back(dps->at(i));
-    }
 }
 
 MACVelocityField* FluidSimulation::getVelocityField() { 
@@ -1262,6 +1287,7 @@ void FluidSimulation::_initializeSimulationFromSaveState(FluidSimulationSaveStat
     _levelset = LevelSet(_isize, _jsize, _ksize, _dx);
     _fluidCellIndices = GridIndexVector(_isize, _jsize, _ksize);
     _addedFluidCellQueue = GridIndexVector(_isize, _jsize, _ksize);
+    _removedFluidCellQueue = GridIndexVector(_isize, _jsize, _ksize);
 
     _initializeSolidCellsFromSaveState(state);
     _initializeMarkerParticlesFromSaveState(state);
@@ -1462,6 +1488,44 @@ void FluidSimulation::_updateAddedFluidCellQueue() {
     _addedFluidCellQueue.shrink_to_fit();
 }
 
+void FluidSimulation::_updateRemovedFluidCellQueue() {
+    if (_removedFluidCellQueue.size() == 0) {
+        return;
+    }
+
+    Array3d<bool> isRemovalCell(_isize, _jsize, _ksize, false);
+    for (unsigned int i = 0; i < _removedFluidCellQueue.size(); i++) {
+        isRemovalCell.set(_removedFluidCellQueue[i], true);
+    }
+
+    std::vector<bool> isRemoved;
+    isRemoved.reserve(_markerParticles.size());
+
+    bool isParticlesInRemovalCell = false;
+    MarkerParticle p;
+    GridIndex g;
+    for (unsigned int i = 0; i < _markerParticles.size(); i++) {
+        p = _markerParticles[i];
+        g = Grid3d::positionToGridIndex(p.position, _dx);
+
+        bool isInRemovalCell = isRemovalCell(g);
+        if (isInRemovalCell) {
+            isParticlesInRemovalCell = true;
+        }
+
+        isRemoved.push_back(isInRemovalCell);
+    }
+
+    std::cout << "SIZE: " << _markerParticles.size() << std::endl;
+    if (isParticlesInRemovalCell) {
+        _removeItemsFromVector(_markerParticles, isRemoved);
+    }
+    std::cout << "SIZE: " << _markerParticles.size() << std::endl;
+
+    _removedFluidCellQueue.clear();
+    _removedFluidCellQueue.shrink_to_fit();
+}
+
 void FluidSimulation::_removeMarkerParticlesInSolidCells() {
     std::vector<bool> isRemoved;
     isRemoved.reserve(_markerParticles.size());
@@ -1522,9 +1586,21 @@ void FluidSimulation::_removeParticlesInSolidCells() {
 void FluidSimulation::_updateFluidCells() {
     _removeParticlesInSolidCells();
     _updateAddedFluidCellQueue();
+    _updateRemovedFluidCellQueue();
     _updateFluidSources();
 
-    _materialGrid.setAir(_fluidCellIndices);
+    //_materialGrid.setAir(_fluidCellIndices);
+
+    for (int k = 1; k < _materialGrid.depth - 1; k++) {
+        for (int j = 1; j < _materialGrid.height - 1; j++) {
+            for (int i = 1; i < _materialGrid.width - 1; i++) {
+                if (_materialGrid.isCellFluid(i, j, k)) {
+                    _materialGrid.setAir(i, j, k);
+                }
+            }
+        }
+    }
+
     _fluidCellIndices.clear();
     
     MarkerParticle p;

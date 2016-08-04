@@ -1,6 +1,9 @@
 #include "../fluidsimulation.h"
 #include "cbindings.h"
 #include "aabb_c.h"
+#include "gridindex_c.h"
+#include "markerparticle_c.h"
+#include "diffuseparticle_c.h"
 
 #ifdef _WIN32
     #define EXPORTDLL __declspec(dllexport)
@@ -590,6 +593,240 @@ extern "C" {
         CBindings::safe_execute_method_void_3param(
             obj, &FluidSimulation::addSolidCell, i, j, k, err
         );
+    }
+
+    EXPORTDLL void FluidSimulation_add_solid_cells(FluidSimulation* obj, 
+                                                   GridIndex_t *cells,
+                                                   int n,
+                                                   int *err) {
+        std::vector<GridIndex> indices;
+        indices.reserve(n);
+        for (int i = 0; i < n; i++) {
+            indices.push_back(GridIndex(cells[i].i, cells[i].j, cells[i].k));
+        }
+
+        *err = CBindings::SUCCESS;
+        try {
+            obj->addSolidCells(indices);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_remove_solid_cell(FluidSimulation* obj, 
+                                                     int i, int j, int k,
+                                                     int *err) {
+        CBindings::safe_execute_method_void_3param(
+            obj, &FluidSimulation::removeSolidCell, i, j, k, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_remove_solid_cells(FluidSimulation* obj, 
+                                                      GridIndex_t *cells,
+                                                      int n,
+                                                      int *err) {
+        std::vector<GridIndex> indices;
+        indices.reserve(n);
+        for (int i = 0; i < n; i++) {
+            indices.push_back(GridIndex(cells[i].i, cells[i].j, cells[i].k));
+        }
+
+        *err = CBindings::SUCCESS;
+        try {
+            obj->removeSolidCells(indices);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_add_fluid_cell(FluidSimulation* obj, 
+                                                  int i, int j, int k,
+                                                  int *err) {
+        CBindings::safe_execute_method_void_3param(
+            obj, &FluidSimulation::addFluidCell, i, j, k, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_add_fluid_cells(FluidSimulation* obj, 
+                                                   GridIndex_t *cells,
+                                                   int n,
+                                                   int *err) {
+        std::vector<GridIndex> indices;
+        indices.reserve(n);
+        for (int i = 0; i < n; i++) {
+            indices.push_back(GridIndex(cells[i].i, cells[i].j, cells[i].k));
+        }
+
+        *err = CBindings::SUCCESS;
+        try {
+            obj->addFluidCells(indices);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_remove_fluid_cell(FluidSimulation* obj, 
+                                                     int i, int j, int k,
+                                                     int *err) {
+        CBindings::safe_execute_method_void_3param(
+            obj, &FluidSimulation::removeFluidCell, i, j, k, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_remove_fluid_cells(FluidSimulation* obj, 
+                                                      GridIndex_t *cells,
+                                                      int n,
+                                                      int *err) {
+        std::vector<GridIndex> indices;
+        indices.reserve(n);
+        for (int i = 0; i < n; i++) {
+            indices.push_back(GridIndex(cells[i].i, cells[i].j, cells[i].k));
+        }
+
+        *err = CBindings::SUCCESS;
+        try {
+            obj->removeFluidCells(indices);
+        } catch (std::exception &ex) {
+            CBindings::set_error_message(ex);
+            *err = CBindings::FAIL;
+        }
+    }
+
+    EXPORTDLL int FluidSimulation_get_num_marker_particles(FluidSimulation* obj, 
+                                                           int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getNumMarkerParticles, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particles(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            MarkerParticle_t *out, int *err) {
+
+        std::vector<MarkerParticle> mps = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getMarkerParticles,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < mps.size(); i++) {
+            out[i] = CBindings::to_struct(mps[i]);
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_positions(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            Vector3_t *out, int *err) {
+
+        std::vector<vmath::vec3> mps = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getMarkerParticlePositions,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < mps.size(); i++) {
+            out[i] = CBindings::to_struct(mps[i]);
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_marker_particle_velocities(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            Vector3_t *out, int *err) {
+
+        std::vector<vmath::vec3> mvs = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getMarkerParticleVelocities,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < mvs.size(); i++) {
+            out[i] = CBindings::to_struct(mvs[i]);
+        }
+    }
+
+    EXPORTDLL int FluidSimulation_get_num_diffuse_particles(FluidSimulation* obj, 
+                                                            int *err) {
+        return CBindings::safe_execute_method_ret_0param(
+            obj, &FluidSimulation::getNumDiffuseParticles, err
+        );
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particles(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            DiffuseParticle_t *out, int *err) {
+
+        std::vector<DiffuseParticle> dps = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getDiffuseParticles,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < dps.size(); i++) {
+            out[i] = CBindings::to_struct(dps[i]);
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_positions(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            Vector3_t *out, int *err) {
+
+        std::vector<vmath::vec3> dps = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getDiffuseParticlePositions,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < dps.size(); i++) {
+            out[i] = CBindings::to_struct(dps[i]);
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_velocities(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            Vector3_t *out, int *err) {
+
+        std::vector<vmath::vec3> dvs = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getDiffuseParticleVelocities,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < dvs.size(); i++) {
+            out[i] = CBindings::to_struct(dvs[i]);
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_lifetimes(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            float *out, int *err) {
+
+        std::vector<float> lfs = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getDiffuseParticleLifetimes,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < lfs.size(); i++) {
+            out[i] = lfs[i];
+        }
+    }
+
+    EXPORTDLL void FluidSimulation_get_diffuse_particle_types(
+            FluidSimulation* obj, 
+            int startidx, int endidx,
+            char *out, int *err) {
+
+        std::vector<char> types = CBindings::safe_execute_method_ret_2param(
+            obj, &FluidSimulation::getDiffuseParticleTypes,
+            startidx, endidx, err
+        );
+
+        for (unsigned int i = 0; i < types.size(); i++) {
+            out[i] = types[i];
+        }
     }
 
     EXPORTDLL char* FluidSimulation_get_error_message() {

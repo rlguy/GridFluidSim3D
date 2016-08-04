@@ -1,10 +1,11 @@
-from ctypes import c_void_p, c_char_p, c_int, c_double, byref
+import ctypes
+from ctypes import c_void_p, c_char_p, c_char, c_int, c_float, c_double, byref
 import numbers
 
 from fluidlib import lib
 from fluidsimulationsavestate import FluidSimulationSaveState
 from vector3 import Vector3, Vector3_t
-from gridindex import GridIndex
+from gridindex import GridIndex, GridIndex_t
 from aabb import AABB, AABB_t
 import pybindings as pb
 import method_decorators as decorators
@@ -32,15 +33,12 @@ def _check_simulation_not_initialized(func):
 class FluidSimulation(object):
 
     def __init__(self, isize = None, jsize = None, ksize = None, dx = None):
-        is_empty_constructor = all(x == None for x in (isize, jsize, ksize, dx))
         is_dimensions_constructor = (isinstance(isize, int) and
                                      isinstance(jsize, int) and
                                      isinstance(ksize, int) and
                                      isinstance(dx, numbers.Real))
 
-        if is_empty_constructor:
-            self._init_from_empty()
-        elif is_dimensions_constructor:
+        if is_dimensions_constructor:
             self._init_from_dimensions(isize, jsize, ksize, dx)
         else:
             errmsg = "FluidSimulation must be initialized with types:\n"
@@ -49,11 +47,6 @@ class FluidSimulation(object):
                       "ksize:\t" + str(int) + "\n" + 
                       "dx:\t" + str(float))
             raise TypeError(errmsg)
-
-    def _init_from_empty(self):
-        libfunc = lib.FluidSimulation_new_from_empty
-        pb.init_lib_func(libfunc, [c_void_p], c_void_p)
-        self._obj = pb.execute_lib_func(libfunc, [])
 
     @decorators.check_gt_zero
     def _init_from_dimensions(self, isize, jsize, ksize, dx):
@@ -535,7 +528,220 @@ class FluidSimulation(object):
     @decorators.ijk_or_gridindex
     def add_solid_cell(self, i, j, k):
         libfunc = lib.FluidSimulation_add_solid_cell
-        pb.init_lib_func(libfunc, 
-                            [c_void_p, c_int, c_int, c_int, c_void_p], None)
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), i, j, k])
 
+    def add_solid_cells(self, cell_list):
+        n = len(cell_list)
+        indices = (GridIndex_t * n)()
+        for i in xrange(n):
+            indices[i].i = cell_list[i].i
+            indices[i].j = cell_list[i].j
+            indices[i].k = cell_list[i].k
+
+        libfunc = lib.FluidSimulation_add_solid_cells
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), indices, n])
+
+    @decorators.ijk_or_gridindex
+    def remove_solid_cell(self, i, j, k):
+        libfunc = lib.FluidSimulation_remove_solid_cell
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), i, j, k])
+
+    def remove_solid_cells(self, cell_list):
+        n = len(cell_list)
+        indices = (GridIndex_t * n)()
+        for i in xrange(n):
+            indices[i].i = cell_list[i].i
+            indices[i].j = cell_list[i].j
+            indices[i].k = cell_list[i].k
+
+        libfunc = lib.FluidSimulation_remove_solid_cells
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), indices, n])
+
+    @decorators.ijk_or_gridindex
+    def add_fluid_cell(self, i, j, k):
+        libfunc = lib.FluidSimulation_add_fluid_cell
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), i, j, k])
+
+    def add_fluid_cells(self, cell_list):
+        n = len(cell_list)
+        indices = (GridIndex_t * n)()
+        for i in xrange(n):
+            indices[i].i = cell_list[i].i
+            indices[i].j = cell_list[i].j
+            indices[i].k = cell_list[i].k
+
+        libfunc = lib.FluidSimulation_add_fluid_cells
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), indices, n])
+
+    @decorators.ijk_or_gridindex
+    def remove_fluid_cell(self, i, j, k):
+        libfunc = lib.FluidSimulation_remove_fluid_cell
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), i, j, k])
+
+    def remove_fluid_cells(self, cell_list):
+        n = len(cell_list)
+        indices = (GridIndex_t * n)()
+        for i in xrange(n):
+            indices[i].i = cell_list[i].i
+            indices[i].j = cell_list[i].j
+            indices[i].k = cell_list[i].k
+
+        libfunc = lib.FluidSimulation_remove_fluid_cells
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), indices, n])
+
+    def get_num_marker_particles(self):
+        libfunc = lib.FluidSimulation_get_num_marker_particles
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    def get_marker_particles(self, startidx = None, endidx = None):
+        nparticles = self.get_num_marker_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (MarkerParticle_t * n)()
+
+        libfunc = lib.FluidSimulation_get_marker_particles
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_marker_particle_positions(self, startidx = None, endidx = None):
+        nparticles = self.get_num_marker_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (Vector3_t * n)()
+
+        libfunc = lib.FluidSimulation_get_marker_particle_positions
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_marker_particle_velocities(self, startidx = None, endidx = None):
+        nparticles = self.get_num_marker_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (Vector3_t * n)()
+
+        libfunc = lib.FluidSimulation_get_marker_particle_velocities
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_num_diffuse_particles(self):
+        libfunc = lib.FluidSimulation_get_num_diffuse_particles
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    def get_diffuse_particles(self, startidx = None, endidx = None):
+        nparticles = self.get_num_diffuse_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (DiffuseParticle_t * n)()
+
+        libfunc = lib.FluidSimulation_get_diffuse_particles
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_diffuse_particle_positions(self, startidx = None, endidx = None):
+        nparticles = self.get_num_diffuse_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (Vector3_t * n)()
+
+        libfunc = lib.FluidSimulation_get_diffuse_particle_positions
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_diffuse_particle_velocities(self, startidx = None, endidx = None):
+        nparticles = self.get_num_diffuse_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (Vector3_t * n)()
+
+        libfunc = lib.FluidSimulation_get_diffuse_particle_velocities
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        return out
+
+    def get_diffuse_particle_lifetimes(self, startidx = None, endidx = None):
+        nparticles = self.get_num_diffuse_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (c_float * n)()
+
+        libfunc = lib.FluidSimulation_get_diffuse_particle_lifetimes
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        floats = []
+        for f in out:
+            floats.append(float(f))
+
+        return floats
+
+    def get_diffuse_particle_types(self, startidx = None, endidx = None):
+        nparticles = self.get_num_diffuse_particles()
+        startidx, endidx = self._check_range(startidx, endidx, 0, nparticles)
+        n = endidx - startidx
+        out = (c_char * n)()
+
+        libfunc = lib.FluidSimulation_get_diffuse_particle_types
+        pb.init_lib_func(libfunc, 
+                         [c_void_p, c_int, c_int, c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
+
+        types = []
+        for t in out:
+            types.append(ord(t))
+
+        return types
+
+    def _check_range(self, startidx, endidx, minidx, maxidx):
+        if startidx is None:
+            startidx = minidx
+        if endidx is None:
+            endidx = maxidx
+
+        if not isinstance(startidx, int) or not isinstance(endidx, int):
+            raise TypeError("Index range must be integers")
+        if startidx < minidx:
+            raise IndexError("startidx out of range: " + str(startidx))
+        if endidx > maxidx:
+            raise IndexError("endidx out of range: " + str(endidx))
+        if endidx < startidx:
+            endidx = startidx
+
+        return startidx, endidx
+
+class MarkerParticle_t(ctypes.Structure):
+    _fields_ = [("position", Vector3_t),
+                ("velocity", Vector3_t)]
+
+class DiffuseParticle_t(ctypes.Structure):
+    _fields_ = [("position", Vector3_t),
+                ("velocity", Vector3_t),
+                ("lifetime", c_float),
+                ("type", c_char)]
