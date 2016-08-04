@@ -12,7 +12,7 @@ def __load_library(name):
         libdir = os.path.dirname(__file__)
         if libdir == "":
             libdir = "./"
-        files = glob.glob(libdir + "/*" + name + "*")
+        files = glob.glob(libdir + "/lib/*" + name + "*")
 
         library = None
         for f in files:
@@ -27,4 +27,4 @@ def __load_library(name):
 
         return library
 
-lib = __load_library("fluidcore")
+pyfluid = __load_library("pyfluid")

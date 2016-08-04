@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from ctypes import c_void_p, c_char_p, c_int, c_double, byref
 
-from fluidlib import lib
+from pyfluid import pyfluid as lib
 import pybindings as pb
 import method_decorators as decorators
 from vector3 import Vector3, Vector3_t

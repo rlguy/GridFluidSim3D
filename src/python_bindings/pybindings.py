@@ -1,4 +1,4 @@
-from fluidlib import lib
+from pyfluid import pyfluid as lib
 from ctypes import c_char_p, c_int, byref
 
 def check_success(success, errprefix):

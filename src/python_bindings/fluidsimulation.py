@@ -2,7 +2,7 @@ import ctypes
 from ctypes import c_void_p, c_char_p, c_char, c_int, c_float, c_double, byref
 import numbers
 
-from fluidlib import lib
+from pyfluid import pyfluid as lib
 from fluidsimulationsavestate import FluidSimulationSaveState
 from vector3 import Vector3, Vector3_t
 from gridindex import GridIndex, GridIndex_t
