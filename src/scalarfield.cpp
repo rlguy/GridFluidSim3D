@@ -407,6 +407,27 @@ double ScalarField::getScalarFieldValue(int i, int j, int k) {
     return val;
 }
 
+double ScalarField::getScalarFieldValueAtCellCenter(GridIndex g) {
+    return getScalarFieldValueAtCellCenter(g.i, g.j, g.k);
+}
+
+double ScalarField::getScalarFieldValueAtCellCenter(int i, int j, int k) {
+    FLUIDSIM_ASSERT(Grid3d::isGridIndexInRange(i, j, k, _field.width - 1, 
+                                                        _field.height - 1, 
+                                                        _field.depth - 1));
+    double sum = 0.0;
+    sum += getScalarFieldValue(i,     j,     k);
+    sum += getScalarFieldValue(i + 1, j,     k);
+    sum += getScalarFieldValue(i,     j + 1, k);
+    sum += getScalarFieldValue(i + 1, j + 1, k);
+    sum += getScalarFieldValue(i    , j    , k + 1);
+    sum += getScalarFieldValue(i + 1, j    , k + 1);
+    sum += getScalarFieldValue(i    , j + 1, k + 1);
+    sum += getScalarFieldValue(i + 1, j + 1, k + 1);
+
+    return 0.125*sum;
+}
+
 double ScalarField::getRawScalarFieldValue(GridIndex g) {
     return getRawScalarFieldValue(g.i, g.j, g.k);
 }

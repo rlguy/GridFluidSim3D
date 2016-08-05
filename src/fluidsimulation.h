@@ -662,9 +662,12 @@ private:
     void _calculateInitialFluidSurfaceScalarField(ScalarField &field);
     void _getInitialFluidCellsFromScalarField(ScalarField &field,
                                               GridIndexVector &fluidCells);
-    void _getPartiallyFilledFluidCellParticles(GridIndexVector &partialFluidCells,
-                                               ScalarField &field,
-                                               std::vector<vmath::vec3> &partialParticles);
+    void _getFullAndPartiallyFullFluidCells(GridIndexVector &fluidCells,
+                                            GridIndexVector &fullFluidCells,
+                                            GridIndexVector &partialFluidCells);
+    void _getPartiallyFullFluidCellParticles(GridIndexVector &partialFluidCells,
+                                             ScalarField &field,
+                                             std::vector<vmath::vec3> &partialParticles);
     void _initializeMarkerParticles(GridIndexVector &fullFluidCells,
                                     std::vector<vmath::vec3> &partialParticles);
     void _initializeFluidCellIndices();

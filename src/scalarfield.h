@@ -69,6 +69,8 @@ public:
     void getScalarField(Array3d<float> &field);
     double getScalarFieldValue(GridIndex g);
     double getScalarFieldValue(int i, int j, int k);
+    double getScalarFieldValueAtCellCenter(GridIndex g);
+    double getScalarFieldValueAtCellCenter(int i, int j, int k);
     void getSetScalarFieldValues(Array3d<bool> &field);
     bool isScalarFieldValueSet(GridIndex g);
     bool isScalarFieldValueSet(int i, int j, int k);
