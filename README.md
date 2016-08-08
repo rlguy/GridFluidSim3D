@@ -29,6 +29,7 @@ Below is a list of features implemented in the simulator.
 * Save and load state of a simulation
 * GPU accelerated fourth-order Runge-Kutta integration using OpenCL
 * GPU accelerated velocity advection using OpenCL
+* Python bindings
 
 ## Dependencies
 
@@ -57,7 +58,24 @@ cmake -G "MinGW Makefiles"
 
 will generate Makefiles for the MinGW compiler which can then be built using the [GNU Make](https://www.gnu.org/software/make/) utility with the command ```make```. A list of CMake generators can be found [here](https://cmake.org/cmake/help/v3.0/manual/cmake-generators.7.html).
 
-Once successfully built, the program will be located in the '''build/fluidsim/''' directory.
+Once successfully built, the program will be located in the ```build/fluidsim/``` directory with the following directory structure:
+
+```
+fluidsim
+│   fluidsim.a      - Runs program configured in main.cpp     
+│
+└───output          - Stores data output by the simulation program
+│   └───bakefiles       - meshes
+│   └───logs            - logfiles
+│   └───savestates      - simulation save states
+│   └───temp            - temporary files created by the simulation program
+│    
+└───pyfluid         - The pyfluid Python package
+│   └───examples        - pyfluid example usage
+│   └───lib             - C++ library files
+│
+└───resources       - Contains files used during runtime
+```
 
 ## Configuring the Fluid Simulator
 
