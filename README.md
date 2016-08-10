@@ -79,9 +79,13 @@ fluidsim
 
 ## Configuring the Fluid Simulator
 
-The simulator is configured in the file [src/main.cpp](src/main.cpp). The default simulation will drop a ball of fluid in the center of the simulation domain. Example configurations are located in the [src/examples/cpp/](src/examples/cpp) directory. Some documentation on the public methods for the FluidSimulation class is provided in the [fluidsimulation.h](src/fluidsimulation.h) header.
+The fluid simulator can be configured by manipulating a FluidSimulation object in the function ```main()``` located in the file [src/main.cpp](src/main.cpp). After building the project, the fluid simulation exectuable will be located in the ```fluidsim/``` directory. Example configurations are located in the [src/examples/cpp/](src/examples/cpp) directory. Some documentation on the public methods for the FluidSimulation class is provided in the [fluidsimulation.h](src/fluidsimulation.h) header.
 
-### Hello World
+A fluid simulation can also be configured and run within a Python script by importing the ```pyfluid``` package, which will be located in the ```fluidsim/``` directory after building the project. Example scripts are located in the [src/examples/python/](src/examples/python) directory.
+
+The following two sections will demonstrate how to program a simple "Hello World" simulation using either C++ or Python.
+
+### Hello World (C++)
 
 This is a very basic example of how to use the FluidSimulation class to run a simulation. The simulation in this example will drop a ball of fluid in the center of a cube shaped fluid domain. This example is relatively quick to compute and can be used to test if the simulation program is running correctly.
 
@@ -146,6 +150,24 @@ If you open the `000029.ply` mesh file in a 3D modelling package such as [Blende
 ![alt tag](http://rlguy.com/gridfluidsim/images/hello_world_frame30.jpg)
 
 The fluid simulation in this example is quick to compute, but of low quality due to the low resolution of the simulation grid. The quality of this simulation can be improved by increasing the simulation dimensions while decreasing the cell size. For example, try simulating on a grid of resolution `64 x 64 x 64` with a cell size of `0.125`, or even better, on a grid of resolution `128 x 128 x 128` with a cell size of `0.0625`.
+
+### Hello World (Python)
+
+The following Python script will run the equivalent simulation described in the previous section.
+
+```python
+from pyfluid import FluidSimulation
+
+fluidsim = FluidSimulation(32, 32, 32, 0.25)
+
+width, height, depth = fluidsim.get_simulation_dimensions()
+fluidsim.add_implicit_fluid_point(width / 2, height / 2, depth / 2, 6.0)
+fluidsim.add_body_force(0.0, -25.0, 0.0)
+fluidsim.initialize();
+
+for i in range(30):
+    fluidsim.update(1.0 / 30)
+```
 
 ## Rendering
 
