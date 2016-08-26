@@ -29,9 +29,11 @@ else:
 try:
     import pyfluid
 except ImportError:
-    errmsg = ("Could not find the pyfluid package. Pass the path to the " +
-              "pyfluid package directory as a command line argument and try again.\n\n" +
-              "Usage:\tpython example_dambreak.py path/to/pyfluid/package\n")
+    errmsg = ("Could not find the pyfluid package. Pass the directory that contains the " +
+              "pyfluid package as a command line argument and try again. " + 
+              "For example, if the package is located at 'build/fluidsim/pyfluid', " +
+              "then pass the directory 'build/fluidsim/'\n\n" +
+              "Usage:\tpython example_dambreak.py path/to/directory\n")
     raise ImportError(errmsg)
 
 # This example will run a dambreak scenario where a cuboid of fluid is released 
