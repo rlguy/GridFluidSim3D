@@ -55,7 +55,6 @@ public:
         return *this;
     }
 
-    void write();
     void setPath(std::string path);
     void setSeparator(std::string separator);
     void enableConsole();
@@ -65,6 +64,7 @@ public:
     void newline();
     void separator();
     void timestamp();
+    void log(std::ostream &out);
     void log(std::string str, int indentLevel = 0);
     void log(std::string str, int value, int indentLevel = 0);
     void log(std::string str, double value, int precision = 0, int indentLevel = 0);
@@ -75,6 +75,7 @@ public:
 
 private:
     void _print(std::string str);
+    void _write();
 
     std::string _path;
     std::string _filename;

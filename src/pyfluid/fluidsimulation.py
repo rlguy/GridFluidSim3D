@@ -2,13 +2,13 @@ import ctypes
 from ctypes import c_void_p, c_char_p, c_char, c_int, c_float, c_double, byref
 import numbers
 
-from pyfluid import pyfluid as lib
-from fluidsimulationsavestate import FluidSimulationSaveState
-from vector3 import Vector3, Vector3_t
-from gridindex import GridIndex, GridIndex_t
-from aabb import AABB, AABB_t
-import pybindings as pb
-import method_decorators as decorators
+from .pyfluid import pyfluid as lib
+from .fluidsimulationsavestate import FluidSimulationSaveState
+from .vector3 import Vector3, Vector3_t
+from .gridindex import GridIndex, GridIndex_t
+from .aabb import AABB, AABB_t
+from . import pybindings as pb
+from . import method_decorators as decorators
 
 
 
@@ -256,6 +256,31 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), count])
 
+    def get_domain_offset(self):
+        libfunc = lib.FluidSimulation_get_domain_offset
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], Vector3_t)
+        cvect = pb.execute_lib_func(libfunc, [self()])
+        return Vector3.from_struct(cvect)
+
+    @decorators.xyz_or_vector
+    def set_domain_offset(self, x, y, z):
+        libfunc = lib.FluidSimulation_set_domain_offset
+        pb.init_lib_func(
+            libfunc, 
+            [c_void_p, c_double, c_double, c_double, c_void_p], None
+        )
+        pb.execute_lib_func(libfunc, [self(), x, y, z])
+
+    def set_mesh_output_format_as_ply(self):
+        libfunc = lib.FluidSimulation_set_mesh_output_format_as_ply
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    def set_mesh_output_format_as_bobj(self):
+        libfunc = lib.FluidSimulation_set_mesh_output_format_as_bobj
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
     @property
     def enable_surface_mesh_output(self):
         libfunc = lib.FluidSimulation_is_surface_mesh_output_enabled
@@ -285,6 +310,24 @@ class FluidSimulation(object):
             libfunc = lib.FluidSimulation_disable_isotropic_surface_reconstruction
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_preview_mesh_output(self):
+        libfunc = lib.FluidSimulation_is_preview_mesh_output_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_preview_mesh_output.setter
+    @decorators.check_ge_zero
+    def enable_preview_mesh_output(self, cellsize):
+        if cellsize:
+            libfunc = lib.FluidSimulation_enable_preview_mesh_output
+            pb.init_lib_func(libfunc, [c_void_p, c_double, c_void_p], None)
+            pb.execute_lib_func(libfunc, [self(), cellsize])
+        else:
+            libfunc = lib.FluidSimulation_disable_preview_mesh_output
+            pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+            pb.execute_lib_func(libfunc, [self()])
 
     @property
     def enable_anisotropic_surface_reconstruction(self):
@@ -465,6 +508,62 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
+    @property
+    def enable_opencl_particle_advection(self):
+        libfunc = lib.FluidSimulation_is_opencl_particle_advection_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_opencl_particle_advection.setter
+    def enable_opencl_particle_advection(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_opencl_particle_advection
+        else:
+            libfunc = lib.FluidSimulation_disable_opencl_particle_advection
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def enable_opencl_scalar_field(self):
+        libfunc = lib.FluidSimulation_is_opencl_scalar_field_enabled
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return bool(pb.execute_lib_func(libfunc, [self()]))
+
+    @enable_opencl_scalar_field.setter
+    def enable_opencl_scalar_field(self, boolval):
+        if boolval:
+            libfunc = lib.FluidSimulation_enable_opencl_scalar_field
+        else:
+            libfunc = lib.FluidSimulation_disable_opencl_scalar_field
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self()])
+
+    @property
+    def particle_advection_kernel_workload_size(self):
+        libfunc = lib.FluidSimulation_get_particle_advection_kernel_workload_size
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @particle_advection_kernel_workload_size.setter
+    @decorators.check_ge(1)
+    def particle_advection_kernel_workload_size(self, size):
+        libfunc = lib.FluidSimulation_set_particle_advection_kernel_workload_size
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), size])
+
+    @property
+    def scalar_field_kernel_workload_size(self):
+        libfunc = lib.FluidSimulation_get_scalar_field_kernel_workload_size
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p], c_int)
+        return pb.execute_lib_func(libfunc, [self()])
+
+    @scalar_field_kernel_workload_size.setter
+    @decorators.check_ge(1)
+    def scalar_field_kernel_workload_size(self, size):
+        libfunc = lib.FluidSimulation_set_scalar_field_kernel_workload_size
+        pb.init_lib_func(libfunc, [c_void_p, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), size])
+
     @decorators.xyz_or_vector
     def add_body_force(self, fx, fy, fz):
         libfunc = lib.FluidSimulation_add_body_force
@@ -547,34 +646,22 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self()])
 
-    @decorators.ijk_or_gridindex
-    def add_solid_cell(self, i, j, k):
-        libfunc = lib.FluidSimulation_add_solid_cell
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), i, j, k])
-
     def add_solid_cells(self, cell_list):
         n = len(cell_list)
         indices = (GridIndex_t * n)()
-        for i in xrange(n):
+        for i in range(n):
             indices[i].i = cell_list[i].i
             indices[i].j = cell_list[i].j
             indices[i].k = cell_list[i].k
 
         libfunc = lib.FluidSimulation_add_solid_cells
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), indices, n])
-
-    @decorators.ijk_or_gridindex
-    def remove_solid_cell(self, i, j, k):
-        libfunc = lib.FluidSimulation_remove_solid_cell
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), i, j, k])
 
     def remove_solid_cells(self, cell_list):
         n = len(cell_list)
         indices = (GridIndex_t * n)()
-        for i in xrange(n):
+        for i in range(n):
             indices[i].i = cell_list[i].i
             indices[i].j = cell_list[i].j
             indices[i].k = cell_list[i].k
@@ -583,40 +670,29 @@ class FluidSimulation(object):
         pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), indices, n])
 
-    @decorators.ijk_or_gridindex
-    def add_fluid_cell(self, i, j, k):
-        libfunc = lib.FluidSimulation_add_fluid_cell
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), i, j, k])
-
-    def add_fluid_cells(self, cell_list):
+    def add_fluid_cells(self, cell_list, vx = 0.0, vy = 0.0, vz = 0.0):
         n = len(cell_list)
         indices = (GridIndex_t * n)()
-        for i in xrange(n):
+        for i in range(n):
             indices[i].i = cell_list[i].i
             indices[i].j = cell_list[i].j
             indices[i].k = cell_list[i].k
+        velocity = Vector3_t(vx, vy, vz)
 
-        libfunc = lib.FluidSimulation_add_fluid_cells
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), indices, n])
-
-    @decorators.ijk_or_gridindex
-    def remove_fluid_cell(self, i, j, k):
-        libfunc = lib.FluidSimulation_remove_fluid_cell
-        pb.init_lib_func(libfunc, [c_void_p, c_int, c_int, c_int, c_void_p], None)
-        pb.execute_lib_func(libfunc, [self(), i, j, k])
+        libfunc = lib.FluidSimulation_add_fluid_cells_velocity
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, Vector3_t, c_int, c_void_p], None)
+        pb.execute_lib_func(libfunc, [self(), indices, velocity, n])
 
     def remove_fluid_cells(self, cell_list):
         n = len(cell_list)
         indices = (GridIndex_t * n)()
-        for i in xrange(n):
+        for i in range(n):
             indices[i].i = cell_list[i].i
             indices[i].j = cell_list[i].j
             indices[i].k = cell_list[i].k
 
         libfunc = lib.FluidSimulation_remove_fluid_cells
-        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_void_p, c_void_p], None)
+        pb.init_lib_func(libfunc, [c_void_p, c_void_p, c_int, c_void_p], None)
         pb.execute_lib_func(libfunc, [self(), indices, n])
 
     def get_num_marker_particles(self):

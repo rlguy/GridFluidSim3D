@@ -57,6 +57,7 @@ freely, subject to the following restrictions:
 #include "stopwatch.h"
 #include "config.h"
 #include "fluidsimassert.h"
+#include "kernels/kernels.h"
 
 class ParticleAdvector
 {
@@ -69,8 +70,16 @@ public:
     void setDevicePreferenceCPU();
 
     void printDeviceInfo();
+    std::string getDeviceInfo();
+    void printKernelInfo();
+    std::string getKernelInfo();
     bool isUsingGPU();
     bool isUsingCPU();
+    void disableOpenCL();
+    void enableOpenCL();
+    bool isOpenCLEnabled();
+    int getKernelWorkLoadSize();
+    void setKernelWorkLoadSize(int n);
 
     void advectParticlesRK4(std::vector<vmath::vec3> &particles,
                             MACVelocityField *vfield,
@@ -103,11 +112,11 @@ public:
 private:
 
     struct CLDeviceInfo {
-        std::string cl_device_name;
-        std::string cl_device_vendor;
-        std::string cl_device_version;
-        std::string cl_driver_version;
-        std::string cl_device_opencl_c_version;
+        char cl_device_name[4096];
+        char cl_device_vendor[4096];
+        char cl_device_version[4096];
+        char cl_driver_version[4096];
+        char cl_device_opencl_c_version[4096];
 
         cl_device_type device_type;
         cl_uint cl_device_max_clock_frequency;
@@ -116,6 +125,17 @@ private:
         cl_ulong cl_device_max_mem_alloc_size;
         size_t cl_device_max_work_group_size;
         GridIndex cl_device_max_work_item_sizes;
+    };
+
+    struct CLKernelInfo {
+        char cl_kernel_function_name[4096];
+        char cl_kernel_attributes[4096];
+
+        cl_ulong cl_kernel_num_args;
+        size_t cl_kernel_work_group_size;
+        cl_ulong cl_kernel_local_mem_size;
+        cl_ulong cl_kernel_private_mem_size;
+        size_t cl_kernel_preferred_work_group_size_multiple;
     };
 
     struct ParticleChunk {
@@ -153,6 +173,7 @@ private:
     cl::Device _getCLDevice(cl::Context &context, cl_int *err);
     CLDeviceInfo _initializeDeviceInfo(cl::Device &device);
     cl_int _initializeCLKernel();
+    CLKernelInfo _initializeKernelInfo(cl::Kernel &kernel);
     std::string _getProgramString(std::string filename);
     cl_int _initializeCLCommandQueue();
 
@@ -191,6 +212,31 @@ private:
                         DataBuffer &buffer,
                         std::vector<vmath::vec3> &output);
     
+    vmath::vec3 _RK4(vmath::vec3 p0, double dt, MACVelocityField *vfield);
+    vmath::vec3 _RK3(vmath::vec3 p0, double dt, MACVelocityField *vfield);
+    vmath::vec3 _RK2(vmath::vec3 p0, double dt, MACVelocityField *vfield);
+    vmath::vec3 _RK1(vmath::vec3 p0, double dt, MACVelocityField *vfield);
+    void _advectParticlesRK4NoCL(std::vector<vmath::vec3> &particles,
+                                 MACVelocityField *vfield, 
+                                 double dt,
+                                 std::vector<vmath::vec3> &output);
+    void _advectParticlesRK3NoCL(std::vector<vmath::vec3> &particles,
+                                 MACVelocityField *vfield, 
+                                 double dt,
+                                 std::vector<vmath::vec3> &output);
+    void _advectParticlesRK2NoCL(std::vector<vmath::vec3> &particles,
+                                 MACVelocityField *vfield, 
+                                 double dt,
+                                 std::vector<vmath::vec3> &output);
+    void _advectParticlesRK1NoCL(std::vector<vmath::vec3> &particles,
+                                 MACVelocityField *vfield, 
+                                 double dt,
+                                 std::vector<vmath::vec3> &output);
+    void _tricubicInterpolateNoCL(std::vector<vmath::vec3> &particles,
+                                 MACVelocityField *vfield, 
+                                 std::vector<vmath::vec3> &output);
+    void _validateOutput(std::vector<vmath::vec3> &output);
+
 
     bool _isInitialized = false;
 
@@ -198,6 +244,7 @@ private:
     cl_device_type _devicePreference2 = CL_DEVICE_TYPE_CPU;
 
     CLDeviceInfo _deviceInfo;
+    CLKernelInfo _kernelInfo;
     cl::Context _CLContext;
     cl::Device _CLDevice;
     cl::Kernel _CLKernel;
@@ -212,7 +259,9 @@ private:
     int _dataChunkWidth = 5;
     int _dataChunkHeight = 5;
     int _dataChunkDepth = 5;
-    int _maxChunksPerComputation = 5000;
+    int _maxChunksPerComputation = 15000;
+    int _kernelWorkLoadSize = 1000;
+    bool _isOpenCLEnabled = true;
     
 };
 

@@ -1,6 +1,6 @@
-from vector3 import Vector3, Vector3_t
-from gridindex import GridIndex
-import method_decorators as decorators
+from .vector3 import Vector3, Vector3_t
+from .gridindex import GridIndex
+from . import method_decorators as decorators
 import ctypes
 
 class AABB_t(ctypes.Structure):

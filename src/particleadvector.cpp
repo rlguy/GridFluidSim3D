@@ -46,6 +46,7 @@ bool ParticleAdvector::initialize() {
     if (err != CL_SUCCESS) {
         return false;
     }
+    _kernelInfo = _initializeKernelInfo(_CLKernel);
 
     err = _initializeCLCommandQueue();
     if (err != CL_SUCCESS) {
@@ -81,16 +82,25 @@ void ParticleAdvector::printDeviceInfo() {
         return;
     }
 
-    std::cout << "CL_DEVICE_NAME:                " << 
-                 _deviceInfo.cl_device_name << std::endl;
-    std::cout << "CL_DEVICE_VENDOR:              " << 
-                 _deviceInfo.cl_device_vendor << std::endl;
-    std::cout << "CL_DEVICE_VERSION:             " << 
-                 _deviceInfo.cl_device_version << std::endl;
-    std::cout << "CL_DRIVER_VERSION:             " << 
-                 _deviceInfo.cl_driver_version << std::endl;
-    std::cout << "CL_DEVICE_OPENCL_C_VERSION:    " << 
-                 _deviceInfo.cl_device_opencl_c_version << std::endl;
+    std::cout << getDeviceInfo();
+}
+
+std::string ParticleAdvector::getDeviceInfo() {
+    std::ostringstream ss;
+    if (!_isInitialized) {
+        return ss.str();
+    }
+
+    ss << "CL_DEVICE_NAME:                " << 
+          _deviceInfo.cl_device_name << std::endl;
+    ss << "CL_DEVICE_VENDOR:              " << 
+          _deviceInfo.cl_device_vendor << std::endl;
+    ss << "CL_DEVICE_VERSION:             " << 
+          _deviceInfo.cl_device_version << std::endl;
+    ss << "CL_DRIVER_VERSION:             " << 
+           _deviceInfo.cl_driver_version << std::endl;
+    ss << "CL_DEVICE_OPENCL_C_VERSION:    " << 
+          _deviceInfo.cl_device_opencl_c_version << std::endl;
 
     std::string type;
     switch (_deviceInfo.device_type) {
@@ -109,23 +119,57 @@ void ParticleAdvector::printDeviceInfo() {
         default:
             break;
     }
-    std::cout << "CL_DEVICE_TYPE:                " << 
-                 type << std::endl;
-    std::cout << "CL_DEVICE_MAX_CLOCK_FREQUENCY: " << 
-                 _deviceInfo.cl_device_max_clock_frequency << "MHz" << std::endl;
-    std::cout << "CL_DEVICE_GLOBAL_MEM_SIZE:     " << 
-                 _deviceInfo.cl_device_global_mem_size << std::endl;
-    std::cout << "CL_DEVICE_LOCAL_MEM_SIZE:      " << 
-                 _deviceInfo.cl_device_local_mem_size << std::endl;
-    std::cout << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:  " << 
-                 _deviceInfo.cl_device_max_mem_alloc_size << std::endl;
-    std::cout << "CL_DEVICE_MAX_WORK_GROUP_SIZE: " << 
-                 _deviceInfo.cl_device_max_work_group_size << std::endl;
+    ss << "CL_DEVICE_TYPE:                " << 
+          type << std::endl;
+    ss << "CL_DEVICE_MAX_CLOCK_FREQUENCY: " << 
+          _deviceInfo.cl_device_max_clock_frequency << "MHz" << std::endl;
+    ss << "CL_DEVICE_GLOBAL_MEM_SIZE:     " << 
+          _deviceInfo.cl_device_global_mem_size << std::endl;
+    ss << "CL_DEVICE_LOCAL_MEM_SIZE:      " << 
+          _deviceInfo.cl_device_local_mem_size << std::endl;
+    ss << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:  " << 
+          _deviceInfo.cl_device_max_mem_alloc_size << std::endl;
+    ss << "CL_DEVICE_MAX_WORK_GROUP_SIZE: " << 
+          _deviceInfo.cl_device_max_work_group_size << std::endl;
 
     GridIndex g = _deviceInfo.cl_device_max_work_item_sizes;
-    std::cout << "CL_DEVICE_MAX_WORK_ITEM_SIZES: " << g.i << " x " << 
-                                                      g.j << " x " << 
-                                                      g.k << std::endl;
+    ss << "CL_DEVICE_MAX_WORK_ITEM_SIZES: " << g.i << " x " << 
+                                               g.j << " x " << 
+                                               g.k << std::endl;
+    return ss.str();
+}
+
+void ParticleAdvector::printKernelInfo() {
+    if (!_isInitialized) {
+        return;
+    }
+
+    std::cout << getKernelInfo();
+}
+
+std::string ParticleAdvector::getKernelInfo() {
+    std::ostringstream ss;
+    if (!_isInitialized) {
+        return ss.str();
+    }
+
+    ss << "CL_KERNEL_FUNCTION_NAME:                      " << 
+          _kernelInfo.cl_kernel_function_name << std::endl;
+    ss << "CL_KERNEL_ATTRIBUTES:                        " << 
+          _kernelInfo.cl_kernel_attributes << std::endl;
+
+    ss << "CL_KERNEL_NUM_ARGS:                           " << 
+          _kernelInfo.cl_kernel_num_args << std::endl;
+    ss << "CL_KERNEL_WORK_GROUP_SIZE:                    " << 
+          _kernelInfo.cl_kernel_work_group_size << std::endl;
+    ss << "CL_KERNEL_LOCAL_MEM_SIZE:                     " << 
+          _kernelInfo.cl_kernel_local_mem_size << std::endl;
+    ss << "CL_KERNEL_PRIVATE_MEM_SIZE:                   " << 
+          _kernelInfo.cl_kernel_private_mem_size << std::endl;
+    ss << "CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: " << 
+          _kernelInfo.cl_kernel_preferred_work_group_size_multiple << std::endl;
+
+    return ss.str();
 }
 
 bool ParticleAdvector::isUsingGPU() {
@@ -142,10 +186,35 @@ bool ParticleAdvector::isUsingCPU() {
     return _deviceInfo.device_type == CL_DEVICE_TYPE_CPU;
 }
 
+void ParticleAdvector::disableOpenCL() {
+    _isOpenCLEnabled = false;
+}
+
+void ParticleAdvector::enableOpenCL() {
+    _isOpenCLEnabled = true;
+}
+
+bool ParticleAdvector::isOpenCLEnabled() {
+    return _isOpenCLEnabled;
+}
+
+int ParticleAdvector::getKernelWorkLoadSize() {
+    return _kernelWorkLoadSize;
+}
+
+void ParticleAdvector::setKernelWorkLoadSize(int n) {
+    _kernelWorkLoadSize = n;
+}
+
 void ParticleAdvector::advectParticlesRK4(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
+    if (!_isOpenCLEnabled) {
+        _advectParticlesRK4NoCL(particles, vfield, dt, output);
+        return;
+    }
+
     FLUIDSIM_ASSERT(_isInitialized);
 
     /*
@@ -206,6 +275,11 @@ void ParticleAdvector::advectParticlesRK3(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
+    if (!_isOpenCLEnabled) {
+        _advectParticlesRK3NoCL(particles, vfield, dt, output);
+        return;
+    }
+
     FLUIDSIM_ASSERT(_isInitialized);
 
     /*
@@ -258,6 +332,11 @@ void ParticleAdvector::advectParticlesRK2(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
+    if (!_isOpenCLEnabled) {
+        _advectParticlesRK2NoCL(particles, vfield, dt, output);
+        return;
+    }
+
     FLUIDSIM_ASSERT(_isInitialized);
 
     /*
@@ -295,6 +374,11 @@ void ParticleAdvector::advectParticlesRK1(std::vector<vmath::vec3> &particles,
                                           MACVelocityField *vfield, 
                                           double dt,
                                           std::vector<vmath::vec3> &output) {
+    if (!_isOpenCLEnabled) {
+        _advectParticlesRK1NoCL(particles, vfield, dt, output);
+        return;
+    }
+
     FLUIDSIM_ASSERT(_isInitialized);
 
     /*  // Forward Euler
@@ -317,6 +401,11 @@ void ParticleAdvector::advectParticlesRK1(std::vector<vmath::vec3> &particles,
 void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
                                            MACVelocityField *vfield,
                                            std::vector<vmath::vec3> &output) {
+    if (!_isOpenCLEnabled) {
+        _tricubicInterpolateNoCL(particles, vfield, output);
+        return;
+    }
+
     FLUIDSIM_ASSERT(_isInitialized);
 
     vfield->getGridDimensions(&_isize, &_jsize, &_ksize);
@@ -325,14 +414,9 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
     int chunki = _dataChunkWidth;
     int chunkj = _dataChunkHeight;
     int chunkk = _dataChunkDepth;
-
-    // There's a bug where interpolations are not always accurate at the
-    // maximum boundaries of the velocity field. I'm not sure what causes
-    // this bug, but padding the grid with an extra chunk seems to solve this
-    // issue.
-    int chunkgridi = ceil((double)_isize / (double)(chunki)) + 1;
-    int chunkgridj = ceil((double)_jsize / (double)(chunkj)) + 1;
-    int chunkgridk = ceil((double)_ksize / (double)(chunkk)) + 1;
+    int chunkgridi = ceil((double)_isize / (double)(chunki));
+    int chunkgridj = ceil((double)_jsize / (double)(chunkj));
+    int chunkgridk = ceil((double)_ksize / (double)(chunkk));
 
     Array3d<ParticleChunk> particleGrid(chunkgridi, chunkgridj, chunkgridk);
 
@@ -346,7 +430,7 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
     int numComputations = ceil((double)chunkParams.size() / (double) maxChunks);
 
     output.reserve(particles.size());
-    for (unsigned int i = output.size(); i < particles.size(); i++) {
+    for (size_t i = output.size(); i < particles.size(); i++) {
         output.push_back(vmath::vec3());
     }
 
@@ -355,7 +439,7 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
         int begidx = i*maxChunks;
         int endidx = begidx + maxChunks;
         if (endidx > (int)chunkParams.size()) {
-            endidx = chunkParams.size();
+            endidx = (int)chunkParams.size();
         }
 
         std::vector<DataChunkParameters>::iterator beg = chunkParams.begin() + begidx;
@@ -366,10 +450,17 @@ void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
 
         _tricubicInterpolateChunks(chunks, output);
     }
+
+    _validateOutput(output);
 }
 
 void ParticleAdvector::tricubicInterpolate(std::vector<vmath::vec3> &particles,
                                            MACVelocityField *vfield) {
+    if (!_isOpenCLEnabled) {
+        _tricubicInterpolateNoCL(particles, vfield, particles);
+        return;
+    }
+
     tricubicInterpolate(particles, vfield, particles);
 }
 
@@ -461,23 +552,40 @@ ParticleAdvector::CLDeviceInfo ParticleAdvector::_initializeDeviceInfo(cl::Devic
 
     GridIndex groupdims(1, 1, 1);
     if (workItemSizes.size() >= 1) {
-        groupdims.i = workItemSizes[0];
+        groupdims.i = (int)workItemSizes[0];
     }
     if (workItemSizes.size() >= 2) {
-        groupdims.j = workItemSizes[1];
+        groupdims.j = (int)workItemSizes[1];
     }
     if (workItemSizes.size() >= 3) {
-        groupdims.k = workItemSizes[2];
+        groupdims.k = (int)workItemSizes[2];
     }
     info.cl_device_max_work_item_sizes = groupdims;
 
     return info;
 }
 
-cl_int ParticleAdvector::_initializeCLKernel() {
-    std::string fname = Config::getResourcesDirectory() + "/kernels/tricubicinterpolate.cl";
-    std::string prog = _getProgramString(fname);
+ParticleAdvector::CLKernelInfo ParticleAdvector::_initializeKernelInfo(cl::Kernel &kernel) {
+    CLKernelInfo info;
 
+    kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &(info.cl_kernel_function_name));
+    kernel.getInfo(CL_KERNEL_ATTRIBUTES, &(info.cl_kernel_attributes));
+
+    clGetKernelInfo (kernel(), CL_KERNEL_NUM_ARGS,
+                     sizeof(cl_ulong), &(info.cl_kernel_num_args), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_WORK_GROUP_SIZE,
+                             sizeof(size_t), &(info.cl_kernel_work_group_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_LOCAL_MEM_SIZE,
+                             sizeof(cl_ulong), &(info.cl_kernel_local_mem_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_PRIVATE_MEM_SIZE,
+                             sizeof(cl_ulong), &(info.cl_kernel_private_mem_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+                             sizeof(size_t), &(info.cl_kernel_preferred_work_group_size_multiple), NULL);
+    return info;
+}
+
+cl_int ParticleAdvector::_initializeCLKernel() {
+    std::string prog = Kernels::tricubicinterpolateCL;
     cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
     cl::Program program(_CLContext, source);
 
@@ -523,9 +631,9 @@ void ParticleAdvector::_getParticleChunkGrid(double cwidth, double cheight, doub
                                              std::vector<vmath::vec3> &particles,
                                              Array3d<ParticleChunk> &grid) {
 
-    int bwidth = grid.width * cwidth;
-    int bheight = grid.height * cheight;
-    int bdepth = grid.depth * cdepth;
+    double bwidth = grid.width * cwidth;
+    double bheight = grid.height * cheight;
+    double bdepth = grid.depth * cdepth;
     AABB bbox(vmath::vec3(0.0, 0.0, 0.0), bwidth, bheight, bdepth);
     double eps = 1e-6;
 
@@ -581,6 +689,31 @@ void ParticleAdvector::_getParticleChunkGrid(double cwidth, double cheight, doub
         pc->particles.push_back(p);
         pc->references.push_back(i);
     }
+
+    /*
+       Move particles away from the boundaries of a chunk. Due to reduced
+       precision by using float32 in the OpenCL kernel, if a particle is very 
+       close to the boundary of a chunk, its location could be calculated to be 
+       in a different chunk from what is calculated in this method.
+    */
+    double chunkeps = 0.01 * _dx;
+    for (int k = 0; k < grid.depth; k++) {
+        for (int j = 0; j < grid.height; j++) {
+            for (int i = 0; i < grid.width; i++) {
+                bbox = AABB(i*cwidth, j*cheight, k*cdepth, cwidth, cheight, cdepth);
+                bbox.expand(-chunkeps);
+
+                pc = grid.getPointer(i, j, k);
+                for (unsigned int pidx = 0; pidx < pc->particles.size(); pidx++) {
+                    p = pc->particles[pidx];
+                    if (!bbox.isPointInside(p)) {
+                        p = bbox.getNearestPointInsideAABB(p, eps);
+                        pc->particles[pidx] = p;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void ParticleAdvector::_getDataChunkParametersForChunkIndex(GridIndex cindex,
@@ -625,7 +758,7 @@ void ParticleAdvector::_getDataChunkParametersForChunkIndex(GridIndex cindex,
         int begidx = i*groupSize;
         int endidx = begidx + groupSize;
         if (endidx > (int)particleChunk->particles.size()) {
-            endidx = particleChunk->particles.size();
+            endidx = (int)particleChunk->particles.size();
         }
 
         params.particlesBegin = particleChunk->particles.begin() + begidx;
@@ -664,13 +797,7 @@ void ParticleAdvector::_getDataChunkParameters(MACVelocityField *vfield,
 }
 
 int ParticleAdvector::_getWorkGroupSize(CLDeviceInfo &info) {
-    int devicemax = fmin(info.cl_device_max_work_group_size,
-                         info.cl_device_max_work_item_sizes.i);
-    devicemax = fmin(info.cl_device_max_work_item_sizes.i,
-                     info.cl_device_max_work_item_sizes.j);
-    devicemax = fmin(info.cl_device_max_work_item_sizes.j,
-                     info.cl_device_max_work_item_sizes.k);
-    return fmin(devicemax, _maxItemsPerWorkGroup);
+    return fmin(info.cl_device_max_work_group_size, _maxItemsPerWorkGroup);
 }
 
 int ParticleAdvector::_getChunkPositionDataSize() {
@@ -733,21 +860,29 @@ void ParticleAdvector::_tricubicInterpolateChunks(std::vector<DataChunkParameter
     _initializeDataBuffer(chunks, buffer);
     _setCLKernelArgs(buffer, _dx);
 
+    int loadSize = _kernelWorkLoadSize;
     int workGroupSize = _getWorkGroupSize(_deviceInfo);
-    int numWorkItems = chunks.size()*workGroupSize;
+    int numWorkItems = (int)chunks.size()*workGroupSize;
+    int numComputations = ceil((double)chunks.size() / (double)loadSize);
 
     cl::Event event;
-    cl_int err = _CLQueue.enqueueNDRangeKernel(_CLKernel, 
-                                               cl::NullRange, 
-                                               cl::NDRange(numWorkItems), 
-                                               cl::NDRange(workGroupSize), 
-                                               NULL, 
-                                               &event);    
-    _checkError(err, "CommandQueue::enqueueNDRangeKernel()");
+    cl_int err;
+    for (int i = 0; i < numComputations; i++) {
+        int offset = i * loadSize * workGroupSize;
+        int items = (int)fmin(numWorkItems - offset, loadSize * workGroupSize);
+        
+        err = _CLQueue.enqueueNDRangeKernel(_CLKernel, 
+                                            cl::NDRange(offset), 
+                                            cl::NDRange(items), 
+                                            cl::NDRange(workGroupSize), 
+                                            NULL, 
+                                            &event);    
+        _checkError(err, "CommandQueue::enqueueNDRangeKernel()");
+    }
 
     event.wait();
 
-    int dataSize = chunks.size() * _getChunkPositionDataSize();
+    int dataSize = (int)chunks.size() * _getChunkPositionDataSize();
     err = _CLQueue.enqueueReadBuffer(buffer.positionDataCL, 
                                      CL_TRUE, 0, 
                                      dataSize, 
@@ -795,7 +930,7 @@ void ParticleAdvector::_getHostPositionDataBuffer(std::vector<DataChunkParameter
                                                   std::vector<vmath::vec3> &buffer) {
 
     int groupSize = _getWorkGroupSize(_deviceInfo);
-    int numElements = chunks.size()*groupSize;
+    int numElements = (int)chunks.size()*groupSize;
     buffer.reserve(numElements);
 
     DataChunkParameters c;
@@ -897,6 +1032,112 @@ void ParticleAdvector::_setOutputData(std::vector<DataChunkParameters> &chunks,
         for (std::vector<int>::iterator it = begin; it != end; ++it) {
             output[*it] = buffer.positionDataH[hostOffset + dataOffset];
             dataOffset++;
+        }
+    }
+}
+
+vmath::vec3 ParticleAdvector::_RK4(vmath::vec3 p0, double dt, MACVelocityField *vfield) {
+    vmath::vec3 k1 = vfield->evaluateVelocityAtPosition(p0);
+    vmath::vec3 k2 = vfield->evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    vmath::vec3 k3 = vfield->evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k2);
+    vmath::vec3 k4 = vfield->evaluateVelocityAtPosition(p0 + (float)dt*k3);
+    
+    vmath::vec3 p1 = p0 + (float)(dt/6.0f)*(k1 + 2.0f*k2 + 2.0f*k3 + k4);
+
+    return p1;
+}
+
+vmath::vec3 ParticleAdvector::_RK3(vmath::vec3 p0, double dt, MACVelocityField *vfield) {
+    vmath::vec3 k1 = vfield->evaluateVelocityAtPosition(p0);
+    vmath::vec3 k2 = vfield->evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    vmath::vec3 k3 = vfield->evaluateVelocityAtPosition(p0 + (float)(0.75*dt)*k2);
+    vmath::vec3 p1 = p0 + (float)(dt/9.0f)*(2.0f*k1 + 3.0f*k2 + 4.0f*k3);
+
+    return p1;
+}
+
+vmath::vec3 ParticleAdvector::_RK2(vmath::vec3 p0, double dt, MACVelocityField *vfield) {
+    vmath::vec3 k1 = vfield->evaluateVelocityAtPosition(p0);
+    vmath::vec3 k2 = vfield->evaluateVelocityAtPosition(p0 + (float)(0.5*dt)*k1);
+    vmath::vec3 p1 = p0 + (float)dt*k2;
+
+    return p1;
+}
+
+vmath::vec3 ParticleAdvector::_RK1(vmath::vec3 p0, double dt, MACVelocityField *vfield) {
+    vmath::vec3 k1 = vfield->evaluateVelocityAtPosition(p0);
+    vmath::vec3 p1 = p0 + (float)dt*k1;
+
+    return p1;
+}
+
+void ParticleAdvector::_advectParticlesRK4NoCL(std::vector<vmath::vec3> &particles,
+                             MACVelocityField *vfield, 
+                             double dt,
+                             std::vector<vmath::vec3> &output) {
+    output.clear();
+    output.reserve(particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
+        output.push_back(_RK4(particles[i], dt, vfield));
+    }
+}
+
+void ParticleAdvector::_advectParticlesRK3NoCL(std::vector<vmath::vec3> &particles,
+                             MACVelocityField *vfield, 
+                             double dt,
+                             std::vector<vmath::vec3> &output) {
+    output.clear();
+    output.reserve(particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
+        output.push_back(_RK3(particles[i], dt, vfield));
+    }
+}
+
+void ParticleAdvector::_advectParticlesRK2NoCL(std::vector<vmath::vec3> &particles,
+                             MACVelocityField *vfield, 
+                             double dt,
+                             std::vector<vmath::vec3> &output) {
+    output.clear();
+    output.reserve(particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
+        output.push_back(_RK2(particles[i], dt, vfield));
+    }
+}
+
+void ParticleAdvector::_advectParticlesRK1NoCL(std::vector<vmath::vec3> &particles,
+                             MACVelocityField *vfield, 
+                             double dt,
+                             std::vector<vmath::vec3> &output) {
+    output.clear();
+    output.reserve(particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
+        output.push_back(_RK1(particles[i], dt, vfield));
+    }
+}
+
+void ParticleAdvector::_tricubicInterpolateNoCL(std::vector<vmath::vec3> &particles,
+                                                MACVelocityField *vfield, 
+                                                std::vector<vmath::vec3> &output) {
+    output.reserve(particles.size());
+    for (size_t i = output.size(); i < particles.size(); i++) {
+        output.push_back(vmath::vec3());
+    }
+
+    for (size_t i = 0; i < particles.size(); i++) {
+        output[i] = vfield->evaluateVelocityAtPosition(particles[i]);
+    }
+
+    _validateOutput(output);
+}
+
+void ParticleAdvector::_validateOutput(std::vector<vmath::vec3> &output) {
+    vmath::vec3 v;
+    for (unsigned int i = 0; i < output.size(); i++) {
+        v = output[i];
+        if (std::isinf(v.x) || std::isnan(v.x) || 
+                std::isinf(v.y) || std::isnan(v.y) ||
+                std::isinf(v.z) || std::isnan(v.z)) {
+            output[i] = vmath::vec3(0.0, 0.0, 0.0);
         }
     }
 }

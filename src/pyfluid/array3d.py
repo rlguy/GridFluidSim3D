@@ -15,7 +15,7 @@ class Array3d:
         pass
 
     def fill(self, value):
-        for i in xrange(self._num_elements):
+        for i in range(self._num_elements):
             self._grid[i] = value
 
     @decorators.ijk_or_gridindex

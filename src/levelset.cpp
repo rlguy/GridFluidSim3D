@@ -251,7 +251,7 @@ void LevelSet::_floodFillWithDistance(GridIndex seed, double val) {
     GridIndex g;
     GridIndex ns[6];
     while (!queue.empty()) {
-        g = queue[queue.size() - 1];
+        g = queue[(int)queue.size() - 1];
         queue.pop_back();
 
         Grid3d::getNeighbourGridIndices6(g, ns);
@@ -492,7 +492,7 @@ int LevelSet::_getRandomTriangle(std::vector<int> &tris,
         }
     }
 
-    return tris.size() - 1;
+    return (int)tris.size() - 1;
 }
 
 vmath::vec3 LevelSet::_getRandomPointInTriangle(int tidx) {
@@ -574,7 +574,7 @@ double LevelSet::_calculateCurvatureAtVertex(int idx) {
 void LevelSet::calculateSurfaceCurvature() {
     _surfaceMesh.updateVertexTriangles();
     _surfaceMesh.updateTriangleAreas();
-    _triangleHash = Array3d<bool>(_surfaceMesh.triangles.size(), 1, 1, false);
+    _triangleHash = Array3d<bool>((int)_surfaceMesh.triangles.size(), 1, 1, false);
 
     _vertexCurvatures.clear();
     for (unsigned int i = 0; i < _surfaceMesh.vertices.size(); i++) {

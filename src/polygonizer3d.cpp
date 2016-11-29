@@ -427,34 +427,6 @@ vmath::vec3 Polygonizer3d::_vertexInterp(vmath::vec3 p1, vmath::vec3 p2,
         return p2 - (float)(eps*_dx)*v; 
     }
 
-    double tol = 1e-9;
-    int nmax = 50;
-    int n = 0;
-    vmath::vec3 a = p1;
-    vmath::vec3 b = p2;
-    vmath::vec3 c;
-    double vala = valp1 - _surfaceThreshold;
-    double valc = 0.0;
-    while (n < nmax) {
-        c = 0.5f*(a + b);
-
-        valc = _scalarField->tricubicInterpolation(c) - _surfaceThreshold;
-        if (fabs(valc) < tol || vmath::length(b - a) < tol ) {
-            return c;
-        }
-
-        n++;
-
-        if ((valc < 0.0 && vala < 0.0) || (valc > 0.0 && vala > 0.0)) {
-            a = c;
-            vala = valc;
-        } else {
-            b = c;
-        }
-        
-    }
-
-    // method failed: linearly interpolate value
     double mu = (_surfaceThreshold - valp1) / (valp2 - valp1);
     return p1 + (float)mu*(p2 - p1);
 }
@@ -479,7 +451,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.U(vertices[0]) == -1) {
             v = _vertexInterp(positions[0], positions[1], values[0], values[1]);
             meshVertices.push_back(v);
-            edges.U.set(vertices[0], meshVertices.size() - 1);
+            edges.U.set(vertices[0], (int)meshVertices.size() - 1);
         }
         vertexList[0] = edges.U(vertices[0]);
     }
@@ -487,7 +459,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.W(vertices[1]) == -1) {
             v = _vertexInterp(positions[1], positions[2], values[1], values[2]);
             meshVertices.push_back(v);
-            edges.W.set(vertices[1], meshVertices.size() - 1);
+            edges.W.set(vertices[1], (int)meshVertices.size() - 1);
         }
         vertexList[1] = edges.W(vertices[1]);
     }
@@ -495,7 +467,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.U(vertices[3]) == -1) {
             v = _vertexInterp(positions[2], positions[3], values[2], values[3]);
             meshVertices.push_back(v);
-            edges.U.set(vertices[3], meshVertices.size() - 1);
+            edges.U.set(vertices[3], (int)meshVertices.size() - 1);
         }
         vertexList[2] = edges.U(vertices[3]);
     }
@@ -503,7 +475,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.W(vertices[0]) == -1) {
             v = _vertexInterp(positions[3], positions[0], values[3], values[0]);
             meshVertices.push_back(v);
-            edges.W.set(vertices[0], meshVertices.size() - 1);
+            edges.W.set(vertices[0], (int)meshVertices.size() - 1);
         }
         vertexList[3] = edges.W(vertices[0]);
     }
@@ -511,7 +483,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.U(vertices[4]) == -1) {
             v = _vertexInterp(positions[4], positions[5], values[4], values[5]);
             meshVertices.push_back(v);
-            edges.U.set(vertices[4], meshVertices.size() - 1);
+            edges.U.set(vertices[4], (int)meshVertices.size() - 1);
         }
         vertexList[4] = edges.U(vertices[4]);
     }
@@ -519,7 +491,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.W(vertices[5]) == -1) {
             v = _vertexInterp(positions[5], positions[6], values[5], values[6]);
             meshVertices.push_back(v);
-            edges.W.set(vertices[5], meshVertices.size() - 1);
+            edges.W.set(vertices[5], (int)meshVertices.size() - 1);
         }
         vertexList[5] = edges.W(vertices[5]);
     }
@@ -527,7 +499,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.U(vertices[7]) == -1) {
             v = _vertexInterp(positions[6], positions[7], values[6], values[7]);
             meshVertices.push_back(v);
-            edges.U.set(vertices[7], meshVertices.size() - 1);
+            edges.U.set(vertices[7], (int)meshVertices.size() - 1);
         }
         vertexList[6] = edges.U(vertices[7]);
     }
@@ -535,7 +507,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.W(vertices[4]) == -1) {
             v = _vertexInterp(positions[7], positions[4], values[7], values[4]);
             meshVertices.push_back(v);
-            edges.W.set(vertices[4], meshVertices.size() - 1);
+            edges.W.set(vertices[4], (int)meshVertices.size() - 1);
         }
         vertexList[7] = edges.W(vertices[4]);
     }
@@ -543,7 +515,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.V(vertices[0]) == -1) {
             v = _vertexInterp(positions[0], positions[4], values[0], values[4]);
             meshVertices.push_back(v);
-            edges.V.set(vertices[0], meshVertices.size() - 1);
+            edges.V.set(vertices[0], (int)meshVertices.size() - 1);
         }
         vertexList[8] = edges.V(vertices[0]);
     }
@@ -551,7 +523,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.V(vertices[1]) == -1) {
             v = _vertexInterp(positions[1], positions[5], values[1], values[5]);
             meshVertices.push_back(v);
-            edges.V.set(vertices[1], meshVertices.size() - 1);
+            edges.V.set(vertices[1], (int)meshVertices.size() - 1);
         }
         vertexList[9] = edges.V(vertices[1]);
     }
@@ -559,7 +531,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.V(vertices[2]) == -1) {
             v = _vertexInterp(positions[2], positions[6], values[2], values[6]);
             meshVertices.push_back(v);
-            edges.V.set(vertices[2], meshVertices.size() - 1);
+            edges.V.set(vertices[2], (int)meshVertices.size() - 1);
         }
         vertexList[10] = edges.V(vertices[2]);
     }
@@ -567,7 +539,7 @@ void Polygonizer3d::_calculateVertexList(GridIndex g,
         if (edges.V(vertices[3]) == -1) {
             v = _vertexInterp(positions[3], positions[7], values[3], values[7]);
             meshVertices.push_back(v);
-            edges.V.set(vertices[3], meshVertices.size() - 1);
+            edges.V.set(vertices[3], (int)meshVertices.size() - 1);
         }
         vertexList[11] = edges.V(vertices[3]);
     }

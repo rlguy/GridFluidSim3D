@@ -77,7 +77,7 @@ void FluidBrickGrid::setBrickDimensions(AABB brick) {
     _initializeBrickGrid();
 }
 
-bool FluidBrickGrid::getBrickMesh(LevelSet &levelset, TriangleMesh &mesh) {
+bool FluidBrickGrid::getBrickMesh(TriangleMesh &mesh) {
     FLUIDSIM_ASSERT(isInitialized());
 
     if (!_isCurrentBrickGridReady) {

@@ -567,7 +567,7 @@ void FluidSimulationSaveState::_writeBinarySolidCellIndices(FluidSimulation *_fl
         endLoop:
 
         _writeBinaryVectorGridIndex(indices, state);
-        numWritten += indices.size();
+        numWritten += (int)indices.size();
     }
 
 }
@@ -621,23 +621,23 @@ std::string FluidSimulationSaveState::_getRandomString(int len) {
 }
 
 void FluidSimulationSaveState::_writeBinaryVector3f(std::vector<vmath::vec3> &vectors, std::ofstream *state) {
-    int binsize = 3 * vectors.size() * sizeof(float);
+    int binsize = 3 * (int)vectors.size() * sizeof(float);
     state->write((char *)&vectors[0], binsize);
 }
 
 void FluidSimulationSaveState::_writeBinaryVectorf(std::vector<float> &floats, std::ofstream *state) {
-    int binsize = floats.size() * sizeof(float);
+    int binsize = (int)floats.size() * sizeof(float);
     state->write((char *)&floats[0], binsize);
 }
 
 void FluidSimulationSaveState::_writeBinaryVectorc(std::vector<char> &chars, std::ofstream *state) {
-    int binsize = chars.size() * sizeof(char);
+    int binsize = (int)chars.size() * sizeof(char);
     state->write((char *)&chars[0], binsize);
 }
 
 void FluidSimulationSaveState::_writeBinaryVectorGridIndex(std::vector<GridIndex> &indices, 
                                                            std::ofstream *state) {
-    int binsize = 3*indices.size()*sizeof(int);
+    int binsize = 3*(int)indices.size()*sizeof(int);
     state->write((char *)&indices[0], binsize);
 }
 

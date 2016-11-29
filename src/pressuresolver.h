@@ -62,7 +62,7 @@ public:
     const double operator [](int i) const;
     double& operator[](int i);
 
-    inline unsigned int size() {
+    inline size_t size() {
         return _vector.size();
     }
 
@@ -97,7 +97,7 @@ public:
     const MatrixCell operator [](int i) const;
     MatrixCell& operator [](int i);
 
-    inline unsigned int size() {
+    inline size_t size() {
         return cells.size();
     }
 

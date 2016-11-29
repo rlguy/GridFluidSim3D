@@ -41,15 +41,6 @@ LogFile::LogFile(std::string filename, std::string extension) :
 LogFile::~LogFile() {
 }
 
-void LogFile::write() {
-    std::ofstream out;
-    out.open(_path + "/" + _filename, std::ios::out | std::ios::app);
-
-    out << _stream.str();
-    out.close();
-    clear();
-}
-
 void LogFile::setPath(std::string path) {
     _path = path;
 }
@@ -77,17 +68,27 @@ void LogFile::clear() {
 void LogFile::newline() {
     _stream << std::endl;
     _print("\n");
+    _write();
 }
 
 void LogFile::separator() {
     _stream << _separator << std::endl;
     _print(_separator + "\n");
+    _write();
 }
 
 void LogFile::timestamp() {
     std::string time = getTime();
     _stream << time << std::endl;
     _print(time + "\n");
+    _write();
+}
+
+void LogFile::log(std::ostream &s) {
+    std::ostringstream &out = dynamic_cast<std::ostringstream&>(s);
+    _stream << out.str();
+    _print(out.str());
+    _write();
 }
 
 void LogFile::log(std::string str, int indentLevel) {
@@ -116,6 +117,7 @@ void LogFile::log(std::string str, std::string value, int indentLevel) {
     out << str << value << std::endl;
     _stream << out.str();
     _print(out.str());
+    _write();
 }
 
 std::string LogFile::getTime() {
@@ -139,4 +141,13 @@ void LogFile::_print(std::string str) {
         std::cout << str;
         std::cout.flush();
     }
+}
+
+void LogFile::_write() {
+    std::ofstream out;
+    out.open(_path + "/" + _filename, std::ios::out | std::ios::app);
+
+    out << _stream.str();
+    out.close();
+    clear();
 }

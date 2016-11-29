@@ -52,6 +52,9 @@ bool CLScalarField::initialize() {
     if (err != CL_SUCCESS) {
         return false;
     }
+    _kernelPointsInfo = _initializeKernelInfo(_CLKernelPoints);
+    _kernelPointValuesInfo = _initializeKernelInfo(_CLKernelPointValues);
+    _kernelWeightPointValuesInfo = _initializeKernelInfo(_CLKernelWeightPointValues);
 
     err = _initializeCLCommandQueue();
     if (err != CL_SUCCESS) {
@@ -68,6 +71,10 @@ void CLScalarField::addPoints(std::vector<vmath::vec3> &points,
                               double dx,
                               Array3d<float> *field) {
     FLUIDSIM_ASSERT(_isInitialized);
+
+    if (!_isOpenCLEnabled) {
+        _addPointsNoCL(points, radius, offset, dx, field);
+    }
 
     _isize = field->width;
     _jsize = field->height;
@@ -144,6 +151,11 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
     FLUIDSIM_ASSERT(_isInitialized);
     FLUIDSIM_ASSERT(points.size() == values.size());
 
+    if (!_isOpenCLEnabled) {
+        _addPointValuesNoCL(points, values, radius, offset, dx, field);
+        return;
+    }
+
     _isize = field->width;
     _jsize = field->height;
     _ksize = field->depth;
@@ -195,8 +207,14 @@ void CLScalarField::addPointValues(std::vector<vmath::vec3> &points,
     FLUIDSIM_ASSERT(_isInitialized);
     FLUIDSIM_ASSERT(points.size() == values.size());
     FLUIDSIM_ASSERT(scalarfield->width == weightfield->width &&
-           scalarfield->height == weightfield->height &&
-           scalarfield->depth == weightfield->depth);
+                    scalarfield->height == weightfield->height &&
+                    scalarfield->depth == weightfield->depth);
+
+    if (!_isOpenCLEnabled) {
+        _addPointValuesNoCL(points, values, radius, offset, dx, 
+                            scalarfield, weightfield);
+        return;
+    }
 
     _isize = scalarfield->width;
     _jsize = scalarfield->height;
@@ -324,16 +342,25 @@ void CLScalarField::printDeviceInfo() {
         return;
     }
 
-    std::cout << "CL_DEVICE_NAME:                " << 
-                 _deviceInfo.cl_device_name << std::endl;
-    std::cout << "CL_DEVICE_VENDOR:              " << 
-                 _deviceInfo.cl_device_vendor << std::endl;
-    std::cout << "CL_DEVICE_VERSION:             " << 
-                 _deviceInfo.cl_device_version << std::endl;
-    std::cout << "CL_DRIVER_VERSION:             " << 
-                 _deviceInfo.cl_driver_version << std::endl;
-    std::cout << "CL_DEVICE_OPENCL_C_VERSION:    " << 
-                 _deviceInfo.cl_device_opencl_c_version << std::endl;
+    std::cout << getDeviceInfo();
+}
+
+std::string CLScalarField::getDeviceInfo() {
+    std::ostringstream ss;
+    if (!_isInitialized) {
+        return ss.str();
+    }
+
+    ss << "CL_DEVICE_NAME:                " << 
+          _deviceInfo.cl_device_name << std::endl;
+    ss << "CL_DEVICE_VENDOR:              " << 
+          _deviceInfo.cl_device_vendor << std::endl;
+    ss << "CL_DEVICE_VERSION:             " << 
+          _deviceInfo.cl_device_version << std::endl;
+    ss << "CL_DRIVER_VERSION:             " << 
+           _deviceInfo.cl_driver_version << std::endl;
+    ss << "CL_DEVICE_OPENCL_C_VERSION:    " << 
+          _deviceInfo.cl_device_opencl_c_version << std::endl;
 
     std::string type;
     switch (_deviceInfo.device_type) {
@@ -352,23 +379,65 @@ void CLScalarField::printDeviceInfo() {
         default:
             break;
     }
-    std::cout << "CL_DEVICE_TYPE:                " << 
-                 type << std::endl;
-    std::cout << "CL_DEVICE_MAX_CLOCK_FREQUENCY: " << 
-                 _deviceInfo.cl_device_max_clock_frequency << "MHz" << std::endl;
-    std::cout << "CL_DEVICE_GLOBAL_MEM_SIZE:     " << 
-                 _deviceInfo.cl_device_global_mem_size << std::endl;
-    std::cout << "CL_DEVICE_LOCAL_MEM_SIZE:      " << 
-                 _deviceInfo.cl_device_local_mem_size << std::endl;
-    std::cout << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:  " << 
-                 _deviceInfo.cl_device_max_mem_alloc_size << std::endl;
-    std::cout << "CL_DEVICE_MAX_WORK_GROUP_SIZE: " << 
-                 _deviceInfo.cl_device_max_work_group_size << std::endl;
+    ss << "CL_DEVICE_TYPE:                " << 
+          type << std::endl;
+    ss << "CL_DEVICE_MAX_CLOCK_FREQUENCY: " << 
+          _deviceInfo.cl_device_max_clock_frequency << "MHz" << std::endl;
+    ss << "CL_DEVICE_GLOBAL_MEM_SIZE:     " << 
+          _deviceInfo.cl_device_global_mem_size << std::endl;
+    ss << "CL_DEVICE_LOCAL_MEM_SIZE:      " << 
+          _deviceInfo.cl_device_local_mem_size << std::endl;
+    ss << "CL_DEVICE_MAX_MEM_ALLOC_SIZE:  " << 
+          _deviceInfo.cl_device_max_mem_alloc_size << std::endl;
+    ss << "CL_DEVICE_MAX_WORK_GROUP_SIZE: " << 
+          _deviceInfo.cl_device_max_work_group_size << std::endl;
 
     GridIndex g = _deviceInfo.cl_device_max_work_item_sizes;
-    std::cout << "CL_DEVICE_MAX_WORK_ITEM_SIZES: " << g.i << " x " << 
-                                                      g.j << " x " << 
-                                                      g.k << std::endl;
+    ss << "CL_DEVICE_MAX_WORK_ITEM_SIZES: " << g.i << " x " << 
+                                               g.j << " x " << 
+                                               g.k << std::endl;
+    return ss.str();
+}
+
+void CLScalarField::printKernelInfo() {
+    if (!_isInitialized) {
+        return;
+    }
+
+    std::cout << getKernelInfo();
+}
+
+std::string CLScalarField::getKernelInfo() {
+    std::string k1 = _getKernelInfo(_kernelPointsInfo);
+    std::string k2 = _getKernelInfo(_kernelPointValuesInfo);
+    std::string k3 = _getKernelInfo(_kernelWeightPointValuesInfo);
+
+    return k1 + "\n" + k2 + "\n" + k3;
+}
+
+std::string CLScalarField::_getKernelInfo(CLKernelInfo &info) {
+    std::ostringstream ss;
+    if (!_isInitialized) {
+        return ss.str();
+    }
+
+    ss << "CL_KERNEL_FUNCTION_NAME:                      " << 
+                 info.cl_kernel_function_name << std::endl;
+    ss << "CL_KERNEL_ATTRIBUTES:                        " << 
+                 info.cl_kernel_attributes << std::endl;
+
+    ss << "CL_KERNEL_NUM_ARGS:                           " << 
+                 info.cl_kernel_num_args << std::endl;
+    ss << "CL_KERNEL_WORK_GROUP_SIZE:                    " << 
+                 info.cl_kernel_work_group_size << std::endl;
+    ss << "CL_KERNEL_LOCAL_MEM_SIZE:                     " << 
+                 info.cl_kernel_local_mem_size << std::endl;
+    ss << "CL_KERNEL_PRIVATE_MEM_SIZE:                   " << 
+                 info.cl_kernel_private_mem_size << std::endl;
+    ss << "CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: " << 
+                 info.cl_kernel_preferred_work_group_size_multiple << std::endl;
+
+    return ss.str();
 }
 
 cl_int CLScalarField::_initializeChunkDimensions() {
@@ -425,6 +494,26 @@ bool CLScalarField::isUsingCPU() {
         return false;
     }
     return _deviceInfo.device_type == CL_DEVICE_TYPE_CPU;
+}
+
+void CLScalarField::disableOpenCL() {
+    _isOpenCLEnabled = false;
+}
+
+void CLScalarField::enableOpenCL() {
+    _isOpenCLEnabled = true;
+}
+
+bool CLScalarField::isOpenCLEnabled() {
+    return _isOpenCLEnabled;
+}
+
+int CLScalarField::getKernelWorkLoadSize() {
+    return _kernelWorkLoadSize;
+}
+
+void CLScalarField::setKernelWorkLoadSize(int n) {
+    _kernelWorkLoadSize = n;
 }
 
 void CLScalarField::_checkError(cl_int err, const char * name) {
@@ -515,23 +604,40 @@ CLScalarField::CLDeviceInfo CLScalarField::_initializeDeviceInfo(cl::Device &dev
 
     GridIndex groupdims(1, 1, 1);
     if (workItemSizes.size() >= 1) {
-        groupdims.i = workItemSizes[0];
+        groupdims.i = (int)workItemSizes[0];
     }
     if (workItemSizes.size() >= 2) {
-        groupdims.j = workItemSizes[1];
+        groupdims.j = (int)workItemSizes[1];
     }
     if (workItemSizes.size() >= 3) {
-        groupdims.k = workItemSizes[2];
+        groupdims.k = (int)workItemSizes[2];
     }
     info.cl_device_max_work_item_sizes = groupdims;
 
     return info;
 }
 
-cl_int CLScalarField::_initializeCLKernels() {
-    std::string fname = Config::getResourcesDirectory() + "/kernels/scalarfield.cl";
-    std::string prog = _getProgramString(fname);
+CLScalarField::CLKernelInfo CLScalarField::_initializeKernelInfo(cl::Kernel &kernel) {
+    CLKernelInfo info;
 
+    kernel.getInfo(CL_KERNEL_FUNCTION_NAME, &(info.cl_kernel_function_name));
+    kernel.getInfo(CL_KERNEL_ATTRIBUTES, &(info.cl_kernel_attributes));
+
+    clGetKernelInfo (kernel(), CL_KERNEL_NUM_ARGS,
+                     sizeof(cl_ulong), &(info.cl_kernel_num_args), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_WORK_GROUP_SIZE,
+                             sizeof(size_t), &(info.cl_kernel_work_group_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_LOCAL_MEM_SIZE,
+                             sizeof(cl_ulong), &(info.cl_kernel_local_mem_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_PRIVATE_MEM_SIZE,
+                             sizeof(cl_ulong), &(info.cl_kernel_private_mem_size), NULL);
+    clGetKernelWorkGroupInfo(kernel(), _CLDevice(), CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+                             sizeof(size_t), &(info.cl_kernel_preferred_work_group_size_multiple), NULL);
+    return info;
+}
+
+cl_int CLScalarField::_initializeCLKernels() {
+    std::string prog = Kernels::scalarfieldCL;
     cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
     cl::Program program(_CLContext, source);
 
@@ -863,7 +969,7 @@ void CLScalarField::_getWorkChunksFromWorkGroup(WorkGroup *group,
     }
 
     GridIndex groupidx = group->chunkOffset; 
-    int size = group->particles.size();
+    int size = (int)group->particles.size();
     int chunksize = _maxParticlesPerChunk;
 
     for (int i = 0; i < size; i += chunksize) {
@@ -980,10 +1086,10 @@ void CLScalarField::_computePointScalarField(std::vector<WorkChunk> &chunks,
     _initializePointComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
     _setPointComputationCLKernelArgs(buffer, numParticles);
 
-    int numWorkItems = chunks.size() * _workGroupSize;
+    int numWorkItems = (int)chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelPoints, numWorkItems, _workGroupSize);
 
-    int dataSize = chunks.size() * _getChunkScalarFieldDataSize();
+    int dataSize = (int)chunks.size() * _getChunkScalarFieldDataSize();
     _readCLBuffer(buffer.scalarFieldDataCL, buffer.scalarFieldDataH, dataSize);
     _setPointComputationOutputFieldData(buffer.scalarFieldDataH, chunks, workGroupGrid);
 }
@@ -998,10 +1104,10 @@ void CLScalarField::_computePointValueScalarField(std::vector<WorkChunk> &chunks
     _initializePointValueComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
     _setPointValueComputationCLKernelArgs(buffer, numParticles);
 
-    int numWorkItems = chunks.size() * _workGroupSize;
+    int numWorkItems = (int)chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelPointValues, numWorkItems, _workGroupSize);
 
-    int dataSize = chunks.size() * _getChunkScalarFieldDataSize();
+    int dataSize = (int)chunks.size() * _getChunkScalarFieldDataSize();
     _readCLBuffer(buffer.scalarFieldDataCL, buffer.scalarFieldDataH, dataSize);
     _setPointValueComputationOutputFieldData(buffer.scalarFieldDataH, chunks, workGroupGrid);
 }
@@ -1015,10 +1121,10 @@ void CLScalarField::_computePointValueScalarWeightField(std::vector<WorkChunk> &
     _initializeWeightPointValueComputationDataBuffer(chunks, workGroupGrid, numParticles, buffer);
     _setWeightPointValueComputationCLKernelArgs(buffer, numParticles);
 
-    int numWorkItems = chunks.size() * _workGroupSize;
+    int numWorkItems = (int)chunks.size() * _workGroupSize;
     _launchKernel(_CLKernelWeightPointValues, numWorkItems, _workGroupSize);
 
-    int dataSize = chunks.size() * _getChunkScalarWeightFieldDataSize();
+    int dataSize = (int)chunks.size() * _getChunkScalarWeightFieldDataSize();
     _readCLBuffer(buffer.scalarFieldDataCL, buffer.scalarFieldDataH, dataSize);
     _setWeightPointValueComputationOutputFieldData(buffer.scalarFieldDataH, 
                                                    chunks, 
@@ -1099,7 +1205,7 @@ void CLScalarField::_getHostPointDataBuffer(std::vector<WorkChunk> &chunks,
                                             Array3d<WorkGroup> &grid,
                                             int numParticles,
                                             std::vector<float> &buffer) {
-    int numElements = chunks.size() * 3 * numParticles;
+    int numElements = (int)chunks.size() * 3 * numParticles;
     buffer.reserve(numElements);
 
     // Dummy position that is far away enough from the scalar field that it
@@ -1138,7 +1244,7 @@ void CLScalarField::_getHostPointValueDataBuffer(std::vector<WorkChunk> &chunks,
                                                  Array3d<WorkGroup> &grid,
                                                  int numParticles,
                                                  std::vector<float> &buffer) {
-    int numElements = chunks.size() * 4 * numParticles;
+    int numElements = (int)chunks.size() * 4 * numParticles;
     buffer.reserve(numElements);
 
     // Dummy position that is far away enough from the scalar field that it
@@ -1181,7 +1287,7 @@ void CLScalarField::_getHostPointValueDataBuffer(std::vector<WorkChunk> &chunks,
 
 void CLScalarField::_getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks,
                                                   std::vector<float> &buffer) {
-    int numElements = chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
+    int numElements = (int)chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
     buffer.reserve(numElements);
     for (int i = 0; i < numElements; i++) {
         buffer.push_back(0.0);
@@ -1190,7 +1296,7 @@ void CLScalarField::_getHostScalarFieldDataBuffer(std::vector<WorkChunk> &chunks
 
 void CLScalarField::_getHostScalarWeightFieldDataBuffer(std::vector<WorkChunk> &chunks,
                                                         std::vector<float> &buffer) {
-    int numElements = 2 * chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
+    int numElements = 2 * (int)chunks.size() * _chunkWidth * _chunkHeight * _chunkWidth;
     buffer.reserve(numElements);
     for (int i = 0; i < numElements; i++) {
         buffer.push_back(0.0);
@@ -1248,22 +1354,37 @@ void CLScalarField::_setKernelArgs(cl::Kernel &kernel,
     err = kernel.setArg(4, numParticles);
     _checkError(err, "Kernel::setArg() - num particles");
 
-    err = kernel.setArg(5, (float)radius);
+    int numGroups = buffer.offsetDataH.size();
+    err = kernel.setArg(5, numGroups);
+    _checkError(err, "Kernel::setArg() - num groups");
+
+    err = kernel.setArg(6, (float)radius);
     _checkError(err, "Kernel::setArg() - radius");
 
-    err = kernel.setArg(6, (float)dx);
+    err = kernel.setArg(7, (float)dx);
     _checkError(err, "Kernel::setArg() - dx");
 }
 
 void CLScalarField::_launchKernel(cl::Kernel &kernel, int numWorkItems, int workGroupSize) {
+    int numChunks = numWorkItems / workGroupSize;
+    int loadSize = _kernelWorkLoadSize;
+    int numComputations = ceil((double)numChunks / (double)loadSize);
+
     cl::Event event;
-    cl_int err = _CLQueue.enqueueNDRangeKernel(kernel, 
-                                               cl::NullRange, 
-                                               cl::NDRange(numWorkItems), 
-                                               cl::NDRange(workGroupSize), 
-                                               NULL, 
-                                               &event);    
-    _checkError(err, "CommandQueue::enqueueNDRangeKernel()");
+    cl_int err;
+    for (int i = 0; i < numComputations; i++) {
+        int offset = i * loadSize * workGroupSize;
+        int items = (int)fmin(numWorkItems - offset, loadSize * workGroupSize);
+        
+        err = _CLQueue.enqueueNDRangeKernel(kernel, 
+                                            cl::NDRange(offset), 
+                                            cl::NDRange(items), 
+                                            cl::NDRange(workGroupSize), 
+                                            NULL, 
+                                            &event);    
+        _checkError(err, "CommandQueue::enqueueNDRangeKernel()");
+    }
+
     event.wait();
 }
 
@@ -1314,7 +1435,7 @@ void CLScalarField::_setWeightPointValueComputationOutputFieldData(std::vector<f
     ArrayView3d<float> scalarfieldview;
     ArrayView3d<float> weightfieldview;
     int bufferidx = 0;
-    int weightfieldoffset = chunks.size() * elementsPerChunk;
+    int weightfieldoffset = (int)chunks.size() * elementsPerChunk;
     for (unsigned int cidx = 0; cidx < chunks.size(); cidx++) {
         cg = chunks[cidx].workGroupIndex;
         group = workGroupGrid.getPointer(cg);
@@ -1359,6 +1480,74 @@ float CLScalarField::_getWorkGroupMinimumValue(WorkGroup *g) {
     }
 
     return minval;
+}
+
+void CLScalarField::_addPointsNoCL(std::vector<vmath::vec3> &points, 
+                                   double radius,
+                                   vmath::vec3 offset,
+                                   double dx,
+                                   Array3d<float> *field) {
+
+    ScalarField calcfield(field->width, field->height, field->depth, dx);
+    calcfield.setPointRadius(radius);
+    calcfield.setOffset(offset);
+    for (unsigned int i = 0; i < points.size(); i++) {
+        calcfield.addPoint(points[i]);
+    }
+
+    Array3d<float>* calcfieldp = calcfield.getPointerToScalarField();
+    _copyField(calcfieldp, field);
+
+}
+
+void CLScalarField::_addPointValuesNoCL(std::vector<vmath::vec3> &points, 
+                                        std::vector<float> &values,
+                                        double radius,
+                                        vmath::vec3 offset,
+                                        double dx,
+                                        Array3d<float> *field) {
+
+    ScalarField calcfield(field->width, field->height, field->depth, dx);
+    calcfield.setPointRadius(radius);
+    calcfield.setOffset(offset);
+    for (unsigned int i = 0; i < points.size(); i++) {
+        calcfield.addPointValue(points[i], values[i]);
+    }
+
+    Array3d<float>* calcfieldp = calcfield.getPointerToScalarField();
+    _copyField(calcfieldp, field);
+}
+
+void CLScalarField::_addPointValuesNoCL(std::vector<vmath::vec3> &points, 
+                                        std::vector<float> &values,
+                                        double radius,
+                                        vmath::vec3 offset,
+                                        double dx,
+                                        Array3d<float> *scalarfield,
+                                        Array3d<float> *weightfield) {
+
+    ScalarField calcfield(scalarfield->width, scalarfield->height, scalarfield->depth, dx);
+    calcfield.enableWeightField();
+    calcfield.setPointRadius(radius);
+    calcfield.setOffset(offset);
+    for (unsigned int i = 0; i < points.size(); i++) {
+        calcfield.addPointValue(points[i], values[i]);
+    }
+
+    Array3d<float>* calcfieldp = calcfield.getPointerToScalarField();
+    Array3d<float>* calcweightfieldp = calcfield.getPointerToWeightField();
+    _copyField(calcfieldp, scalarfield);
+    _copyField(calcweightfieldp, weightfield);
+}
+
+void CLScalarField::_copyField(Array3d<float> *src, Array3d<float> *dest) {
+    for (int k = 0; k < dest->depth; k++) {
+        for (int j = 0; j < dest->height; j++) {
+            for (int i = 0; i < dest->width; i++) {
+                dest->set(i, j, k, src->get(i, j, k));
+            }
+        }
+    }
 }
 
 #ifdef __GNUC__

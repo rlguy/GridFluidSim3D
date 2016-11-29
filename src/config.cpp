@@ -20,31 +20,55 @@ freely, subject to the following restrictions:
 #include "config.h"
 
 namespace Config {
-    std::string getExecutableDirectory() {
-        return std::string(CONFIG_EXECUTABLE_DIR);
-    }
+    std::string executableDirectory = CONFIG_EXECUTABLE_DIR;
+    std::string outputDirectory     = CONFIG_OUTPUT_DIR;
+    std::string bakefilesDirectory  = CONFIG_BAKEFILES_DIR;
+    std::string logsDirectory       = CONFIG_LOGS_DIR;
+    std::string savestatesDirectory = CONFIG_SAVESTATES_DIR;
+    std::string tempDirectory       = CONFIG_TEMP_DIR;
 
-    std::string getResourcesDirectory() {
-        return std::string(CONFIG_RESOURCES_DIR);
+    std::string getExecutableDirectory() {
+        return executableDirectory;
     }
 
     std::string getOutputDirectory() {
-        return std::string(CONFIG_OUTPUT_DIR);
+        return outputDirectory;
     }
 
     std::string getBakefilesDirectory() {
-        return std::string(CONFIG_BAKEFILES_DIR);
+        return bakefilesDirectory;
     }
 
     std::string getLogsDirectory() {
-        return std::string(CONFIG_LOGS_DIR);
+        return logsDirectory;
     }
 
     std::string getSavestatesDirectory() {
-        return std::string(CONFIG_SAVESTATES_DIR);
+        return savestatesDirectory;
     }
 
     std::string getTempDirectory() {
-        return std::string(CONFIG_TEMP_DIR);
+        return tempDirectory;
     }
+
+    void setOutputDirectory(std::string dir) {
+        outputDirectory = dir;
+    }
+
+    void setBakefilesDirectory(std::string dir) {
+        bakefilesDirectory = dir;
+    }
+
+    void setLogsDirectory(std::string dir) {
+        logsDirectory = dir;
+    }
+
+    void setSavestatesDirectory(std::string dir) {
+        savestatesDirectory = dir;
+    }
+
+    void setTempDirectory(std::string dir) {
+        tempDirectory = dir;
+    }
+
 }

@@ -1,10 +1,10 @@
 import ctypes
 from ctypes import c_void_p, c_char_p, c_int, c_double, byref
 
-from pyfluid import pyfluid as lib
-from vector3 import Vector3, Vector3_t
-from gridindex import GridIndex, GridIndex_t
-import pybindings as pb
+from .pyfluid import pyfluid as lib
+from .vector3 import Vector3, Vector3_t
+from .gridindex import GridIndex, GridIndex_t
+from . import pybindings as pb
 
 def _check_load_state_initialized(func):
     def wrapper(*args, **kwargs):
@@ -160,7 +160,7 @@ class FluidSimulationSaveState(object):
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         lifetimes = [0.0]*n
-        for i in xrange(n):
+        for i in range(n):
             lifetimes[i] = out[i]
         return lifetimes
 
@@ -177,7 +177,7 @@ class FluidSimulationSaveState(object):
         pb.execute_lib_func(libfunc, [self(), startidx, endidx, out])
 
         types = [0]*n
-        for i in xrange(n):
+        for i in range(n):
             types[i] = ord(out[i])
         return types
 

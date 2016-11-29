@@ -41,10 +41,10 @@ public:
 		for (int i = 0; i < numElements; i++) {
 			push_back(T());
 		}
-		_currentNodeIndex = _nodes.size() - 1;
+		_currentNodeIndex = (int)_nodes.size() - 1;
 	}
 
-	inline void setFragmentSize(unsigned int numElements) {
+	inline void setFragmentSize(size_t numElements) {
 		if (_nodes.size() != 0) {
 			return;
 		}
@@ -70,7 +70,7 @@ public:
 
 	inline void reserve(unsigned int n) {
 		int numFragments = n / _elementsPerFragment;
-		int numNewFragments = numFragments - _nodes.size();
+		int numNewFragments = numFragments - (int)_nodes.size();
 		for (int i = 0; i < numNewFragments; i++) {
 			_addNewVectorNode();
 		}
@@ -234,7 +234,7 @@ private:
 				_vector.reserve(_capacity);
 			}
 
-			inline unsigned int size() {
+			inline size_t size() {
 				return _vector.size();
 			}
 

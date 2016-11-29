@@ -59,6 +59,7 @@ freely, subject to the following restrictions:
 #include "stopwatch.h"
 #include "config.h"
 #include "fluidsimassert.h"
+#include "kernels/kernels.h"
 
 class CLScalarField
 {
@@ -112,17 +113,25 @@ public:
     void setDevicePreferenceCPU();
 
     void printDeviceInfo();
+    std::string getDeviceInfo();
+    void printKernelInfo();
+    std::string getKernelInfo();
     bool isUsingGPU();
     bool isUsingCPU();
+    void disableOpenCL();
+    void enableOpenCL();
+    bool isOpenCLEnabled();
+    int getKernelWorkLoadSize();
+    void setKernelWorkLoadSize(int n);
 
 private:
 
     struct CLDeviceInfo {
-        std::string cl_device_name;
-        std::string cl_device_vendor;
-        std::string cl_device_version;
-        std::string cl_driver_version;
-        std::string cl_device_opencl_c_version;
+        char cl_device_name[4096];
+        char cl_device_vendor[4096];
+        char cl_device_version[4096];
+        char cl_driver_version[4096];
+        char cl_device_opencl_c_version[4096];
 
         cl_device_type device_type;
         cl_uint cl_device_max_clock_frequency;
@@ -131,6 +140,17 @@ private:
         cl_ulong cl_device_max_mem_alloc_size;
         size_t cl_device_max_work_group_size;
         GridIndex cl_device_max_work_item_sizes;
+    };
+
+    struct CLKernelInfo {
+        char cl_kernel_function_name[4096];
+        char cl_kernel_attributes[4096];
+
+        cl_ulong cl_kernel_num_args;
+        size_t cl_kernel_work_group_size;
+        cl_ulong cl_kernel_local_mem_size;
+        cl_ulong cl_kernel_private_mem_size;
+        size_t cl_kernel_preferred_work_group_size_multiple;
     };
 
     struct DataBuffer {
@@ -174,8 +194,10 @@ private:
     cl::Context _getCLContext(cl_int *err);
     cl::Device _getCLDevice(cl::Context &context, cl_int *err);
     CLDeviceInfo _initializeDeviceInfo(cl::Device &device);
+    CLKernelInfo _initializeKernelInfo(cl::Kernel &kernel);
     cl_int _initializeChunkDimensions();
     cl_int _initializeCLKernels();
+    std::string _getKernelInfo(CLKernelInfo &info);
     std::string _getProgramString(std::string filename);
     cl_int _initializeCLCommandQueue();
 
@@ -282,6 +304,26 @@ private:
     void _updateWorkGroupMinimumValues(Array3d<WorkGroup> &grid);
     float _getWorkGroupMinimumValue(WorkGroup *g);
 
+    void _addPointsNoCL(std::vector<vmath::vec3> &points, 
+                        double radius,
+                        vmath::vec3 offset,
+                        double dx,
+                        Array3d<float> *field);
+    void _addPointValuesNoCL(std::vector<vmath::vec3> &points, 
+                             std::vector<float> &values,
+                             double radius,
+                             vmath::vec3 offset,
+                             double dx,
+                             Array3d<float> *field);
+    void _addPointValuesNoCL(std::vector<vmath::vec3> &points, 
+                             std::vector<float> &values,
+                             double radius,
+                             vmath::vec3 offset,
+                             double dx,
+                             Array3d<float> *scalarfield,
+                             Array3d<float> *weightfield);
+    void _copyField(Array3d<float> *src, Array3d<float> *dest);
+
     bool _isInitialized = false;
 
     cl_device_type _devicePreference1 = CL_DEVICE_TYPE_GPU;
@@ -293,6 +335,9 @@ private:
     cl::Kernel _CLKernelPoints;
     cl::Kernel _CLKernelPointValues;
     cl::Kernel _CLKernelWeightPointValues;
+    CLKernelInfo _kernelPointsInfo;
+    CLKernelInfo _kernelPointValuesInfo;
+    CLKernelInfo _kernelWeightPointValuesInfo;
     cl::CommandQueue _CLQueue;
 
     int _isize = 0;
@@ -312,10 +357,13 @@ private:
     int _maxWorkGroupSize = 256;
     int _minWorkGroupSize = 32;
     int _maxParticlesPerChunk = 1000;
-    int _maxChunksPerComputation = 5000;
+    int _maxChunksPerComputation = 15000;
+    int _kernelWorkLoadSize = 1000;
 
     bool _isMaxScalarFieldValueThresholdSet = false;
     float _maxScalarFieldValueThreshold = 1.0;
+
+    bool _isOpenCLEnabled = true;
     
 };
 

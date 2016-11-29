@@ -38,6 +38,11 @@ freely, subject to the following restrictions:
 #include "spatialpointgrid.h"
 #include "fluidsimassert.h"
 
+enum class TriangleMeshFormat : char { 
+    ply   = 0x00, 
+    bobj  = 0x01
+};
+
 class TriangleMesh
 {
 public:
@@ -46,6 +51,8 @@ public:
 
     bool loadPLY(std::string PLYFilename);
     void writeMeshToPLY(std::string filename);
+    void writeMeshToBOBJ(std::string filename);
+    static std::string getFileExtension(TriangleMeshFormat fmt);
 
     int numVertices();
     int numFaces();

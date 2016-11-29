@@ -52,7 +52,6 @@ class GridIndex(object):
 
     @i.setter
     def i(self, value):
-    	print "SETTING"
         self._values[0] = value
 
     @j.setter

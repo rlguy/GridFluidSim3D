@@ -51,7 +51,7 @@ if (NOT EXISTS "${CL_CPP_BINDINGS_DIR}/cl.hpp")
 endif()
 
 include_directories(src ${OpenCL_INCLUDE_DIRS})
-file(GLOB SOURCES "src/*.cpp" "src/c_bindings/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/c_bindings/*.cpp" "src/kernels/*.cpp")
 
 add_library(objects OBJECT ${SOURCES})
 
@@ -70,12 +70,10 @@ file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/bakefiles")
 file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/logs")
 file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/savestates")
 file(MAKE_DIRECTORY "${EXECUTABLE_DIR}/output/temp")
-file(COPY "src/kernels" DESTINATION "${EXECUTABLE_DIR}/resources")
-file(COPY "${CMAKE_SOURCE_DIR}/src/python_bindings/" DESTINATION "${PYTHON_MODULE_DIR}")
+file(COPY "${CMAKE_SOURCE_DIR}/src/pyfluid/" DESTINATION "${PYTHON_MODULE_DIR}")
 file(COPY "${CMAKE_SOURCE_DIR}/src/examples/python/" DESTINATION "${PYTHON_MODULE_DIR}/examples")
 
 set(CONFIG_EXECUTABLE_DIR  ${EXECUTABLE_DIR})
-set(CONFIG_RESOURCES_DIR   ${EXECUTABLE_DIR}/resources)
 set(CONFIG_OUTPUT_DIR      ${EXECUTABLE_DIR}/output)
 set(CONFIG_BAKEFILES_DIR   ${EXECUTABLE_DIR}/output/bakefiles)
 set(CONFIG_LOGS_DIR        ${EXECUTABLE_DIR}/output/logs)
@@ -84,4 +82,13 @@ set(CONFIG_TEMP_DIR        ${EXECUTABLE_DIR}/output/temp)
 configure_file(
   "${PROJECT_SOURCE_DIR}/src/config.h.in"
   "${PROJECT_SOURCE_DIR}/src/config.h"
+)
+
+file(READ "src/kernels/tricubicinterpolate.cl" TRICUBIC_INTERPOLATE_KERNEL_STRING)
+file(READ "src/kernels/scalarfield.cl" SCALAR_FIELD_KERNEL_STRING)
+set(TRICUBIC_INTERPOLATE_KERNEL_STRING  ${TRICUBIC_INTERPOLATE_KERNEL_STRING})
+set(SCALAR_FIELD_KERNEL_STRING  ${SCALAR_FIELD_KERNEL_STRING})
+configure_file(
+  "${PROJECT_SOURCE_DIR}/src/kernels/kernels.cpp.in"
+  "${PROJECT_SOURCE_DIR}/src/kernels/kernels.cpp"
 )

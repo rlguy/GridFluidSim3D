@@ -50,9 +50,9 @@ from pyfluid import FluidSimulation, CuboidFluidSource, AABB, Vector3, GridIndex
 def get_pillar_cells(position, radius, isize, jsize, ksize, dx):
     rsq = radius*radius
     cells = []
-    for k in xrange(ksize):
-        for j in xrange(jsize):
-            for i in xrange(isize):
+    for k in range(ksize):
+        for j in range(jsize):
+            for i in range(isize):
                 vx = (i + 0.5)*dx - position.x
                 vz = (k + 0.5)*dx - position.z
                 distsq = vx*vx + vz*vz

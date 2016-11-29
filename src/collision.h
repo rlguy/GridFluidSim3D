@@ -57,16 +57,16 @@ namespace Collision {
     extern vmath::vec3 findClosestPointOnTriangle(vmath::vec3 p0, vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2);
 
 
-    extern inline bool rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+    extern bool rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
                                              vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2);
 
-    extern inline bool rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+    extern bool rayIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
                                              vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2, vmath::vec3 *collision);
 
-    extern inline bool lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+    extern bool lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
                                               vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2);
 
-    extern inline bool lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
+    extern bool lineIntersectsTriangle(vmath::vec3 p, vmath::vec3 dir,
                                               vmath::vec3 v0, vmath::vec3 v1, vmath::vec3 v2, vmath::vec3 *collision);
 
     extern bool rayIntersectsPlane(vmath::vec3 p0, vmath::vec3 dir,

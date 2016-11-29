@@ -38,72 +38,91 @@ freely, subject to the following restrictions:
 class IsotropicParticleMesher {
 
 public:
-	IsotropicParticleMesher();
-	IsotropicParticleMesher(int isize, int jsize, int ksize, double dx);
-	~IsotropicParticleMesher();
+    IsotropicParticleMesher();
+    IsotropicParticleMesher(int isize, int jsize, int ksize, double dx);
+    ~IsotropicParticleMesher();
 
-	void setSubdivisionLevel(int n);
-	void setNumPolygonizationSlices(int n);
+    void setSubdivisionLevel(int n);
+    void setNumPolygonizationSlices(int n);
 
-	TriangleMesh meshParticles(FragmentedVector<MarkerParticle> &particles, 
-		                       FluidMaterialGrid &materialGrid,
-		                       double particleRadius);
+    TriangleMesh meshParticles(FragmentedVector<MarkerParticle> &particles, 
+                               FluidMaterialGrid &materialGrid,
+                               double particleRadius);
 
-	void setScalarFieldAccelerator(CLScalarField *accelerator);
-	void setScalarFieldAccelerator();
+    void setScalarFieldAccelerator(CLScalarField *accelerator);
+    void setScalarFieldAccelerator();
+    void enablePreviewMesher(double dx);
+    void disablePreviewMesher();
+    TriangleMesh getPreviewMesh(FluidMaterialGrid &materialGrid);
+    TriangleMesh getPreviewMesh();
 
 private:
 
-	TriangleMesh _polygonizeAll(FragmentedVector<MarkerParticle> &particles,
-	                            FluidMaterialGrid &materialGrid);
+    TriangleMesh _polygonizeAll(FragmentedVector<MarkerParticle> &particles,
+                                FluidMaterialGrid &materialGrid);
 
-	TriangleMesh _polygonizeSlices(FragmentedVector<MarkerParticle> &particles,
-	                               FluidMaterialGrid &materialGrid);
-	TriangleMesh _polygonizeSlice(int startidx, int endidx, 
-		                          FragmentedVector<MarkerParticle> &particles, 
-	                              FluidMaterialGrid &materialGrid);
-	void _getSubdividedGridDimensions(int *i, int *j, int *k, double *dx);
-	void _computeSliceScalarField(int startidx, int endidx, 
-		                          FragmentedVector<MarkerParticle> &particles,
-		                          FluidMaterialGrid &materialGrid,
-		                          ScalarField &field);
-	vmath::vec3 _getSliceGridPositionOffset(int startidx, int endidx);
-	void _getSliceParticles(int startidx, int endidx, 
-		                    FragmentedVector<MarkerParticle> &markerParticles,
-		                    FragmentedVector<vmath::vec3> &sliceParticles);
-	void _getSliceMaterialGrid(int startidx, int endidx,
-		                       FluidMaterialGrid &materialGrid,
-		                       FluidMaterialGrid &sliceMaterialGrid);
-	AABB _getSliceAABB(int startidx, int endidx);
-	void _addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
-	                             ScalarField &field);
-	void _addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
-	                             ScalarField &field);
-	void _addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
-	                                        ScalarField &field);
-	void _addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
-	                                        ScalarField &field);
-	void _updateScalarFieldSeam(int startidx, int endidx, ScalarField &field);
-	void _applyScalarFieldSliceSeamData(ScalarField &field);
-	void _saveScalarFieldSliceSeamData(ScalarField &field);
-	void _getSliceMask(int startidx, int endidx, Array3d<bool> &mask);
+    TriangleMesh _polygonizeSlices(FragmentedVector<MarkerParticle> &particles,
+                                   FluidMaterialGrid &materialGrid);
+    TriangleMesh _polygonizeSlice(int startidx, int endidx, 
+                                  FragmentedVector<MarkerParticle> &particles, 
+                                  FluidMaterialGrid &materialGrid);
+    void _getSubdividedGridDimensions(int *i, int *j, int *k, double *dx);
+    void _computeSliceScalarField(int startidx, int endidx, 
+                                  FragmentedVector<MarkerParticle> &particles,
+                                  FluidMaterialGrid &materialGrid,
+                                  ScalarField &field);
+    vmath::vec3 _getSliceGridPositionOffset(int startidx, int endidx);
+    void _getSliceParticles(int startidx, int endidx, 
+                            FragmentedVector<MarkerParticle> &markerParticles,
+                            FragmentedVector<vmath::vec3> &sliceParticles);
+    void _getSliceMaterialGrid(int startidx, int endidx,
+                               FluidMaterialGrid &materialGrid,
+                               FluidMaterialGrid &sliceMaterialGrid);
+    AABB _getSliceAABB(int startidx, int endidx);
+    void _addPointsToScalarField(FragmentedVector<vmath::vec3> &points,
+                                 ScalarField &field);
+    void _addPointsToScalarField(FragmentedVector<MarkerParticle> &points,
+                                 ScalarField &field);
+    void _addPointsToScalarFieldAccelerator(FragmentedVector<vmath::vec3> &points,
+                                            ScalarField &field);
+    void _addPointsToScalarFieldAccelerator(FragmentedVector<MarkerParticle> &points,
+                                            ScalarField &field);
+    void _updateScalarFieldSeam(int startidx, int endidx, ScalarField &field);
+    void _applyScalarFieldSliceSeamData(ScalarField &field);
+    void _saveScalarFieldSliceSeamData(ScalarField &field);
+    void _getSliceMask(int startidx, int endidx, Array3d<bool> &mask);
 
-	int _isize = 0;
-	int _jsize = 0;
-	int _ksize = 0;
-	double _dx = 0.0;
+    void _initializePreviewMesher(double dx);
+    void _addScalarFieldToPreviewField(ScalarField &field);
+    void _addScalarFieldSliceToPreviewField(int startidx, int endidx, 
+                                            ScalarField &field);
+    void _getPreviewMaterialGrid(FluidMaterialGrid &materialGrid,
+                                 FluidMaterialGrid &previewGrid);
+    void _setScalarFieldSolidBorders(ScalarField &field);
 
-	int _subdivisionLevel = 1;
-	int _numPolygonizationSlices = 1;
+    int _isize = 0;
+    int _jsize = 0;
+    int _ksize = 0;
+    double _dx = 0.0;
 
-	double _particleRadius = 0.0;
-	double _maxScalarFieldValueThreshold = 1.0;
+    int _subdivisionLevel = 1;
+    int _numPolygonizationSlices = 1;
 
-	Array3d<float> _scalarFieldSeamData;
+    double _particleRadius = 0.0;
+    double _maxScalarFieldValueThreshold = 1.0;
 
-	int _maxParticlesPerScalarFieldAddition = 5e6;
-	bool _isScalarFieldAcceleratorSet = false;
-	CLScalarField *_scalarFieldAccelerator;
+    Array3d<float> _scalarFieldSeamData;
+
+    int _maxParticlesPerScalarFieldAddition = 5e6;
+    bool _isScalarFieldAcceleratorSet = false;
+    CLScalarField *_scalarFieldAccelerator;
+
+    bool _isPreviewMesherEnabled = false;
+    int _pisize = 0;
+    int _pjsize = 0;
+    int _pksize = 0;
+    double _pdx = 0.0;
+    ScalarField _pfield;
 
 
 };

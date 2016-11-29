@@ -27,4 +27,19 @@ def __load_library(name):
 
         return library
 
+def load_library():
+    try:
+        global pyfluid
+        pyfluid = __load_library("pyfluid")
+    except:
+        pass
+
+def unload_library():
+    try:
+        global pyfluid
+        ctypes.windll.kernel32.FreeLibrary(pyfluid._handle)
+    except:
+        pass
+
+
 pyfluid = __load_library("pyfluid")

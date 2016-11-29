@@ -28,7 +28,7 @@ void load_local_memory(int chunk_width,
                        __local  float *local_data) {
 
     size_t lid = get_local_id(0);
-    size_t gid = get_group_id(0);
+    size_t gid = get_global_id(0) / get_local_size(0);
 
     int local_size = get_local_size(0);
     int num_read = ceil((float)num_values / (float)local_size);
@@ -81,11 +81,12 @@ __kernel void compute_scalar_field_points(__global float *particles,
                                           __global int *chunk_offsets,
                                           __local  float *local_particles,
                                           int num_particles,
+                                          int num_groups,
                                           float radius,
                                           float dx) {
     size_t tid = get_global_id(0);
     size_t lid = get_local_id(0);
-    size_t gid = get_group_id(0);
+    size_t gid = tid / get_local_size(0);
 
     int local_size = get_local_size(0);
     int chunk_width = (int)floor(cbrt((float)local_size));
@@ -141,11 +142,12 @@ __kernel void compute_scalar_field_point_values(__global float *point_values,
                                                 __global int *chunk_offsets,
                                                 __local  float *local_point_values,
                                                 int num_points,
+                                                int num_groups,
                                                 float radius,
                                                 float dx) {
     size_t tid = get_global_id(0);
     size_t lid = get_local_id(0);
-    size_t gid = get_group_id(0);
+    size_t gid = tid / get_local_size(0);
 
     int local_size = get_local_size(0);
     int chunk_width = (int)floor(cbrt((float)local_size));
@@ -202,11 +204,12 @@ __kernel void compute_scalar_weight_field_point_values(__global float *point_val
                                                        __global int *chunk_offsets,
                                                        __local  float *local_point_values,
                                                        int num_points,
+                                                       int num_groups,
                                                        float radius,
                                                        float dx) {
     size_t tid = get_global_id(0);
     size_t lid = get_local_id(0);
-    size_t gid = get_group_id(0);
+    size_t gid = tid / get_local_size(0);
 
     int local_size = get_local_size(0);
     int chunk_width = (int)floor(cbrt((float)local_size));
@@ -259,7 +262,7 @@ __kernel void compute_scalar_weight_field_point_values(__global float *point_val
     }
 
     int scalarfieldidx = gid * num_cells + lid;
-    int weightfieldidx = get_num_groups(0) * num_cells + scalarfieldidx;
+    int weightfieldidx = num_groups * num_cells + scalarfieldidx;
     field_data[scalarfieldidx] = scalarsum;
     field_data[weightfieldidx] = weightsum;
 }

@@ -1,8 +1,8 @@
 import numbers
 
-from fluidsimulationsavestate import FluidSimulationSaveState
-from vector3 import Vector3
-from gridindex import GridIndex
+from .fluidsimulationsavestate import FluidSimulationSaveState
+from .vector3 import Vector3
+from .gridindex import GridIndex
 
 def ijk_or_gridindex(func):
     def ijk_or_gridindex_wrapper(self, *args):

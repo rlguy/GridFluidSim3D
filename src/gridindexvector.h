@@ -34,7 +34,7 @@ public:
     GridIndexVector(int i, int j, int k);
     ~GridIndexVector();
 
-    inline unsigned int size() {
+    inline size_t size() {
         return _indices.size();
     }
 
@@ -42,7 +42,7 @@ public:
         return _indices.empty();
     }
 
-    inline void reserve(unsigned int n) {
+    inline void reserve(size_t n) {
         _indices.reserve(n);
     }
 

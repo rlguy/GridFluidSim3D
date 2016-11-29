@@ -207,6 +207,21 @@ public:
     void setMinPolyhedronTriangleCount(int n);
 
     /*
+        Offset will be added to the position of the meshes output by the 
+        simulator.
+    */
+    vmath::vec3 getDomainOffset();
+    void setDomainOffset(double x, double y, double z);
+    void setDomainOffset(vmath::vec3 offset);
+
+    /*
+        Specify file format that meshes will be written as. The simulator will
+        write .PLY meshes by default.
+    */
+    void setMeshOutputFormatAsPLY();
+    void setMeshOutputFormatAsBOBJ();
+
+    /*
         Enable/disable the simulation from saving polygonized triangle meshes 
         to disk. 
 
@@ -228,6 +243,19 @@ public:
     void enableIsotropicSurfaceReconstruction();
     void disableIsotropicSurfaceReconstruction();
     bool isIsotropicSurfaceReconstructionEnabled();
+
+    /*
+        Enable/disable the simulation from saving preview triangle 
+        meshes to disk.
+
+        A preview mesh is reconstructed at a specified resolution seperate from
+        the simulation resolution.
+
+        Enabled by default.
+    */
+    void enablePreviewMeshOutput(double dx);
+    void disablePreviewMeshOutput();
+    bool isPreviewMeshOutputEnabled();
 
     /*
         Enable/disable the simulation from saving anisotropic reconstructed triangle 
@@ -385,6 +413,36 @@ public:
     void disableAutosave();
     bool isAutosaveEnabled();
 
+    /*
+        Enable/disable use of OpenCL for particle advection.
+
+        Enabled by default.
+    */
+    void enableOpenCLParticleAdvection();
+    void disableOpenCLParticleAdvection();
+    bool isOpenCLParticleAdvectionEnabled();
+
+    /*
+        Enable/disable use of OpenCL for scalar fields.
+
+        Enabled by default.
+    */
+    void enableOpenCLScalarField();
+    void disableOpenCLScalarField();
+    bool isOpenCLScalarFieldEnabled();
+
+    /*
+        Maximum workload size for the ParticleAdvector OpenCL kernel
+    */
+    int getParticleAdvectionKernelWorkLoadSize();
+    void setParticleAdvectionKernelWorkLoadSize(int n);
+
+
+    /*
+        Maximum workload size for the CLScalarField OpenCL kernels
+    */
+    int getScalarFieldKernelWorkLoadSize();
+    void setScalarFieldKernelWorkLoadSize(int n);
 
     /*
         Add a constant force such as gravity to the simulation.
@@ -474,8 +532,6 @@ public:
         to a region containing fluid particles, those fluid particles will
         be removed from the simulation.
     */
-    void addSolidCell(int i, int j, int k);
-    void addSolidCell(GridIndex g);
     void addSolidCells(std::vector<GridIndex> &indices);
 
     /*
@@ -485,25 +541,22 @@ public:
         The bordering cells of the simulation grid are permanently set as
         solid cells and will not be removed.
     */
-    void removeSolidCell(int i, int j, int k);
-    void removeSolidCell(GridIndex g);
     void removeSolidCells(std::vector<GridIndex> &indices);
 
     /*
         Add fluid cells to the simulation grid. Fluid cells will only be
         added if the current cell material is of type air.
     */
-    void addFluidCell(int i, int j, int k);
-    void addFluidCell(GridIndex g);
     void addFluidCells(std::vector<GridIndex> &indices);
+    void addFluidCells(std::vector<GridIndex> &indices, vmath::vec3 velocity);
+    void addFluidCells(std::vector<GridIndex> &indices, 
+                       double vx, double vy, double vz);
 
     /*
         Remove fluid cells from the simulation grid. When a fluid cell is
         removed, all marker particles within the fluid cell will be removed
         and the material will be replaced by air.
     */
-    void removeFluidCell(int i, int j, int k);
-    void removeFluidCell(GridIndex g);
     void removeFluidCells(std::vector<GridIndex> &indices);
 
     /*
@@ -625,6 +678,18 @@ private:
                         bbox(p, w, h, d) {}
     };
 
+    struct GridCellGroup {
+        GridIndexVector indices;
+        vmath::vec3 velocity;
+
+        GridCellGroup() {}
+        GridCellGroup(int isize, int jsize, int ksize) : 
+                        indices(isize, jsize, ksize) {}
+        GridCellGroup(int isize, int jsize, int ksize, vmath::vec3 v) : 
+                        indices(isize, jsize, ksize),
+                        velocity(v) {}
+    };
+
     /*
         Initializing the Fluid Simulator
 
@@ -656,7 +721,11 @@ private:
         The final initialization stage is to initialize objects that use the OpenCL
         library.
     */
+    void _initializeLogFile();
+    void _initializeSimulationGrids(int isize, int jsize, int ksize, double dx);
+    void _initializeSimulationVectors(int isize, int jsize, int ksize);
     void _initializeSimulation();
+    void _logOpenCLInfo();
     void _initializeSolidCells();
     void _initializeFluidMaterial();
     void _calculateInitialFluidSurfaceScalarField(ScalarField &field);
@@ -672,6 +741,7 @@ private:
                                     std::vector<vmath::vec3> &partialParticles);
     void _initializeFluidCellIndices();
     void _initializeMarkerParticleRadius();
+    double _getMarkerParticleJitter();
     void _addMarkerParticlesToCell(GridIndex g);
     void _addMarkerParticlesToCell(GridIndex g, vmath::vec3 velocity);
     void _addMarkerParticle(vmath::vec3 p);
@@ -763,7 +833,7 @@ private:
     */
     bool _isInternalFluidSurfaceNeeded();
     void _reconstructInternalFluidSurface();
-    TriangleMesh _polygonizeInternalSurface();
+    void _polygonizeInternalSurface(TriangleMesh &surface, TriangleMesh &preview);
 
     /*
         3. Compute LevelSet Signed Distance Field
@@ -806,9 +876,12 @@ private:
         call to _stepFluid.
     */
     void _reconstructOutputFluidSurface(double dt);
+    void _outputIsotropicSurfaceMesh();
+    void _outputAnisotropicSurfaceMesh();
+    void _outputDiffuseMaterial();
+    void _outputBrickMesh(double dt);
     std::string _numberToString(int number);
-    void _writeSurfaceMeshToFile(TriangleMesh &isomesh,
-                                 TriangleMesh &anisomesh);
+    std::string _getFrameString(int number);
     void _writeDiffuseMaterialToFile(std::string bubblefile,
                                      std::string foamfile,
                                      std::string sprayfile);
@@ -818,10 +891,12 @@ private:
     void _writeBrickMaterialToFile(std::string brickfile, 
                                    std::string colorfile, 
                                    std::string texturefile);
+    void _writeTriangleMeshToFile(TriangleMesh &mesh, std::string filename);
     void _smoothSurfaceMesh(TriangleMesh &mesh);
     void _getSmoothVertices(TriangleMesh &mesh, std::vector<int> &smoothVertices);
     bool _isVertexNearSolid(vmath::vec3 v, double eps);
-    TriangleMesh _polygonizeIsotropicOutputSurface();
+    void _polygonizeIsotropicOutputSurface(TriangleMesh &surface, 
+                                           TriangleMesh &preview);
     TriangleMesh _polygonizeAnisotropicOutputSurface();
     void _updateBrickGrid(double dt);
 
@@ -982,7 +1057,7 @@ private:
         }
 
         int numRemoved = items.size() - currentidx;
-        for (unsigned int i = 0; i < numRemoved; i++) {
+        for (int i = 0; i < numRemoved; i++) {
             items.pop_back();
         }
         items.shrink_to_fit();
@@ -1030,12 +1105,16 @@ private:
     std::vector<SphericalFluidSource*> _sphericalFluidSources;
     std::vector<CuboidFluidSource*> _cuboidFluidSources;
     FragmentedVector<MarkerParticle> _markerParticles;
-    GridIndexVector _addedFluidCellQueue;
-    GridIndexVector _removedFluidCellQueue;
+    std::vector<GridCellGroup> _addedFluidCellQueue;
+    std::vector<GridCellGroup> _removedFluidCellQueue;
     GridIndexVector _fluidCellIndices;
+    double _markerParticleJitterFactor = 0.1;
 
     // Reconstruct internal fluid surface
     TriangleMesh _surfaceMesh;
+    TriangleMesh _previewMesh;
+    bool _isPreviewSurfaceMeshEnabled = false;
+    double _previewdx = 0.0;
 
     // Compute levelset signed distance field
     LevelSet _levelset;
@@ -1059,6 +1138,8 @@ private:
     double _markerParticleScale = 3.0;
     int _currentBrickMeshFrame = 0;
     int _brickMeshFrameOffset = -3;
+    vmath::vec3 _domainOffset;
+    TriangleMeshFormat _meshOutputFormat = TriangleMeshFormat::ply;
     FluidBrickGrid _fluidBrickGrid;
 
     // Advect velocity field

@@ -147,7 +147,7 @@ void PressureSolver::_initialize(PressureSolverParameters params) {
 	_materialGrid = params.materialGrid;
 	_vField = params.velocityField;
     _logfile = params.logfile;
-	_matSize = _fluidCells->size();
+	_matSize = (int)_fluidCells->size();
 
 
 }

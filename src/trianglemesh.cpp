@@ -109,8 +109,8 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
 
     std::string vertstring = _toString(vertices.size());
     std::string facestring = _toString(triangles.size());
-    int vertdigits = vertstring.length();
-    int facedigits = facestring.length();
+    int vertdigits = (int)vertstring.length();
+    int facedigits = (int)facestring.length();
 
     int offset = 0;
     int headersize;
@@ -122,11 +122,11 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
 
     int binsize;
     if (isColorEnabled) {
-        binsize = headersize + 3*(sizeof(float)*vertices.size() + sizeof(unsigned char)*vertices.size())
-                             + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
+        binsize = headersize + 3*(sizeof(float)*(int)vertices.size() + sizeof(unsigned char)*(int)vertices.size())
+                             + (sizeof(unsigned char) + 3*sizeof(int))*(int)triangles.size();
     } else {
-        binsize = headersize + 3*sizeof(float)*vertices.size()
-                             + (sizeof(unsigned char) + 3*sizeof(int))*triangles.size();
+        binsize = headersize + 3*sizeof(float)*(int)vertices.size()
+                             + (sizeof(unsigned char) + 3*sizeof(int))*(int)triangles.size();
     }
     char *bin = new char[binsize];
 
@@ -193,7 +193,7 @@ void TriangleMesh::writeMeshToPLY(std::string filename) {
             vertdata[3*i + 2] = v.z;
         }
         memcpy(bin + offset, vertdata, 3*sizeof(float)*vertices.size());
-        offset += 3*sizeof(float)*vertices.size();
+        offset += 3*sizeof(float)*(int)vertices.size();
         delete[] vertdata;
     }
 
@@ -235,6 +235,36 @@ int TriangleMesh::_numDigitsInInteger(int num) {
     }
 
     return count;
+}
+
+void TriangleMesh::writeMeshToBOBJ(std::string filename) {
+    std::ofstream erasefile;
+    erasefile.open(filename, std::ofstream::out | std::ofstream::trunc);
+    erasefile.close();
+
+    std::ofstream bobj(filename.c_str(), std::ios::out | std::ios::binary);
+
+    int numVertices = (int)vertices.size();
+    bobj.write((char *)&numVertices, sizeof(int));
+
+    int binsize = 3 * numVertices * sizeof(float);
+    bobj.write((char *)vertices.data(), binsize);
+
+    int numTriangles = (int)triangles.size();
+    bobj.write((char *)&numTriangles, sizeof(int));
+
+    binsize = 3 * numTriangles * sizeof(int);
+    bobj.write((char *)triangles.data(), binsize);
+
+    bobj.close();
+}
+
+std::string TriangleMesh::getFileExtension(TriangleMeshFormat fmt) {
+    if (fmt == TriangleMeshFormat::ply) {
+        return "ply";
+    } else {
+        return "bobj";
+    }
 }
 
 bool triangleSort(const Triangle &a, const Triangle &b)
@@ -380,7 +410,7 @@ bool TriangleMesh::_getElementNumberInPlyHeader(std::string &header,
         return false;
     }
 
-    int startidx = match + element.size();
+    int startidx = (int)match + (int)element.size();
     int endidx = 0;
     bool numberFound = false;
 
@@ -446,7 +476,7 @@ bool TriangleMesh::_loadPLYVertexData(std::ifstream *file, std::string &header) 
     }
 
     int vertexDataSize = numVertices*vertexSize;
-    int vertexDataOffset = header.size();
+    int vertexDataOffset = (int)header.size();
 
     file->seekg(vertexDataOffset, std::ios_base::beg);
     char *vertexData = new char[vertexDataSize];
@@ -495,7 +525,7 @@ bool TriangleMesh::_loadPLYTriangleData(std::ifstream *file, std::string &header
     }
 
     int vertexDataSize = numVertices*vertexSize;
-    int vertexDataOffset = header.size();
+    int vertexDataOffset = (int)header.size();
 
     int numFaces;
     success = _getNumFacesInPLYHeader(header, &numFaces);
@@ -1039,7 +1069,7 @@ void TriangleMesh::append(TriangleMesh &mesh) {
     normals.reserve(normals.size() + mesh.normals.size());
     triangles.reserve(triangles.size() + mesh.triangles.size());
 
-    int indexOffset = vertices.size();
+    int indexOffset = (int)vertices.size();
 
     vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
     vertexcolors.insert(vertexcolors.end(), mesh.vertexcolors.begin(), mesh.vertexcolors.end());
@@ -1073,7 +1103,7 @@ void TriangleMesh::join(TriangleMesh &mesh, double tolerance) {
 
     AABB bbox = _getMeshVertexIntersectionAABB(vertices, mesh.vertices, tolerance);
 
-    unsigned int indexOffset = vertices.size();
+    unsigned int indexOffset = (unsigned int)vertices.size();
     append(mesh);
 
     std::vector<int> verts1;

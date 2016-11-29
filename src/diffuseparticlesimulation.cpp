@@ -92,8 +92,8 @@ void DiffuseParticleSimulation::
         setDiffuseParticles(std::vector<DiffuseParticle> &particles) {
     _diffuseParticles.clear();
     _diffuseParticles.shrink_to_fit();
-    _diffuseParticles.reserve(particles.size());
-    for (unsigned int i = 0; i < particles.size(); i++) {
+    _diffuseParticles.reserve((unsigned int)particles.size());
+    for (size_t i = 0; i < particles.size(); i++) {
         _diffuseParticles.push_back(particles[i]);
     }
 }
@@ -110,8 +110,8 @@ void DiffuseParticleSimulation::
 
 void DiffuseParticleSimulation::
         addDiffuseParticles(std::vector<DiffuseParticle> &particles) {
-    _diffuseParticles.reserve(_diffuseParticles.size() + particles.size());
-    for (unsigned int i = 0; i < particles.size(); i++) {
+    _diffuseParticles.reserve((unsigned int)(_diffuseParticles.size() + particles.size()));
+    for (size_t i = 0; i < particles.size(); i++) {
         _diffuseParticles.push_back(particles[i]);
     }
 }
@@ -305,7 +305,7 @@ void DiffuseParticleSimulation::
 void DiffuseParticleSimulation::
         _shuffleDiffuseParticleEmitters(std::vector<DiffuseParticleEmitter> &emitters) {
     DiffuseParticleEmitter em;
-    for (int i = emitters.size() - 2; i >= 0; i--) {
+    for (int i = (int)emitters.size() - 2; i >= 0; i--) {
         int j = (rand() % (int)(i - 0 + 1));
         em = emitters[i];
         emitters[i] = emitters[j];
@@ -328,8 +328,8 @@ void DiffuseParticleSimulation::
 
     _computeNewDiffuseParticleVelocities(newdps);
 
-    _diffuseParticles.reserve(_diffuseParticles.size() + newdps.size());
-    for (unsigned int i = 0; i < newdps.size(); i++) {
+    _diffuseParticles.reserve((unsigned int)(_diffuseParticles.size() + newdps.size()));
+    for (size_t i = 0; i < newdps.size(); i++) {
         _diffuseParticles.push_back(newdps[i]);
     }
 }

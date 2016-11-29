@@ -50,7 +50,7 @@ public:
     AABB getBrickAABB();
     void setBrickDimensions(double width, double height, double depth);
     void setBrickDimensions(AABB brick);
-    bool getBrickMesh(LevelSet &levelset, TriangleMesh &mesh);
+    bool getBrickMesh(TriangleMesh &mesh);
     bool isBrickMeshReady();
     void update(LevelSet &levelset, 
                 FluidMaterialGrid &materialGrid,

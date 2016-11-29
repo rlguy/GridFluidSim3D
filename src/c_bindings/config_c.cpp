@@ -16,12 +16,6 @@ extern "C" {
         dir[dirstr.size()] = '\0';
     }
 
-    EXPORTDLL void Config_get_resources_directory(char *dir) {
-        std::string dirstr = Config::getResourcesDirectory();
-        memcpy(dir, &dirstr[0], dirstr.size());
-        dir[dirstr.size()] = '\0';
-    }
-
     EXPORTDLL void Config_get_output_directory(char *dir) {
         std::string dirstr = Config::getOutputDirectory();
         memcpy(dir, &dirstr[0], dirstr.size());
@@ -50,6 +44,26 @@ extern "C" {
         std::string dirstr = Config::getTempDirectory();
         memcpy(dir, &dirstr[0], dirstr.size());
         dir[dirstr.size()] = '\0';
+    }
+
+    EXPORTDLL void Config_set_output_directory(char *dir) {
+        Config::setOutputDirectory(std::string(dir));
+    }
+
+    EXPORTDLL void Config_set_bakefiles_directory(char *dir) {
+        Config::setBakefilesDirectory(std::string(dir));
+    }
+
+    EXPORTDLL void Config_set_logs_directory(char *dir) {
+        Config::setLogsDirectory(std::string(dir));
+    }
+
+    EXPORTDLL void Config_set_savestates_directory(char *dir) {
+        Config::setSavestatesDirectory(std::string(dir));
+    }
+
+    EXPORTDLL void Config_set_temp_directory(char *dir) {
+        Config::setTempDirectory(std::string(dir));
     }
     
 }

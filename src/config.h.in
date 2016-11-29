@@ -21,7 +21,6 @@ freely, subject to the following restrictions:
 #define FLUIDSIM_CONFIG_H
 
 #define CONFIG_EXECUTABLE_DIR 	"@CONFIG_EXECUTABLE_DIR@"
-#define CONFIG_RESOURCES_DIR 	"@CONFIG_RESOURCES_DIR@"
 #define CONFIG_OUTPUT_DIR 		"@CONFIG_OUTPUT_DIR@"
 #define CONFIG_BAKEFILES_DIR 	"@CONFIG_BAKEFILES_DIR@"
 #define CONFIG_LOGS_DIR 		"@CONFIG_LOGS_DIR@"
@@ -31,15 +30,27 @@ freely, subject to the following restrictions:
 #include <string>
 
 namespace Config {
+
+extern std::string executableDirectory;
+extern std::string outputDirectory;
+extern std::string bakefilesDirectory;
+extern std::string logsDirectory;
+extern std::string savestatesDirectory;
+extern std::string tempDirectory;
     
 extern std::string getExecutableDirectory();
-extern std::string getResourcesDirectory();
 extern std::string getOutputDirectory();
 extern std::string getBakefilesDirectory();
 extern std::string getLogsDirectory();
 extern std::string getSavestatesDirectory();
 extern std::string getTempDirectory();
     
+extern void setOutputDirectory(std::string dir);
+extern void setBakefilesDirectory(std::string dir);
+extern void setLogsDirectory(std::string dir);
+extern void setSavestatesDirectory(std::string dir);
+extern void setTempDirectory(std::string dir);
+
 }
 
 #endif
