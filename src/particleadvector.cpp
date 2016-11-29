@@ -28,6 +28,7 @@ ParticleAdvector::ParticleAdvector() {
 }
 
 bool ParticleAdvector::initialize() {
+    std::cout << "Initializing ParticleAdvector" << std::endl;
     cl_int err;
     cl::Context context = _getCLContext(&err);
     if (err != CL_SUCCESS) {
@@ -40,18 +41,26 @@ bool ParticleAdvector::initialize() {
     }
     _CLContext = context;
     _CLDevice = device;
+    std::cout << "initializing device info..." << std::endl;
     _deviceInfo = _initializeDeviceInfo(device);
+
+    printDeviceInfo();
     
     err = _initializeCLKernel();
     if (err != CL_SUCCESS) {
         return false;
     }
+    std::cout << "initializing kernel info..." << std::endl;
     _kernelInfo = _initializeKernelInfo(_CLKernel);
+
+    printKernelInfo();
 
     err = _initializeCLCommandQueue();
     if (err != CL_SUCCESS) {
         return false;
     }
+
+    std::cout << "successfully intialize particle advector!" << std::endl;
 
     _isInitialized = true;
     return true;
@@ -79,7 +88,7 @@ void ParticleAdvector::setDevicePreferenceCPU() {
 
 void ParticleAdvector::printDeviceInfo() {
     if (!_isInitialized) {
-        return;
+        //return;
     }
 
     std::cout << getDeviceInfo();
@@ -88,7 +97,7 @@ void ParticleAdvector::printDeviceInfo() {
 std::string ParticleAdvector::getDeviceInfo() {
     std::ostringstream ss;
     if (!_isInitialized) {
-        return ss.str();
+        //return ss.str();
     }
 
     ss << "CL_DEVICE_NAME:                " << 
@@ -141,7 +150,7 @@ std::string ParticleAdvector::getDeviceInfo() {
 
 void ParticleAdvector::printKernelInfo() {
     if (!_isInitialized) {
-        return;
+        //return;
     }
 
     std::cout << getKernelInfo();
@@ -150,7 +159,7 @@ void ParticleAdvector::printKernelInfo() {
 std::string ParticleAdvector::getKernelInfo() {
     std::ostringstream ss;
     if (!_isInitialized) {
-        return ss.str();
+        //return ss.str();
     }
 
     ss << "CL_KERNEL_FUNCTION_NAME:                      " << 
@@ -474,8 +483,11 @@ void ParticleAdvector::_checkError(cl_int err, const char * name) {
 cl::Context ParticleAdvector::_getCLContext(cl_int *err) {
     cl::Context context;
 
+    std::cout << "Finding CL platforms..." << std::endl;
     std::vector< cl::Platform > platforms;
     cl::Platform::get(&platforms);
+
+    std::cout << "Found " << platforms.size() << " platforms" << std::endl;
 
     if (platforms.size() == 0) {
         *err = -1;
@@ -483,6 +495,7 @@ cl::Context ParticleAdvector::_getCLContext(cl_int *err) {
     }
 
     // Try to find a platform with first device preference
+    std::cout << "Finding GPU context..." << std::endl;
     for (unsigned int i = 0; i < platforms.size(); i++) {
         cl_context_properties p = (cl_context_properties)(platforms[i]());
 
@@ -490,12 +503,15 @@ cl::Context ParticleAdvector::_getCLContext(cl_int *err) {
         context = cl::Context(_devicePreference1, cprops, NULL, NULL, err);
 
         if (*err == CL_SUCCESS) {
+            std::cout << "Found GPU context!" << std::endl;
             return context;
         }
     }
+    std::cout << "Did not find GPU context" << std::endl;
 
     // If first preference device not found, try to find a platform with 
     // second device preference.
+    std::cout << "Finding CPU context..." << std::endl;
     for (unsigned int i = 0; i < platforms.size(); i++) {
         cl_context_properties p = (cl_context_properties)(platforms[i]());
 
@@ -503,19 +519,22 @@ cl::Context ParticleAdvector::_getCLContext(cl_int *err) {
         context = cl::Context(_devicePreference2, cprops, NULL, NULL, err);
 
         if (*err == CL_SUCCESS) {
+            std::cout << "Found CPU context!" << std::endl;
             return context;
         }
     }
 
     *err = -1;
-
+    std::cout << "Did not find any OpenCL context" << std::endl;
     return context;
 }
 
 cl::Device ParticleAdvector::_getCLDevice(cl::Context &context, cl_int *err) {
+    std::cout << "Finding CL device..." << std::endl;
     std::vector<cl::Device> devices;
     devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
+    std::cout << "Found " << devices.size() << " CL devices!" << std::endl;
     if (devices.size() == 0) {
         *err = -1;
         return cl::Device();
@@ -591,13 +610,17 @@ cl_int ParticleAdvector::_initializeCLKernel() {
 
     std::vector<cl::Device> devices = _CLContext.getInfo<CL_CONTEXT_DEVICES>();
 
+    std::cout << "Building kernel program..." << std::endl;
     cl_int err = program.build(devices, "");
     if (err != CL_SUCCESS) {
+        std::cout << "Error building kernel program!" << std::endl;
         return err;
     }
 
+    std::cout << "Initializing kernel..." << std::endl;
     cl::Kernel kernel(program, "tricubic_interpolate_kernel", &err);
     if (err != CL_SUCCESS) {
+        std::cout << "Error intializing kernel!" << std::endl;
         return err;
     }
 
@@ -616,9 +639,11 @@ std::string ParticleAdvector::_getProgramString(std::string filename) {
 }
 
 cl_int ParticleAdvector::_initializeCLCommandQueue() {
+    std::cout << "Initializing command queue..." << std::endl;
     cl_int err;
     cl::CommandQueue queue(_CLContext, _CLDevice, 0, &err);
     if (err != CL_SUCCESS) {
+        std::cout << "Error initializing command queue!" << std::endl;
         return err;
     }
 
