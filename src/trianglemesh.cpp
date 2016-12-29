@@ -68,6 +68,48 @@ bool TriangleMesh::loadPLY(std::string PLYFilename) {
     return true;
 }
 
+bool TriangleMesh::loadBOBJ(std::string BOBJFilename) {
+    std::ifstream file(BOBJFilename.c_str(), std::ios::in | std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    int numverts;
+    file.read((char *)&numverts, sizeof(int));
+    if (!file.good() || numverts < 0) {
+        return false;
+    }
+    
+    int binsize = 3 * numverts * sizeof(float);
+    std::vector<vmath::vec3> vertices(numverts);
+    if (numverts > 0) {
+        file.read((char *)vertices.data(), binsize);
+        if (!file.good()) {
+            return false;
+        }
+    }
+
+    int numfaces;
+    file.read((char *)&numfaces, sizeof(int));
+    if (!file.good() || numfaces < 0) {
+        return false;
+    }
+
+    binsize = 3 * numfaces * sizeof(int);
+    std::vector<Triangle> triangles(numfaces);
+    if (numfaces > 0) {
+        file.read((char *)triangles.data(), binsize);
+        if (!file.good()) {
+            return false;
+        }
+    }
+
+    this->vertices = vertices;
+    this->triangles = triangles;
+
+    return true;
+}
+
 void TriangleMesh::writeMeshToPLY(std::string filename) {
     // Header format:
     /*
@@ -764,9 +806,6 @@ void TriangleMesh::smooth(double value, int iterations) {
 
 void TriangleMesh::smooth(double value, int iterations, 
                           std::vector<int> &verts) {
-    value = value < 0.0 ? 0.0 : value;
-    value = value > 1.0 ? 1.0 : value;
-
     std::vector<bool> isVertexSmooth;
     _getBoolVectorOfSmoothedVertices(verts, isVertexSmooth);
 

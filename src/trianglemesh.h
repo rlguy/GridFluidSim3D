@@ -50,6 +50,7 @@ public:
     ~TriangleMesh();
 
     bool loadPLY(std::string PLYFilename);
+    bool loadBOBJ(std::string BOBJFilename);
     void writeMeshToPLY(std::string filename);
     void writeMeshToBOBJ(std::string filename);
     static std::string getFileExtension(TriangleMeshFormat fmt);
