@@ -70,6 +70,7 @@ void example_diffuse_inflow() {
     fluidsim.addCuboidFluidSource(&inflow);
 
     // Create a pillar of solid cells in the center of the domain
+    std::vector<GridIndex> solidCells;
     vmath::vec3 center(0.5*width, 0.5*height, 0.5*depth);
     double pillarRadius = 15*dx;
     double rsq = pillarRadius * pillarRadius;
@@ -81,11 +82,12 @@ void example_diffuse_inflow() {
                 double distsq = v.x*v.x + v.z*v.z;
 
                 if (distsq < rsq) {
-                    fluidsim.addSolidCell(i, j, k);
+                    solidCells.push_back(GridIndex(i, j, k));
                 }
             }
         }
     }
+    fluidsim.addSolidCells(solidCells);
 
     fluidsim.addBodyForce(0.0, -25.0, 0.0);
     fluidsim.initialize();
