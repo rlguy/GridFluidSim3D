@@ -634,8 +634,15 @@ void ParticleAdvector::_getParticleChunkGrid(double cwidth, double cheight, doub
     double bwidth = grid.width * cwidth;
     double bheight = grid.height * cheight;
     double bdepth = grid.depth * cdepth;
-    AABB bbox(vmath::vec3(0.0, 0.0, 0.0), bwidth, bheight, bdepth);
+
     double eps = 1e-6;
+    double bboxeps = 0.01 * _dx;
+
+    // The grid boundary dimensions are reduced to keep particles away from
+    // the edge. Numerical error may cause particle locations to be calculated
+    // to be outside of the grid if they lie on the grid boundary.
+    AABB bbox(vmath::vec3(0.0, 0.0, 0.0), bwidth, bheight, bdepth);
+    bbox.expand(-bboxeps);
 
     Array3d<int> countGrid(grid.width, grid.height, grid.depth, 0);
     vmath::vec3 p;
@@ -696,12 +703,11 @@ void ParticleAdvector::_getParticleChunkGrid(double cwidth, double cheight, doub
        close to the boundary of a chunk, its location could be calculated to be 
        in a different chunk from what is calculated in this method.
     */
-    double chunkeps = 0.01 * _dx;
     for (int k = 0; k < grid.depth; k++) {
         for (int j = 0; j < grid.height; j++) {
             for (int i = 0; i < grid.width; i++) {
                 bbox = AABB(i*cwidth, j*cheight, k*cdepth, cwidth, cheight, cdepth);
-                bbox.expand(-chunkeps);
+                bbox.expand(-bboxeps);
 
                 pc = grid.getPointer(i, j, k);
                 for (unsigned int pidx = 0; pidx < pc->particles.size(); pidx++) {
