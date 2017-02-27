@@ -145,9 +145,7 @@ for (int i = 0; i < numframes; i++) {
 
 As this loop runs, the program should output simulation stats and timing metrics to the terminal. After the loop completes, the ```output/bakefiles/``` directory should contain 30 .PLY triangle meshes numbered in sequence from 0 to 29: `000000.ply, 000001.ply, 000002.ply, ..., 000028.ply, 000029.ply`.
 
-If you open the `000029.ply` mesh file in a 3D modelling package such as [Blender](http://www.blender.org), the mesh should look similar to the following image.
-
-![alt tag](http://rlguy.com/gridfluidsim/images/hello_world_frame30.jpg)
+If you open the `000029.ply` mesh file in a 3D modelling package such as [Blender](http://www.blender.org), the mesh should look similar to [this image](http://rlguy.com/gridfluidsim/images/hello_world_frame30.jpg).
 
 The fluid simulation in this example is quick to compute, but of low quality due to the low resolution of the simulation grid. The quality of this simulation can be improved by increasing the simulation dimensions while decreasing the cell size. For example, try simulating on a grid of resolution `64 x 64 x 64` with a cell size of `0.125`, or even better, on a grid of resolution `128 x 128 x 128` with a cell size of `0.0625`.
 
@@ -168,23 +166,3 @@ fluidsim.initialize();
 for i in range(30):
     fluidsim.update(1.0 / 30)
 ```
-
-## Rendering
-
-This fluid simulation program generates a triangle mesh for each frame and stores this data in the ```output/bakefiles/``` directory as a sequence of .PLY files. The fluid simulation is configured in the file [src/main.cpp](src/main.cpp) and the default simulation drops a ball of fluid in the center of the fluid domain.
-
-To render the simulation into an animation, you will need to import the series of .ply meshes into a rendering program where you can set up a scene with lighting and materials, such as the free and open source [Blender](http://www.blender.org) software.
-
-If you are not familiar with Blender, you can try out this [.blend](https://drive.google.com/file/d/0B1bzpKpnt4f4LVBLUGZtVDZsaWc) file that will import the .ply meshes and render the default simulation. I have highlighted the important areas for configuring the render in this screen shot:
-
-![alt tag](http://rlguy.com/gridfluidsim/images/blender-default_sim_render_screenshot.jpg)
-
-To configure and render the animation, you will need to:
-
-1. Change the _WATER_FILEPATH_DIRECTORY_ variable to point to the filepath of your bakefiles folder
-2. Set the resolution and frame range of the animation
-3. Set the output file destination
-4. Click the 'Run Script' button
-5. Click the 'Animate' button
-
-Blender will render your animation as a sequence of images which you can then convert into a video with a tool such as [ffmpeg](https://ffmpeg.org/).
