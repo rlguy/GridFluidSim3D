@@ -71,10 +71,8 @@ fluidsim
 │   └───temp            - temporary files created by the simulation program
 │    
 └───pyfluid         - The pyfluid Python package
-│   └───examples        - pyfluid example usage
-│   └───lib             - C++ library files
-│
-└───resources       - Contains files used during runtime
+    └───examples        - pyfluid example usage
+    └───lib             - C++ library files
 ```
 
 ## Configuring the Fluid Simulator
