@@ -841,8 +841,8 @@ int ParticleAdvector::_getMaxChunksPerComputation() {
     int offsetSize = _getChunkOffsetDataSize();
     int totalSize = _getChunkTotalDataSize();
 
-    unsigned long int maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
-    unsigned long int maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
+    cl_ulong maxGlobalMem = _deviceInfo.cl_device_global_mem_size;
+    cl_ulong maxAlloc = _deviceInfo.cl_device_max_mem_alloc_size;
 
     int numPositionAllocItems = floor((double)maxAlloc / (double)positionSize);
     int numVelocityAllocItems = floor((double)maxAlloc / (double)vfieldSize);
